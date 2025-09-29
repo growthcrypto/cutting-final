@@ -1,0 +1,209 @@
+const mongoose = require('mongoose');
+
+// User Management
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['manager', 'chatter'], required: true },
+  chatterName: { type: String }, // For chatter accounts
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Creator/Account Management
+const creatorAccountSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // "Creator 1", "Creator 2", etc.
+  accountName: { type: String, required: true }, // OnlyFans account name
+  isActive: { type: Boolean, default: true },
+  isMainAccount: { type: Boolean, default: true }, // Which account is primarily used
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Guidelines Management
+const guidelineSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  category: { type: String, enum: ['sales', 'engagement', 'language', 'professionalism'], required: true },
+  weight: { type: Number, default: 1, min: 1, max: 5 }, // Importance weighting
+  examples: [{ type: String }], // Good examples
+  counterExamples: [{ type: String }], // What not to do
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Daily Chatter Reports
+const dailyChatterReportSchema = new mongoose.Schema({
+  chatterName: { type: String, required: true },
+  date: { type: Date, required: true },
+  shift: { type: String, enum: ['morning', 'afternoon', 'evening', 'night'], required: true },
+  
+  // PPV Data
+  ppvSales: [{
+    amount: { type: Number, required: true },
+    creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
+    timestamp: { type: Date, default: Date.now }
+  }],
+  
+  // Tips Data
+  tips: [{
+    amount: { type: Number, required: true },
+    creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
+    timestamp: { type: Date, default: Date.now }
+  }],
+  
+  // Performance Metrics
+  fansChatted: { type: Number, default: 0 },
+  avgResponseTime: { type: Number, default: 0 }, // in minutes
+  
+  // Calculated Fields
+  totalPPVRevenue: { type: Number, default: 0 },
+  totalTipRevenue: { type: Number, default: 0 },
+  totalRevenue: { type: Number, default: 0 },
+  avgPPVPrice: { type: Number, default: 0 },
+  avgTipAmount: { type: Number, default: 0 },
+  
+  notes: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Weekly Message Analysis
+const messageAnalysisSchema = new mongoose.Schema({
+  chatterName: { type: String, required: true },
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  // Message Data
+  totalMessages: { type: Number, default: 0 },
+  messagesSample: [{ type: String }], // Sample messages for analysis
+  
+  // AI Scores
+  overallScore: { type: Number, min: 0, max: 100, default: 0 },
+  guidelinesScore: { type: Number, min: 0, max: 100, default: 0 },
+  grammarScore: { type: Number, min: 0, max: 100, default: 0 },
+  engagementScore: { type: Number, min: 0, max: 100, default: 0 },
+  
+  // Detailed Analysis
+  strengths: [{ type: String }],
+  weaknesses: [{ type: String }],
+  recommendations: [{ type: String }],
+  
+  // Guidelines Breakdown
+  guidelinesAnalysis: [{
+    guidelineId: { type: mongoose.Schema.Types.ObjectId, ref: 'Guideline' },
+    score: { type: Number, min: 0, max: 100 },
+    feedback: { type: String },
+    examples: [{ type: String }]
+  }],
+  
+  // Performance Metrics
+  avgMessageLength: { type: Number, default: 0 },
+  avgResponseTime: { type: Number, default: 0 },
+  keywordUsage: [{ keyword: String, count: Number }],
+  
+  processedAt: { type: Date, default: Date.now }
+});
+
+// Weekly Account Data (from Infloww)
+const accountDataSchema = new mongoose.Schema({
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  // Account Metrics
+  netRevenue: { type: Number, default: 0 },
+  totalSubs: { type: Number, default: 0 },
+  newSubs: { type: Number, default: 0 },
+  profileClicks: { type: Number, default: 0 },
+  recurringRevenue: { type: Number, default: 0 },
+  
+  // Calculated Rates
+  clickToSubRate: { type: Number, default: 0 }, // (newSubs / profileClicks) * 100
+  renewalRate: { type: Number, default: 0 }, // (recurringRevenue / totalRevenue) * 100
+  
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Chatter Performance Data (from Infloww)
+const chatterPerformanceSchema = new mongoose.Schema({
+  chatterName: { type: String, required: true },
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  // Performance Metrics
+  messagesSent: { type: Number, default: 0 },
+  ppvsSent: { type: Number, default: 0 },
+  ppvsUnlocked: { type: Number, default: 0 },
+  fansChattedWith: { type: Number, default: 0 },
+  
+  // Calculated Rates
+  unlockRate: { type: Number, default: 0 }, // (ppvsUnlocked / ppvsSent) * 100
+  revenuePerMessage: { type: Number, default: 0 },
+  
+  createdAt: { type: Date, default: Date.now }
+});
+
+// AI Analysis Results
+const aiAnalysisSchema = new mongoose.Schema({
+  analysisType: { type: String, enum: ['agency_health', 'chatter_individual', 'opportunity_sizing'], required: true },
+  dateRange: {
+    start: { type: Date, required: true },
+    end: { type: Date, required: true }
+  },
+  
+  // Analysis Results
+  criticalIssues: [{
+    issue: { type: String, required: true },
+    severity: { type: String, enum: ['low', 'medium', 'high', 'critical'], required: true },
+    affectedMetrics: [{ type: String }],
+    description: { type: String }
+  }],
+  
+  recommendations: [{
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    priority: { type: String, enum: ['low', 'medium', 'high'], required: true },
+    expectedImpact: { type: String },
+    roiCalculation: {
+      currentValue: { type: Number },
+      potentialValue: { type: Number },
+      weeklyImpact: { type: Number },
+      monthlyImpact: { type: Number }
+    }
+  }],
+  
+  opportunities: [{
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    potentialRevenue: { type: Number },
+    implementationDifficulty: { type: String, enum: ['easy', 'medium', 'hard'] }
+  }],
+  
+  keyInsights: [{ type: String }],
+  performanceMetrics: { type: mongoose.Schema.Types.Mixed }, // Flexible data structure
+  
+  generatedAt: { type: Date, default: Date.now }
+});
+
+// Export all models
+const User = mongoose.model('User', userSchema);
+const CreatorAccount = mongoose.model('CreatorAccount', creatorAccountSchema);
+const Guideline = mongoose.model('Guideline', guidelineSchema);
+const DailyChatterReport = mongoose.model('DailyChatterReport', dailyChatterReportSchema);
+const MessageAnalysis = mongoose.model('MessageAnalysis', messageAnalysisSchema);
+const AccountData = mongoose.model('AccountData', accountDataSchema);
+const ChatterPerformance = mongoose.model('ChatterPerformance', chatterPerformanceSchema);
+const AIAnalysis = mongoose.model('AIAnalysis', aiAnalysisSchema);
+
+module.exports = {
+  User,
+  CreatorAccount,
+  Guideline,
+  DailyChatterReport,
+  MessageAnalysis,
+  AccountData,
+  ChatterPerformance,
+  AIAnalysis
+};

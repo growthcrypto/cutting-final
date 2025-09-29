@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyFans Agency Analytics & AI System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .gradient-card-2 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-card-3 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center gradient-bg">
+        <div class="max-w-md w-full mx-4">
+            <div class="bg-white rounded-lg shadow-2xl p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                        Agency Analytics
+                    </h1>
+                    <p class="text-gray-600">OnlyFans Performance Management</p>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Username</label>
+                        <input type="text" id="loginUsername" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="loginPassword" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                    </button>
+                </form>
+                
+                <div id="loginError" class="mt-4 text-red-600 text-sm hidden"></div>
+                
+                <div class="mt-6 text-center text-sm text-gray-500">
+                    <p>Default: admin / admin123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <nav class="gradient-bg text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <button id="sidebarToggle" class="mr-4 lg:hidden">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <i class="fas fa-chart-line text-2xl mr-3"></i>
+                        <h1 class="text-xl font-bold">OnlyFans Agency Analytics</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userWelcome" class="text-sm"></span>
+                        <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-white bg-opacity-20 hover:bg-opacity-30 transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="flex h-screen pt-16">
+            <!-- Sidebar -->
+            <div id="sidebar" class="sidebar w-64 bg-white shadow-lg fixed inset-y-16 left-0 z-50 lg:relative lg:translate-x-0">
+                <div class="p-6">
+                    <div class="space-y-2">
+                        <!-- Manager Navigation -->
+                        <div id="managerNav" class="space-y-2 hidden">
+                            <a href="#" onclick="showSection('dashboard')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                            </a>
+                            <a href="#" onclick="showSection('guidelines')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-list-check mr-3"></i>Guidelines
+                            </a>
+                            <a href="#" onclick="showSection('team-management')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-users mr-3"></i>Team Management
+                            </a>
+                            <a href="#" onclick="showSection('ai-analysis')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-brain mr-3"></i>AI Analysis
+                            </a>
+                            <a href="#" onclick="showSection('data-upload')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-upload mr-3"></i>Data Upload
+                            </a>
+                        </div>
+
+                        <!-- Chatter Navigation -->
+                        <div id="chatterNav" class="space-y-2 hidden">
+                            <a href="#" onclick="showSection('chatter-dashboard')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-tachometer-alt mr-3"></i>My Dashboard
+                            </a>
+                            <a href="#" onclick="showSection('daily-report')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-plus mr-3"></i>Daily Report
+                            </a>
+                            <a href="#" onclick="showSection('my-performance')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-chart-line mr-3"></i>My Performance
+                            </a>
+                            <a href="#" onclick="showSection('team-comparison')" class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition">
+                                <i class="fas fa-users mr-3"></i>Team Comparison
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 overflow-x-hidden overflow-y-auto lg:ml-0">
+                <div class="p-6">
+                    
+                    <!-- Dashboard Section -->
+                    <div id="dashboard" class="section">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Agency Dashboard</h2>
+                            <p class="text-gray-600">Overview of your OnlyFans agency performance</p>
+                        </div>
+
+                        <!-- Metrics Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div class="gradient-card text-white rounded-lg p-6 card-hover">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white text-opacity-80">Total Revenue</p>
+                                        <p class="text-3xl font-bold" id="totalRevenue">$0</p>
+                                    </div>
+                                    <i class="fas fa-dollar-sign text-4xl text-white text-opacity-60"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="gradient-card-2 text-white rounded-lg p-6 card-hover">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white text-opacity-80">Active Chatters</p>
+                                        <p class="text-3xl font-bold" id="activeChatters">4</p>
+                                    </div>
+                                    <i class="fas fa-users text-4xl text-white text-opacity-60"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="gradient-card-3 text-white rounded-lg p-6 card-hover">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white text-opacity-80">Avg PPV Price</p>
+                                        <p class="text-3xl font-bold" id="avgPPVPrice">$0</p>
+                                    </div>
+                                    <i class="fas fa-tags text-4xl text-white text-opacity-60"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-purple-500 text-white rounded-lg p-6 card-hover">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-white text-opacity-80">Unlock Rate</p>
+                                        <p class="text-3xl font-bold" id="unlockRate">0%</p>
+                                    </div>
+                                    <i class="fas fa-unlock text-4xl text-white text-opacity-60"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-white rounded-lg shadow-lg p-6">
+                                <h3 class="text-xl font-semibold text-gray-800 mb-4">Revenue Trends</h3>
+                                <canvas id="revenueChart" width="400" height="200"></canvas>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg shadow-lg p-6">
+                                <h3 class="text-xl font-semibold text-gray-800 mb-4">Performance Overview</h3>
+                                <canvas id="performanceChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Report Section (Chatter) -->
+                    <div id="daily-report" class="section hidden">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Daily Report</h2>
+                            <p class="text-gray-600">Upload your daily performance data</p>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-lg p-8">
+                            <form id="dailyReportForm" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                                        <input type="date" id="reportDate" required
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Shift</label>
+                                        <select id="reportShift" required
+                                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                            <option value="">Select shift...</option>
+                                            <option value="morning">Morning</option>
+                                            <option value="afternoon">Afternoon</option>
+                                            <option value="evening">Evening</option>
+                                            <option value="night">Night</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Fans Chatted With</label>
+                                        <input type="number" id="fansChatted" min="0"
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Avg Response Time (minutes)</label>
+                                        <input type="number" id="avgResponseTime" min="0" step="0.1"
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+
+                                <!-- PPV Sales Section -->
+                                <div class="border-t pt-6">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-800">PPV Sales</h3>
+                                        <button type="button" id="addPPVSale" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm">
+                                            <i class="fas fa-plus mr-1"></i>Add Sale
+                                        </button>
+                                    </div>
+                                    <div id="ppvSalesContainer" class="space-y-3">
+                                        <!-- PPV sales will be added dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Tips Section -->
+                                <div class="border-t pt-6">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-800">Tips</h3>
+                                        <button type="button" id="addTip" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
+                                            <i class="fas fa-plus mr-1"></i>Add Tip
+                                        </button>
+                                    </div>
+                                    <div id="tipsContainer" class="space-y-3">
+                                        <!-- Tips will be added dynamically -->
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+                                    <textarea id="reportNotes" rows="3"
+                                              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                              placeholder="Any additional notes about your shift..."></textarea>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg">
+                                        <i class="fas fa-save mr-2"></i>Save Report
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Other sections will be added as we build them -->
+                    <div id="guidelines" class="section hidden">
+                        <h2 class="text-2xl font-bold mb-4">Guidelines Management</h2>
+                        <p class="text-gray-600">Coming soon...</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p class="text-gray-700">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed top-4 right-4 max-w-sm w-full hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg border-l-4 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i id="notificationIcon" class="text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p id="notificationMessage" class="text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="hideNotification()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app-new.js"></script>
+</body>
+</html>
