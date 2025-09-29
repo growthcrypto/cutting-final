@@ -467,8 +467,19 @@ function initializeSidebar() {
                 : 'fas fa-angle-double-left text-xl';
         }
 
-        // Always set margin to 0 - no automatic sidebar space
-        mainContent.style.marginLeft = '0';
+        // Expand content when sidebar is collapsed
+        if (collapsed) {
+            mainContent.style.marginLeft = '0';
+            mainContent.style.width = '100%';
+        } else {
+            if (window.innerWidth >= 1024) {
+                mainContent.style.marginLeft = '288px';
+                mainContent.style.width = 'calc(100% - 288px)';
+            } else {
+                mainContent.style.marginLeft = '0';
+                mainContent.style.width = '100%';
+            }
+        }
     }
 
     function toggleSidebarState(forceState) {
@@ -602,22 +613,31 @@ function applyCustomDateRange() {
         return;
     }
 
-    if (startDate > endDate) {
+    if (new Date(startDate) > new Date(endDate)) {
         showError('Start date cannot be after end date.');
         return;
     }
 
+    // Set the custom date range
     customDateRange = { start: startDate, end: endDate };
     currentTimeInterval = 'custom';
+    
+    // Update button states
     updateTimeIntervalButtons();
+    
+    // Close the picker
     closeCustomDatePicker();
 
+    // Reload data for managers
     if (currentUser?.role === 'manager') {
         loadDashboardData();
         loadAIRecommendations();
     }
 
-    showNotification(`Custom range applied: ${formatDateLabel(startDate)} → ${formatDateLabel(endDate)}`, 'success');
+    // Show success message
+    const startFormatted = formatDateLabel(startDate);
+    const endFormatted = formatDateLabel(endDate);
+    showNotification(`Custom range applied: ${startFormatted} → ${endFormatted}`, 'success');
 }
 
 function closeCustomDatePicker(options = {}) {
