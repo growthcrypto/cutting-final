@@ -1471,68 +1471,106 @@ function renderAgencyAnalysisResults(data) {
     if (!container) return;
     
     container.innerHTML = `
-        <!-- Overall Score -->
-        <div class="glass-card rounded-xl p-8 mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h4 class="text-2xl font-semibold text-white">Overall Agency Performance</h4>
-                    <p class="text-gray-400 mt-2">Comprehensive score based on ${currentAIAnalysisInterval} performance data</p>
+        <!-- Performance Score Dashboard -->
+        <div class="relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-3xl"></div>
+            <div class="relative p-12 mb-12">
+                <div class="text-center mb-12">
+                    <div class="inline-flex items-center justify-center w-40 h-40 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-4 border-purple-400/30 mb-8">
+                        <div class="text-center">
+                            <div class="text-7xl font-black text-purple-400">${data.overallScore}</div>
+                            <div class="text-2xl text-purple-300 font-semibold">/ 100</div>
+                        </div>
+                    </div>
+                    <h4 class="text-4xl font-bold text-white mb-4">Agency Performance Score</h4>
+                    <p class="text-gray-300 text-xl max-w-2xl mx-auto">Comprehensive intelligence analysis based on ${currentAIAnalysisInterval} of performance data</p>
                 </div>
-                <div class="text-right">
-                    <div class="text-5xl font-bold text-purple-400">${data.overallScore}</div>
-                    <div class="text-lg text-gray-400">/ 100</div>
+                
+                <div class="w-full max-w-4xl mx-auto">
+                    <div class="w-full bg-gray-800/50 rounded-full h-6 mb-4">
+                        <div class="bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 h-6 rounded-full transition-all duration-2000 shadow-lg shadow-purple-500/20" style="width: ${data.overallScore}%"></div>
+                    </div>
+                    <div class="flex justify-between text-lg text-gray-400">
+                        <span>Needs Major Improvement</span>
+                        <span>Industry Leading</span>
+                    </div>
                 </div>
-            </div>
-            <div class="w-full bg-gray-700/50 rounded-full h-4 mb-2">
-                <div class="bg-gradient-to-r from-purple-500 to-purple-400 h-4 rounded-full transition-all duration-1000" style="width: ${data.overallScore}%"></div>
-            </div>
-            <div class="flex justify-between text-sm text-gray-400">
-                <span>Poor</span>
-                <span>Excellent</span>
             </div>
         </div>
 
-        <!-- Revenue Analysis -->
-        <div class="glass-card rounded-xl p-8 mb-8">
-            <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
-                <i class="fas fa-chart-line text-green-400 mr-4"></i>
-                Revenue Intelligence Analysis
-            </h4>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                <div class="text-center p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                    <div class="text-3xl font-bold text-green-400 mb-3">$${data.revenueAnalysis.current.toLocaleString()}</div>
-                    <div class="text-lg text-gray-300 mb-2">Current Monthly</div>
-                    <div class="text-sm text-gray-500">Based on uploaded data</div>
+        <!-- Revenue Intelligence Dashboard -->
+        <div class="relative overflow-hidden mb-16">
+            <div class="absolute inset-0 bg-gradient-to-br from-green-600/5 via-emerald-600/5 to-teal-600/5 rounded-3xl"></div>
+            <div class="relative p-12">
+                <div class="flex items-center mb-12">
+                    <div class="w-20 h-20 bg-green-600/20 rounded-2xl flex items-center justify-center mr-6">
+                        <i class="fas fa-chart-line text-green-400 text-4xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-4xl font-bold text-white mb-2">Revenue Intelligence</h4>
+                        <p class="text-green-200 text-xl">Smart optimization opportunities and growth potential</p>
+                    </div>
                 </div>
-                <div class="text-center p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                    <div class="text-3xl font-bold text-blue-400 mb-3">$${data.revenueAnalysis.potential.toLocaleString()}</div>
-                    <div class="text-lg text-gray-300 mb-2">Optimization Potential</div>
-                    <div class="text-sm text-gray-500">With recommended changes</div>
-                </div>
-                <div class="text-center p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                    <div class="text-3xl font-bold text-yellow-400 mb-3">$${data.revenueAnalysis.gap.toLocaleString()}</div>
-                    <div class="text-lg text-gray-300 mb-2">Revenue Opportunity</div>
-                    <div class="text-sm text-gray-500">Actionable potential</div>
-                </div>
-            </div>
-            
-            <div class="border-t border-gray-700 pt-8">
-                <h5 class="text-lg font-semibold text-white mb-6">Revenue Optimization Opportunities</h5>
-                <div class="space-y-4">
-                    ${data.revenueAnalysis.opportunities.map(opp => `
-                        <div class="flex items-center justify-between p-6 bg-gray-800/50 rounded-xl border border-gray-700 hover:bg-gray-700/30 transition-all">
-                            <div class="flex-1">
-                                <div class="font-semibold text-white mb-2">${opp.area}</div>
-                                <div class="text-gray-300">+$${opp.impact.toLocaleString()} monthly potential</div>
-                                <div class="text-sm text-gray-500 mt-1">Based on current performance data</div>
-                            </div>
-                            <div class="text-right ml-6">
-                                <div class="text-2xl font-bold text-green-400">${opp.confidence}%</div>
-                                <div class="text-sm text-gray-400">Confidence</div>
-                            </div>
+                
+                <!-- Revenue Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-green-500/20 text-center">
+                        <div class="w-16 h-16 bg-green-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
                         </div>
-                    `).join('')}
+                        <div class="text-4xl font-black text-green-400 mb-3">$${data.revenueAnalysis.current.toLocaleString()}</div>
+                        <div class="text-xl text-white font-semibold mb-2">Current Monthly</div>
+                        <div class="text-gray-400">Based on uploaded data</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-blue-500/20 text-center">
+                        <div class="w-16 h-16 bg-blue-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-rocket text-blue-400 text-2xl"></i>
+                        </div>
+                        <div class="text-4xl font-black text-blue-400 mb-3">$${data.revenueAnalysis.potential.toLocaleString()}</div>
+                        <div class="text-xl text-white font-semibold mb-2">Optimization Potential</div>
+                        <div class="text-gray-400">With AI recommendations</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-yellow-500/20 text-center">
+                        <div class="w-16 h-16 bg-yellow-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-target text-yellow-400 text-2xl"></i>
+                        </div>
+                        <div class="text-4xl font-black text-yellow-400 mb-3">$${data.revenueAnalysis.gap.toLocaleString()}</div>
+                        <div class="text-xl text-white font-semibold mb-2">Growth Opportunity</div>
+                        <div class="text-gray-400">Immediate potential</div>
+                    </div>
+                </div>
+                
+                <!-- Revenue Opportunities -->
+                <div class="bg-gray-800/30 rounded-2xl p-8 border border-gray-600">
+                    <h5 class="text-2xl font-bold text-white mb-8 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>
+                        Revenue Optimization Opportunities
+                    </h5>
+                    <div class="grid grid-cols-1 gap-6">
+                        ${data.revenueAnalysis.opportunities.map((opp, index) => `
+                            <div class="bg-gradient-to-r from-gray-900/50 to-gray-800/50 p-8 rounded-2xl border border-gray-600 hover:border-green-500/30 transition-all group">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center flex-1">
+                                        <div class="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center text-white font-bold text-xl mr-6">
+                                            ${index + 1}
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-2xl font-bold text-white mb-2">${opp.area}</div>
+                                            <div class="text-gray-300 text-lg">Monthly Revenue Potential: <span class="text-green-400 font-bold">+$${opp.impact.toLocaleString()}</span></div>
+                                            <div class="text-gray-500 mt-2">AI Confidence Level: ${opp.confidence}% • Based on current performance data</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right ml-8">
+                                        <div class="text-3xl font-black text-green-400">${opp.confidence}%</div>
+                                        <div class="text-gray-400">Success Rate</div>
+                                        <button class="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition-all">
+                                            <i class="fas fa-play mr-2"></i>Implement
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         </div>
@@ -1609,44 +1647,62 @@ function renderAgencyAnalysisResults(data) {
             </div>
         </div>
 
-        <!-- Action Plan -->
-        <div class="glass-card rounded-xl p-8 mb-8">
-            <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
-                <i class="fas fa-rocket text-green-400 mr-4"></i>
-                90-Day Strategic Action Plan
-            </h4>
-            <div class="space-y-6">
-                ${data.actionPlan.map((action, index) => `
-                    <div class="p-6 border border-gray-600 rounded-xl hover:bg-gray-800/30 transition-all">
-                        <div class="flex items-start justify-between mb-5">
-                            <div class="flex items-start">
-                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4 mt-1">
-                                    ${index + 1}
-                                </div>
-                                <div>
-                                    <div class="flex items-center mb-2">
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold ${
-                                            action.priority === 'High' ? 'bg-red-500/20 text-red-400' :
-                                            action.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-blue-500/20 text-blue-400'
-                                        }">${action.priority} Priority</span>
-                                    </div>
-                                    <div class="text-lg font-semibold text-white mb-2">${action.task}</div>
-                                    <div class="text-gray-400">Effort Required: ${action.effort}</div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xl font-bold text-green-400 mb-1">${action.expectedROI}</div>
-                                <div class="text-gray-400 text-sm">${action.timeline}</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-end">
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all">
-                                <i class="fas fa-play mr-2"></i>Start Implementation
-                            </button>
-                        </div>
+        <!-- Strategic Action Plan -->
+        <div class="relative overflow-hidden mb-16">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-indigo-600/5 to-purple-600/5 rounded-3xl"></div>
+            <div class="relative p-12">
+                <div class="flex items-center mb-12">
+                    <div class="w-20 h-20 bg-blue-600/20 rounded-2xl flex items-center justify-center mr-6">
+                        <i class="fas fa-rocket text-blue-400 text-4xl"></i>
                     </div>
-                `).join('')}
+                    <div>
+                        <h4 class="text-4xl font-bold text-white mb-2">90-Day Strategic Action Plan</h4>
+                        <p class="text-blue-200 text-xl">Prioritized roadmap for maximum ROI impact</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-8">
+                    ${data.actionPlan.map((action, index) => `
+                        <div class="bg-gradient-to-r from-gray-900/60 to-gray-800/60 p-10 rounded-3xl border border-gray-600 hover:border-blue-500/30 transition-all group">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start flex-1">
+                                    <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl mr-8 shadow-lg">
+                                        ${index + 1}
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-4">
+                                            <span class="px-4 py-2 rounded-full text-sm font-bold ${
+                                                action.priority === 'High' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                                action.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                                'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                            }">${action.priority} Priority</span>
+                                        </div>
+                                        <div class="text-3xl font-bold text-white mb-4">${action.task}</div>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                                            <div class="text-center p-4 bg-gray-800/40 rounded-xl">
+                                                <div class="text-xl font-bold text-green-400">${action.expectedROI}</div>
+                                                <div class="text-gray-400">Expected ROI</div>
+                                            </div>
+                                            <div class="text-center p-4 bg-gray-800/40 rounded-xl">
+                                                <div class="text-xl font-bold text-blue-400">${action.timeline}</div>
+                                                <div class="text-gray-400">Implementation Time</div>
+                                            </div>
+                                            <div class="text-center p-4 bg-gray-800/40 rounded-xl">
+                                                <div class="text-xl font-bold text-yellow-400">${action.effort}</div>
+                                                <div class="text-gray-400">Effort Required</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-8">
+                                    <button class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-lg">
+                                        <i class="fas fa-play mr-3"></i>Start Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
     `;
