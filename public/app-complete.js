@@ -84,19 +84,32 @@ function setupEventListeners() {
     // Sidebar toggle
     document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
     
-    // Sidebar close button - handled in unified click handler below
+    // Sidebar toggle buttons
+    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+    const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
+    
+    if (sidebarToggleIcon) {
+        sidebarToggleIcon.addEventListener('click', toggleSidebarCollapse);
+    }
+    
+    if (floatingSidebarToggle) {
+        floatingSidebarToggle.addEventListener('click', toggleSidebarCollapse);
+    }
 
     // Click outside sidebar to close (mobile)
     document.addEventListener('click', function(event) {
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const floatingBtn = document.getElementById('floatingSidebarToggle');
         
         if (sidebar && !sidebar.classList.contains('sidebar-hidden')) {
-            // If click is outside sidebar and not on toggle button
-            if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-                // Only auto-close on mobile (when sidebar is fixed positioned)
+            // If click is outside sidebar and not on toggle buttons
+            if (!sidebar.contains(event.target) && 
+                !sidebarToggle.contains(event.target) &&
+                !floatingBtn.contains(event.target)) {
+                // Only auto-close on mobile
                 if (window.innerWidth < 1024) {
-                    closeSidebar();
+                    toggleSidebarCollapse();
                 }
             }
         }
@@ -125,9 +138,6 @@ function setupEventListeners() {
         } else if (e.target.id === 'cancelCustomRange' || e.target.closest('#cancelCustomRange') || e.target.parentElement?.id === 'cancelCustomRange') {
             e.preventDefault();
             closeCustomDatePicker();
-        } else if (e.target.id === 'sidebarClose' || e.target.closest('#sidebarClose') || e.target.parentElement?.id === 'sidebarClose') {
-            e.preventDefault();
-            closeSidebar();
         }
     });
 
@@ -446,39 +456,48 @@ async function loadChattersForInfloww() {
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
-    
     if (sidebar) {
-        const isHidden = sidebar.classList.contains('sidebar-hidden');
         sidebar.classList.toggle('sidebar-hidden');
-        
-        // Handle main content margin on desktop
-        if (window.innerWidth >= 1024 && mainContent) {
-            if (isHidden) {
-                // Sidebar is being shown, restore normal margin
-                mainContent.style.marginLeft = '';
-                sidebar.style.transform = '';
-            } else {
-                // Sidebar is being hidden, expand main content
-                mainContent.style.marginLeft = '0';
-                sidebar.style.transform = 'translateX(-100%)';
-            }
-        }
     }
 }
 
-function closeSidebar() {
+function toggleSidebarCollapse() {
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('.main-content');
+    const floatingToggle = document.getElementById('floatingSidebarToggle');
+    const toggleIcon = document.querySelector('#sidebarToggleIcon i');
     
-    if (sidebar) {
-        sidebar.classList.add('sidebar-hidden');
-        // Force the style for immediate feedback
-        sidebar.style.transform = 'translateX(-100%)';
+    if (!sidebar || !mainContent) return;
+    
+    const isCurrentlyHidden = sidebar.classList.contains('sidebar-hidden');
+    
+    if (isCurrentlyHidden) {
+        // Show sidebar
+        sidebar.classList.remove('sidebar-hidden');
+        mainContent.classList.remove('expanded');
         
-        // Expand main content on desktop
-        if (window.innerWidth >= 1024 && mainContent) {
-            mainContent.style.marginLeft = '0';
+        // Hide floating toggle button
+        if (floatingToggle) {
+            floatingToggle.classList.add('hidden');
+        }
+        
+        // Update icon direction
+        if (toggleIcon) {
+            toggleIcon.className = 'fas fa-angle-double-left text-xl';
+        }
+    } else {
+        // Hide sidebar
+        sidebar.classList.add('sidebar-hidden');
+        mainContent.classList.add('expanded');
+        
+        // Show floating toggle button
+        if (floatingToggle) {
+            floatingToggle.classList.remove('hidden');
+        }
+        
+        // Update icon direction
+        if (toggleIcon) {
+            toggleIcon.className = 'fas fa-angle-double-right text-xl';
         }
     }
 }
@@ -511,12 +530,11 @@ function toggleCustomDatePicker() {
     const picker = document.getElementById('customDatePicker');
     
     if (picker) {
-        const isHidden = picker.classList.contains('hidden');
+        const isHidden = picker.classList.contains('hide');
         
         if (isHidden) {
             // Show picker
-            picker.classList.remove('hidden');
-            picker.style.display = 'block';
+            picker.classList.remove('hide');
             
             // Set default dates if not already set
             const startInput = document.getElementById('customStartDate');
@@ -532,8 +550,7 @@ function toggleCustomDatePicker() {
             }
         } else {
             // Hide picker
-            picker.classList.add('hidden');
-            picker.style.display = 'none';
+            picker.classList.add('hide');
         }
     }
 }
@@ -573,8 +590,7 @@ function applyCustomDateRange() {
 function closeCustomDatePicker() {
     const picker = document.getElementById('customDatePicker');
     if (picker) {
-        picker.classList.add('hidden');
-        picker.style.display = 'none';
+        picker.classList.add('hide');
     }
 }
 

@@ -96,17 +96,24 @@
         
         @media (min-width: 1024px) {
             .sidebar-hidden {
-                transform: translateX(-288px) !important; /* 72 * 4 = 288px width */
-            }
-            
-            /* When sidebar is hidden on desktop, expand main content */
-            .sidebar-hidden + .main-content {
-                margin-left: 0 !important;
+                transform: translateX(-288px) !important;
             }
         }
         
+        /* Main content expansion when sidebar is hidden */
         .main-content {
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-left: 0;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 288px; /* Default sidebar width */
+            }
+            
+            .main-content.expanded {
+                margin-left: 0 !important;
+            }
         }
 
         .chart-container {
@@ -166,7 +173,7 @@
             position: relative;
         }
         
-        .date-picker-dropdown {
+        .custom-date-dropdown {
             position: absolute;
             top: calc(100% + 0.5rem);
             right: 0;
@@ -177,11 +184,16 @@
             min-width: 300px;
             z-index: 9999;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            transition: all 0.2s ease;
         }
         
-        .date-picker-dropdown.hidden {
-            display: none;
+        .custom-date-dropdown.hide {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
         }
         
         .date-picker-dropdown input[type="date"] {
@@ -342,10 +354,10 @@
         <div class="flex h-screen pt-0">
             <!-- Sidebar -->
             <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 lg:relative lg:translate-x-0 pt-20 lg:pt-0">
-                <!-- Sidebar Close Button -->
+                <!-- Sidebar Toggle Button -->
                 <div class="flex justify-end p-4">
-                    <button id="sidebarClose" class="text-gray-400 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
+                    <button id="sidebarToggleIcon" class="text-gray-400 hover:text-white transition-colors" title="Toggle Sidebar">
+                        <i class="fas fa-angle-double-left text-xl"></i>
                     </button>
                 </div>
                 <nav class="p-6 pt-2 lg:pt-6 space-y-2">
@@ -394,6 +406,11 @@
                 </nav>
             </aside>
 
+            <!-- Floating Sidebar Toggle Button (hidden by default) -->
+            <button id="floatingSidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg transition-all hidden" title="Show Sidebar">
+                <i class="fas fa-angle-double-right text-lg"></i>
+            </button>
+
             <!-- Main Content -->
             <main class="main-content flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto lg:ml-0 scrollbar-thin">
                 <!-- Dashboard Section -->
@@ -421,7 +438,7 @@
                                 <button id="customDateBtn" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
                                     <i class="fas fa-calendar mr-1"></i>Custom
                                 </button>
-                                <div id="customDatePicker" class="date-picker-dropdown hidden">
+                                <div id="customDatePicker" class="custom-date-dropdown hide">
                                     <div class="space-y-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-2">Start Date</label>
