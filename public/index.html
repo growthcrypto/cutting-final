@@ -3,27 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OnlyFans Agency Analytics & AI System</title>
+    <title>Agency Analytics Pro - OnlyFans Performance Intelligence</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
                     colors: {
-                        dark: {
-                            50: '#f8fafc',
-                            100: '#f1f5f9',
-                            200: '#e2e8f0',
-                            300: '#cbd5e1',
-                            400: '#94a3b8',
-                            500: '#64748b',
-                            600: '#475569',
-                            700: '#334155',
-                            800: '#1e293b',
-                            900: '#0f172a',
+                        primary: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
                         }
                     }
                 }
@@ -31,99 +44,227 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
         }
-        .card-hover {
-            transition: all 0.2s ease;
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         }
-        .card-hover:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
         }
+
+        .gradient-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+        }
+
+        .gradient-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+        }
+
+        .gradient-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+        }
+
+        .premium-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
         .sidebar {
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         .sidebar-hidden {
             transform: translateX(-100%);
         }
-        .metric-card {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
+        .chart-container {
+            background: rgba(17, 24, 39, 0.6);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(75, 85, 99, 0.2);
         }
-        .metric-card-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+
+        .premium-button {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+            transition: all 0.2s ease;
         }
-        .metric-card-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+
+        .premium-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px 0 rgba(59, 130, 246, 0.5);
         }
-        .metric-card-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+
+        .ai-insight-card {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 16px;
         }
-        .glassmorphism {
-            backdrop-filter: blur(16px) saturate(180%);
-            background-color: rgba(17, 25, 40, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.125);
+
+        .data-point {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+
+        .data-point i {
+            color: #3b82f6;
         }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(75, 85, 99, 0.3);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center gradient-bg">
-        <div class="w-full max-w-md mx-4">
-            <div class="glassmorphism rounded-2xl p-8 shadow-2xl">
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading Agency Analytics Pro...</p>
+        </div>
+    </div>
+
+    <!-- Authentication Screen -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <!-- Background Animation -->
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-blue-900/20"></div>
+        <div class="absolute top-0 left-0 w-full h-full">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="relative z-10 w-full max-w-md mx-4">
+            <div class="glass-card rounded-2xl p-8 shadow-2xl">
                 <div class="text-center mb-8">
-                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
                         <i class="fas fa-chart-line text-2xl text-white"></i>
                     </div>
-                    <h1 class="text-2xl font-bold text-white mb-2">Agency Analytics</h1>
-                    <p class="text-white/70">OnlyFans Performance Management</p>
+                    <h1 class="text-2xl font-bold mb-2">Agency Analytics Pro</h1>
+                    <p class="text-gray-400 text-sm">OnlyFans Performance Intelligence Platform</p>
                 </div>
-                
-                <form id="loginForm" class="space-y-6">
-                    <div>
-                        <label class="block text-white/90 text-sm font-medium mb-2">Username</label>
-                        <input type="text" id="loginUsername" required
-                               class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent">
+
+                <!-- Login Form -->
+                <div id="loginForm">
+                    <form class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="loginUsername" required
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="loginPassword" required
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <button type="submit" class="w-full premium-button text-white font-medium py-3 px-4 rounded-xl transition-all">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                        </button>
+                    </form>
+
+                    <div id="loginError" class="mt-4 text-red-400 text-sm hidden"></div>
+                </div>
+
+                <!-- Create Account Form -->
+                <div id="createAccountForm" class="hidden space-y-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-semibold mb-2">Join the Team</h2>
+                        <p class="text-gray-400 text-sm">Create your chatter account</p>
                     </div>
-                    
-                    <div>
-                        <label class="block text-white/90 text-sm font-medium mb-2">Password</label>
-                        <input type="password" id="loginPassword" required
-                               class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent">
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-white/20 hover:bg-white/30 text-white font-medium py-3 px-4 rounded-xl transition duration-200 backdrop-blur">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
-                    </button>
-                </form>
-                
-                <div id="loginError" class="mt-4 text-red-300 text-sm hidden"></div>
+
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Chatter Name</label>
+                            <input type="text" id="chatterName" required
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="newUsername" required
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email</label>
+                            <input type="email" id="newEmail" required
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="newPassword" required minlength="6"
+                                   class="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <button type="submit" class="w-full premium-button text-white font-medium py-3 px-4 rounded-xl transition-all">
+                            <i class="fas fa-user-plus mr-2"></i>Create Account
+                        </button>
+
+                        <button type="button" id="backToLogin" class="w-full text-gray-400 hover:text-white text-sm py-2 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Login
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Main Application -->
-    <div id="mainApp" class="hidden">
+    <div id="mainApp" class="hidden min-h-screen">
         <!-- Header -->
-        <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+        <header class="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-40">
             <div class="flex items-center justify-between px-6 py-4">
                 <div class="flex items-center space-x-4">
-                    <button id="sidebarToggle" class="lg:hidden text-gray-400 hover:text-white">
+                    <button id="sidebarToggle" class="lg:hidden text-gray-400 hover:text-white transition">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                     <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-                            <i class="fas fa-chart-line text-white text-sm"></i>
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <i class="fas fa-chart-line text-white"></i>
                         </div>
-                        <h1 class="text-xl font-semibold">OnlyFans Analytics</h1>
+                        <div>
+                            <h1 class="text-xl font-bold">Agency Analytics Pro</h1>
+                            <p class="text-xs text-gray-400">Performance Intelligence Platform</p>
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -137,319 +278,235 @@
 
         <div class="flex h-screen pt-0">
             <!-- Sidebar -->
-            <aside id="sidebar" class="sidebar w-64 bg-gray-800 border-r border-gray-700 fixed inset-y-0 left-0 z-30 lg:relative lg:translate-x-0 pt-20 lg:pt-0">
-                <nav class="p-4 space-y-2">
+            <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 lg:relative lg:translate-x-0 pt-20 lg:pt-0">
+                <nav class="p-6 space-y-2">
                     <!-- Manager Navigation -->
-                    <div id="managerNav" class="hidden">
-                        <div class="space-y-1">
-                            <a href="#" onclick="showSection('dashboard')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>Dashboard
-                            </a>
-                            <a href="#" onclick="showSection('analytics')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-chart-bar w-5 h-5 mr-3"></i>Analytics
-                            </a>
-                            <a href="#" onclick="showSection('data-upload')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-upload w-5 h-5 mr-3"></i>Data Upload
-                            </a>
-                            <a href="#" onclick="showSection('guidelines')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-list-check w-5 h-5 mr-3"></i>Guidelines
-                            </a>
-                            <a href="#" onclick="showSection('ai-analysis')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-brain w-5 h-5 mr-3"></i>AI Analysis
-                            </a>
-                            <a href="#" onclick="showSection('team-management')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-users w-5 h-5 mr-3"></i>Team Management
+                    <div id="managerNav" class="space-y-1">
+                        <a href="#" onclick="showSection('dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>Dashboard
+                        </a>
+                        <a href="#" onclick="showSection('analytics')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-chart-bar w-5 h-5 mr-3"></i>Analytics
+                        </a>
+                        <a href="#" onclick="showSection('ai-analysis')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-brain w-5 h-5 mr-3"></i>AI Analysis
+                        </a>
+                        <a href="#" onclick="showSection('data-upload')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-upload w-5 h-5 mr-3"></i>Data Upload
+                        </a>
+                        <a href="#" onclick="showSection('guidelines')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-list-check w-5 h-5 mr-3"></i>Guidelines
+                        </a>
+                        <a href="#" onclick="showSection('team-management')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-users w-5 h-5 mr-3"></i>Team Management
+                        </a>
+                        <div class="border-t border-gray-700 pt-4 mt-4">
+                            <a href="#" onclick="showSection('settings')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                                <i class="fas fa-cog w-5 h-5 mr-3"></i>Settings
                             </a>
                         </div>
                     </div>
 
                     <!-- Chatter Navigation -->
-                    <div id="chatterNav" class="hidden">
-                        <div class="space-y-1">
-                            <a href="#" onclick="showSection('chatter-dashboard')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>My Dashboard
-                            </a>
-                            <a href="#" onclick="showSection('daily-report')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-plus w-5 h-5 mr-3"></i>Daily Report
-                            </a>
-                            <a href="#" onclick="showSection('my-performance')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-chart-line w-5 h-5 mr-3"></i>My Performance
-                            </a>
-                            <a href="#" onclick="showSection('team-comparison')" class="nav-link flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition">
-                                <i class="fas fa-users w-5 h-5 mr-3"></i>Team Comparison
-                            </a>
-                        </div>
+                    <div id="chatterNav" class="space-y-1">
+                        <a href="#" onclick="showSection('chatter-dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>My Dashboard
+                        </a>
+                        <a href="#" onclick="showSection('daily-report')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-plus w-5 h-5 mr-3"></i>Daily Report
+                        </a>
+                        <a href="#" onclick="showSection('my-performance')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-chart-line w-5 h-5 mr-3"></i>My Performance
+                        </a>
+                        <a href="#" onclick="showSection('team-comparison')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                            <i class="fas fa-users w-5 h-5 mr-3"></i>Team Comparison
+                        </a>
                     </div>
                 </nav>
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 bg-gray-900 overflow-y-auto lg:ml-0">
+            <main class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto lg:ml-0 scrollbar-thin">
                 <!-- Dashboard Section -->
-                <div id="dashboard" class="section p-6">
-                    <div class="mb-8">
-                        <h2 class="text-3xl font-bold mb-2">Agency Dashboard</h2>
-                        <p class="text-gray-400">Real-time performance overview</p>
+                <div id="dashboard" class="section p-8">
+                    <!-- Header with Time Controls -->
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+                        <div>
+                            <h2 class="text-3xl font-bold mb-2">Performance Dashboard</h2>
+                            <p class="text-gray-400">Real-time insights and AI-powered recommendations</p>
+                        </div>
+
+                        <!-- Time Interval Controls -->
+                        <div class="flex items-center space-x-2 mt-4 lg:mt-0">
+                            <span class="text-sm text-gray-400 mr-3">Time Period:</span>
+                            <button onclick="setTimeInterval('24h')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">
+                                24h
+                            </button>
+                            <button onclick="setTimeInterval('7d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">
+                                7d
+                            </button>
+                            <button onclick="setTimeInterval('30d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">
+                                30d
+                            </button>
+                            <button onclick="setTimeInterval('custom')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                                <i class="fas fa-calendar mr-1"></i>Custom
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights Banner -->
+                    <div id="aiInsights" class="ai-insight-card mb-8">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                                    <i class="fas fa-brain text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold">AI Performance Insights</h3>
+                                    <p class="text-sm text-gray-300">Real-time analysis and recommendations</p>
+                                </div>
+                            </div>
+                            <button onclick="showSection('ai-analysis')" class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                View Details →
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Key Metrics Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
-                        <!-- Total Revenue -->
-                        <div class="metric-card text-white rounded-xl p-6 card-hover">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-white/80 text-sm">Total Revenue</p>
-                                    <p class="text-2xl font-bold" id="totalRevenue">$0</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 mb-8">
+                        <!-- Revenue Metrics -->
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                                    <i class="fas fa-dollar-sign text-xl text-white"></i>
                                 </div>
-                                <i class="fas fa-dollar-sign text-2xl text-white/60"></i>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="totalRevenue">$0</div>
+                                    <div class="text-xs text-gray-400">Total Revenue</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <i class="fas fa-arrow-up text-green-400 mr-2"></i>
+                                <span class="text-green-400" id="revenueChange">+0%</span>
+                                <span class="text-gray-400 ml-1">vs last period</span>
                             </div>
                         </div>
 
-                        <!-- Net Revenue -->
-                        <div class="metric-card-success text-white rounded-xl p-6 card-hover">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-white/80 text-sm">Net Revenue</p>
-                                    <p class="text-2xl font-bold" id="netRevenue">$0</p>
+                        <!-- Subscribers -->
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                    <i class="fas fa-users text-xl text-white"></i>
                                 </div>
-                                <i class="fas fa-chart-line text-2xl text-white/60"></i>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="totalSubs">0</div>
+                                    <div class="text-xs text-gray-400">Total Subs</div>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Total Subs -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Total Subs</p>
-                                    <p class="text-2xl font-bold" id="totalSubs">0</p>
-                                </div>
-                                <i class="fas fa-users text-2xl text-gray-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- New Subs -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">New Subs</p>
-                                    <p class="text-2xl font-bold" id="newSubs">0</p>
-                                </div>
-                                <i class="fas fa-user-plus text-2xl text-gray-400"></i>
+                            <div class="flex items-center text-sm">
+                                <i class="fas fa-arrow-up text-green-400 mr-2"></i>
+                                <span class="text-green-400" id="subsChange">+0%</span>
+                                <span class="text-gray-400 ml-1">vs last period</span>
                             </div>
                         </div>
 
                         <!-- Profile Clicks -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Profile Clicks</p>
-                                    <p class="text-2xl font-bold" id="profileClicks">0</p>
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                    <i class="fas fa-eye text-xl text-white"></i>
                                 </div>
-                                <i class="fas fa-eye text-2xl text-gray-400"></i>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="profileClicks">0</div>
+                                    <div class="text-xs text-gray-400">Profile Clicks</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <i class="fas fa-arrow-up text-green-400 mr-2"></i>
+                                <span class="text-green-400" id="clicksChange">+0%</span>
+                                <span class="text-gray-400 ml-1">vs last period</span>
                             </div>
                         </div>
 
-                        <!-- Recurring Revenue -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Recurring Rev</p>
-                                    <p class="text-2xl font-bold" id="recurringRevenue">$0</p>
+                        <!-- PPV Performance -->
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                    <i class="fas fa-paper-plane text-xl text-white"></i>
                                 </div>
-                                <i class="fas fa-sync text-2xl text-gray-400"></i>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="ppvsSent">0</div>
+                                    <div class="text-xs text-gray-400">PPVs Sent</div>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Messages Sent -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Messages Sent</p>
-                                    <p class="text-2xl font-bold" id="messagesSent">0</p>
-                                </div>
-                                <i class="fas fa-comment text-2xl text-gray-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- PPVs Sent -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">PPVs Sent</p>
-                                    <p class="text-2xl font-bold" id="ppvsSent">0</p>
-                                </div>
-                                <i class="fas fa-paper-plane text-2xl text-gray-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- PPVs Unlocked -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">PPVs Unlocked</p>
-                                    <p class="text-2xl font-bold" id="ppvsUnlocked">0</p>
-                                </div>
-                                <i class="fas fa-unlock text-2xl text-gray-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- Unlock Rate -->
-                        <div class="metric-card-warning text-white rounded-xl p-6 card-hover">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-white/80 text-sm">Unlock Rate</p>
-                                    <p class="text-2xl font-bold" id="unlockRate">0%</p>
-                                </div>
-                                <i class="fas fa-percentage text-2xl text-white/60"></i>
-                            </div>
-                        </div>
-
-                        <!-- Avg PPV Price -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Avg PPV Price</p>
-                                    <p class="text-2xl font-bold" id="avgPPVPrice">$0</p>
-                                </div>
-                                <i class="fas fa-tags text-2xl text-gray-400"></i>
+                            <div class="flex items-center text-sm">
+                                <span class="text-gray-400" id="unlockRate">0% unlock rate</span>
                             </div>
                         </div>
 
                         <!-- Response Time -->
-                        <div class="bg-gray-800 text-white rounded-xl p-6 card-hover border border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-400 text-sm">Avg Response</p>
-                                    <p class="text-2xl font-bold" id="avgResponseTime">0m</p>
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                                    <i class="fas fa-clock text-xl text-white"></i>
                                 </div>
-                                <i class="fas fa-clock text-2xl text-gray-400"></i>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="avgResponseTime">0m</div>
+                                    <div class="text-xs text-gray-400">Avg Response</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <i class="fas fa-arrow-down text-green-400 mr-2"></i>
+                                <span class="text-green-400">Faster is better</span>
+                            </div>
+                        </div>
+
+                        <!-- Messages Sent -->
+                        <div class="glass-card rounded-xl p-6 metric-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
+                                    <i class="fas fa-comments text-xl text-white"></i>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold" id="messagesSent">0</div>
+                                    <div class="text-xs text-gray-400">Messages Sent</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-gray-400">Active engagement</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Charts Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="chart-container">
                             <h3 class="text-lg font-semibold mb-4">Revenue Trends</h3>
                             <canvas id="revenueChart" width="400" height="200"></canvas>
                         </div>
-                        
-                        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                            <h3 class="text-lg font-semibold mb-4">Performance Metrics</h3>
+
+                        <div class="chart-container">
+                            <h3 class="text-lg font-semibold mb-4">Performance Overview</h3>
                             <canvas id="performanceChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendations -->
+                    <div id="aiRecommendations" class="ai-insight-card">
+                        <h3 class="font-semibold mb-4 flex items-center">
+                            <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                            AI Recommendations
+                        </h3>
+                        <div id="aiRecommendationsList" class="space-y-3">
+                            <!-- AI recommendations will be loaded here -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Other sections will be built in next steps -->
-                <div id="analytics" class="section hidden p-6">
+                <!-- Other sections will be built next -->
+                <div id="analytics" class="section hidden p-8">
                     <h2 class="text-2xl font-bold mb-4">Detailed Analytics</h2>
-                    <p class="text-gray-400">Building comprehensive analytics view...</p>
-                </div>
-
-                <div id="guidelines" class="section hidden p-6">
-                    <h2 class="text-2xl font-bold mb-4">Guidelines Management</h2>
-                    <p class="text-gray-400">Building guidelines upload system...</p>
-                </div>
-
-                <div id="data-upload" class="section hidden p-6">
-                    <h2 class="text-2xl font-bold mb-4">Data Upload</h2>
-                    <p class="text-gray-400">Building data upload interface...</p>
-                </div>
-
-                <div id="ai-analysis" class="section hidden p-6">
-                    <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
-                    <p class="text-gray-400">Building AI analysis interface...</p>
-                </div>
-
-                <div id="team-management" class="section hidden p-6">
-                    <h2 class="text-2xl font-bold mb-4">Team Management</h2>
-                    <p class="text-gray-400">Building team management interface...</p>
-                </div>
-
-                <!-- Daily Report Section (Chatter) -->
-                <div id="daily-report" class="section hidden p-6">
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold mb-2">Daily Report</h2>
-                        <p class="text-gray-400">Upload your daily performance data</p>
-                    </div>
-
-                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                        <form id="dailyReportForm" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Date</label>
-                                    <input type="date" id="reportDate" required
-                                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Shift</label>
-                                    <select id="reportShift" required
-                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="">Select shift...</option>
-                                        <option value="morning">Morning</option>
-                                        <option value="afternoon">Afternoon</option>
-                                        <option value="evening">Evening</option>
-                                        <option value="night">Night</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Fans Chatted With</label>
-                                    <input type="number" id="fansChatted" min="0"
-                                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Avg Response Time (minutes)</label>
-                                    <input type="number" id="avgResponseTime" min="0" step="0.1"
-                                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-                            </div>
-
-                            <!-- PPV Sales Section -->
-                            <div class="border-t border-gray-600 pt-6">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-semibold">PPV Sales</h3>
-                                    <button type="button" id="addPPVSale" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                                        <i class="fas fa-plus mr-1"></i>Add Sale
-                                    </button>
-                                </div>
-                                <div id="ppvSalesContainer" class="space-y-3">
-                                    <!-- PPV sales will be added dynamically -->
-                                </div>
-                            </div>
-
-                            <!-- Tips Section -->
-                            <div class="border-t border-gray-600 pt-6">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-semibold">Tips</h3>
-                                    <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                                        <i class="fas fa-plus mr-1"></i>Add Tip
-                                    </button>
-                                </div>
-                                <div id="tipsContainer" class="space-y-3">
-                                    <!-- Tips will be added dynamically -->
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Notes (optional)</label>
-                                <textarea id="reportNotes" rows="3"
-                                          class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                          placeholder="Any additional notes about your shift..."></textarea>
-                            </div>
-
-                            <div class="flex justify-end">
-                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition">
-                                    <i class="fas fa-save mr-2"></i>Save Report
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    <p class="text-gray-400">Building comprehensive analytics...</p>
                 </div>
             </main>
         </div>
@@ -457,15 +514,15 @@
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="glassmorphism rounded-xl p-6 text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div class="glass-card rounded-xl p-6 text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
             <p class="text-white">Processing...</p>
         </div>
     </div>
 
     <!-- Notification -->
     <div id="notification" class="fixed top-4 right-4 max-w-sm w-full hidden z-50">
-        <div class="glassmorphism rounded-xl border p-4">
+        <div class="glass-card rounded-xl border p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <i id="notificationIcon" class="text-xl"></i>

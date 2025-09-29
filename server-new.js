@@ -20,7 +20,9 @@ const {
   MessageAnalysis,
   AccountData,
   ChatterPerformance,
-  AIAnalysis
+  AIAnalysis,
+  Chatter,
+  Analytics
 } = require('./models');
 
 const app = express();
@@ -267,10 +269,54 @@ app.post('/api/creator-accounts', authenticateToken, requireManager, async (req,
 });
 
 // Get all users (manager only)
-app.get('/api/users', authenticateToken, requireManager, async (req, res) => {
+app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
   try {
     const users = await User.find({}, { password: 0 }); // Exclude password
     res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get analytics for dashboard
+app.get('/api/analytics/team/:team', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { team } = req.params;
+    const { interval = '7d' } = req.query;
+
+    const chatters = await Chatter.find({ team, isActive: true });
+    const chatterIds = chatters.map(c => c._id);
+
+    let query = { chatterId: { $in: chatterIds } };
+
+    // Apply time interval filter
+    if (interval !== 'all') {
+      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      query.date = { $gte: startDate };
+    }
+
+    const analytics = await Analytics.find(query).sort({ date: -1 });
+    res.json(analytics);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// AI Recommendations endpoint
+app.get('/api/ai/recommendations', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { interval = '7d' } = req.query;
+
+    // Get analytics data for analysis
+    const analytics = await Analytics.find({}).sort({ date: -1 }).limit(30);
+    const chatters = await Chatter.find({ isActive: true });
+
+    // Generate AI recommendations based on data patterns
+    const recommendations = await generateAIRecommendations(analytics, chatters, interval);
+
+    res.json(recommendations);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -411,6 +457,69 @@ app.listen(PORT, () => {
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
 });
+
+// AI Recommendations function
+async function generateAIRecommendations(analytics, chatters, interval) {
+  try {
+    if (!openai) {
+      return [{
+        description: 'AI analysis unavailable - OpenAI API key not configured',
+        expectedImpact: 'Enable AI for personalized recommendations'
+      }];
+    }
+
+    // Calculate key metrics
+    const totalRevenue = analytics.reduce((sum, a) => sum + a.revenue, 0);
+    const totalSubs = analytics.reduce((sum, a) => sum + a.conversions, 0);
+    const totalClicks = analytics.reduce((sum, a) => sum + (a.profileClicks || 0), 0);
+    const avgResponseTime = analytics.length > 0 ? analytics.reduce((sum, a) => sum + a.responseTime, 0) / analytics.length : 0;
+
+    const recommendations = [];
+
+    // Analyze click-to-sub conversion rate
+    if (totalClicks > 0) {
+      const clickToSubRate = (totalSubs / totalClicks * 100);
+      if (clickToSubRate < 5) {
+        recommendations.push({
+          description: `Low click-to-sub conversion rate (${clickToSubRate.toFixed(1)}%). Consider updating profile branding, bio, or preview content to better attract subscribers.`,
+          expectedImpact: 'Potential 2-3x increase in conversion rate'
+        });
+      }
+    }
+
+    // Analyze response time
+    if (avgResponseTime > 5) {
+      recommendations.push({
+        description: `Average response time is ${avgResponseTime.toFixed(1)} minutes. Faster responses (under 3 minutes) typically result in higher engagement and sales.`,
+        expectedImpact: '15-25% increase in conversion rates'
+      });
+    }
+
+    // Analyze revenue patterns
+    if (totalRevenue < 1000 && interval === '30d') {
+      recommendations.push({
+        description: 'Monthly revenue is below target. Focus on increasing PPV unlock rates and exploring higher-value content offerings.',
+        expectedImpact: '$500-1000 monthly increase'
+      });
+    }
+
+    // If no specific recommendations, provide general advice
+    if (recommendations.length === 0) {
+      recommendations.push({
+        description: 'Performance is within normal ranges. Continue monitoring trends and consider A/B testing different messaging approaches.',
+        expectedImpact: 'Ongoing optimization'
+      });
+    }
+
+    return recommendations.slice(0, 3); // Return top 3 recommendations
+  } catch (error) {
+    console.error('AI Recommendations Error:', error);
+    return [{
+      description: 'Unable to generate AI recommendations at this time',
+      expectedImpact: 'Check AI service configuration'
+    }];
+  }
+}
 
 // Handle errors
 process.on('uncaughtException', (err) => {

@@ -197,6 +197,38 @@ const AccountData = mongoose.model('AccountData', accountDataSchema);
 const ChatterPerformance = mongoose.model('ChatterPerformance', chatterPerformanceSchema);
 const AIAnalysis = mongoose.model('AIAnalysis', aiAnalysisSchema);
 
+// Legacy models for compatibility
+const chatterSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  team: { type: String, required: true },
+  joinDate: { type: Date, default: Date.now },
+  isActive: { type: Boolean, default: true }
+});
+
+const analyticsSchema = new mongoose.Schema({
+  chatterId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chatter', required: true },
+  date: { type: Date, required: true },
+  messagesSent: { type: Number, default: 0 },
+  messagesReceived: { type: Number, default: 0 },
+  revenue: { type: Number, default: 0 },
+  conversions: { type: Number, default: 0 },
+  responseTime: { type: Number, default: 0 },
+  customerSatisfaction: { type: Number, default: 0 },
+  upsells: { type: Number, default: 0 },
+  refunds: { type: Number, default: 0 },
+  activeSubscribers: { type: Number, default: 0 },
+  newSubscribers: { type: Number, default: 0 },
+  churnRate: { type: Number, default: 0 },
+  profileClicks: { type: Number, default: 0 },
+  ppvsSent: { type: Number, default: 0 },
+  ppvsUnlocked: { type: Number, default: 0 },
+  totalSubs: { type: Number, default: 0 }
+});
+
+const Chatter = mongoose.model('Chatter', chatterSchema);
+const Analytics = mongoose.model('Analytics', analyticsSchema);
+
 module.exports = {
   User,
   CreatorAccount,
@@ -205,5 +237,7 @@ module.exports = {
   MessageAnalysis,
   AccountData,
   ChatterPerformance,
-  AIAnalysis
+  AIAnalysis,
+  Chatter,
+  Analytics
 };
