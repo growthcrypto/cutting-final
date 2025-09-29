@@ -461,9 +461,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
     }
 
     // Generate AI analysis using OpenAI
-    const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
-    
-    res.json(aiAnalysis);
+    try {
+      const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
+      res.json(aiAnalysis);
+    } catch (aiError) {
+      console.error('AI Analysis failed, falling back to basic analysis:', aiError);
+      
+      // Fallback to basic analysis if AI fails
+      const fallbackAnalysis = generateFallbackAnalysis(analyticsData, analysisType, interval);
+      res.json(fallbackAnalysis);
+    }
   } catch (error) {
     console.error('AI Analysis Error:', error);
     res.status(500).json({ error: error.message });
@@ -623,6 +630,82 @@ app.listen(PORT, () => {
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
 });
+
+// Fallback analysis function when AI fails
+function generateFallbackAnalysis(analyticsData, analysisType, interval) {
+  if (analysisType === 'agency') {
+    const clickToSubRate = analyticsData.profileClicks > 0 ? (analyticsData.newSubs / analyticsData.profileClicks * 100) : 0;
+    const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
+    const revenuePerSub = analyticsData.totalSubs > 0 ? (analyticsData.totalRevenue / analyticsData.totalSubs) : 0;
+    
+    let overallScore = 0;
+    if (analyticsData.totalRevenue > 0) overallScore += 20;
+    if (clickToSubRate > 10) overallScore += 20;
+    if (ppvUnlockRate > 50) overallScore += 20;
+    if (analyticsData.avgResponseTime < 3) overallScore += 20;
+    if (revenuePerSub > 10) overallScore += 20;
+    
+    return {
+      overallScore,
+      insights: [
+        `Total revenue of $${analyticsData.totalRevenue.toLocaleString()} generated this ${interval} period`,
+        `Click-to-subscription conversion rate is ${clickToSubRate.toFixed(1)}%`,
+        `Average response time is ${analyticsData.avgResponseTime.toFixed(1)} minutes`,
+        `PPV unlock rate is ${ppvUnlockRate.toFixed(1)}%`
+      ],
+      weakPoints: [
+        clickToSubRate < 10 ? `Low conversion rate (${clickToSubRate.toFixed(1)}%) - industry average is 12%` : null,
+        analyticsData.avgResponseTime > 3 ? `Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes is above optimal (2-3 minutes)` : null,
+        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below industry average (45-60%)` : null
+      ].filter(Boolean),
+      opportunities: [
+        `Improving conversion rate to 12% could increase revenue by ${Math.round(analyticsData.totalRevenue * 0.2)}`,
+        `Reducing response time to 2 minutes could increase conversions by 15-20%`
+      ],
+      roiCalculations: [
+        `Response time improvement: $${Math.round(analyticsData.totalRevenue * 0.15)} potential monthly gain for $400 training cost`,
+        `Conversion optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $600 funnel improvements`
+      ],
+      recommendations: [
+        'Focus on faster response times - aim for under 2 minutes',
+        'Test premium PPV pricing strategy',
+        'Plan weekend coverage optimization'
+      ]
+    };
+  } else {
+    const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
+    const revenuePerPPV = analyticsData.ppvsSent > 0 ? (analyticsData.totalRevenue / analyticsData.ppvsSent) : 0;
+    
+    let overallScore = 0;
+    if (analyticsData.totalRevenue > 0) overallScore += 25;
+    if (ppvUnlockRate > 50) overallScore += 25;
+    if (analyticsData.avgResponseTime < 3) overallScore += 25;
+    if (revenuePerPPV > 30) overallScore += 25;
+    
+    return {
+      overallScore,
+      strengths: [
+        `Generated $${analyticsData.totalRevenue.toLocaleString()} in revenue this ${interval} period`,
+        `Active engagement with ${analyticsData.messagesSent} messages sent`,
+        ppvUnlockRate > 60 ? `Excellent PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%` : `Good PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%`
+      ],
+      weaknesses: [
+        analyticsData.avgResponseTime > 4 ? `Slow response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes (target: <3 minutes)` : null,
+        ppvUnlockRate < 40 ? `Low PPV unlock rate of ${ppvUnlockRate.toFixed(1)}% (target: 50-60%)` : null,
+        revenuePerPPV < 25 ? `Low revenue per PPV of $${revenuePerPPV.toFixed(2)} (target: $30-50)` : null
+      ].filter(Boolean),
+      opportunities: [
+        `Improving PPV unlock rate to 50% could increase revenue by ${Math.round(analyticsData.totalRevenue * 0.25)}`,
+        `Reducing response time to 2 minutes could increase conversions by 20%`
+      ],
+      recommendations: [
+        'Focus on faster response times - aim for under 2 minutes',
+        'Improve PPV content quality and pricing strategy',
+        'Test higher PPV prices to increase revenue per sale'
+      ]
+    };
+  }
+}
 
 // AI Analysis function using OpenAI
 async function generateAIAnalysis(analyticsData, analysisType, interval) {
