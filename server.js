@@ -18,12 +18,18 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // OpenAI Configuration
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openai;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+} else {
+  console.warn('⚠️  OPENAI_API_KEY not set - AI analysis will be disabled');
+}
 
 // MongoDB Connection
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/chatter_analytics';
+console.log('🔌 Attempting to connect to MongoDB...');
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -31,6 +37,7 @@ mongoose.connect(mongoUri, {
   console.log('✅ Connected to MongoDB successfully!');
 }).catch((error) => {
   console.error('❌ MongoDB connection error:', error);
+  console.log('⚠️  App will continue without database connection');
 });
 
 // Database Models
@@ -529,11 +536,29 @@ async function generateTeamAIAnalysis(team, chatters, analytics, messages) {
   }
 }
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    hasOpenAI: !!process.env.OPENAI_API_KEY,
+    hasMongoDB: !!mongoose.connection.readyState
+  });
+});
+
 // Serve static files
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌐 Health check: http://localhost:${PORT}/health`);
 });
