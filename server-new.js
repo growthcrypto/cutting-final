@@ -374,9 +374,15 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
   }
 });
 
+// Test endpoint to verify server is working
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is working', timestamp: new Date().toISOString() });
+});
+
 // AI Analysis endpoint for comprehensive analysis
 app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
+    console.log('AI Analysis endpoint called with:', req.body);
     const { analysisType, interval, startDate, endDate, chatterId } = req.body;
     
     // Get the analytics data based on parameters
