@@ -3354,15 +3354,22 @@ async function loadChattersForAnalysis() {
     }
 }
 
-// OLD FUNCTION REMOVED - USING NEW VERSION ABOVE
-/* OLD CODE REMOVED
+        const analysis = {
+            overallScore: 78,
+            totalRevenue: 12450,
+            totalSubs: 1234,
+            profileClicks: 8765,
+            conversionRate: 14.1,
+            ppvUnlockRate: 57.2,
+            avgResponseTime: 3.2,
+            weekOverWeekGrowth: 12.5,
             insights: [
                 'Revenue trending upward with 12.5% growth this period ($12,450 vs $11,065 previous)',
                 'Click-to-subscription conversion rate is 14.1% (industry avg: 12%)',
                 'Response times averaging 3.2 minutes - competitive but can improve',
                 'PPV unlock rate of 57.2% significantly above industry average (45%)',
                 'Profile clicks increased by 15.2% indicating strong marketing performance',
-                // OLD INSIGHTS REMOVED - NOW USING REAL DATA ANALYSIS
+                'New subscriber acquisition cost decreased by 8.3% showing efficiency gains'
             ],
             weakPoints: [
                 'Response time fluctuation: ranges from 1.8min to 6.4min across chatters',
@@ -3384,96 +3391,113 @@ async function loadChattersForAnalysis() {
         };
 
         resultsContainer.innerHTML = `
-            <div class="space-y-6">
+            <div class="space-y-8">
                 <!-- Overall Performance -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="text-center p-4 bg-green-900/20 rounded-lg">
-                        <div class="text-3xl font-bold text-green-400">${analysis.overallScore}</div>
-                        <div class="text-sm text-gray-400">Overall Score</div>
-                        <div class="text-xs text-green-400">Above Average (75+)</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-green-900/20 rounded-xl border border-green-500/30">
+                        <div class="text-4xl font-bold text-green-400 mb-2">${analysis.overallScore}</div>
+                        <div class="text-lg text-gray-300 mb-1">Overall Score</div>
+                        <div class="text-sm text-green-400">Above Average (75+)</div>
                     </div>
-                    <div class="text-center p-4 bg-blue-900/20 rounded-lg">
-                        <div class="text-2xl font-bold text-blue-400">${analysis.conversionRate}%</div>
-                        <div class="text-sm text-gray-400">Conversion Rate</div>
-                        <div class="text-xs text-blue-400">Above Industry Avg</div>
+                    <div class="text-center p-6 bg-blue-900/20 rounded-xl border border-blue-500/30">
+                        <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.conversionRate}%</div>
+                        <div class="text-lg text-gray-300 mb-1">Conversion Rate</div>
+                        <div class="text-sm text-blue-400">Above Industry Avg</div>
                     </div>
-                    <div class="text-center p-4 bg-purple-900/20 rounded-lg">
-                        <div class="text-2xl font-bold text-purple-400">$${(analysis.totalRevenue/analysis.totalSubs).toFixed(2)}</div>
-                        <div class="text-sm text-gray-400">Revenue per Sub</div>
-                        <div class="text-xs text-yellow-400">Below Target ($12.50)</div>
+                    <div class="text-center p-6 bg-purple-900/20 rounded-xl border border-purple-500/30">
+                        <div class="text-3xl font-bold text-purple-400 mb-2">$${(analysis.totalRevenue/analysis.totalSubs).toFixed(2)}</div>
+                        <div class="text-lg text-gray-300 mb-1">Revenue per Sub</div>
+                        <div class="text-sm text-yellow-400">Below Target ($12.50)</div>
                     </div>
                 </div>
 
-                <!-- REPLACED WITH NEW LAYOUT - THIS OLD CODE IS DISABLED -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Performance Insights -->
+                <div class="bg-gray-800/30 rounded-xl p-8 border border-gray-600/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
+                        <i class="fas fa-chart-line mr-3 text-xl"></i>Performance Insights
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         ${analysis.insights.map(insight => 
-                            `<div class="text-sm text-gray-300 flex items-start">
-                                <i class="fas fa-check-circle text-green-400 mr-2 mt-0.5 text-xs"></i>
+                            `<div class="text-base text-gray-300 flex items-start p-3 bg-gray-700/30 rounded-lg">
+                                <i class="fas fa-check-circle text-green-400 mr-3 mt-1 text-lg"></i>
                                 <span>${insight}</span>
                             </div>`
                         ).join('')}
                     </div>
                 </div>
 
-                <!-- Weak Points -->
-                <div class="bg-red-900/10 rounded-lg p-4 border border-red-500/20">
-                    <h4 class="font-semibold mb-3 text-red-400 flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>Areas for Improvement
+                <!-- Areas for Improvement -->
+                <div class="bg-red-900/10 rounded-xl p-8 border border-red-500/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-red-400 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>Areas for Improvement
                     </h4>
-                    <div class="space-y-2">
+                    <div class="space-y-4">
                         ${analysis.weakPoints.map(point => 
-                            `<div class="text-sm text-gray-300 flex items-start">
-                                <i class="fas fa-arrow-down text-red-400 mr-2 mt-0.5 text-xs"></i>
+                            `<div class="text-base text-gray-300 flex items-start p-4 bg-red-900/20 rounded-lg">
+                                <i class="fas fa-arrow-down text-red-400 mr-3 mt-1 text-lg"></i>
                                 <span>${point}</span>
                             </div>`
                         ).join('')}
                     </div>
                 </div>
 
-                <!-- Opportunities & ROI -->
-                <div class="bg-green-900/10 rounded-lg p-4 border border-green-500/20">
-                    <h4 class="font-semibold mb-3 text-green-400 flex items-center">
-                        <i class="fas fa-rocket mr-2"></i>Growth Opportunities & ROI
+                <!-- Growth Opportunities & ROI -->
+                <div class="bg-green-900/10 rounded-xl p-8 border border-green-500/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-green-400 flex items-center">
+                        <i class="fas fa-rocket mr-3 text-xl"></i>Growth Opportunities & ROI
                     </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <h5 class="text-sm font-medium text-yellow-400 mb-2">Opportunities:</h5>
-                            ${analysis.opportunities.map(opp => 
-                                `<div class="text-sm text-gray-300 flex items-start mb-1">
-                                    <i class="fas fa-lightbulb text-yellow-400 mr-2 mt-0.5 text-xs"></i>
-                                    <span>${opp}</span>
-                                </div>`
-                            ).join('')}
+                            <h5 class="text-xl font-medium text-yellow-400 mb-4">Opportunities:</h5>
+                            <div class="space-y-3">
+                                ${analysis.opportunities.map(opp => 
+                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-yellow-900/20 rounded-lg">
+                                        <i class="fas fa-lightbulb text-yellow-400 mr-3 mt-1 text-lg"></i>
+                                        <span>${opp}</span>
+                                    </div>`
+                                ).join('')}
+                            </div>
                         </div>
                         <div>
-                            <h5 class="text-sm font-medium text-green-400 mb-2">ROI Calculations:</h5>
-                            ${analysis.roiCalculations.map(calc => 
-                                `<div class="text-sm text-gray-300 flex items-start mb-1">
-                                    <i class="fas fa-dollar-sign text-green-400 mr-2 mt-0.5 text-xs"></i>
-                                    <span>${calc}</span>
-                                </div>`
-                            ).join('')}
+                            <h5 class="text-xl font-medium text-green-400 mb-4">ROI Calculations:</h5>
+                            <div class="space-y-3">
+                                ${analysis.roiCalculations.map(calc => 
+                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
+                                        <i class="fas fa-dollar-sign text-green-400 mr-3 mt-1 text-lg"></i>
+                                        <span>${calc}</span>
+                                    </div>`
+                                ).join('')}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Action Items -->
-                <div class="bg-blue-900/10 rounded-lg p-4 border border-blue-500/20">
-                    <h4 class="font-semibold mb-3 text-blue-400 flex items-center">
-                        <i class="fas fa-tasks mr-2"></i>Recommended Actions (Priority Order)
+                <!-- Recommended Actions -->
+                <div class="bg-blue-900/10 rounded-xl p-8 border border-blue-500/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
+                        <i class="fas fa-tasks mr-3 text-xl"></i>Recommended Actions (Priority Order)
                     </h4>
-                    <div class="space-y-2">
-                        <div class="flex items-start p-3 bg-red-900/20 rounded">
-                            <span class="bg-red-500 text-white text-xs px-2 py-1 rounded mr-3 mt-0.5">HIGH</span>
-                            <span class="text-sm">Implement response time training program - Start this week</span>
+                    <div class="space-y-4">
+                        <div class="flex items-start p-6 bg-red-900/20 rounded-xl border border-red-500/30">
+                            <span class="bg-red-500 text-white text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">HIGH</span>
+                            <div>
+                                <span class="text-lg font-medium text-white">Implement response time training program</span>
+                                <p class="text-gray-400 mt-1">Start this week</p>
+                            </div>
                         </div>
-                        <div class="flex items-start p-3 bg-yellow-900/20 rounded">
-                            <span class="bg-yellow-500 text-black text-xs px-2 py-1 rounded mr-3 mt-0.5">MED</span>
-                            <span class="text-sm">Test premium PPV pricing strategy - Start next Monday</span>
+                        <div class="flex items-start p-6 bg-yellow-900/20 rounded-xl border border-yellow-500/30">
+                            <span class="bg-yellow-500 text-black text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">MED</span>
+                            <div>
+                                <span class="text-lg font-medium text-white">Test premium PPV pricing strategy</span>
+                                <p class="text-gray-400 mt-1">Start next Monday</p>
+                            </div>
                         </div>
-                        <div class="flex items-start p-3 bg-green-900/20 rounded">
-                            <span class="bg-green-500 text-black text-xs px-2 py-1 rounded mr-3 mt-0.5">LOW</span>
-                            <span class="text-sm">Plan weekend coverage optimization - Implement in 2 weeks</span>
+                        <div class="flex items-start p-6 bg-green-900/20 rounded-xl border border-green-500/30">
+                            <span class="bg-green-500 text-black text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">LOW</span>
+                            <div>
+                                <span class="text-lg font-medium text-white">Plan weekend coverage optimization</span>
+                                <p class="text-gray-400 mt-1">Implement in 2 weeks</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3485,7 +3509,6 @@ async function loadChattersForAnalysis() {
         showLoading(false);
     }
 }
-END OLD CODE REMOVED */
 
 async function runChatterAnalysis() {
     const chatterId = document.getElementById('chatterSelect').value;
