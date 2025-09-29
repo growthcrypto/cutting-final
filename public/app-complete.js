@@ -1487,55 +1487,6 @@ async function runAgencyAnalysis() {
                     </div>
                 </div>
 
-                <!-- Core Employee Analytics -->
-                ${analysis.employeeAnalytics ? `
-                <div class="bg-purple-900/10 rounded-xl p-8 border border-purple-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-purple-400 flex items-center">
-                        <i class="fas fa-users mr-3 text-xl"></i>Employee Analytics
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="text-center p-4 bg-purple-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-purple-400 mb-2">${analysis.employeeAnalytics.totalEmployees}</div>
-                            <div class="text-sm text-gray-300">Active Chatters</div>
-                        </div>
-                        <div class="text-center p-4 bg-green-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-green-400 mb-2">$${analysis.employeeAnalytics.averagePPVPrice ? analysis.employeeAnalytics.averagePPVPrice.toFixed(0) : '0'}</div>
-                            <div class="text-sm text-gray-300">Avg PPV Price</div>
-                        </div>
-                        <div class="text-center p-4 bg-blue-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.employeeAnalytics.averageMessageScore ? analysis.employeeAnalytics.averageMessageScore.toFixed(0) : '0'}</div>
-                            <div class="text-sm text-gray-300">Avg Message Score</div>
-                        </div>
-                        <div class="text-center p-4 bg-yellow-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-yellow-400 mb-2">$${analysis.employeeAnalytics.averageRevenue ? analysis.employeeAnalytics.averageRevenue.toFixed(0) : '0'}</div>
-                            <div class="text-sm text-gray-300">Avg Revenue</div>
-                        </div>
-                    </div>
-                    ${analysis.employeeAnalytics.topPerformer ? `
-                    <div class="mt-6 p-4 bg-gray-800/30 rounded-lg">
-                        <h5 class="text-lg font-semibold text-purple-400 mb-3">Top Performer Details</h5>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                                <span class="text-gray-400">Avg Revenue:</span>
-                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.avgRevenue.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-400">Avg PPV Price:</span>
-                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.avgPPVPrice.toFixed(2)}</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-400">Message Score:</span>
-                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.messageScore.toFixed(1)}/100</span>
-                            </div>
-                            <div>
-                                <span class="text-gray-400">PPV Unlock Rate:</span>
-                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.ppvUnlockRate.toFixed(1)}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-                ` : ''}
 
                 <!-- Recommended Actions -->
                 <div class="bg-blue-900/10 rounded-xl p-8 border border-blue-500/30">

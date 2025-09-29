@@ -738,21 +738,7 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
         'Focus on improving PPV unlock rates through better content and pricing',
         'Train chatters on message quality to improve scores',
         'Test higher PPV prices to increase average revenue per sale'
-      ],
-      employeeAnalytics: {
-        totalEmployees: employeePerformance.length,
-        topPerformer: topPerformer ? {
-          name: topPerformer.name,
-          avgRevenue: topPerformer.avgRevenue,
-          avgPPVPrice: topPerformer.avgPPVPrice,
-          messageScore: topPerformer.messageScore,
-          ppvUnlockRate: topPerformer.ppvUnlockRate
-        } : null,
-        averagePPVPrice: avgPPVPrice,
-        averageMessageScore: avgMessageScore,
-        averageRevenue: employeePerformance.length > 0 ? 
-          employeePerformance.reduce((sum, emp) => sum + emp.avgRevenue, 0) / employeePerformance.length : 0
-      }
+      ]
     };
   } else {
     const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
@@ -820,32 +806,18 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
           "weakPoints": ["weakness1", "weakness2"],
           "opportunities": ["opportunity1", "opportunity2"],
           "roiCalculations": ["roi1", "roi2"],
-          "recommendations": ["recommendation1", "recommendation2"],
-          "employeeAnalytics": {
-            "totalEmployees": [number],
-            "topPerformer": {
-              "name": "chatter_name",
-              "avgRevenue": [number],
-              "avgPPVPrice": [number],
-              "messageScore": [number],
-              "ppvUnlockRate": [percentage]
-            },
-            "averagePPVPrice": [number],
-            "averageMessageScore": [number],
-            "averageRevenue": [number]
-          }
+          "recommendations": ["recommendation1", "recommendation2"]
         }
 
-        Focus on these core metrics:
+        Focus on these core agency metrics:
         1. Total revenue performance
         2. PPV unlock rates and pricing
-        3. Average PPV price per chatter
+        3. Average PPV price across all chatters
         4. Message quality scores from weekly message analysis
-        5. Employee performance rankings
-        6. Specific weak points with data-driven explanations
-        7. Actionable opportunities with potential revenue impact
-        8. ROI calculations for improvements
-        9. Prioritized recommendations
+        5. Specific weak points with data-driven explanations
+        6. Actionable opportunities with potential revenue impact
+        7. ROI calculations for improvements
+        8. Prioritized recommendations
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
