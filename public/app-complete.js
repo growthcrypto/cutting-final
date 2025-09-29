@@ -84,11 +84,7 @@ function setupEventListeners() {
     // Sidebar toggle
     document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
     
-    // Sidebar close button
-    const sidebarClose = document.getElementById('sidebarClose');
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeSidebar);
-    }
+    // Sidebar close button - handled in unified click handler below
 
     // Click outside sidebar to close (mobile)
     document.addEventListener('click', function(event) {
@@ -118,17 +114,26 @@ function setupEventListeners() {
         });
     });
 
-    // Custom date picker buttons
+    // Custom date picker buttons - using event delegation
     document.addEventListener('click', function(e) {
-        if (e.target.id === 'customDateBtn') {
+        console.log('Click detected on:', e.target.id, e.target); // Debug log
+        
+        if (e.target.id === 'customDateBtn' || e.target.closest('#customDateBtn') || e.target.parentElement?.id === 'customDateBtn') {
             e.preventDefault();
+            console.log('Custom date button clicked'); // Debug log
             toggleCustomDatePicker();
-        } else if (e.target.id === 'applyCustomRange') {
+        } else if (e.target.id === 'applyCustomRange' || e.target.closest('#applyCustomRange') || e.target.parentElement?.id === 'applyCustomRange') {
             e.preventDefault();
+            console.log('Apply button clicked'); // Debug log
             applyCustomDateRange();
-        } else if (e.target.id === 'cancelCustomRange') {
+        } else if (e.target.id === 'cancelCustomRange' || e.target.closest('#cancelCustomRange') || e.target.parentElement?.id === 'cancelCustomRange') {
             e.preventDefault();
+            console.log('Cancel button clicked'); // Debug log
             closeCustomDatePicker();
+        } else if (e.target.id === 'sidebarClose' || e.target.closest('#sidebarClose') || e.target.parentElement?.id === 'sidebarClose') {
+            e.preventDefault();
+            console.log('Sidebar close clicked'); // Debug log
+            closeSidebar();
         }
     });
 
@@ -453,9 +458,15 @@ function toggleSidebar() {
 }
 
 function closeSidebar() {
+    console.log('closeSidebar called'); // Debug log
     const sidebar = document.getElementById('sidebar');
+    console.log('Sidebar element:', sidebar); // Debug log
+    
     if (sidebar) {
         sidebar.classList.add('sidebar-hidden');
+        console.log('Added sidebar-hidden class'); // Debug log
+    } else {
+        console.log('Sidebar element not found!'); // Debug log
     }
 }
 
@@ -484,19 +495,29 @@ function setTimeInterval(interval) {
 }
 
 function toggleCustomDatePicker() {
+    console.log('toggleCustomDatePicker called'); // Debug log
     const picker = document.getElementById('customDatePicker');
+    console.log('Picker element:', picker); // Debug log
+    
     if (picker) {
         picker.classList.toggle('hidden');
+        console.log('Picker hidden class:', picker.classList.contains('hidden')); // Debug log
         
         // Set default dates if not already set
-        if (!document.getElementById('customStartDate').value) {
+        const startInput = document.getElementById('customStartDate');
+        const endInput = document.getElementById('customEndDate');
+        
+        if (startInput && endInput && !startInput.value) {
             const today = new Date();
             const lastWeek = new Date();
             lastWeek.setDate(today.getDate() - 7);
             
-            document.getElementById('customStartDate').value = lastWeek.toISOString().split('T')[0];
-            document.getElementById('customEndDate').value = today.toISOString().split('T')[0];
+            startInput.value = lastWeek.toISOString().split('T')[0];
+            endInput.value = today.toISOString().split('T')[0];
+            console.log('Set default dates'); // Debug log
         }
+    } else {
+        console.log('Custom date picker element not found!'); // Debug log
     }
 }
 
