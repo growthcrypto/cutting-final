@@ -893,15 +893,10 @@
                                     </button>
                                 </div>
                                 <div id="ppvSalesContainer" class="space-y-3">
-                                    <div class="ppv-sale-entry grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-gray-800/50 rounded-lg">
+                                    <div class="ppv-sale-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg">
                                         <div>
                                             <label class="block text-sm font-medium mb-1">PPV Price ($)</label>
-                                            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00"
-                                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1">Time Sent</label>
-                                            <input type="time" name="ppvTime"
+                                            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
                                                    class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
                                         </div>
                                         <div class="flex items-end">
@@ -971,6 +966,129 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- My Performance Section (For Chatters) -->
+                <div id="my-performance" class="section hidden p-8">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-2">My Performance</h2>
+                        <p class="text-gray-400">Your personal analytics, combined metrics, and message analysis</p>
+                    </div>
+
+                    <!-- Time Period Selector -->
+                    <div class="glass-card rounded-xl p-6 mb-8">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <span class="text-sm font-medium text-gray-300">Time Period:</span>
+                            <button onclick="setMyPerformanceInterval('24h')" class="interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">24h</button>
+                            <button onclick="setMyPerformanceInterval('7d')" class="interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">7d</button>
+                            <button onclick="setMyPerformanceInterval('30d')" class="interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">30d</button>
+                            <button onclick="setMyPerformanceInterval('custom')" class="interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Main Performance Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="glass-card rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-green-400 mb-2" id="myTotalRevenue">$0</div>
+                            <div class="text-sm text-gray-300">Total Revenue</div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-blue-400 mb-2" id="myPPVSent">0</div>
+                            <div class="text-sm text-gray-300">PPVs Sent</div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-purple-400 mb-2" id="myAvgPPVPrice">$0</div>
+                            <div class="text-sm text-gray-300">Avg PPV Price</div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 text-center">
+                            <div class="text-3xl font-bold text-yellow-400 mb-2" id="myResponseTime">0m</div>
+                            <div class="text-sm text-gray-300">Avg Response Time</div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Analytics -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <!-- Revenue Efficiency -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-blue-400">Revenue Efficiency</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Revenue per PPV:</span>
+                                    <span class="text-white font-semibold" id="myRevenuePerPPV">$0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Revenue per Hour:</span>
+                                    <span class="text-white font-semibold" id="myRevenuePerHour">$0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Conversion Rate:</span>
+                                    <span class="text-white font-semibold" id="myConversionRate">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Trends -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-green-400">Performance Trends</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Weekly Growth:</span>
+                                    <span class="text-green-400 font-semibold" id="myWeeklyGrowth">+0%</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Best Day:</span>
+                                    <span class="text-white font-semibold" id="myBestDay">-</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300">Peak Hour:</span>
+                                    <span class="text-white font-semibold" id="myPeakHour">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message Analysis -->
+                    <div class="glass-card rounded-xl p-6 mb-8">
+                        <h3 class="text-xl font-semibold mb-4 text-purple-400">Message Analysis</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-400 mb-2" id="myMessageScore">0/100</div>
+                                <div class="text-sm text-gray-300">Overall Score</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-400 mb-2" id="myGrammarScore">0/100</div>
+                                <div class="text-sm text-gray-300">Grammar Score</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-400 mb-2" id="myGuidelinesScore">0/100</div>
+                                <div class="text-sm text-gray-300">Guidelines Score</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Message Analysis Details -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-lg font-medium text-green-400 mb-3">Strengths</h4>
+                                <div id="myMessageStrengths" class="space-y-2">
+                                    <div class="text-gray-300 text-sm">No message analysis available yet</div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-medium text-red-400 mb-3">Areas for Improvement</h4>
+                                <div id="myMessageWeaknesses" class="space-y-2">
+                                    <div class="text-gray-300 text-sm">No message analysis available yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Chart -->
+                    <div class="glass-card rounded-xl p-6">
+                        <h3 class="text-xl font-semibold mb-4 text-yellow-400">Performance Over Time</h3>
+                        <div class="h-64">
+                            <canvas id="myPerformanceChart"></canvas>
+                        </div>
                     </div>
                 </div>
 

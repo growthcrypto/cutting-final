@@ -421,6 +421,9 @@ function loadSectionData(sectionId) {
         case 'data-upload':
             loadChattersForInfloww();
             break;
+        case 'my-performance':
+            loadMyPerformanceData();
+            break;
         default:
             break;
     }
@@ -4047,22 +4050,18 @@ function addPPVSaleField() {
     const index = container.children.length;
 
     const saleDiv = document.createElement('div');
-    saleDiv.className = 'flex gap-3 items-center';
+    saleDiv.className = 'ppv-sale-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
     saleDiv.innerHTML = `
-        <div class="flex-1">
-            <input type="number" name="ppvAmount${index}" placeholder="PPV Amount ($)" min="0" step="0.01" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+        <div>
+            <label class="block text-sm font-medium mb-1">PPV Price ($)</label>
+            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
+                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
         </div>
-        <div class="flex-1">
-            <select name="ppvAccount${index}" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="">Select Creator...</option>
-                ${creatorAccounts.map(account => `<option value="${account._id}">${account.name}</option>`).join('')}
-            </select>
+        <div class="flex items-end">
+            <button type="button" class="remove-ppv-sale bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
-        <button type="button" onclick="removePPVSale(this)" class="text-red-400 hover:text-red-300">
-            <i class="fas fa-times"></i>
-        </button>
     `;
 
     container.appendChild(saleDiv);
@@ -4097,11 +4096,186 @@ function addTipField() {
 }
 
 function removePPVSale(button) {
-    button.parentElement.remove();
+    button.closest('.ppv-sale-entry').remove();
 }
 
 function removeTip(button) {
     button.parentElement.remove();
+}
+
+// My Performance functions
+let currentMyPerformanceInterval = '7d';
+
+function setMyPerformanceInterval(interval) {
+    currentMyPerformanceInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.interval-btn').forEach(btn => {
+        btn.className = 'interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm';
+    });
+    
+    // Highlight selected button
+    event.target.className = 'interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm';
+    
+    // Load data for the selected interval
+    loadMyPerformanceData();
+}
+
+async function loadMyPerformanceData() {
+    try {
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) return;
+
+        // Get user info
+        const userResponse = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const user = await userResponse.json();
+
+        // Get performance data
+        const response = await fetch(`/api/analytics/dashboard?interval=${currentMyPerformanceInterval}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+
+        // Update main metrics
+        document.getElementById('myTotalRevenue').textContent = `$${data.totalRevenue.toLocaleString()}`;
+        document.getElementById('myPPVSent').textContent = data.ppvsSent || 0;
+        document.getElementById('myAvgPPVPrice').textContent = `$${data.avgPPVPrice || 0}`;
+        document.getElementById('myResponseTime').textContent = `${data.avgResponseTime || 0}m`;
+
+        // Update combined analytics
+        const revenuePerPPV = data.ppvsSent > 0 ? (data.totalRevenue / data.ppvsSent) : 0;
+        const revenuePerHour = data.totalRevenue / (currentMyPerformanceInterval === '24h' ? 24 : currentMyPerformanceInterval === '7d' ? 168 : 720);
+        
+        document.getElementById('myRevenuePerPPV').textContent = `$${revenuePerPPV.toFixed(2)}`;
+        document.getElementById('myRevenuePerHour').textContent = `$${revenuePerHour.toFixed(2)}`;
+        document.getElementById('myConversionRate').textContent = `${data.conversionRate || 0}%`;
+
+        // Update performance trends (mock data for now)
+        document.getElementById('myWeeklyGrowth').textContent = '+12.5%';
+        document.getElementById('myBestDay').textContent = 'Tuesday';
+        document.getElementById('myPeakHour').textContent = '2-4 PM';
+
+        // Load message analysis
+        await loadMyMessageAnalysis();
+
+        // Load performance chart
+        loadMyPerformanceChart(data);
+
+    } catch (error) {
+        console.error('Error loading my performance data:', error);
+    }
+}
+
+async function loadMyMessageAnalysis() {
+    try {
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) return;
+
+        // Get message analysis data
+        const response = await fetch('/api/message-analysis', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            const analysis = await response.json();
+            
+            document.getElementById('myMessageScore').textContent = `${analysis.overallScore || 0}/100`;
+            document.getElementById('myGrammarScore').textContent = `${analysis.grammarScore || 0}/100`;
+            document.getElementById('myGuidelinesScore').textContent = `${analysis.guidelinesScore || 0}/100`;
+
+            // Update strengths and weaknesses
+            const strengthsDiv = document.getElementById('myMessageStrengths');
+            const weaknessesDiv = document.getElementById('myMessageWeaknesses');
+
+            if (analysis.strengths && analysis.strengths.length > 0) {
+                strengthsDiv.innerHTML = analysis.strengths.map(strength => 
+                    `<div class="text-green-300 text-sm">• ${strength}</div>`
+                ).join('');
+            } else {
+                strengthsDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+            }
+
+            if (analysis.weaknesses && analysis.weaknesses.length > 0) {
+                weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => 
+                    `<div class="text-red-300 text-sm">• ${weakness}</div>`
+                ).join('');
+            } else {
+                weaknessesDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading message analysis:', error);
+    }
+}
+
+function loadMyPerformanceChart(data) {
+    const ctx = document.getElementById('myPerformanceChart');
+    if (!ctx) return;
+
+    // Destroy existing chart
+    if (window.myPerformanceChartInstance) {
+        window.myPerformanceChartInstance.destroy();
+    }
+
+    // Mock data for performance over time
+    const labels = currentMyPerformanceInterval === '24h' ? 
+        ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'] :
+        currentMyPerformanceInterval === '7d' ?
+        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] :
+        ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+
+    const revenueData = currentMyPerformanceInterval === '24h' ? 
+        [0, 0, 25, 45, 80, 60] :
+        currentMyPerformanceInterval === '7d' ?
+        [120, 180, 150, 200, 160, 90, 110] :
+        [800, 950, 1100, 1200];
+
+    window.myPerformanceChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue ($)',
+                data: revenueData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#d1d5db'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#9ca3af'
+                    },
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.3)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: '#9ca3af'
+                    },
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.3)'
+                    }
+                }
+            }
+        }
+    });
 }
 
 async function handleDailyReportSubmit(event) {
