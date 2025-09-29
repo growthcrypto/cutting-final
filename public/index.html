@@ -91,7 +91,13 @@
         }
 
         .sidebar-hidden {
-            transform: translateX(-100%);
+            transform: translateX(-100%) !important;
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar-hidden {
+                transform: translateX(-288px) !important; /* 72 * 4 = 288px width */
+            }
         }
 
         .chart-container {
@@ -148,17 +154,22 @@
         }
 
         .date-picker-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: rgba(17, 24, 39, 0.95);
+            position: absolute !important;
+            top: 100% !important;
+            right: 0 !important;
+            background: rgba(17, 24, 39, 0.95) !important;
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(75, 85, 99, 0.3);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            min-width: 300px;
-            z-index: 50;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(75, 85, 99, 0.3) !important;
+            border-radius: 1rem !important;
+            padding: 1.5rem !important;
+            min-width: 300px !important;
+            z-index: 9999 !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            display: block !important;
+        }
+        
+        .date-picker-dropdown.hidden {
+            display: none !important;
         }
         
         .date-picker-dropdown input[type="date"] {

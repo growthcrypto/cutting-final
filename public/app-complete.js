@@ -116,23 +116,17 @@ function setupEventListeners() {
 
     // Custom date picker buttons - using event delegation
     document.addEventListener('click', function(e) {
-        console.log('Click detected on:', e.target.id, e.target); // Debug log
-        
         if (e.target.id === 'customDateBtn' || e.target.closest('#customDateBtn') || e.target.parentElement?.id === 'customDateBtn') {
             e.preventDefault();
-            console.log('Custom date button clicked'); // Debug log
             toggleCustomDatePicker();
         } else if (e.target.id === 'applyCustomRange' || e.target.closest('#applyCustomRange') || e.target.parentElement?.id === 'applyCustomRange') {
             e.preventDefault();
-            console.log('Apply button clicked'); // Debug log
             applyCustomDateRange();
         } else if (e.target.id === 'cancelCustomRange' || e.target.closest('#cancelCustomRange') || e.target.parentElement?.id === 'cancelCustomRange') {
             e.preventDefault();
-            console.log('Cancel button clicked'); // Debug log
             closeCustomDatePicker();
         } else if (e.target.id === 'sidebarClose' || e.target.closest('#sidebarClose') || e.target.parentElement?.id === 'sidebarClose') {
             e.preventDefault();
-            console.log('Sidebar close clicked'); // Debug log
             closeSidebar();
         }
     });
@@ -458,15 +452,12 @@ function toggleSidebar() {
 }
 
 function closeSidebar() {
-    console.log('closeSidebar called'); // Debug log
     const sidebar = document.getElementById('sidebar');
-    console.log('Sidebar element:', sidebar); // Debug log
     
     if (sidebar) {
         sidebar.classList.add('sidebar-hidden');
-        console.log('Added sidebar-hidden class'); // Debug log
-    } else {
-        console.log('Sidebar element not found!'); // Debug log
+        // Force the style for immediate feedback
+        sidebar.style.transform = 'translateX(-100%)';
     }
 }
 
@@ -495,13 +486,17 @@ function setTimeInterval(interval) {
 }
 
 function toggleCustomDatePicker() {
-    console.log('toggleCustomDatePicker called'); // Debug log
     const picker = document.getElementById('customDatePicker');
-    console.log('Picker element:', picker); // Debug log
     
     if (picker) {
         picker.classList.toggle('hidden');
-        console.log('Picker hidden class:', picker.classList.contains('hidden')); // Debug log
+        
+        // Also force display style to ensure visibility
+        if (picker.classList.contains('hidden')) {
+            picker.style.display = 'none';
+        } else {
+            picker.style.display = 'block';
+        }
         
         // Set default dates if not already set
         const startInput = document.getElementById('customStartDate');
@@ -514,10 +509,7 @@ function toggleCustomDatePicker() {
             
             startInput.value = lastWeek.toISOString().split('T')[0];
             endInput.value = today.toISOString().split('T')[0];
-            console.log('Set default dates'); // Debug log
         }
-    } else {
-        console.log('Custom date picker element not found!'); // Debug log
     }
 }
 
@@ -554,7 +546,11 @@ function applyCustomDateRange() {
 }
 
 function closeCustomDatePicker() {
-    document.getElementById('customDatePicker').classList.add('hidden');
+    const picker = document.getElementById('customDatePicker');
+    if (picker) {
+        picker.classList.add('hidden');
+        picker.style.display = 'none';
+    }
 }
 
 // Data loading functions
