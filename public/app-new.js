@@ -126,7 +126,11 @@ async function handleLogin(event) {
             showMainApp();
             showNotification('Login successful!', 'success');
         } else {
-            showError(data.error || 'Login failed');
+            if (response.status === 503) {
+                showError('Database is connecting... Please wait a moment and try again.');
+            } else {
+                showError(data.error || 'Login failed');
+            }
         }
     } catch (error) {
         showError('Connection error. Please try again.');

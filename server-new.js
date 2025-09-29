@@ -47,21 +47,27 @@ const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://
 console.log('🔌 Attempting to connect to MongoDB...');
 console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
 
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 15000, // Increase timeout
-  socketTimeoutMS: 45000,
-  bufferCommands: false, // Disable mongoose buffering
-  bufferMaxEntries: 0 // Disable mongoose buffering
-}).then(() => {
-  console.log('✅ Connected to MongoDB successfully!');
-  initializeData();
-}).catch((error) => {
-  console.error('❌ MongoDB connection error:', error.message);
-  console.log('⚠️  App will continue without database connection');
-  console.log('🔍 Check if MongoDB service is running and accessible');
-});
+// Connect to MongoDB and wait for connection
+async function connectToMongoDB() {
+  try {
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000
+      // Removed bufferCommands settings to use defaults
+    });
+    console.log('✅ Connected to MongoDB successfully!');
+    await initializeData();
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    console.log('⚠️  App will continue with limited functionality');
+    console.log('🔍 Check if MongoDB service is running and accessible');
+  }
+}
+
+// Start MongoDB connection
+connectToMongoDB();
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
@@ -103,9 +109,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Database connection check middleware
+const checkDatabaseConnection = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ 
+      error: 'Database connection not ready. Please try again in a moment.' 
+    });
+  }
+  next();
+};
+
 // Initialize default data
 async function initializeData() {
   try {
+    console.log('🔧 Initializing default data...');
+    
     // Create default creator accounts if none exist
     const accountCount = await CreatorAccount.countDocuments();
     if (accountCount === 0) {
@@ -130,7 +148,8 @@ async function initializeData() {
         role: 'manager'
       });
       await manager.save();
-      console.log('✅ Default manager account created (username: admin, password: admin123)');
+      console.log('✅ Default manager account created');
+      console.log('🔑 Login with: admin / admin123');
     }
 
   } catch (error) {
@@ -150,7 +169,7 @@ app.get('/health', (req, res) => {
 });
 
 // Authentication Routes
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -189,7 +208,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.post('/api/auth/register', authenticateToken, requireManager, async (req, res) => {
+app.post('/api/auth/register', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
   try {
     const { username, email, password, role, chatterName } = req.body;
 
