@@ -51,6 +51,9 @@ function showMainApp() {
     
     // Load initial data
     loadCreatorAccounts();
+    if (currentUser.role === 'manager') {
+        loadUsers();
+    }
 }
 
 function setupEventListeners() {
@@ -65,6 +68,9 @@ function setupEventListeners() {
     
     // Daily report form
     document.getElementById('dailyReportForm').addEventListener('submit', handleDailyReportSubmit);
+    
+    // User creation form
+    document.getElementById('createUserForm').addEventListener('submit', handleCreateUser);
     
     // Add PPV sale
     document.getElementById('addPPVSale').addEventListener('click', addPPVSaleField);
@@ -414,5 +420,95 @@ async function apiCall(endpoint, options = {}) {
     } catch (error) {
         console.error('API call error:', error);
         throw error;
+    }
+}
+
+// User management functions
+async function handleCreateUser(event) {
+    event.preventDefault();
+    
+    const userData = {
+        username: document.getElementById('newUsername').value,
+        email: document.getElementById('newEmail').value,
+        password: document.getElementById('newPassword').value,
+        role: 'chatter',
+        chatterName: document.getElementById('newChatterName').value
+    };
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('User created successfully!', 'success');
+            document.getElementById('createUserForm').reset();
+            loadUsers(); // Refresh user list
+        } else {
+            showError(result.error || 'Failed to create user');
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadUsers() {
+    if (currentUser && currentUser.role === 'manager') {
+        try {
+            const response = await fetch('/api/users', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (response.ok) {
+                const users = await response.json();
+                updateUsersTable(users);
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+    }
+}
+
+function updateUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.username}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.chatterName || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.email}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                        user.role === 'manager' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                    }">
+                        ${user.role}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                        user.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }">
+                        ${user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
 }

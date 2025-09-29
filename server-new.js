@@ -45,15 +45,22 @@ if (process.env.OPENAI_API_KEY) {
 // MongoDB Connection
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/onlyfans_analytics';
 console.log('🔌 Attempting to connect to MongoDB...');
+console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
+
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 15000, // Increase timeout
+  socketTimeoutMS: 45000,
+  bufferCommands: false, // Disable mongoose buffering
+  bufferMaxEntries: 0 // Disable mongoose buffering
 }).then(() => {
   console.log('✅ Connected to MongoDB successfully!');
   initializeData();
 }).catch((error) => {
   console.error('❌ MongoDB connection error:', error.message);
   console.log('⚠️  App will continue without database connection');
+  console.log('🔍 Check if MongoDB service is running and accessible');
 });
 
 // JWT middleware
@@ -235,6 +242,16 @@ app.post('/api/creator-accounts', authenticateToken, requireManager, async (req,
     const account = new CreatorAccount({ name, accountName, isMainAccount });
     await account.save();
     res.json(account);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all users (manager only)
+app.get('/api/users', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0 }); // Exclude password
+    res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

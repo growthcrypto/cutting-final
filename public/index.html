@@ -67,10 +67,6 @@
                 </form>
                 
                 <div id="loginError" class="mt-4 text-red-600 text-sm hidden"></div>
-                
-                <div class="mt-6 text-center text-sm text-gray-500">
-                    <p>Default: admin / admin123</p>
-                </div>
             </div>
         </div>
     </div>
@@ -294,7 +290,77 @@
                         </div>
                     </div>
 
-                    <!-- Other sections will be added as we build them -->
+                    <!-- Team Management Section -->
+                    <div id="team-management" class="section hidden">
+                        <div class="mb-8">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Team Management</h2>
+                            <p class="text-gray-600">Manage chatter accounts and permissions</p>
+                        </div>
+
+                        <!-- Create New User -->
+                        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6">Create New Chatter Account</h3>
+                            <form id="createUserForm" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                        <input type="text" id="newUsername" required
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                        <input type="email" id="newEmail" required
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                        <input type="password" id="newPassword" required minlength="6"
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Chatter Name</label>
+                                        <input type="text" id="newChatterName" required
+                                               placeholder="Display name for the chatter"
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg">
+                                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Existing Users -->
+                        <div class="bg-white rounded-lg shadow-lg p-8">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6">Existing Team Members</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chatter Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                        <!-- Users will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guidelines Section -->
                     <div id="guidelines" class="section hidden">
                         <h2 class="text-2xl font-bold mb-4">Guidelines Management</h2>
                         <p class="text-gray-600">Coming soon...</p>
