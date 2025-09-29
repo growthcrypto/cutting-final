@@ -173,15 +173,22 @@ app.get('/health', (req, res) => {
 // Authentication Routes
 app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
   try {
+    console.log('Login attempt for username:', req.body.username);
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
 
     const user = await User.findOne({ username, isActive: true });
     if (!user) {
+      console.log('User not found:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -196,6 +203,7 @@ app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    console.log('Login successful for user:', username, 'role:', user.role);
     res.json({
       token,
       user: {
@@ -210,7 +218,8 @@ app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
   }
 });
 
-app.post('/api/auth/register', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+// Public registration endpoint (no auth required)
+app.post('/api/auth/register', checkDatabaseConnection, async (req, res) => {
   try {
     const { username, email, password, role, chatterName } = req.body;
 
@@ -243,6 +252,43 @@ app.post('/api/auth/register', checkDatabaseConnection, authenticateToken, requi
       }
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Manager-only registration endpoint for creating additional accounts
+app.post('/api/auth/register-manager', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+  try {
+    console.log('Manager registration attempt:', req.body);
+    const { username, email, password, role, chatterName } = req.body;
+
+    // Validate required fields
+    if (!username || !email || !password || !role) {
+      return res.status(400).json({ error: 'Missing required fields: username, email, password, role' });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username or email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+      chatterName: role === 'chatter' ? chatterName : undefined
+    });
+
+    await user.save();
+    console.log('User created by manager:', user.username, user.role);
+    res.status(201).json({ message: 'User created successfully', userId: user._id });
+  } catch (error) {
+    console.error('Manager registration error:', error);
     res.status(500).json({ error: error.message });
   }
 });
