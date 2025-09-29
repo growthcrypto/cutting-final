@@ -467,9 +467,14 @@ function initializeSidebar() {
                 : 'fas fa-angle-double-left text-xl';
         }
 
-        // Content always takes full width - NO sidebar margins
-        mainContent.style.marginLeft = '0';
-        mainContent.style.width = '100%';
+        // Move content left to fill sidebar space when collapsed
+        if (collapsed) {
+            // Sidebar is hidden, move content all the way left
+            mainContent.style.marginLeft = '0';
+        } else {
+            // Sidebar is visible, offset content by sidebar width
+            mainContent.style.marginLeft = '288px';
+        }
     }
 
     function toggleSidebarState(forceState) {
