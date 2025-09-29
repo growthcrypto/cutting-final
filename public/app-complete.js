@@ -136,9 +136,12 @@ function setupEventListeners() {
         } else if (e.target.id === 'addGuidelineForm') {
             e.preventDefault();
             handleAddGuideline(e);
-        } else if (e.target.id === 'inflowwDataForm') {
+        } else if (e.target.id === 'ofAccountDataForm') {
             e.preventDefault();
-            handleInflowwDataSubmit(e);
+            handleOFAccountDataSubmit(e);
+        } else if (e.target.id === 'chatterDataForm') {
+            e.preventDefault();
+            handleChatterDataSubmit(e);
         } else if (e.target.id === 'messagesUploadForm') {
             e.preventDefault();
             handleMessagesUpload(e);
@@ -382,9 +385,10 @@ async function loadChattersForInfloww() {
             const users = await response.json();
             const chatters = users.filter(user => user.role === 'chatter');
             
-            const select = document.getElementById('inflowwChatter');
-            if (select) {
-                select.innerHTML = '<option value="">Select Chatter...</option>' +
+            // Load for chatter data form
+            const chatterSelect = document.getElementById('chatterDataChatter');
+            if (chatterSelect) {
+                chatterSelect.innerHTML = '<option value="">Select Chatter...</option>' +
                     chatters.map(chatter => 
                         `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
                     ).join('');
@@ -820,19 +824,19 @@ function createDataUploadSection() {
             <p class="text-gray-400">Submit analytics data and message exports</p>
         </div>
         
-        <!-- Infloww Data Form -->
+        <!-- OF Account Data Form -->
         <div class="glass-card rounded-xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-6">Infloww Analytics Data</h3>
-            <form id="inflowwDataForm" class="space-y-6">
+            <h3 class="text-xl font-semibold mb-6">OF Account Data</h3>
+            <form id="ofAccountDataForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">Date</label>
-                        <input type="date" id="inflowwDate" required
+                        <input type="date" id="ofAccountDate" required
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Creator Account</label>
-                        <select id="inflowwCreator" required
+                        <select id="ofAccountCreator" required
                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                               <option value="">Select Creator...</option>
                               <option value="arya">Arya</option>
@@ -843,83 +847,96 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="border-t border-gray-700 pt-6">
-                    <h4 class="text-lg font-semibold mb-4">Revenue & Subscribers</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Net Revenue ($)</label>
-                            <input type="number" id="netRevenue" min="0" step="0.01"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Total Revenue ($)</label>
-                            <input type="number" id="totalRevenue" min="0" step="0.01"
+                            <input type="number" id="ofNetRevenue" min="0" step="0.01"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">Recurring Revenue ($)</label>
-                            <input type="number" id="recurringRevenue" min="0" step="0.01"
+                            <input type="number" id="ofRecurringRevenue" min="0" step="0.01"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">Total Subscribers</label>
-                            <input type="number" id="totalSubs" min="0"
+                            <input type="number" id="ofTotalSubs" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">New Subscribers</label>
-                            <input type="number" id="newSubs" min="0"
+                            <input type="number" id="ofNewSubs" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">Profile Clicks</label>
-                            <input type="number" id="profileClicks" min="0"
+                            <input type="number" id="ofProfileClicks" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-t border-gray-700 pt-6">
-                    <h4 class="text-lg font-semibold mb-4">PPV & Messaging</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Messages Sent</label>
-                            <input type="number" id="messagesSent" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">PPVs Sent</label>
-                            <input type="number" id="ppvsSent" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">PPVs Unlocked</label>
-                            <input type="number" id="ppvsUnlocked" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Avg PPV Price ($)</label>
-                            <input type="number" id="avgPPVPrice" min="0" step="0.01"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Avg Response Time (min)</label>
-                            <input type="number" id="avgResponseTime" min="0" step="0.1"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Chatter Name</label>
-                            <select id="inflowwChatter"
-                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                                <option value="">Select Chatter...</option>
-                                <!-- Chatters will be loaded dynamically from created accounts -->
-                            </select>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end">
                     <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
-                        <i class="fas fa-save mr-2"></i>Submit Analytics Data
+                        <i class="fas fa-save mr-2"></i>Submit OF Account Data
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Chatter's Data Form -->
+        <div class="glass-card rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-6">Chatter's Data</h3>
+            <form id="chatterDataForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" id="chatterDataDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Chatter Name</label>
+                        <select id="chatterDataChatter" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Chatter...</option>
+                            <!-- Chatters will be loaded dynamically from created accounts -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-700 pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Messages Sent</label>
+                            <input type="number" id="chatterMessagesSent" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">PPVs Sent</label>
+                            <input type="number" id="chatterPPVsSent" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">PPVs Unlocked</label>
+                            <input type="number" id="chatterPPVsUnlocked" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Avg PPV Price ($)</label>
+                            <input type="number" id="chatterAvgPPVPrice" min="0" step="0.01"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Avg Response Time (min)</label>
+                            <input type="number" id="chatterAvgResponseTime" min="0" step="0.1"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-save mr-2"></i>Submit Chatter Data
                     </button>
                 </div>
             </form>
@@ -1737,22 +1754,16 @@ async function runChatterAnalysis() {
 }
 
 // Form handlers
-async function handleInflowwDataSubmit(event) {
+async function handleOFAccountDataSubmit(event) {
     const formData = {
-        date: document.getElementById('inflowwDate').value,
-        creator: document.getElementById('inflowwCreator').value,
-        chatter: document.getElementById('inflowwChatter').value,
-        netRevenue: parseFloat(document.getElementById('netRevenue').value) || 0,
-        totalRevenue: parseFloat(document.getElementById('totalRevenue').value) || 0,
-        recurringRevenue: parseFloat(document.getElementById('recurringRevenue').value) || 0,
-        totalSubs: parseInt(document.getElementById('totalSubs').value) || 0,
-        newSubs: parseInt(document.getElementById('newSubs').value) || 0,
-        profileClicks: parseInt(document.getElementById('profileClicks').value) || 0,
-        messagesSent: parseInt(document.getElementById('messagesSent').value) || 0,
-        ppvsSent: parseInt(document.getElementById('ppvsSent').value) || 0,
-        ppvsUnlocked: parseInt(document.getElementById('ppvsUnlocked').value) || 0,
-        avgPPVPrice: parseFloat(document.getElementById('avgPPVPrice').value) || 0,
-        avgResponseTime: parseFloat(document.getElementById('avgResponseTime').value) || 0
+        date: document.getElementById('ofAccountDate').value,
+        creator: document.getElementById('ofAccountCreator').value,
+        netRevenue: parseFloat(document.getElementById('ofNetRevenue').value) || 0,
+        recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
+        totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
+        newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
+        profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
+        dataType: 'of_account'
     };
 
     if (!formData.date || !formData.creator) {
@@ -1763,7 +1774,7 @@ async function handleInflowwDataSubmit(event) {
     showLoading(true);
 
     try {
-        const response = await fetch('/api/analytics/infloww', {
+        const response = await fetch('/api/analytics/of-account', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1775,8 +1786,56 @@ async function handleInflowwDataSubmit(event) {
         const result = await response.json();
 
         if (response.ok) {
-            showNotification('Analytics data submitted successfully!', 'success');
-            document.getElementById('inflowwDataForm').reset();
+            showNotification('OF Account data submitted successfully!', 'success');
+            document.getElementById('ofAccountDataForm').reset();
+            // Update dashboard if we're on it
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit data');
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleChatterDataSubmit(event) {
+    const formData = {
+        date: document.getElementById('chatterDataDate').value,
+        chatter: document.getElementById('chatterDataChatter').value,
+        messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
+        ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
+        ppvsUnlocked: parseInt(document.getElementById('chatterPPVsUnlocked').value) || 0,
+        avgPPVPrice: parseFloat(document.getElementById('chatterAvgPPVPrice').value) || 0,
+        avgResponseTime: parseFloat(document.getElementById('chatterAvgResponseTime').value) || 0,
+        dataType: 'chatter'
+    };
+
+    if (!formData.date || !formData.chatter) {
+        showError('Please fill in Date and Chatter fields');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/chatter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Chatter data submitted successfully!', 'success');
+            document.getElementById('chatterDataForm').reset();
             // Update dashboard if we're on it
             if (currentUser && currentUser.role === 'manager') {
                 loadDashboardData();

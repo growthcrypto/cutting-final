@@ -335,17 +335,33 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
   }
 });
 
-// Submit Infloww analytics data
-app.post('/api/analytics/infloww', checkDatabaseConnection, authenticateToken, async (req, res) => {
+// Submit OF Account data
+app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const analyticsData = new AccountData({
+    const accountData = new AccountData({
       ...req.body,
       submittedBy: req.user.id,
       submittedAt: new Date()
     });
     
-    await analyticsData.save();
-    res.json({ message: 'Analytics data saved successfully', data: analyticsData });
+    await accountData.save();
+    res.json({ message: 'OF Account data saved successfully', data: accountData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit Chatter data
+app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const chatterData = new ChatterPerformance({
+      ...req.body,
+      submittedBy: req.user.id,
+      submittedAt: new Date()
+    });
+    
+    await chatterData.save();
+    res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
