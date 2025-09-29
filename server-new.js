@@ -632,11 +632,52 @@ app.listen(PORT, () => {
 });
 
 // Fallback analysis function when AI fails
-function generateFallbackAnalysis(analyticsData, analysisType, interval) {
+async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
   if (analysisType === 'agency') {
     const clickToSubRate = analyticsData.profileClicks > 0 ? (analyticsData.newSubs / analyticsData.profileClicks * 100) : 0;
     const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
     const revenuePerSub = analyticsData.totalSubs > 0 ? (analyticsData.totalRevenue / analyticsData.totalSubs) : 0;
+    const revenuePerHour = analyticsData.totalRevenue / (interval === '7d' ? 168 : interval === '30d' ? 720 : 24);
+    const messagesPerPPV = analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent / analyticsData.ppvsSent) : 0;
+    
+    // Get employee analytics
+    const dailyReports = await DailyChatterReport.find({
+      date: { $gte: new Date(Date.now() - (interval === '7d' ? 7 : interval === '30d' ? 30 : 1) * 24 * 60 * 60 * 1000) }
+    });
+    
+    // Calculate employee performance metrics
+    const employeeMetrics = {};
+    dailyReports.forEach(report => {
+      if (report.chatterId) {
+        if (!employeeMetrics[report.chatterId]) {
+          employeeMetrics[report.chatterId] = {
+            revenue: 0,
+            ppvsSent: 0,
+            responseTime: 0,
+            count: 0,
+            name: report.chatterId // Will be replaced with actual name if available
+          };
+        }
+        const revenue = report.ppvSales.reduce((sum, sale) => sum + sale.amount, 0) + 
+                       report.tips.reduce((sum, tip) => sum + tip.amount, 0);
+        employeeMetrics[report.chatterId].revenue += revenue;
+        employeeMetrics[report.chatterId].ppvsSent += report.ppvSales?.length || 0;
+        employeeMetrics[report.chatterId].responseTime += report.avgResponseTime || 0;
+        employeeMetrics[report.chatterId].count++;
+      }
+    });
+    
+    // Calculate averages and rankings
+    const employeePerformance = Object.values(employeeMetrics).map(emp => ({
+      ...emp,
+      avgRevenue: emp.revenue / emp.count,
+      avgResponseTime: emp.responseTime / emp.count,
+      revenuePerPPV: emp.ppvsSent > 0 ? emp.revenue / emp.ppvsSent : 0
+    })).sort((a, b) => b.avgRevenue - a.avgRevenue);
+    
+    const topPerformer = employeePerformance[0];
+    const performanceGap = employeePerformance.length > 1 ? 
+      employeePerformance[0].avgRevenue - employeePerformance[employeePerformance.length - 1].avgRevenue : 0;
     
     let overallScore = 0;
     if (analyticsData.totalRevenue > 0) overallScore += 20;
@@ -651,26 +692,64 @@ function generateFallbackAnalysis(analyticsData, analysisType, interval) {
         `Total revenue of $${analyticsData.totalRevenue.toLocaleString()} generated this ${interval} period`,
         `Click-to-subscription conversion rate is ${clickToSubRate.toFixed(1)}%`,
         `Average response time is ${analyticsData.avgResponseTime.toFixed(1)} minutes`,
-        `PPV unlock rate is ${ppvUnlockRate.toFixed(1)}%`
+        `PPV unlock rate is ${ppvUnlockRate.toFixed(1)}%`,
+        `Revenue per hour: $${revenuePerHour.toFixed(2)}`,
+        `Messages per PPV: ${messagesPerPPV.toFixed(1)}`
       ],
       weakPoints: [
         clickToSubRate < 10 ? `Low conversion rate (${clickToSubRate.toFixed(1)}%) - industry average is 12%` : null,
         analyticsData.avgResponseTime > 3 ? `Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes is above optimal (2-3 minutes)` : null,
-        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below industry average (45-60%)` : null
+        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below industry average (45-60%)` : null,
+        performanceGap > 500 ? `High performance variance: $${performanceGap.toFixed(0)} gap between top and bottom performers` : null
       ].filter(Boolean),
       opportunities: [
-        `Improving conversion rate to 12% could increase revenue by ${Math.round(analyticsData.totalRevenue * 0.2)}`,
-        `Reducing response time to 2 minutes could increase conversions by 15-20%`
-      ],
+        `Improving conversion rate to 12% could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.2)}`,
+        `Reducing response time to 2 minutes could increase conversions by 15-20%`,
+        performanceGap > 500 ? `Leveling up all chatters to top performer could increase revenue by $${Math.round(performanceGap * employeePerformance.length)}` : null
+      ].filter(Boolean),
       roiCalculations: [
         `Response time improvement: $${Math.round(analyticsData.totalRevenue * 0.15)} potential monthly gain for $400 training cost`,
-        `Conversion optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $600 funnel improvements`
-      ],
+        `Conversion optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $600 funnel improvements`,
+        performanceGap > 500 ? `Team training ROI: $${Math.round(performanceGap * employeePerformance.length * 12)} annual potential for $2,000 training investment` : null
+      ].filter(Boolean),
       recommendations: [
         'Focus on faster response times - aim for under 2 minutes',
         'Test premium PPV pricing strategy',
-        'Plan weekend coverage optimization'
-      ]
+        'Plan weekend coverage optimization',
+        performanceGap > 500 ? 'Implement team training to level up all chatters' : null
+      ].filter(Boolean),
+      employeeAnalytics: {
+        totalEmployees: employeePerformance.length,
+        topPerformer: topPerformer ? {
+          name: topPerformer.name,
+          avgRevenue: topPerformer.avgRevenue,
+          avgResponseTime: topPerformer.avgResponseTime,
+          revenuePerPPV: topPerformer.revenuePerPPV
+        } : null,
+        performanceGap: performanceGap,
+        teamConsistency: employeePerformance.length > 1 ? 
+          (1 - (performanceGap / (topPerformer?.avgRevenue || 1))) * 100 : 100,
+        averageTeamRevenue: employeePerformance.length > 0 ? 
+          employeePerformance.reduce((sum, emp) => sum + emp.avgRevenue, 0) / employeePerformance.length : 0
+      },
+      complexAgencyMetrics: {
+        revenueEfficiency: revenuePerHour,
+        conversionFunnel: {
+          clicksToSubs: clickToSubRate,
+          subsToRevenue: revenuePerSub,
+          messagesToPPV: messagesPerPPV
+        },
+        operationalMetrics: {
+          avgResponseTime: analyticsData.avgResponseTime,
+          ppvUnlockRate: ppvUnlockRate,
+          revenuePerSub: revenuePerSub
+        },
+        growthPotential: {
+          conversionUpside: Math.max(0, 12 - clickToSubRate),
+          responseTimeUpside: Math.max(0, analyticsData.avgResponseTime - 2),
+          teamUpside: performanceGap
+        }
+      }
     };
   } else {
     const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
@@ -720,35 +799,67 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
 
     let prompt;
     if (analysisType === 'agency') {
-      prompt = `You are an expert OnlyFans agency analyst. Analyze the following agency performance data for the ${interval} period and provide comprehensive insights:
+            prompt = `You are an expert OnlyFans agency analyst. Analyze the following agency performance data for the ${interval} period and provide comprehensive insights:
 
-AGENCY DATA:
-- Total Revenue: $${analyticsData.totalRevenue}
-- Net Revenue: $${analyticsData.netRevenue}
-- Total Subscribers: ${analyticsData.totalSubs}
-- New Subscribers: ${analyticsData.newSubs}
-- Profile Clicks: ${analyticsData.profileClicks}
-- PPVs Sent: ${analyticsData.ppvsSent}
-- Average Response Time: ${analyticsData.avgResponseTime} minutes
+        AGENCY DATA:
+        - Total Revenue: $${analyticsData.totalRevenue}
+        - Net Revenue: $${analyticsData.netRevenue}
+        - Total Subscribers: ${analyticsData.totalSubs}
+        - New Subscribers: ${analyticsData.newSubs}
+        - Profile Clicks: ${analyticsData.profileClicks}
+        - PPVs Sent: ${analyticsData.ppvsSent}
+        - Average Response Time: ${analyticsData.avgResponseTime} minutes
 
-Please provide a detailed analysis in JSON format with the following structure:
-{
-  "overallScore": [0-100],
-  "insights": ["insight1", "insight2", "insight3"],
-  "weakPoints": ["weakness1", "weakness2"],
-  "opportunities": ["opportunity1", "opportunity2"],
-  "roiCalculations": ["roi1", "roi2"],
-  "recommendations": ["recommendation1", "recommendation2"]
-}
+        Please provide a detailed analysis in JSON format with the following structure:
+        {
+          "overallScore": [0-100],
+          "insights": ["insight1", "insight2", "insight3"],
+          "weakPoints": ["weakness1", "weakness2"],
+          "opportunities": ["opportunity1", "opportunity2"],
+          "roiCalculations": ["roi1", "roi2"],
+          "recommendations": ["recommendation1", "recommendation2"],
+          "employeeAnalytics": {
+            "totalEmployees": [number],
+            "topPerformer": {
+              "name": "chatter_name",
+              "avgRevenue": [number],
+              "avgResponseTime": [number],
+              "revenuePerPPV": [number]
+            },
+            "performanceGap": [number],
+            "teamConsistency": [percentage],
+            "averageTeamRevenue": [number]
+          },
+          "complexAgencyMetrics": {
+            "revenueEfficiency": [revenue per hour],
+            "conversionFunnel": {
+              "clicksToSubs": [percentage],
+              "subsToRevenue": [revenue per sub],
+              "messagesToPPV": [ratio]
+            },
+            "operationalMetrics": {
+              "avgResponseTime": [minutes],
+              "ppvUnlockRate": [percentage],
+              "revenuePerSub": [dollars]
+            },
+            "growthPotential": {
+              "conversionUpside": [percentage improvement possible],
+              "responseTimeUpside": [minutes improvement possible],
+              "teamUpside": [revenue improvement possible]
+            }
+          }
+        }
 
-Focus on:
-1. Performance insights based on real data
-2. Specific weak points with data-driven explanations
-3. Actionable opportunities with potential revenue impact
-4. ROI calculations for improvements
-5. Prioritized recommendations
+        Focus on:
+        1. Performance insights based on real data
+        2. Employee performance analysis and team dynamics
+        3. Complex agency metrics including conversion funnels and efficiency
+        4. Specific weak points with data-driven explanations
+        5. Actionable opportunities with potential revenue impact
+        6. ROI calculations for improvements
+        7. Prioritized recommendations
 
-Be specific with numbers and percentages. Don't make up data that isn't provided.`;
+        Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
       prompt = `You are an expert OnlyFans chatter performance analyst. Analyze the following individual chatter performance data for the ${interval} period:
 

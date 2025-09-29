@@ -1487,33 +1487,125 @@ async function runAgencyAnalysis() {
                     </div>
                 </div>
 
+                <!-- Employee Analytics -->
+                ${analysis.employeeAnalytics ? `
+                <div class="bg-purple-900/10 rounded-xl p-8 border border-purple-500/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-purple-400 flex items-center">
+                        <i class="fas fa-users mr-3 text-xl"></i>Employee Analytics
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="text-center p-4 bg-purple-900/20 rounded-lg">
+                            <div class="text-3xl font-bold text-purple-400 mb-2">${analysis.employeeAnalytics.totalEmployees}</div>
+                            <div class="text-sm text-gray-300">Active Chatters</div>
+                        </div>
+                        <div class="text-center p-4 bg-green-900/20 rounded-lg">
+                            <div class="text-3xl font-bold text-green-400 mb-2">$${analysis.employeeAnalytics.topPerformer ? analysis.employeeAnalytics.topPerformer.avgRevenue.toFixed(0) : '0'}</div>
+                            <div class="text-sm text-gray-300">Top Performer Avg</div>
+                        </div>
+                        <div class="text-center p-4 bg-blue-900/20 rounded-lg">
+                            <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.employeeAnalytics.teamConsistency.toFixed(0)}%</div>
+                            <div class="text-sm text-gray-300">Team Consistency</div>
+                        </div>
+                        <div class="text-center p-4 bg-yellow-900/20 rounded-lg">
+                            <div class="text-3xl font-bold text-yellow-400 mb-2">$${analysis.employeeAnalytics.performanceGap.toFixed(0)}</div>
+                            <div class="text-sm text-gray-300">Performance Gap</div>
+                        </div>
+                    </div>
+                    ${analysis.employeeAnalytics.topPerformer ? `
+                    <div class="mt-6 p-4 bg-gray-800/30 rounded-lg">
+                        <h5 class="text-lg font-semibold text-purple-400 mb-3">Top Performer Details</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">Avg Revenue:</span>
+                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.avgRevenue.toFixed(2)}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Response Time:</span>
+                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.avgResponseTime.toFixed(1)} min</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Revenue per PPV:</span>
+                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.revenuePerPPV.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+
+                <!-- Complex Agency Metrics -->
+                ${analysis.complexAgencyMetrics ? `
+                <div class="bg-indigo-900/10 rounded-xl p-8 border border-indigo-500/30">
+                    <h4 class="text-2xl font-semibold mb-6 text-indigo-400 flex items-center">
+                        <i class="fas fa-chart-network mr-3 text-xl"></i>Complex Agency Analytics
+                    </h4>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-gray-800/30 rounded-lg p-6">
+                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Revenue Efficiency</h5>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Revenue per Hour:</span>
+                                    <span class="text-white font-semibold">$${analysis.complexAgencyMetrics.revenueEfficiency.toFixed(2)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Revenue per Sub:</span>
+                                    <span class="text-white font-semibold">$${analysis.complexAgencyMetrics.operationalMetrics.revenuePerSub.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800/30 rounded-lg p-6">
+                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Conversion Funnel</h5>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Clicks to Subs:</span>
+                                    <span class="text-white font-semibold">${analysis.complexAgencyMetrics.conversionFunnel.clicksToSubs.toFixed(1)}%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Messages to PPV:</span>
+                                    <span class="text-white font-semibold">${analysis.complexAgencyMetrics.conversionFunnel.messagesToPPV.toFixed(1)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800/30 rounded-lg p-6">
+                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Growth Potential</h5>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Conversion Upside:</span>
+                                    <span class="text-green-400 font-semibold">${analysis.complexAgencyMetrics.growthPotential.conversionUpside.toFixed(1)}%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Response Time Upside:</span>
+                                    <span class="text-green-400 font-semibold">${analysis.complexAgencyMetrics.growthPotential.responseTimeUpside.toFixed(1)} min</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Team Upside:</span>
+                                    <span class="text-green-400 font-semibold">$${analysis.complexAgencyMetrics.growthPotential.teamUpside.toFixed(0)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Recommended Actions -->
                 <div class="bg-blue-900/10 rounded-xl p-8 border border-blue-500/30">
                     <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
                         <i class="fas fa-tasks mr-3 text-xl"></i>Recommended Actions (Priority Order)
                     </h4>
                     <div class="space-y-4">
-                        <div class="flex items-start p-6 bg-red-900/20 rounded-xl border border-red-500/30">
-                            <span class="bg-red-500 text-white text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">HIGH</span>
-                            <div>
-                                <span class="text-lg font-medium text-white">Implement response time training program</span>
-                                <p class="text-gray-400 mt-1">Start this week</p>
+                        ${analysis.recommendations.map((rec, index) => {
+                            const priority = index === 0 ? 'HIGH' : index === 1 ? 'MED' : 'LOW';
+                            const bgColor = index === 0 ? 'red' : index === 1 ? 'yellow' : 'green';
+                            const textColor = index === 1 ? 'black' : 'white';
+                            return `
+                            <div class="flex items-start p-6 bg-${bgColor}-900/20 rounded-xl border border-${bgColor}-500/30">
+                                <span class="bg-${bgColor}-500 text-${textColor} text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">${priority}</span>
+                                <div>
+                                    <span class="text-lg font-medium text-white">${rec}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-start p-6 bg-yellow-900/20 rounded-xl border border-yellow-500/30">
-                            <span class="bg-yellow-500 text-black text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">MED</span>
-                            <div>
-                                <span class="text-lg font-medium text-white">Test premium PPV pricing strategy</span>
-                                <p class="text-gray-400 mt-1">Start next Monday</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start p-6 bg-green-900/20 rounded-xl border border-green-500/30">
-                            <span class="bg-green-500 text-black text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">LOW</span>
-                            <div>
-                                <span class="text-lg font-medium text-white">Plan weekend coverage optimization</span>
-                                <p class="text-gray-400 mt-1">Implement in 2 weeks</p>
-                            </div>
-                        </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             </div>
