@@ -362,8 +362,36 @@ function loadSectionData(sectionId) {
         case 'ai-analysis':
             loadChattersForAnalysis();
             break;
+        case 'data-upload':
+            loadChattersForInfloww();
+            break;
         default:
             break;
+    }
+}
+
+async function loadChattersForInfloww() {
+    try {
+        const response = await fetch('/api/users', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const users = await response.json();
+            const chatters = users.filter(user => user.role === 'chatter');
+            
+            const select = document.getElementById('inflowwChatter');
+            if (select) {
+                select.innerHTML = '<option value="">Select Chatter...</option>' +
+                    chatters.map(chatter => 
+                        `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
+                    ).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading chatters for Infloww:', error);
     }
 }
 
@@ -805,12 +833,12 @@ function createDataUploadSection() {
                     <div>
                         <label class="block text-sm font-medium mb-2">Creator Account</label>
                         <select id="inflowwCreator" required
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Select Creator...</option>
-                            <option value="creator1">Creator 1</option>
-                            <option value="creator2">Creator 2</option>
-                            <option value="creator3">Creator 3</option>
-                        </select>
+                                  class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                              <option value="">Select Creator...</option>
+                              <option value="arya">Arya</option>
+                              <option value="iris">Iris</option>
+                              <option value="lilla">Lilla</option>
+                          </select>
                     </div>
                 </div>
 
@@ -883,10 +911,7 @@ function createDataUploadSection() {
                             <select id="inflowwChatter"
                                     class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                                 <option value="">Select Chatter...</option>
-                                <option value="chatter1">Chatter 1</option>
-                                <option value="chatter2">Chatter 2</option>
-                                <option value="chatter3">Chatter 3</option>
-                                <option value="chatter4">Chatter 4</option>
+                                <!-- Chatters will be loaded dynamically from created accounts -->
                             </select>
                         </div>
                     </div>
@@ -905,15 +930,11 @@ function createDataUploadSection() {
             <h3 class="text-xl font-semibold mb-4">Message Export Upload</h3>
             <div class="mb-4 p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
                 <h4 class="font-medium text-blue-400 mb-2">CSV Structure Required:</h4>
-                <p class="text-sm text-gray-300 mb-2">Your message export CSV should contain these columns:</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
-                    <div>• timestamp</div>
-                    <div>• chatter_name</div>
-                    <div>• message_text</div>
-                    <div>• fan_username</div>
-                    <div>• message_type (text/ppv/tip)</div>
-                    <div>• amount (if ppv/tip)</div>
+                <p class="text-sm text-gray-300 mb-2">Your message export CSV should contain just one column:</p>
+                <div class="text-sm font-mono text-center py-2 bg-gray-800/50 rounded">
+                    <div class="text-blue-400">• message_text</div>
                 </div>
+                <p class="text-xs text-gray-400 mt-2">The chatter name will be automatically detected from your login account.</p>
             </div>
             <form id="messagesUploadForm" class="space-y-4">
                 <div>

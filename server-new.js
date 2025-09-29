@@ -129,11 +129,11 @@ async function initializeData() {
     // Create default creator accounts if none exist
     const accountCount = await CreatorAccount.countDocuments();
     if (accountCount === 0) {
-      const defaultAccounts = [
-        { name: 'Creator 1', accountName: 'creator1_account', isMainAccount: true },
-        { name: 'Creator 2', accountName: 'creator2_account', isMainAccount: true },
-        { name: 'Creator 3', accountName: 'creator3_account', isMainAccount: true }
-      ];
+        const defaultAccounts = [
+          { name: 'Arya', accountName: 'arya_account', isMainAccount: true },
+          { name: 'Iris', accountName: 'iris_account', isMainAccount: true },
+          { name: 'Lilla', accountName: 'lilla_account', isMainAccount: true }
+        ];
       
       await CreatorAccount.insertMany(defaultAccounts);
       console.log('✅ Default creator accounts created');
