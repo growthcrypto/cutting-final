@@ -1366,60 +1366,38 @@ async function runAgencyAnalysis() {
     `;
     
     try {
-        // Fetch real data from API based on selected interval
+        // Call real AI analysis endpoint
         const authToken = localStorage.getItem('authToken');
         if (!authToken) {
             throw new Error('Not authenticated');
         }
 
-        // Get custom date range if applicable
-        let apiUrl = `/api/analytics/dashboard?interval=${currentAIAnalysisInterval}`;
+        // Prepare request body for AI analysis
+        const requestBody = {
+            analysisType: 'agency',
+            interval: currentAIAnalysisInterval
+        };
+
+        // Add custom date range if applicable
         if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
-            apiUrl += `&startDate=${window.customDateRange.start}&endDate=${window.customDateRange.end}`;
+            requestBody.startDate = window.customDateRange.start;
+            requestBody.endDate = window.customDateRange.end;
         }
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch('/api/ai/analysis', {
+            method: 'POST',
             headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch analytics data');
+            throw new Error('Failed to get AI analysis');
         }
 
-        const analyticsData = await response.json();
-        
-        // Simulate AI processing time
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // Check if we have any real data
-        const hasData = analyticsData.totalRevenue > 0 || analyticsData.totalSubs > 0 || analyticsData.profileClicks > 0;
-        
-        if (!hasData) {
-            // Show empty state with guidance
-            resultsContainer.innerHTML = `
-                <div class="text-center py-16">
-                    <div class="w-24 h-24 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-chart-line text-4xl text-gray-500"></i>
-                    </div>
-                    <h3 class="text-2xl font-semibold text-white mb-4">No Data Available</h3>
-                    <p class="text-gray-400 text-lg mb-6 max-w-md mx-auto">
-                        Upload your daily reports and Infloww data to see comprehensive AI analysis.
-                    </p>
-                    <div class="space-y-3 text-sm text-gray-500">
-                        <p>• Submit Daily PPV & Tips Reports</p>
-                        <p>• Upload OF Account Data</p>
-                        <p>• Upload Chatter's Data</p>
-                        <p>• Export and upload message data</p>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        // Generate analysis based on real data
-        const analysis = generateAnalysisFromRealData(analyticsData, currentAIAnalysisInterval);
+        const analysis = await response.json();
 
         resultsContainer.innerHTML = `
             <div class="space-y-8">
@@ -1572,60 +1550,39 @@ async function runChatterAnalysis() {
     `;
     
     try {
-        // Fetch real data for the selected chatter
+        // Call real AI analysis endpoint for individual chatter
         const authToken = localStorage.getItem('authToken');
         if (!authToken) {
             throw new Error('Not authenticated');
         }
 
-        // Get custom date range if applicable
-        let apiUrl = `/api/analytics/dashboard?interval=${currentAIAnalysisInterval}&chatterId=${select.value}`;
+        // Prepare request body for AI analysis
+        const requestBody = {
+            analysisType: 'individual',
+            interval: currentAIAnalysisInterval,
+            chatterId: select.value
+        };
+
+        // Add custom date range if applicable
         if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
-            apiUrl += `&startDate=${window.customDateRange.start}&endDate=${window.customDateRange.end}`;
+            requestBody.startDate = window.customDateRange.start;
+            requestBody.endDate = window.customDateRange.end;
         }
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch('/api/ai/analysis', {
+            method: 'POST',
             headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch chatter data');
+            throw new Error('Failed to get AI analysis');
         }
 
-        const chatterData = await response.json();
-        
-        // Simulate AI processing time
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        // Check if we have any real data for this chatter
-        const hasData = chatterData.totalRevenue > 0 || chatterData.messagesSent > 0 || chatterData.ppvsSent > 0;
-        
-        if (!hasData) {
-            // Show empty state for this chatter
-            resultsContainer.innerHTML = `
-                <div class="text-center py-16">
-                    <div class="w-24 h-24 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-user text-4xl text-gray-500"></i>
-                    </div>
-                    <h3 class="text-2xl font-semibold text-white mb-4">No Data for Selected Chatter</h3>
-                    <p class="text-gray-400 text-lg mb-6 max-w-md mx-auto">
-                        This chatter hasn't submitted any daily reports or data for the selected time period.
-                    </p>
-                    <div class="space-y-3 text-sm text-gray-500">
-                        <p>• Ask them to submit Daily PPV & Tips Reports</p>
-                        <p>• Upload their Chatter's Data</p>
-                        <p>• Try a different time period</p>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        // Generate analysis based on real chatter data
-        const selectedChatter = select.options[select.selectedIndex].text;
-        const analysisData = generateChatterAnalysisFromRealData(chatterData, selectedChatter, currentAIAnalysisInterval);
+        const analysisData = await response.json();
         renderChatterAnalysisResults(analysisData);
         
     } catch (error) {

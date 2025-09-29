@@ -374,6 +374,96 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
   }
 });
 
+// AI Analysis endpoint for comprehensive analysis
+app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { analysisType, interval, startDate, endDate, chatterId } = req.body;
+    
+    // Get the analytics data based on parameters
+    let dateQuery = {};
+    if (startDate && endDate) {
+      dateQuery = {
+        date: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        }
+      };
+    } else {
+      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      dateQuery = { date: { $gte: start } };
+    }
+
+    // Get data based on analysis type
+    let analyticsData;
+    if (analysisType === 'agency') {
+      const dailyReports = await DailyChatterReport.find(dateQuery);
+      const ofAccountData = await AccountData.find(dateQuery);
+      
+      const totalRevenue = dailyReports.reduce((sum, report) => {
+        const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
+        const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
+        return sum + ppvRevenue + tipsRevenue;
+      }, 0);
+
+      const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
+      const avgResponseTime = dailyReports.length > 0 
+        ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
+        : 0;
+
+      const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
+      const totalSubs = ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0);
+      const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
+      const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
+
+      analyticsData = {
+        totalRevenue,
+        netRevenue,
+        totalSubs,
+        newSubs,
+        profileClicks,
+        ppvsSent: totalPPVsSent,
+        avgResponseTime,
+        interval
+      };
+    } else if (analysisType === 'individual' && chatterId) {
+      const dailyReports = await DailyChatterReport.find({ ...dateQuery, chatterId });
+      
+      const totalRevenue = dailyReports.reduce((sum, report) => {
+        const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
+        const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
+        return sum + ppvRevenue + tipsRevenue;
+      }, 0);
+
+      const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
+      const avgResponseTime = dailyReports.length > 0 
+        ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
+        : 0;
+
+      const messagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0);
+
+      analyticsData = {
+        totalRevenue,
+        ppvsSent: totalPPVsSent,
+        messagesSent,
+        avgResponseTime,
+        interval
+      };
+    } else {
+      return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
+    }
+
+    // Generate AI analysis using OpenAI
+    const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
+    
+    res.json(aiAnalysis);
+  } catch (error) {
+    console.error('AI Analysis Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // AI Recommendations endpoint
 app.get('/api/ai/recommendations', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
   try {
@@ -527,6 +617,106 @@ app.listen(PORT, () => {
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
 });
+
+// AI Analysis function using OpenAI
+async function generateAIAnalysis(analyticsData, analysisType, interval) {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    let prompt;
+    if (analysisType === 'agency') {
+      prompt = `You are an expert OnlyFans agency analyst. Analyze the following agency performance data for the ${interval} period and provide comprehensive insights:
+
+AGENCY DATA:
+- Total Revenue: $${analyticsData.totalRevenue}
+- Net Revenue: $${analyticsData.netRevenue}
+- Total Subscribers: ${analyticsData.totalSubs}
+- New Subscribers: ${analyticsData.newSubs}
+- Profile Clicks: ${analyticsData.profileClicks}
+- PPVs Sent: ${analyticsData.ppvsSent}
+- Average Response Time: ${analyticsData.avgResponseTime} minutes
+
+Please provide a detailed analysis in JSON format with the following structure:
+{
+  "overallScore": [0-100],
+  "insights": ["insight1", "insight2", "insight3"],
+  "weakPoints": ["weakness1", "weakness2"],
+  "opportunities": ["opportunity1", "opportunity2"],
+  "roiCalculations": ["roi1", "roi2"],
+  "recommendations": ["recommendation1", "recommendation2"]
+}
+
+Focus on:
+1. Performance insights based on real data
+2. Specific weak points with data-driven explanations
+3. Actionable opportunities with potential revenue impact
+4. ROI calculations for improvements
+5. Prioritized recommendations
+
+Be specific with numbers and percentages. Don't make up data that isn't provided.`;
+    } else {
+      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze the following individual chatter performance data for the ${interval} period:
+
+CHATTER DATA:
+- Total Revenue: $${analyticsData.totalRevenue}
+- PPVs Sent: ${analyticsData.ppvsSent}
+- Messages Sent: ${analyticsData.messagesSent}
+- Average Response Time: ${analyticsData.avgResponseTime} minutes
+
+Please provide a detailed analysis in JSON format with the following structure:
+{
+  "overallScore": [0-100],
+  "strengths": ["strength1", "strength2"],
+  "weaknesses": ["weakness1", "weakness2"],
+  "opportunities": ["opportunity1", "opportunity2"],
+  "recommendations": ["recommendation1", "recommendation2"]
+}
+
+Focus on:
+1. Individual performance strengths and weaknesses
+2. Specific improvement opportunities
+3. Actionable recommendations for this chatter
+4. Performance metrics analysis
+
+Be specific with numbers and percentages. Don't make up data that isn't provided.`;
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert OnlyFans agency analyst. Provide detailed, data-driven analysis in JSON format. Be specific with numbers and actionable insights."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    });
+
+    const aiResponse = completion.choices[0].message.content;
+    
+    try {
+      const analysis = JSON.parse(aiResponse);
+      return analysis;
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', aiResponse);
+      throw new Error('AI response format error');
+    }
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    throw error;
+  }
+}
 
 // AI Recommendations function
 async function generateAIRecommendations(analytics, chatters, interval) {
