@@ -1112,6 +1112,149 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- AI Analysis Section -->
+                <div id="ai-analysis" class="section hidden p-8">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-10">
+                        <div>
+                            <h2 class="text-4xl font-bold mb-3">AI Analysis Center</h2>
+                            <p class="text-gray-400 text-lg">Deep performance insights with actionable recommendations</p>
+                        </div>
+                        
+                        <!-- AI Analysis Time Controls -->
+                        <div class="flex items-center space-x-3 mt-6 lg:mt-0">
+                            <span class="text-sm text-gray-400 mr-4">Analysis Period:</span>
+                            <button onclick="setAIAnalysisInterval('7d')" class="ai-time-btn bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="7d">7 Days</button>
+                            <button onclick="setAIAnalysisInterval('30d')" class="ai-time-btn bg-gray-700 text-gray-300 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="30d">30 Days</button>
+                            <button onclick="setAIAnalysisInterval('custom')" class="ai-time-btn bg-gray-700 text-gray-300 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="custom">
+                                <i class="fas fa-calendar mr-2 text-xs"></i>Custom
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Type Selection -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
+                        <div class="glass-card rounded-2xl p-10 hover:bg-gray-700/20 transition-all cursor-pointer border border-gray-600" onclick="showAgencyAnalysis()">
+                            <div class="flex items-center mb-8">
+                                <div class="w-20 h-20 bg-purple-600/20 rounded-3xl flex items-center justify-center mr-6">
+                                    <i class="fas fa-building text-purple-400 text-3xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-3xl font-bold text-white">Agency Analysis</h3>
+                                    <p class="text-gray-400 text-lg mt-2">Complete business intelligence</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4 mb-8">
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>ROI calculations & opportunity sizing</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Team performance analysis</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Revenue optimization strategies</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Market positioning insights</span>
+                                </div>
+                            </div>
+                            <button class="w-full premium-button text-white font-bold py-4 px-8 rounded-2xl text-lg">
+                                <i class="fas fa-brain mr-3"></i>Run Agency Analysis
+                            </button>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-10 hover:bg-gray-700/20 transition-all cursor-pointer border border-gray-600" onclick="showChatterAnalysis()">
+                            <div class="flex items-center mb-8">
+                                <div class="w-20 h-20 bg-cyan-600/20 rounded-3xl flex items-center justify-center mr-6">
+                                    <i class="fas fa-user-chart text-cyan-400 text-3xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-3xl font-bold text-white">Individual Analysis</h3>
+                                    <p class="text-gray-400 text-lg mt-2">Personal performance deep-dive</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4 mb-8">
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Strengths & weaknesses breakdown</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Personalized improvement plan</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Performance benchmarking</span>
+                                </div>
+                                <div class="flex items-center text-lg text-gray-300">
+                                    <i class="fas fa-check-circle text-green-400 mr-4"></i>
+                                    <span>Skill development roadmap</span>
+                                </div>
+                            </div>
+                            <button class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 px-8 rounded-2xl text-lg transition-all">
+                                <i class="fas fa-user-check mr-3"></i>Run Individual Analysis
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Agency Analysis Results Section -->
+                    <div id="agencyAnalysisSection" class="hidden">
+                        <div class="glass-card rounded-2xl p-12 mb-12 border border-gray-600">
+                            <div class="flex items-center justify-between mb-10">
+                                <h3 class="text-4xl font-bold text-white flex items-center">
+                                    <i class="fas fa-building text-purple-400 mr-5"></i>
+                                    Agency Performance Analysis
+                                    <span class="ml-4 px-4 py-2 bg-purple-500/20 text-purple-400 text-lg font-medium rounded-full">COMPREHENSIVE</span>
+                                </h3>
+                                <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition text-2xl">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="agencyAnalysisResults" class="space-y-10">
+                                <div class="text-center py-16">
+                                    <i class="fas fa-brain text-purple-400 text-6xl mb-6"></i>
+                                    <h4 class="text-2xl font-semibold text-gray-300 mb-4">Click "Run Agency Analysis" to Start</h4>
+                                    <p class="text-gray-400 text-lg">Deep AI analysis will appear here with comprehensive insights</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Analysis Results Section -->
+                    <div id="chatterAnalysisSection" class="hidden">
+                        <div class="glass-card rounded-2xl p-12 mb-12 border border-gray-600">
+                            <div class="flex items-center justify-between mb-10">
+                                <div>
+                                    <h3 class="text-4xl font-bold text-white flex items-center">
+                                        <i class="fas fa-user-chart text-cyan-400 mr-5"></i>
+                                        Individual Performance Analysis
+                                    </h3>
+                                    <div class="flex items-center space-x-6 mt-6">
+                                        <select id="chatterAnalysisSelect" class="bg-gray-700 border border-gray-600 rounded-xl px-6 py-3 text-white text-lg">
+                                            <option value="">Select Chatter...</option>
+                                        </select>
+                                        <span class="px-4 py-2 bg-cyan-500/20 text-cyan-400 text-lg font-medium rounded-full">DETAILED</span>
+                                    </div>
+                                </div>
+                                <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition text-2xl">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="chatterAnalysisResults" class="space-y-10">
+                                <div class="text-center py-16">
+                                    <i class="fas fa-user-chart text-cyan-400 text-6xl mb-6"></i>
+                                    <h4 class="text-2xl font-semibold text-gray-300 mb-4">Select a Chatter and Run Analysis</h4>
+                                    <p class="text-gray-400 text-lg">Detailed individual insights will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
