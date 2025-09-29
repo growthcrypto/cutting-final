@@ -103,16 +103,11 @@
         /* Main content expansion when sidebar is hidden */
         .main-content {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin-left: 0;
         }
         
         @media (min-width: 1024px) {
             .main-content {
                 margin-left: 288px; /* Default sidebar width */
-            }
-            
-            .main-content.expanded {
-                margin-left: 0 !important;
             }
         }
 
@@ -407,8 +402,8 @@
             </aside>
 
             <!-- Floating Sidebar Toggle Button (hidden by default) -->
-            <button id="floatingSidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg transition-all hidden" title="Show Sidebar">
-                <i class="fas fa-angle-double-right text-lg"></i>
+            <button id="floatingSidebarToggle" class="fixed top-20 left-2 z-50 bg-gray-800/90 hover:bg-gray-700 text-gray-300 hover:text-white p-2 rounded-lg shadow-lg transition-all hidden backdrop-blur-sm border border-gray-600" title="Show Sidebar">
+                <i class="fas fa-bars text-sm"></i>
             </button>
 
             <!-- Main Content -->
@@ -435,7 +430,7 @@
                                 30d
                             </button>
                             <div class="date-picker relative">
-                                <button id="customDateBtn" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
+                                <button id="customDateBtn" onclick="toggleCustomDatePicker()" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
                                     <i class="fas fa-calendar mr-1"></i>Custom
                                 </button>
                                 <div id="customDatePicker" class="custom-date-dropdown hide">
@@ -449,10 +444,10 @@
                                             <input type="date" id="customEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                                         </div>
                                         <div class="flex space-x-2">
-                                            <button id="applyCustomRange" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                            <button id="applyCustomRange" onclick="applyCustomDateRange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
                                                 Apply
                                             </button>
-                                            <button id="cancelCustomRange" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
+                                            <button id="cancelCustomRange" onclick="closeCustomDatePicker()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
                                                 Cancel
                                             </button>
                                         </div>

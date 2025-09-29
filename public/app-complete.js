@@ -474,7 +474,11 @@ function toggleSidebarCollapse() {
     if (isCurrentlyHidden) {
         // Show sidebar
         sidebar.classList.remove('sidebar-hidden');
-        mainContent.classList.remove('expanded');
+        
+        // Restore default margin on desktop
+        if (window.innerWidth >= 1024) {
+            mainContent.style.marginLeft = '288px';
+        }
         
         // Hide floating toggle button
         if (floatingToggle) {
@@ -488,7 +492,11 @@ function toggleSidebarCollapse() {
     } else {
         // Hide sidebar
         sidebar.classList.add('sidebar-hidden');
-        mainContent.classList.add('expanded');
+        
+        // Remove margin to expand content on desktop
+        if (window.innerWidth >= 1024) {
+            mainContent.style.marginLeft = '0';
+        }
         
         // Show floating toggle button
         if (floatingToggle) {
@@ -527,14 +535,21 @@ function setTimeInterval(interval) {
 }
 
 function toggleCustomDatePicker() {
+    console.log('toggleCustomDatePicker function called'); // Debug
     const picker = document.getElementById('customDatePicker');
+    console.log('Picker element:', picker); // Debug
     
     if (picker) {
         const isHidden = picker.classList.contains('hide');
+        console.log('Is currently hidden:', isHidden); // Debug
         
         if (isHidden) {
             // Show picker
             picker.classList.remove('hide');
+            picker.style.display = 'block'; // Force display
+            picker.style.visibility = 'visible'; // Force visibility
+            picker.style.opacity = '1'; // Force opacity
+            console.log('Showing picker'); // Debug
             
             // Set default dates if not already set
             const startInput = document.getElementById('customStartDate');
@@ -547,11 +562,15 @@ function toggleCustomDatePicker() {
                 
                 startInput.value = lastWeek.toISOString().split('T')[0];
                 endInput.value = today.toISOString().split('T')[0];
+                console.log('Set default dates'); // Debug
             }
         } else {
             // Hide picker
             picker.classList.add('hide');
+            console.log('Hiding picker'); // Debug
         }
+    } else {
+        console.log('Picker element not found!'); // Debug
     }
 }
 
