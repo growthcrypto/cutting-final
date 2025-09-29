@@ -300,6 +300,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 
     // Get daily reports data
     const dailyReports = await DailyChatterReport.find(dateQuery);
+    const ofAccountData = await AccountData.find(dateQuery);
     
     // Calculate metrics from daily reports
     const totalRevenue = dailyReports.reduce((sum, report) => {
@@ -314,14 +315,20 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
       : 0;
 
-    // Mock some data that would come from other sources
+    // Get real data from OF Account data
+    const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
+    const recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
+    const totalSubs = ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0);
+    const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
+    const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
+
     const analytics = {
       totalRevenue: Math.round(totalRevenue),
-      netRevenue: Math.round(totalRevenue * 0.7), // 70% after OF cut
-      recurringRevenue: Math.round(totalRevenue * 0.4),
-      totalSubs: 1234, // Would come from OF API
-      newSubs: Math.floor(Math.random() * 100) + 50,
-      profileClicks: Math.floor(Math.random() * 5000) + 8000,
+      netRevenue: Math.round(netRevenue),
+      recurringRevenue: Math.round(recurringRevenue),
+      totalSubs: Math.round(totalSubs),
+      newSubs: Math.round(newSubs),
+      profileClicks: Math.round(profileClicks),
       messagesSent: dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0), // Estimate
       ppvsSent: totalPPVsSent,
       ppvsUnlocked: totalPPVsUnlocked,

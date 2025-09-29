@@ -1390,6 +1390,9 @@ async function runAgencyAnalysis() {
 
         const analyticsData = await response.json();
         
+        // Simulate AI processing time
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
         // Check if we have any real data
         const hasData = analyticsData.totalRevenue > 0 || analyticsData.totalSubs > 0 || analyticsData.profileClicks > 0;
         
@@ -1592,6 +1595,9 @@ async function runChatterAnalysis() {
         }
 
         const chatterData = await response.json();
+        
+        // Simulate AI processing time
+        await new Promise(resolve => setTimeout(resolve, 2500));
         
         // Check if we have any real data for this chatter
         const hasData = chatterData.totalRevenue > 0 || chatterData.messagesSent > 0 || chatterData.ppvsSent > 0;
