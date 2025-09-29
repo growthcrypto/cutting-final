@@ -467,19 +467,9 @@ function initializeSidebar() {
                 : 'fas fa-angle-double-left text-xl';
         }
 
-        // Expand content when sidebar is collapsed
-        if (collapsed) {
-            mainContent.style.marginLeft = '0';
-            mainContent.style.width = '100%';
-        } else {
-            if (window.innerWidth >= 1024) {
-                mainContent.style.marginLeft = '288px';
-                mainContent.style.width = 'calc(100% - 288px)';
-            } else {
-                mainContent.style.marginLeft = '0';
-                mainContent.style.width = '100%';
-            }
-        }
+        // Content always takes full width - NO sidebar margins
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
     }
 
     function toggleSidebarState(forceState) {
