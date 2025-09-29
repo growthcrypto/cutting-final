@@ -643,6 +643,124 @@
                     </div>
                 </div>
 
+                <!-- Daily Report Section (For Chatters) -->
+                <div id="daily-report" class="section hidden p-8">
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-2">Daily PPV & Tips Report</h2>
+                        <p class="text-gray-400">Submit your daily PPV sales and tips performance</p>
+                    </div>
+
+                    <div class="glass-card rounded-xl p-6">
+                        <form id="dailyReportForm" class="space-y-6">
+                            <!-- Date and Basic Info -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Report Date</label>
+                                    <input type="date" id="reportDate" required
+                                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Creator Account</label>
+                                    <select id="creatorAccount" required
+                                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        <option value="">Select Creator...</option>
+                                        <option value="arya">Arya</option>
+                                        <option value="iris">Iris</option>
+                                        <option value="lilla">Lilla</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- PPV Sales Section -->
+                            <div class="border-t border-gray-700 pt-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold">PPV Sales</h3>
+                                    <button type="button" id="addPPVSale" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                        <i class="fas fa-plus mr-2"></i>Add PPV Sale
+                                    </button>
+                                </div>
+                                <div id="ppvSalesContainer" class="space-y-3">
+                                    <div class="ppv-sale-entry grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-gray-800/50 rounded-lg">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">PPV Price ($)</label>
+                                            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00"
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">Time Sent</label>
+                                            <input type="time" name="ppvTime"
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
+                                        </div>
+                                        <div class="flex items-end">
+                                            <button type="button" class="remove-ppv-sale bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tips Section -->
+                            <div class="border-t border-gray-700 pt-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold">Tips</h3>
+                                    <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                                        <i class="fas fa-plus mr-2"></i>Add Tip
+                                    </button>
+                                </div>
+                                <div id="tipsContainer" class="space-y-3">
+                                    <div class="tip-entry grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-gray-800/50 rounded-lg">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">Tip Amount ($)</label>
+                                            <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00"
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">Time Received</label>
+                                            <input type="time" name="tipTime"
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
+                                        </div>
+                                        <div class="flex items-end">
+                                            <button type="button" class="remove-tip bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Metrics -->
+                            <div class="border-t border-gray-700 pt-6">
+                                <h3 class="text-lg font-semibold mb-4">Additional Metrics</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">Fans Chatted</label>
+                                        <input type="number" id="fansChatted" min="0" placeholder="15"
+                                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">Avg Response Time (min)</label>
+                                        <input type="number" id="avgResponseTime" min="0" step="0.1" placeholder="2.5"
+                                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">Shift Duration (hrs)</label>
+                                        <input type="number" id="shiftDuration" min="0" step="0.5" placeholder="8"
+                                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="flex justify-end pt-6">
+                                <button type="submit" class="premium-button text-white font-medium py-3 px-8 rounded-xl">
+                                    <i class="fas fa-save mr-2"></i>Submit Daily Report
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Analytics Section -->
                 <div id="analytics" class="section hidden p-8">
                     <div class="mb-8">
