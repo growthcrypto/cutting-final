@@ -446,18 +446,40 @@ async function loadChattersForInfloww() {
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+    
     if (sidebar) {
+        const isHidden = sidebar.classList.contains('sidebar-hidden');
         sidebar.classList.toggle('sidebar-hidden');
+        
+        // Handle main content margin on desktop
+        if (window.innerWidth >= 1024 && mainContent) {
+            if (isHidden) {
+                // Sidebar is being shown, restore normal margin
+                mainContent.style.marginLeft = '';
+                sidebar.style.transform = '';
+            } else {
+                // Sidebar is being hidden, expand main content
+                mainContent.style.marginLeft = '0';
+                sidebar.style.transform = 'translateX(-100%)';
+            }
+        }
     }
 }
 
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
     
     if (sidebar) {
         sidebar.classList.add('sidebar-hidden');
         // Force the style for immediate feedback
         sidebar.style.transform = 'translateX(-100%)';
+        
+        // Expand main content on desktop
+        if (window.innerWidth >= 1024 && mainContent) {
+            mainContent.style.marginLeft = '0';
+        }
     }
 }
 
@@ -489,26 +511,29 @@ function toggleCustomDatePicker() {
     const picker = document.getElementById('customDatePicker');
     
     if (picker) {
-        picker.classList.toggle('hidden');
+        const isHidden = picker.classList.contains('hidden');
         
-        // Also force display style to ensure visibility
-        if (picker.classList.contains('hidden')) {
-            picker.style.display = 'none';
-        } else {
+        if (isHidden) {
+            // Show picker
+            picker.classList.remove('hidden');
             picker.style.display = 'block';
-        }
-        
-        // Set default dates if not already set
-        const startInput = document.getElementById('customStartDate');
-        const endInput = document.getElementById('customEndDate');
-        
-        if (startInput && endInput && !startInput.value) {
-            const today = new Date();
-            const lastWeek = new Date();
-            lastWeek.setDate(today.getDate() - 7);
             
-            startInput.value = lastWeek.toISOString().split('T')[0];
-            endInput.value = today.toISOString().split('T')[0];
+            // Set default dates if not already set
+            const startInput = document.getElementById('customStartDate');
+            const endInput = document.getElementById('customEndDate');
+            
+            if (startInput && endInput && !startInput.value) {
+                const today = new Date();
+                const lastWeek = new Date();
+                lastWeek.setDate(today.getDate() - 7);
+                
+                startInput.value = lastWeek.toISOString().split('T')[0];
+                endInput.value = today.toISOString().split('T')[0];
+            }
+        } else {
+            // Hide picker
+            picker.classList.add('hidden');
+            picker.style.display = 'none';
         }
     }
 }

@@ -98,6 +98,15 @@
             .sidebar-hidden {
                 transform: translateX(-288px) !important; /* 72 * 4 = 288px width */
             }
+            
+            /* When sidebar is hidden on desktop, expand main content */
+            .sidebar-hidden + .main-content {
+                margin-left: 0 !important;
+            }
+        }
+        
+        .main-content {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .chart-container {
@@ -153,23 +162,26 @@
             border-radius: 3px;
         }
 
+        .date-picker {
+            position: relative;
+        }
+        
         .date-picker-dropdown {
-            position: absolute !important;
-            top: 100% !important;
-            right: 0 !important;
-            background: rgba(17, 24, 39, 0.95) !important;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(75, 85, 99, 0.3) !important;
-            border-radius: 1rem !important;
-            padding: 1.5rem !important;
-            min-width: 300px !important;
-            z-index: 9999 !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-            display: block !important;
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background: #1f2937;
+            border: 1px solid #4b5563;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            min-width: 300px;
+            z-index: 9999;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: block;
         }
         
         .date-picker-dropdown.hidden {
-            display: none !important;
+            display: none;
         }
         
         .date-picker-dropdown input[type="date"] {
@@ -383,7 +395,7 @@
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto lg:ml-0 scrollbar-thin">
+            <main class="main-content flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto lg:ml-0 scrollbar-thin">
                 <!-- Dashboard Section -->
                 <div id="dashboard" class="section p-8">
                     <!-- Header with Time Controls -->
