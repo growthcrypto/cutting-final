@@ -236,6 +236,7 @@ async function handleLogin(event) {
     showLoading(true);
 
     try {
+        console.log('Login attempt for username:', username);
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
@@ -244,7 +245,9 @@ async function handleLogin(event) {
             body: JSON.stringify({ username, password })
         });
 
+        console.log('Login response status:', response.status);
         const data = await response.json();
+        console.log('Login response:', data);
 
         if (response.ok) {
             authToken = data.token;
@@ -263,6 +266,7 @@ async function handleLogin(event) {
             }
         }
     } catch (error) {
+        console.error('Login error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
@@ -3580,7 +3584,8 @@ async function handleCreateUser(event) {
     showLoading(true);
 
     try {
-        const response = await fetch('/api/auth/register', {
+        console.log('Creating user with data:', userData);
+        const response = await fetch('/api/auth/register-manager', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -3589,7 +3594,9 @@ async function handleCreateUser(event) {
             body: JSON.stringify(userData)
         });
 
+        console.log('Registration response status:', response.status);
         const result = await response.json();
+        console.log('Registration response:', result);
 
         if (response.ok) {
             showNotification('User created successfully!', 'success');
@@ -3599,6 +3606,7 @@ async function handleCreateUser(event) {
             showError(result.error || 'Failed to create user');
         }
     } catch (error) {
+        console.error('Registration error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
