@@ -107,7 +107,12 @@
         
         @media (min-width: 1024px) {
             .main-content {
-                margin-left: 288px; /* Default sidebar width */
+                margin-left: 288px;
+            }
+
+            .sidebar-collapsed + .main-content,
+            .main-content.sidebar-collapsed {
+                margin-left: 0;
             }
         }
 
@@ -418,9 +423,9 @@
                 </nav>
             </aside>
 
-            <!-- Floating Sidebar Toggle Button (hidden by default) -->
-            <button id="floatingSidebarToggle" class="fixed top-20 left-2 z-50 bg-gray-800/90 hover:bg-gray-700 text-gray-300 hover:text-white p-2 rounded-lg shadow-lg transition-all hidden backdrop-blur-sm border border-gray-600" title="Show Sidebar">
-                <i class="fas fa-bars text-sm"></i>
+            <!-- Floating Sidebar Toggle Button (appears when collapsed) -->
+            <button id="floatingSidebarToggle" class="fixed top-6 left-6 z-40 hidden">
+                <span class="sr-only">Show navigation</span>
             </button>
 
             <!-- Main Content -->

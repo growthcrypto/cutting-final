@@ -414,7 +414,7 @@ async function loadChattersForInfloww() {
 }
 
 function toggleSidebar() {
-    toggleSidebarState();
+    // No-op retained for legacy bindings
 }
 
 function initializeSidebar() {
@@ -424,36 +424,26 @@ function initializeSidebar() {
     const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
     const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
 
-    if (!sidebar || !mainContent || !sidebarToggle || !sidebarToggleIcon || !floatingSidebarToggle) {
-        return;
-    }
+    if (!sidebar || !mainContent || !sidebarToggle || !sidebarToggleIcon || !floatingSidebarToggle) return;
 
-    function updateLayout(isCollapsed) {
-        const toggleIcon = sidebarToggleIcon.querySelector('i');
+    function setCollapsedState(collapsed) {
+        sidebar.classList.toggle('sidebar-hidden', collapsed);
+        floatingSidebarToggle.classList.toggle('hidden', !collapsed);
+        sidebarToggleIcon.querySelector('i').className = collapsed
+            ? 'fas fa-angle-double-right text-xl'
+            : 'fas fa-angle-double-left text-xl';
 
-        if (isCollapsed) {
-            sidebar.classList.add('sidebar-hidden');
-            floatingSidebarToggle.classList.remove('hidden');
-            mainContent.classList.add('sidebar-collapsed');
-            if (window.innerWidth >= 1024) {
-                mainContent.style.marginLeft = '0';
-            }
-            if (toggleIcon) toggleIcon.className = 'fas fa-angle-double-right text-xl';
+        if (window.innerWidth >= 1024) {
+            mainContent.style.marginLeft = collapsed ? '0' : '288px';
         } else {
-            sidebar.classList.remove('sidebar-hidden');
-            floatingSidebarToggle.classList.add('hidden');
-            mainContent.classList.remove('sidebar-collapsed');
-            if (window.innerWidth >= 1024) {
-                mainContent.style.marginLeft = '288px';
-            }
-            if (toggleIcon) toggleIcon.className = 'fas fa-angle-double-left text-xl';
+            mainContent.style.marginLeft = '';
         }
     }
 
-    function toggleSidebarState(forceState = null) {
-        const isCurrentlyCollapsed = sidebar.classList.contains('sidebar-hidden');
-        const newState = forceState !== null ? forceState : !isCurrentlyCollapsed;
-        updateLayout(newState);
+    function toggleSidebarState(forceState) {
+        const isCollapsed = sidebar.classList.contains('sidebar-hidden');
+        const nextState = typeof forceState === 'boolean' ? forceState : !isCollapsed;
+        setCollapsedState(nextState);
     }
 
     sidebarToggle.addEventListener('click', () => toggleSidebarState());
@@ -462,11 +452,12 @@ function initializeSidebar() {
 
     document.addEventListener('click', (event) => {
         if (window.innerWidth >= 1024) return;
-
         const isClickInsideSidebar = sidebar.contains(event.target);
-        const isClickOnToggle = sidebarToggle.contains(event.target) || sidebarToggleIcon.contains(event.target) || floatingSidebarToggle.contains(event.target);
+        const isClickOnControl = sidebarToggle.contains(event.target)
+            || sidebarToggleIcon.contains(event.target)
+            || floatingSidebarToggle.contains(event.target);
 
-        if (!isClickInsideSidebar && !isClickOnToggle) {
+        if (!isClickInsideSidebar && !isClickOnControl) {
             toggleSidebarState(true);
         }
     });
