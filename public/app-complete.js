@@ -83,6 +83,12 @@ function setupEventListeners() {
 
     // Sidebar toggle
     document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+    
+    // Sidebar close button
+    const sidebarClose = document.getElementById('sidebarClose');
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', closeSidebar);
+    }
 
     // Time interval buttons
     document.querySelectorAll('.time-btn').forEach(btn => {
@@ -425,6 +431,11 @@ function toggleSidebar() {
     sidebar.classList.toggle('sidebar-hidden');
 }
 
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.add('sidebar-hidden');
+}
+
 // Time interval functions
 function setTimeInterval(interval) {
     currentTimeInterval = interval;
@@ -451,7 +462,19 @@ function setTimeInterval(interval) {
 
 function toggleCustomDatePicker() {
     const picker = document.getElementById('customDatePicker');
-    picker.classList.toggle('hidden');
+    if (picker) {
+        picker.classList.toggle('hidden');
+        
+        // Set default dates if not already set
+        if (!document.getElementById('customStartDate').value) {
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 7);
+            
+            document.getElementById('customStartDate').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('customEndDate').value = today.toISOString().split('T')[0];
+        }
+    }
 }
 
 function applyCustomDateRange() {

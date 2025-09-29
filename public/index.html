@@ -147,6 +147,41 @@
             border-radius: 3px;
         }
 
+        .date-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            min-width: 300px;
+            z-index: 50;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .date-picker-dropdown input[type="date"] {
+            background: rgba(55, 65, 81, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #f3f4f6;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .date-picker-dropdown input[type="date"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .date-picker-dropdown input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
             background: rgba(156, 163, 175, 0.7);
         }
@@ -258,24 +293,23 @@
     <div id="mainApp" class="hidden min-h-screen">
         <!-- Header -->
         <header class="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-40">
-            <div class="flex items-center justify-between px-6 py-4">
+            <div class="flex items-center justify-between px-6 py-2">
                 <div class="flex items-center space-x-4">
                     <button id="sidebarToggle" class="lg:hidden text-gray-400 hover:text-white transition">
-                        <i class="fas fa-bars text-xl"></i>
+                        <i class="fas fa-bars text-lg"></i>
                     </button>
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                            <i class="fas fa-chart-line text-white"></i>
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <i class="fas fa-chart-line text-white text-sm"></i>
                         </div>
                         <div>
-                            <h1 class="text-xl font-bold">Agency Analytics Pro</h1>
-                            <p class="text-xs text-gray-400">Performance Intelligence Platform</p>
+                            <h1 class="text-lg font-bold">Agency Analytics Pro</h1>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
                     <span id="userWelcome" class="text-sm text-gray-300"></span>
-                    <button id="logoutBtn" class="text-gray-400 hover:text-white transition">
+                    <button id="logoutBtn" class="p-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 hover:text-red-300 transition-all">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -285,7 +319,13 @@
         <div class="flex h-screen pt-0">
             <!-- Sidebar -->
             <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 lg:relative lg:translate-x-0 pt-20 lg:pt-0">
-                <nav class="p-6 space-y-2">
+                <!-- Sidebar Close Button -->
+                <div class="flex justify-end p-4 lg:hidden">
+                    <button id="sidebarClose" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <nav class="p-6 pt-2 lg:pt-6 space-y-2">
                     <!-- Manager Navigation -->
                     <div id="managerNav" class="space-y-1">
                         <a href="#" onclick="showSection('dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
@@ -531,10 +571,131 @@
                     </div>
                 </div>
 
-                <!-- Other sections will be built next -->
+                <!-- Analytics Section -->
                 <div id="analytics" class="section hidden p-8">
-                    <h2 class="text-2xl font-bold mb-4">Detailed Analytics</h2>
-                    <p class="text-gray-400">Building comprehensive analytics...</p>
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold mb-2">Detailed Analytics</h2>
+                        <p class="text-gray-400">Comprehensive performance metrics and insights</p>
+                    </div>
+                    
+                    <!-- Analytics Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Conversion Rate</p>
+                                    <p class="text-2xl font-bold text-blue-400">14.2%</p>
+                                </div>
+                                <i class="fas fa-percentage text-blue-400 text-2xl"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Revenue/Chatter</p>
+                                    <p class="text-2xl font-bold text-green-400">$3,112</p>
+                                </div>
+                                <i class="fas fa-user-dollar text-green-400 text-2xl"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">PPV Success Rate</p>
+                                    <p class="text-2xl font-bold text-purple-400">67.8%</p>
+                                </div>
+                                <i class="fas fa-unlock text-purple-400 text-2xl"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Avg Response Time</p>
+                                    <p class="text-2xl font-bold text-orange-400">2.8m</p>
+                                </div>
+                                <i class="fas fa-stopwatch text-orange-400 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="chart-container">
+                            <h3 class="text-lg font-semibold mb-4">Revenue Breakdown by Creator</h3>
+                            <canvas id="revenueBreakdownChart" width="400" height="200"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3 class="text-lg font-semibold mb-4">Chatter Performance Comparison</h3>
+                            <canvas id="chatterComparisonChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Tables -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Creator Performance -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Creator Performance</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="border-b border-gray-700">
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Creator</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Revenue</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Subscribers</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-700">
+                                        <tr>
+                                            <td class="px-4 py-3 text-white font-medium">Arya</td>
+                                            <td class="px-4 py-3 text-green-400">$4,850</td>
+                                            <td class="px-4 py-3 text-blue-400">445</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 text-white font-medium">Iris</td>
+                                            <td class="px-4 py-3 text-green-400">$4,200</td>
+                                            <td class="px-4 py-3 text-blue-400">398</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 text-white font-medium">Lilla</td>
+                                            <td class="px-4 py-3 text-green-400">$3,400</td>
+                                            <td class="px-4 py-3 text-blue-400">391</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Top Performing Chatters -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Top Performing Chatters</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm">1</div>
+                                        <span class="text-white font-medium">Sarah M.</span>
+                                    </div>
+                                    <span class="text-green-400 font-bold">$3,240</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-black font-bold text-sm">2</div>
+                                        <span class="text-white font-medium">Alex K.</span>
+                                    </div>
+                                    <span class="text-green-400 font-bold">$2,890</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold text-sm">3</div>
+                                        <span class="text-white font-medium">Jamie L.</span>
+                                    </div>
+                                    <span class="text-green-400 font-bold">$2,650</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
