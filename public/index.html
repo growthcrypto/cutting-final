@@ -172,44 +172,61 @@
             position: absolute;
             top: calc(100% + 0.5rem);
             right: 0;
-            background: #1f2937;
-            border: 1px solid #4b5563;
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.95), rgba(17, 24, 39, 0.95));
+            border: 1px solid rgba(99, 102, 241, 0.35);
             border-radius: 1rem;
             padding: 1.5rem;
-            min-width: 300px;
+            min-width: 320px;
             z-index: 9999;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-            transition: all 0.2s ease;
-        }
-        
-        .custom-date-dropdown.hide {
+            box-shadow: 0 25px 50px -20px rgba(30, 64, 175, 0.35);
+            display: none;
             opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
+            pointer-events: none;
+            transform: translateY(-8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        
-        .date-picker-dropdown input[type="date"] {
-            background: rgba(55, 65, 81, 0.8);
-            border: 1px solid rgba(75, 85, 99, 0.5);
+
+        .custom-date-dropdown.show {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .custom-date-dropdown label {
+            color: #dbeafe;
+            letter-spacing: 0.02em;
+        }
+
+        .custom-date-dropdown input[type="date"] {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(96, 165, 250, 0.35);
             border-radius: 0.75rem;
             padding: 0.75rem 1rem;
-            color: #f3f4f6;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
+            color: #f8fafc;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            appearance: none;
         }
-        
-        .date-picker-dropdown input[type="date"]:focus {
+
+        .custom-date-dropdown input[type="date"]:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+            background: rgba(15, 23, 42, 0.9);
         }
-        
-        .date-picker-dropdown input[type="date"]::-webkit-calendar-picker-indicator {
+
+        .custom-date-dropdown input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
+            opacity: 0.8;
             cursor: pointer;
+        }
+
+        .custom-date-dropdown .actions button {
+            border-radius: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
         }
 
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -430,27 +447,48 @@
                                 30d
                             </button>
                             <div class="date-picker relative">
-                                <button id="customDateBtn" onclick="toggleCustomDatePicker()" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
-                                    <i class="fas fa-calendar mr-1"></i>Custom
+                                <button id="customDateBtn" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 flex items-center gap-2">
+                                    <span class="h-6 w-6 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
+                                        <i class="fas fa-calendar text-blue-400 text-xs"></i>
+                                    </span>
+                                    Custom
                                 </button>
-                                <div id="customDatePicker" class="custom-date-dropdown hide">
-                                    <div class="space-y-4">
+                                <div id="customDatePicker" class="custom-date-dropdown">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-blue-200 tracking-wide uppercase">Custom Date Range</h3>
+                                            <p class="text-xs text-blue-100/70">Select start and end dates to filter analytics</p>
+                                        </div>
+                                        <button class="text-blue-200 hover:text-white transition" id="closeDatePicker" title="Close">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-2">Start Date</label>
-                                            <input type="date" id="customStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                            <input type="date" id="customStartDate">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium mb-2">End Date</label>
-                                            <input type="date" id="customEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                            <input type="date" id="customEndDate">
                                         </div>
-                                        <div class="flex space-x-2">
-                                            <button id="applyCustomRange" onclick="applyCustomDateRange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
-                                                Apply
-                                            </button>
-                                            <button id="cancelCustomRange" onclick="closeCustomDatePicker()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
-                                                Cancel
-                                            </button>
+                                    </div>
+
+                                    <div class="mt-6 flex items-center justify-between text-xs text-blue-100/70 bg-blue-900/30 rounded-lg p-3 border border-blue-500/30">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-info-circle text-blue-300"></i>
+                                            <span>Need more than 30 days? Export full report from analytics page.</span>
                                         </div>
+                                    </div>
+
+                                    <div class="actions mt-6 flex gap-3">
+                                        <button id="applyCustomRange" class="flex-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm shadow-md shadow-blue-900/50">
+                                            Apply Range
+                                        </button>
+                                        <button id="cancelCustomRange" class="flex-1 bg-slate-800 text-blue-100 border border-blue-500/40 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition">
+                                            Cancel
+                                        </button>
                                     </div>
                                 </div>
                             </div>

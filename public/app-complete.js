@@ -84,36 +84,7 @@ function setupEventListeners() {
     // Sidebar toggle
     document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
     
-    // Sidebar toggle buttons
-    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
-    const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
-    
-    if (sidebarToggleIcon) {
-        sidebarToggleIcon.addEventListener('click', toggleSidebarCollapse);
-    }
-    
-    if (floatingSidebarToggle) {
-        floatingSidebarToggle.addEventListener('click', toggleSidebarCollapse);
-    }
-
-    // Click outside sidebar to close (mobile)
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const floatingBtn = document.getElementById('floatingSidebarToggle');
-        
-        if (sidebar && !sidebar.classList.contains('sidebar-hidden')) {
-            // If click is outside sidebar and not on toggle buttons
-            if (!sidebar.contains(event.target) && 
-                !sidebarToggle.contains(event.target) &&
-                !floatingBtn.contains(event.target)) {
-                // Only auto-close on mobile
-                if (window.innerWidth < 1024) {
-                    toggleSidebarCollapse();
-                }
-            }
-        }
-    });
+    initializeSidebar();
 
     // Time interval buttons
     document.querySelectorAll('.time-btn').forEach(btn => {
@@ -127,19 +98,7 @@ function setupEventListeners() {
         });
     });
 
-    // Custom date picker buttons - using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'customDateBtn' || e.target.closest('#customDateBtn') || e.target.parentElement?.id === 'customDateBtn') {
-            e.preventDefault();
-            toggleCustomDatePicker();
-        } else if (e.target.id === 'applyCustomRange' || e.target.closest('#applyCustomRange') || e.target.parentElement?.id === 'applyCustomRange') {
-            e.preventDefault();
-            applyCustomDateRange();
-        } else if (e.target.id === 'cancelCustomRange' || e.target.closest('#cancelCustomRange') || e.target.parentElement?.id === 'cancelCustomRange') {
-            e.preventDefault();
-            closeCustomDatePicker();
-        }
-    });
+    initializeCalendar();
 
     // Daily report form
     const dailyReportForm = document.getElementById('dailyReportForm');
@@ -455,162 +414,215 @@ async function loadChattersForInfloww() {
 }
 
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('sidebar-hidden');
-    }
+    toggleSidebarState();
 }
 
-function toggleSidebarCollapse() {
+function initializeSidebar() {
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('.main-content');
-    const floatingToggle = document.getElementById('floatingSidebarToggle');
-    const toggleIcon = document.querySelector('#sidebarToggleIcon i');
-    
-    if (!sidebar || !mainContent) return;
-    
-    const isCurrentlyHidden = sidebar.classList.contains('sidebar-hidden');
-    
-    if (isCurrentlyHidden) {
-        // Show sidebar
-        sidebar.classList.remove('sidebar-hidden');
-        
-        // Restore default margin on desktop
-        if (window.innerWidth >= 1024) {
-            mainContent.style.marginLeft = '288px';
-        }
-        
-        // Hide floating toggle button
-        if (floatingToggle) {
-            floatingToggle.classList.add('hidden');
-        }
-        
-        // Update icon direction
-        if (toggleIcon) {
-            toggleIcon.className = 'fas fa-angle-double-left text-xl';
-        }
-    } else {
-        // Hide sidebar
-        sidebar.classList.add('sidebar-hidden');
-        
-        // Remove margin to expand content on desktop
-        if (window.innerWidth >= 1024) {
-            mainContent.style.marginLeft = '0';
-        }
-        
-        // Show floating toggle button
-        if (floatingToggle) {
-            floatingToggle.classList.remove('hidden');
-        }
-        
-        // Update icon direction
-        if (toggleIcon) {
-            toggleIcon.className = 'fas fa-angle-double-right text-xl';
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+    const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
+
+    if (!sidebar || !mainContent || !sidebarToggle || !sidebarToggleIcon || !floatingSidebarToggle) {
+        return;
+    }
+
+    function updateLayout(isCollapsed) {
+        const toggleIcon = sidebarToggleIcon.querySelector('i');
+
+        if (isCollapsed) {
+            sidebar.classList.add('sidebar-hidden');
+            floatingSidebarToggle.classList.remove('hidden');
+            mainContent.classList.add('sidebar-collapsed');
+            if (window.innerWidth >= 1024) {
+                mainContent.style.marginLeft = '0';
+            }
+            if (toggleIcon) toggleIcon.className = 'fas fa-angle-double-right text-xl';
+        } else {
+            sidebar.classList.remove('sidebar-hidden');
+            floatingSidebarToggle.classList.add('hidden');
+            mainContent.classList.remove('sidebar-collapsed');
+            if (window.innerWidth >= 1024) {
+                mainContent.style.marginLeft = '288px';
+            }
+            if (toggleIcon) toggleIcon.className = 'fas fa-angle-double-left text-xl';
         }
     }
-}
 
-// Time interval functions
-function setTimeInterval(interval) {
-    currentTimeInterval = interval;
-    customDateRange = null;
+    function toggleSidebarState(forceState = null) {
+        const isCurrentlyCollapsed = sidebar.classList.contains('sidebar-hidden');
+        const newState = forceState !== null ? forceState : !isCurrentlyCollapsed;
+        updateLayout(newState);
+    }
 
-    // Update button states
-    document.querySelectorAll('.time-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-700', 'text-gray-300');
+    sidebarToggle.addEventListener('click', () => toggleSidebarState());
+    sidebarToggleIcon.addEventListener('click', () => toggleSidebarState());
+    floatingSidebarToggle.addEventListener('click', () => toggleSidebarState(false));
+
+    document.addEventListener('click', (event) => {
+        if (window.innerWidth >= 1024) return;
+
+        const isClickInsideSidebar = sidebar.contains(event.target);
+        const isClickOnToggle = sidebarToggle.contains(event.target) || sidebarToggleIcon.contains(event.target) || floatingSidebarToggle.contains(event.target);
+
+        if (!isClickInsideSidebar && !isClickOnToggle) {
+            toggleSidebarState(true);
+        }
     });
 
-    const activeBtn = document.querySelector(`[data-interval="${interval}"]`);
-    if (activeBtn) {
-        activeBtn.classList.remove('bg-gray-700', 'text-gray-300');
-        activeBtn.classList.add('bg-blue-600', 'text-white');
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            toggleSidebarState(false);
+        }
+    });
+
+    toggleSidebarState(window.innerWidth < 1024);
+}
+
+// Time interval + custom calendar
+function setTimeInterval(interval) {
+    currentTimeInterval = interval;
+    const isCustom = interval === 'custom';
+    if (!isCustom) {
+        customDateRange = null;
+        closeCustomDatePicker({ skipReset: true });
     }
 
-    // Reload data with new time interval
-    if (currentUser && currentUser.role === 'manager') {
+    updateTimeIntervalButtons();
+
+    if (currentUser?.role === 'manager') {
         loadDashboardData();
         loadAIRecommendations();
     }
 }
 
+function updateTimeIntervalButtons() {
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        const interval = btn.getAttribute('data-interval');
+        const isActive = interval === currentTimeInterval;
+
+        btn.classList.toggle('bg-blue-600', isActive);
+        btn.classList.toggle('text-white', isActive);
+        btn.classList.toggle('bg-gray-700', !isActive);
+        btn.classList.toggle('text-gray-300', !isActive);
+
+        if (interval === 'custom') {
+            const iconWrapper = btn.querySelector('span');
+            const icon = iconWrapper?.querySelector('i');
+
+            iconWrapper?.classList.toggle('bg-blue-500/20', isActive);
+            iconWrapper?.classList.toggle('border-blue-400', isActive);
+            iconWrapper?.classList.toggle('bg-blue-600/20', !isActive);
+            iconWrapper?.classList.toggle('border-blue-500/40', !isActive);
+            icon?.classList.toggle('text-white', isActive);
+            icon?.classList.toggle('text-blue-300', isActive);
+            icon?.classList.toggle('text-blue-400', !isActive);
+        }
+    });
+}
+
 function toggleCustomDatePicker() {
-    console.log('toggleCustomDatePicker function called'); // Debug
     const picker = document.getElementById('customDatePicker');
-    console.log('Picker element:', picker); // Debug
-    
-    if (picker) {
-        const isHidden = picker.classList.contains('hide');
-        console.log('Is currently hidden:', isHidden); // Debug
-        
-        if (isHidden) {
-            // Show picker
-            picker.classList.remove('hide');
-            picker.style.display = 'block'; // Force display
-            picker.style.visibility = 'visible'; // Force visibility
-            picker.style.opacity = '1'; // Force opacity
-            console.log('Showing picker'); // Debug
-            
-            // Set default dates if not already set
-            const startInput = document.getElementById('customStartDate');
-            const endInput = document.getElementById('customEndDate');
-            
-            if (startInput && endInput && !startInput.value) {
-                const today = new Date();
-                const lastWeek = new Date();
-                lastWeek.setDate(today.getDate() - 7);
-                
-                startInput.value = lastWeek.toISOString().split('T')[0];
-                endInput.value = today.toISOString().split('T')[0];
-                console.log('Set default dates'); // Debug
-            }
-        } else {
-            // Hide picker
-            picker.classList.add('hide');
-            console.log('Hiding picker'); // Debug
+    if (!picker) return;
+
+    const shouldShow = !picker.classList.contains('show');
+
+    if (shouldShow) {
+        reviveCalendarInputs();
+        picker.classList.remove('hide');
+
+        requestAnimationFrame(() => {
+            picker.classList.add('show');
+        });
+
+        const startInput = document.getElementById('customStartDate');
+        const endInput = document.getElementById('customEndDate');
+
+        if (startInput && endInput) {
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+
+            startInput.value ||= lastWeek.toISOString().split('T')[0];
+            endInput.value ||= today.toISOString().split('T')[0];
+            startInput.focus({ preventScroll: true });
         }
     } else {
-        console.log('Picker element not found!'); // Debug
+        closeCustomDatePicker();
     }
 }
 
 function applyCustomDateRange() {
-    const startDate = document.getElementById('customStartDate').value;
-    const endDate = document.getElementById('customEndDate').value;
-    
-    if (startDate && endDate && startDate <= endDate) {
-        customDateRange = { start: startDate, end: endDate };
-        currentTimeInterval = 'custom';
-        
-        // Update custom button to show it's active
-        document.querySelectorAll('.time-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-gray-700', 'text-gray-300');
-        });
-        
-        const customBtn = document.querySelector('[data-interval="custom"]');
-        customBtn.classList.remove('bg-gray-700', 'text-gray-300');
-        customBtn.classList.add('bg-blue-600', 'text-white');
-        
-        closeCustomDatePicker();
-        
-        // Reload data
-        if (currentUser && currentUser.role === 'manager') {
-            loadDashboardData();
-            loadAIRecommendations();
-        }
-        
-        showNotification('Custom date range applied', 'success');
-    } else {
-        showError('Please select valid start and end dates');
+    const picker = document.getElementById('customDatePicker');
+    const startInput = document.getElementById('customStartDate');
+    const endInput = document.getElementById('customEndDate');
+
+    if (!picker || !startInput || !endInput) {
+        showError('Unable to apply custom dates. Please refresh and try again.');
+        return;
+    }
+
+    const startDate = startInput.value;
+    const endDate = endInput.value;
+
+    if (!startDate || !endDate) {
+        showError('Please choose both start and end dates.');
+        return;
+    }
+
+    if (startDate > endDate) {
+        showError('Start date cannot be after end date.');
+        return;
+    }
+
+    customDateRange = { start: startDate, end: endDate };
+    currentTimeInterval = 'custom';
+    updateTimeIntervalButtons();
+    closeCustomDatePicker();
+
+    if (currentUser?.role === 'manager') {
+        loadDashboardData();
+        loadAIRecommendations();
+    }
+
+    showNotification(`Custom range applied: ${formatDateLabel(startDate)} → ${formatDateLabel(endDate)}`, 'success');
+}
+
+function closeCustomDatePicker(options = {}) {
+    const picker = document.getElementById('customDatePicker');
+    if (!picker) return;
+
+    picker.classList.remove('show');
+    picker.classList.add('hide');
+
+    if (!options.skipReset) {
+        const startInput = document.getElementById('customStartDate');
+        const endInput = document.getElementById('customEndDate');
+
+        startInput?.blur();
+        endInput?.blur();
     }
 }
 
-function closeCustomDatePicker() {
-    const picker = document.getElementById('customDatePicker');
-    if (picker) {
-        picker.classList.add('hide');
-    }
+function reviveCalendarInputs() {
+    const startInput = document.getElementById('customStartDate');
+    const endInput = document.getElementById('customEndDate');
+
+    [startInput, endInput].forEach(input => {
+        if (!input) return;
+        const wrapper = input.parentNode;
+        const clone = input.cloneNode(true);
+        wrapper.replaceChild(clone, input);
+    });
+}
+
+function formatDateLabel(dateStr) {
+    return new Date(dateStr).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
 }
 
 // Data loading functions
