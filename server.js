@@ -36,7 +36,7 @@ mongoose.connect(mongoUri, {
 }).then(() => {
   console.log('✅ Connected to MongoDB successfully!');
 }).catch((error) => {
-  console.error('❌ MongoDB connection error:', error);
+  console.error('❌ MongoDB connection error:', error.message);
   console.log('⚠️  App will continue without database connection');
 });
 
