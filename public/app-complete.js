@@ -1170,7 +1170,7 @@ async function loadChattersForAnalysis() {
     }
 }
 
-// Enhanced Agency Analysis
+// Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
     const resultsContainer = document.getElementById('agencyAnalysisResults');
     if (!resultsContainer) return;
@@ -1187,7 +1187,7 @@ async function runAgencyAnalysis() {
         // Simulate API call for comprehensive analysis
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const analysisData = generateComprehensiveAgencyAnalysis();
+        const analysisData = await generateComprehensiveAgencyAnalysis();
         renderAgencyAnalysisResults(analysisData);
         
     } catch (error) {
@@ -3354,33 +3354,15 @@ async function loadChattersForAnalysis() {
     }
 }
 
-async function runAgencyAnalysis() {
-    const resultsContainer = document.getElementById('agencyAnalysisResults');
-    if (!resultsContainer) return;
-
-    showLoading(true);
-    resultsContainer.innerHTML = '<div class="animate-pulse"><div class="h-4 bg-gray-700 rounded w-3/4 mb-2"></div><div class="h-4 bg-gray-700 rounded w-1/2"></div></div>';
-
-    try {
-        // Simulate comprehensive AI analysis with real data
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        const analysis = {
-            overallScore: 78,
-            totalRevenue: 12450,
-            totalSubs: 1234,
-            profileClicks: 8765,
-            conversionRate: 14.1,
-            ppvUnlockRate: 57.2,
-            avgResponseTime: 3.2,
-            weekOverWeekGrowth: 12.5,
+// OLD FUNCTION REMOVED - USING NEW VERSION ABOVE
+/* OLD CODE REMOVED
             insights: [
                 'Revenue trending upward with 12.5% growth this period ($12,450 vs $11,065 previous)',
                 'Click-to-subscription conversion rate is 14.1% (industry avg: 12%)',
                 'Response times averaging 3.2 minutes - competitive but can improve',
                 'PPV unlock rate of 57.2% significantly above industry average (45%)',
                 'Profile clicks increased by 15.2% indicating strong marketing performance',
-                'New subscriber acquisition cost decreased by 8.3% showing efficiency gains'
+                // OLD INSIGHTS REMOVED - NOW USING REAL DATA ANALYSIS
             ],
             weakPoints: [
                 'Response time fluctuation: ranges from 1.8min to 6.4min across chatters',
@@ -3422,11 +3404,7 @@ async function runAgencyAnalysis() {
                     </div>
                 </div>
 
-                <!-- Key Insights -->
-                <div class="bg-gray-800/30 rounded-lg p-4">
-                    <h4 class="font-semibold mb-3 text-blue-400 flex items-center">
-                        <i class="fas fa-chart-line mr-2"></i>Performance Insights
-                    </h4>
+                <!-- REPLACED WITH NEW LAYOUT - THIS OLD CODE IS DISABLED -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         ${analysis.insights.map(insight => 
                             `<div class="text-sm text-gray-300 flex items-start">
