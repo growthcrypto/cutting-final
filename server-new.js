@@ -425,6 +425,28 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint to check users
+app.get('/api/debug/users', checkDatabaseConnection, async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0 });
+    res.json({ 
+      message: 'Users found', 
+      count: users.length, 
+      users: users.map(u => ({ 
+        id: u._id, 
+        username: u.username, 
+        email: u.email, 
+        role: u.role, 
+        chatterName: u.chatterName,
+        isActive: u.isActive,
+        createdAt: u.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // AI Analysis endpoint for comprehensive analysis
 app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
