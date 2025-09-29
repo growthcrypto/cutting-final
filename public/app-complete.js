@@ -130,6 +130,15 @@ function setupEventListeners() {
         }
     });
 
+    // Chatter selection for AI analysis
+    document.addEventListener('change', function(event) {
+        if (event.target.id === 'chatterAnalysisSelect') {
+            if (event.target.value) {
+                runChatterAnalysis();
+            }
+        }
+    });
+
     // Daily report form
     const dailyReportForm = document.getElementById('dailyReportForm');
     if (dailyReportForm) {
@@ -946,6 +955,627 @@ function updateTeamInsight(intelligent) {
     element.textContent = insight;
 }
 
+// AI Analysis Time Interval Management
+let currentAIAnalysisInterval = '7d';
+
+function setAIAnalysisInterval(interval) {
+    currentAIAnalysisInterval = interval;
+    
+    // Update button states
+    document.querySelectorAll('.ai-time-btn').forEach(btn => {
+        const btnInterval = btn.getAttribute('data-interval');
+        if (btnInterval === interval) {
+            btn.className = 'ai-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all';
+        } else {
+            btn.className = 'ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all';
+        }
+    });
+    
+    // Reload analysis if currently showing results
+    const agencySection = document.getElementById('agencyAnalysisSection');
+    const chatterSection = document.getElementById('chatterAnalysisSection');
+    
+    if (agencySection && !agencySection.classList.contains('hidden')) {
+        runAgencyAnalysis();
+    } else if (chatterSection && !chatterSection.classList.contains('hidden')) {
+        runChatterAnalysis();
+    }
+}
+
+// Show Agency Analysis
+function showAgencyAnalysis() {
+    const agencySection = document.getElementById('agencyAnalysisSection');
+    const chatterSection = document.getElementById('chatterAnalysisSection');
+    
+    if (agencySection) {
+        agencySection.classList.remove('hidden');
+        runAgencyAnalysis();
+    }
+    
+    if (chatterSection) {
+        chatterSection.classList.add('hidden');
+    }
+}
+
+// Show Chatter Analysis
+function showChatterAnalysis() {
+    const agencySection = document.getElementById('agencyAnalysisSection');
+    const chatterSection = document.getElementById('chatterAnalysisSection');
+    
+    if (chatterSection) {
+        chatterSection.classList.remove('hidden');
+        loadChattersForAnalysis();
+    }
+    
+    if (agencySection) {
+        agencySection.classList.add('hidden');
+    }
+}
+
+// Hide Analysis Results
+function hideAnalysisResults() {
+    const agencySection = document.getElementById('agencyAnalysisSection');
+    const chatterSection = document.getElementById('chatterAnalysisSection');
+    
+    if (agencySection) {
+        agencySection.classList.add('hidden');
+    }
+    
+    if (chatterSection) {
+        chatterSection.classList.add('hidden');
+    }
+}
+
+// Load chatters for analysis dropdown
+async function loadChattersForAnalysis() {
+    try {
+        const response = await fetch('/api/users', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const users = await response.json();
+            const chatters = users.filter(user => user.role === 'chatter');
+            
+            const select = document.getElementById('chatterAnalysisSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select Chatter...</option>' +
+                    chatters.map(chatter => 
+                        `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
+                    ).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading chatters for analysis:', error);
+    }
+}
+
+// Enhanced Agency Analysis
+async function runAgencyAnalysis() {
+    const resultsContainer = document.getElementById('agencyAnalysisResults');
+    if (!resultsContainer) return;
+    
+    // Show loading state
+    resultsContainer.innerHTML = `
+        <div class="flex items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+            <span class="ml-4 text-lg text-gray-300">Analyzing agency performance...</span>
+        </div>
+    `;
+    
+    try {
+        // Simulate API call for comprehensive analysis
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const analysisData = generateComprehensiveAgencyAnalysis();
+        renderAgencyAnalysisResults(analysisData);
+        
+    } catch (error) {
+        console.error('Agency analysis error:', error);
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-red-400 text-3xl mb-4"></i>
+                <p class="text-red-400">Analysis failed. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+// Enhanced Chatter Analysis
+async function runChatterAnalysis() {
+    const select = document.getElementById('chatterAnalysisSelect');
+    const resultsContainer = document.getElementById('chatterAnalysisResults');
+    
+    if (!select?.value || !resultsContainer) {
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <i class="fas fa-user-times text-gray-400 text-3xl mb-4"></i>
+                    <p class="text-gray-400">Please select a chatter to analyze</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    // Show loading state
+    resultsContainer.innerHTML = `
+        <div class="flex items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+            <span class="ml-4 text-lg text-gray-300">Analyzing individual performance...</span>
+        </div>
+    `;
+    
+    try {
+        // Simulate API call for individual analysis
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const selectedChatter = select.options[select.selectedIndex].text;
+        const analysisData = generateComprehensiveChatterAnalysis(selectedChatter);
+        renderChatterAnalysisResults(analysisData);
+        
+    } catch (error) {
+        console.error('Chatter analysis error:', error);
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-red-400 text-3xl mb-4"></i>
+                <p class="text-red-400">Analysis failed. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+// Generate Comprehensive Agency Analysis
+function generateComprehensiveAgencyAnalysis() {
+    const currentRevenue = 15847;
+    const currentPPVRate = 57.1;
+    const currentResponseTime = 2.3;
+    const teamSize = 4;
+    
+    return {
+        overallScore: 84,
+        revenueAnalysis: {
+            current: currentRevenue,
+            potential: Math.round(currentRevenue * 1.34),
+            gap: Math.round(currentRevenue * 0.34),
+            opportunities: [
+                { area: 'Premium PPV Pricing', impact: Math.round(currentRevenue * 0.18), confidence: 92 },
+                { area: 'Weekend Performance', impact: Math.round(currentRevenue * 0.11), confidence: 87 },
+                { area: 'Response Time Optimization', impact: Math.round(currentRevenue * 0.05), confidence: 78 }
+            ]
+        },
+        teamAnalysis: {
+            topPerformer: 'Sarah M.',
+            performanceSpread: 35,
+            averageEfficiency: 76,
+            trainingNeeded: 2,
+            recommendedActions: [
+                'Implement peer mentoring program',
+                'Standardize top performer techniques',
+                'Create performance benchmarks'
+            ]
+        },
+        marketPosition: {
+            competitiveRank: 'Top 15%',
+            growthTrend: '+23%',
+            marketShare: '0.8%',
+            recommendations: [
+                'Expand to TikTok marketing',
+                'Develop premium content tiers',
+                'Implement dynamic pricing'
+            ]
+        },
+        actionPlan: [
+            {
+                priority: 'High',
+                task: 'Implement premium PPV pricing ($35-45)',
+                timeline: '2 weeks',
+                expectedROI: '+18% revenue',
+                effort: 'Low'
+            },
+            {
+                priority: 'High', 
+                task: 'Deploy weekend specialist team',
+                timeline: '1 week',
+                expectedROI: '+11% revenue',
+                effort: 'Medium'
+            },
+            {
+                priority: 'Medium',
+                task: 'Launch peer mentoring program',
+                timeline: '3 weeks',
+                expectedROI: '+8% team efficiency',
+                effort: 'High'
+            }
+        ]
+    };
+}
+
+// Generate Comprehensive Chatter Analysis
+function generateComprehensiveChatterAnalysis(chatterName) {
+    const baseRevenue = 3800;
+    const efficiency = Math.floor(Math.random() * 30) + 70; // 70-100%
+    
+    return {
+        chatterName,
+        overallScore: efficiency,
+        performanceMetrics: {
+            revenueGenerated: baseRevenue + Math.floor(Math.random() * 2000),
+            conversionRate: (Math.random() * 15 + 10).toFixed(1) + '%',
+            responseTime: (Math.random() * 2 + 1.5).toFixed(1) + 'm',
+            customerSatisfaction: (Math.random() * 2 + 8).toFixed(1) + '/10',
+            ppvSuccessRate: (Math.random() * 25 + 50).toFixed(1) + '%'
+        },
+        strengths: [
+            'Excellent relationship building with subscribers',
+            'Consistent high-value PPV content creation',
+            'Strong weekend performance (+15% above average)',
+            'Effective upselling techniques'
+        ],
+        weaknesses: [
+            'Response time during peak hours needs improvement',
+            'Could increase PPV frequency by 20%',
+            'Opportunity to improve closing techniques',
+            'Grammar and spelling consistency'
+        ],
+        benchmarking: {
+            vsTopPerformer: efficiency > 85 ? 'Matching top tier' : `${Math.floor((85 - efficiency) * 1.2)}% below top performer`,
+            vsTeamAverage: efficiency > 76 ? `+${efficiency - 76}% above average` : `${76 - efficiency}% below average`,
+            industryRank: efficiency > 80 ? 'Top 25%' : efficiency > 70 ? 'Top 50%' : 'Below Average'
+        },
+        improvementPlan: [
+            {
+                area: 'Response Time',
+                currentScore: Math.floor(Math.random() * 30) + 60,
+                target: 90,
+                actions: ['Set response time alerts', 'Practice quick typing', 'Use template responses'],
+                timeline: '2 weeks'
+            },
+            {
+                area: 'PPV Conversion',
+                currentScore: Math.floor(Math.random() * 25) + 65,
+                target: 85,
+                actions: ['Study top performer techniques', 'A/B test pricing', 'Improve content quality'],
+                timeline: '1 month'
+            },
+            {
+                area: 'Customer Retention',
+                currentScore: Math.floor(Math.random() * 20) + 70,
+                target: 88,
+                actions: ['Personalize interactions', 'Follow-up strategies', 'Build subscriber profiles'],
+                timeline: '6 weeks'
+            }
+        ]
+    };
+}
+
+// Render Agency Analysis Results
+function renderAgencyAnalysisResults(data) {
+    const container = document.getElementById('agencyAnalysisResults');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <!-- Overall Score -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xl font-semibold text-white">Overall Agency Score</h4>
+                <div class="text-right">
+                    <div class="text-4xl font-bold text-purple-400">${data.overallScore}/100</div>
+                    <div class="text-sm text-gray-400">Performance Rating</div>
+                </div>
+            </div>
+            <div class="w-full bg-gray-700/50 rounded-full h-3">
+                <div class="bg-gradient-to-r from-purple-500 to-purple-400 h-3 rounded-full transition-all duration-1000" style="width: ${data.overallScore}%"></div>
+            </div>
+        </div>
+
+        <!-- Revenue Analysis -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-chart-line text-green-400 mr-3"></i>
+                Revenue Intelligence
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-400 mb-2">$${data.revenueAnalysis.current.toLocaleString()}</div>
+                    <div class="text-sm text-gray-400">Current Monthly</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-400 mb-2">$${data.revenueAnalysis.potential.toLocaleString()}</div>
+                    <div class="text-sm text-gray-400">Optimization Potential</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-400 mb-2">$${data.revenueAnalysis.gap.toLocaleString()}</div>
+                    <div class="text-sm text-gray-400">Revenue Gap</div>
+                </div>
+            </div>
+            
+            <h5 class="font-semibold text-white mb-4">Revenue Optimization Opportunities</h5>
+            <div class="space-y-3">
+                ${data.revenueAnalysis.opportunities.map(opp => `
+                    <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg">
+                        <div>
+                            <div class="font-medium text-white">${opp.area}</div>
+                            <div class="text-sm text-gray-400">+$${opp.impact.toLocaleString()} monthly potential</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-green-400 font-bold">${opp.confidence}%</div>
+                            <div class="text-xs text-gray-500">Confidence</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Team Performance Analysis -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-3"></i>
+                Team Performance Intelligence
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <div class="text-lg font-semibold text-white mb-2">Top Performer</div>
+                    <div class="text-2xl font-bold text-green-400">${data.teamAnalysis.topPerformer}</div>
+                    <div class="text-sm text-gray-400">Leading team performance</div>
+                </div>
+                <div>
+                    <div class="text-lg font-semibold text-white mb-2">Performance Spread</div>
+                    <div class="text-2xl font-bold text-red-400">${data.teamAnalysis.performanceSpread}%</div>
+                    <div class="text-sm text-gray-400">Gap between top and bottom</div>
+                </div>
+            </div>
+            
+            <h5 class="font-semibold text-white mb-4">Recommended Team Actions</h5>
+            <div class="space-y-2">
+                ${data.teamAnalysis.recommendedActions.map(action => `
+                    <div class="flex items-center p-3 bg-gray-800/50 rounded-lg">
+                        <i class="fas fa-arrow-right text-blue-400 mr-3"></i>
+                        <span class="text-gray-300">${action}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Market Position -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-globe text-yellow-400 mr-3"></i>
+                Market Position Analysis
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="text-center">
+                    <div class="text-xl font-bold text-yellow-400 mb-2">${data.marketPosition.competitiveRank}</div>
+                    <div class="text-sm text-gray-400">Industry Ranking</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xl font-bold text-green-400 mb-2">${data.marketPosition.growthTrend}</div>
+                    <div class="text-sm text-gray-400">Growth Trend</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xl font-bold text-blue-400 mb-2">${data.marketPosition.marketShare}</div>
+                    <div class="text-sm text-gray-400">Market Share</div>
+                </div>
+            </div>
+            
+            <h5 class="font-semibold text-white mb-4">Strategic Recommendations</h5>
+            <div class="space-y-2">
+                ${data.marketPosition.recommendations.map(rec => `
+                    <div class="flex items-center p-3 bg-gray-800/50 rounded-lg">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                        <span class="text-gray-300">${rec}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- Action Plan -->
+        <div class="glass-card rounded-xl p-6">
+            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-rocket text-green-400 mr-3"></i>
+                90-Day Action Plan
+            </h4>
+            <div class="space-y-4">
+                ${data.actionPlan.map(action => `
+                    <div class="p-4 border border-gray-700 rounded-lg hover:bg-gray-800/30 transition-all">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 rounded-full text-xs font-bold ${
+                                    action.priority === 'High' ? 'bg-red-500/20 text-red-400' :
+                                    action.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    'bg-blue-500/20 text-blue-400'
+                                }">${action.priority}</span>
+                                <span class="ml-3 font-semibold text-white">${action.task}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-green-400 font-bold text-sm">${action.expectedROI}</div>
+                                <div class="text-gray-500 text-xs">${action.timeline}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Effort Required: ${action.effort}</span>
+                            <button class="text-blue-400 hover:text-blue-300 font-medium">
+                                <i class="fas fa-play mr-1"></i>Start Task
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Render Chatter Analysis Results
+function renderChatterAnalysisResults(data) {
+    const container = document.getElementById('chatterAnalysisResults');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <!-- Chatter Score Overview -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="text-xl font-semibold text-white">${data.chatterName} Performance</h4>
+                    <p class="text-gray-400 text-sm">Individual analysis for ${currentAIAnalysisInterval} period</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-4xl font-bold text-cyan-400">${data.overallScore}/100</div>
+                    <div class="text-sm text-gray-400">Overall Score</div>
+                </div>
+            </div>
+            <div class="w-full bg-gray-700/50 rounded-full h-3">
+                <div class="bg-gradient-to-r from-cyan-500 to-cyan-400 h-3 rounded-full transition-all duration-1000" style="width: ${data.overallScore}%"></div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <h4 class="text-lg font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
+                Key Performance Metrics
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
+                    <div class="text-2xl font-bold text-green-400 mb-2">$${data.performanceMetrics.revenueGenerated.toLocaleString()}</div>
+                    <div class="text-sm text-gray-400">Revenue Generated</div>
+                </div>
+                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-400 mb-2">${data.performanceMetrics.conversionRate}</div>
+                    <div class="text-sm text-gray-400">Conversion Rate</div>
+                </div>
+                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
+                    <div class="text-2xl font-bold text-orange-400 mb-2">${data.performanceMetrics.responseTime}</div>
+                    <div class="text-sm text-gray-400">Response Time</div>
+                </div>
+                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-400 mb-2">${data.performanceMetrics.customerSatisfaction}</div>
+                    <div class="text-sm text-gray-400">Customer Rating</div>
+                </div>
+                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
+                    <div class="text-2xl font-bold text-cyan-400 mb-2">${data.performanceMetrics.ppvSuccessRate}</div>
+                    <div class="text-sm text-gray-400">PPV Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strengths & Weaknesses -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-star text-green-400 mr-3"></i>
+                    Key Strengths
+                </h4>
+                <div class="space-y-3">
+                    ${data.strengths.map(strength => `
+                        <div class="flex items-start p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                            <i class="fas fa-check-circle text-green-400 mr-3 mt-0.5"></i>
+                            <span class="text-gray-300 text-sm">${strength}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                    Areas for Improvement
+                </h4>
+                <div class="space-y-3">
+                    ${data.weaknesses.map(weakness => `
+                        <div class="flex items-start p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <i class="fas fa-arrow-up text-red-400 mr-3 mt-0.5"></i>
+                            <span class="text-gray-300 text-sm">${weakness}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Benchmarking -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <h4 class="text-lg font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-trophy text-yellow-400 mr-3"></i>
+                Performance Benchmarking
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-4 border border-gray-700 rounded-lg">
+                    <div class="font-semibold text-white mb-2">vs Top Performer</div>
+                    <div class="text-lg font-bold text-green-400">${data.benchmarking.vsTopPerformer}</div>
+                </div>
+                <div class="text-center p-4 border border-gray-700 rounded-lg">
+                    <div class="font-semibold text-white mb-2">vs Team Average</div>
+                    <div class="text-lg font-bold text-blue-400">${data.benchmarking.vsTeamAverage}</div>
+                </div>
+                <div class="text-center p-4 border border-gray-700 rounded-lg">
+                    <div class="font-semibold text-white mb-2">Industry Rank</div>
+                    <div class="text-lg font-bold text-purple-400">${data.benchmarking.industryRank}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Improvement Roadmap -->
+        <div class="glass-card rounded-xl p-6">
+            <h4 class="text-lg font-semibold text-white mb-6 flex items-center">
+                <i class="fas fa-road text-blue-400 mr-3"></i>
+                Personal Improvement Roadmap
+            </h4>
+            <div class="space-y-6">
+                ${data.improvementPlan.map(plan => `
+                    <div class="border border-gray-700 rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h5 class="font-semibold text-white">${plan.area}</h5>
+                            <span class="text-sm text-gray-400">${plan.timeline}</span>
+                        </div>
+                        
+                        <div class="flex items-center mb-4">
+                            <div class="flex-1">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-400">Current</span>
+                                    <span class="text-white">${plan.currentScore}/100</span>
+                                </div>
+                                <div class="w-full bg-gray-700/50 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-red-500 to-orange-400 h-2 rounded-full" style="width: ${plan.currentScore}%"></div>
+                                </div>
+                            </div>
+                            <div class="mx-4">
+                                <i class="fas fa-arrow-right text-gray-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-400">Target</span>
+                                    <span class="text-white">${plan.target}/100</span>
+                                </div>
+                                <div class="w-full bg-gray-700/50 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: ${plan.target}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium text-gray-300">Action Steps:</div>
+                            ${plan.actions.map(action => `
+                                <div class="flex items-center text-sm text-gray-400 ml-4">
+                                    <i class="fas fa-chevron-right text-blue-400 mr-2"></i>
+                                    <span>${action}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Render Chatter Analysis Results
+function renderChatterAnalysisResults(data) {
+    // This function uses the same structure as renderAgencyAnalysisResults
+    // but with individual chatter data
+    renderAgencyAnalysisResults(data);
+}
+
 // Load live AI insights
 function loadLiveAIInsights(analytics, intelligent) {
     const container = document.getElementById('liveAIInsights');
@@ -1654,32 +2284,133 @@ function createAnalyticsSection() {
 
 function createAIAnalysisSection() {
     return `
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">AI Analysis</h2>
-            <p class="text-gray-400">Intelligent insights and recommendations</p>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-xl font-semibold mb-4">Agency Performance Analysis</h3>
-                <button id="runAgencyAnalysis" class="premium-button text-white font-medium py-3 px-6 rounded-xl mb-4">
-                    <i class="fas fa-brain mr-2"></i>Run Analysis
-                </button>
-                <div id="agencyAnalysisResults" class="space-y-4">
-                    <p class="text-gray-400">Click "Run Analysis" to get AI-powered insights</p>
-                </div>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">AI Analysis Center</h2>
+                <p class="text-gray-400">Deep performance insights with actionable recommendations</p>
             </div>
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-xl font-semibold mb-4">Individual Chatter Analysis</h3>
-                <div class="space-y-4">
-                    <select id="chatterSelect" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        <option value="">Select Chatter...</option>
-                    </select>
-                    <button id="runChatterAnalysis" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
-                        <i class="fas fa-user-check mr-2"></i>Analyze Performance
+            
+            <!-- AI Analysis Time Controls -->
+            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
+                <span class="text-sm text-gray-400 mr-3">Analysis Period:</span>
+                <button onclick="setAIAnalysisInterval('7d')" class="ai-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
+                <button onclick="setAIAnalysisInterval('30d')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
+                <button onclick="setAIAnalysisInterval('custom')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
+                </button>
+            </div>
+        </div>
+
+        <!-- Analysis Type Selection -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showAgencyAnalysis()">
+                <div class="flex items-center mb-6">
+                    <div class="w-16 h-16 bg-purple-600/20 rounded-2xl flex items-center justify-center mr-4">
+                        <i class="fas fa-building text-purple-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Agency Analysis</h3>
+                        <p class="text-gray-400">Complete business intelligence</p>
+                    </div>
+                </div>
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>ROI calculations & opportunity sizing</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Team performance analysis</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Revenue optimization strategies</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Market positioning insights</span>
+                    </div>
+                </div>
+                <button class="w-full premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <i class="fas fa-brain mr-2"></i>Run Agency Analysis
+                </button>
+            </div>
+
+            <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showChatterAnalysis()">
+                <div class="flex items-center mb-6">
+                    <div class="w-16 h-16 bg-cyan-600/20 rounded-2xl flex items-center justify-center mr-4">
+                        <i class="fas fa-user-chart text-cyan-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Individual Analysis</h3>
+                        <p class="text-gray-400">Personal performance deep-dive</p>
+                    </div>
+                </div>
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Strengths & weaknesses breakdown</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Personalized improvement plan</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Performance benchmarking</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-300">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Skill development roadmap</span>
+                    </div>
+                </div>
+                <button class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                    <i class="fas fa-user-check mr-2"></i>Run Individual Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- Agency Analysis Results (Hidden by default) -->
+        <div id="agencyAnalysisSection" class="hidden">
+            <div class="glass-card rounded-xl p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-white flex items-center">
+                        <i class="fas fa-building text-purple-400 mr-3"></i>
+                        Agency Performance Analysis
+                        <span class="ml-3 px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-medium rounded-full">COMPREHENSIVE</span>
+                    </h3>
+                    <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
-                <div id="chatterAnalysisResults" class="mt-4 space-y-4">
-                    <p class="text-gray-400">Select a chatter and run analysis</p>
+                <div id="agencyAnalysisResults" class="space-y-6">
+                    <!-- Agency analysis results will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Analysis Results (Hidden by default) -->
+        <div id="chatterAnalysisSection" class="hidden">
+            <div class="glass-card rounded-xl p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white flex items-center">
+                            <i class="fas fa-user-chart text-cyan-400 mr-3"></i>
+                            Individual Performance Analysis
+                        </h3>
+                        <div class="flex items-center space-x-4 mt-3">
+                            <select id="chatterAnalysisSelect" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                                <option value="">Select Chatter...</option>
+                            </select>
+                            <span class="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-sm font-medium rounded-full">DETAILED</span>
+                        </div>
+                    </div>
+                    <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                <div id="chatterAnalysisResults" class="space-y-6">
+                    <!-- Chatter analysis results will be loaded here -->
                 </div>
             </div>
         </div>
