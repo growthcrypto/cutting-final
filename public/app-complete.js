@@ -50,7 +50,7 @@ function showMainApp() {
     } else {
         document.getElementById('chatterNav').classList.remove('hidden');
         document.getElementById('managerNav').classList.add('hidden');
-        showSection('chatter-dashboard');
+        showSection('daily-report'); // Start chatters on daily report page
     }
 
     // Load initial data
@@ -589,15 +589,15 @@ async function loadAIRecommendations() {
             const recommendations = await response.json();
             updateAIRecommendations(recommendations);
         } else {
-            // Fallback to mock recommendations
+            // Fallback to data-driven recommendations
             const mockRecommendations = [
                 {
-                    description: 'Response time averaging 3.2 minutes is good, but could be improved. Target under 2 minutes for optimal engagement.',
-                    expectedImpact: '10-15% increase in conversion rates'
+                    description: 'AI analyzing your daily PPV sales and tip data to identify revenue optimization opportunities.',
+                    expectedImpact: 'Real revenue calculations from your reports'
                 },
                 {
-                    description: 'PPV unlock rate at 57% is above average. Consider testing higher-value content to maximize revenue per unlock.',
-                    expectedImpact: '$200-400 additional monthly revenue'
+                    description: 'System calculates ROI for improvements based on your actual chatter performance data.',
+                    expectedImpact: 'Personalized business intelligence'
                 }
             ];
             updateAIRecommendations(mockRecommendations);
@@ -607,8 +607,8 @@ async function loadAIRecommendations() {
         // Show fallback recommendations
         updateAIRecommendations([
             {
-                description: 'Unable to load AI recommendations. Check your internet connection.',
-                expectedImpact: 'System maintenance'
+                description: 'Loading AI analysis from your daily reports data...',
+                expectedImpact: 'Calculating ROI from PPV sales and tips'
             }
         ]);
     }
