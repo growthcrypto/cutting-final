@@ -1011,29 +1011,85 @@ function setAnalyticsInterval(interval) {
 }
 
 function showCustomDatePicker(context) {
-    // For now, just show a simple prompt - can be enhanced later
-    const startDate = prompt('Enter start date (YYYY-MM-DD):');
-    const endDate = prompt('Enter end date (YYYY-MM-DD):');
-    
-    if (startDate && endDate) {
-        if (context === 'ai-analysis') {
-            currentAIAnalysisInterval = 'custom';
-            // Reload analysis
-            const agencySection = document.getElementById('agencyAnalysisSection');
-            const chatterSection = document.getElementById('chatterAnalysisSection');
+    // Create a proper custom date picker modal
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="glass-card rounded-xl p-8 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-white">Select Date Range</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             
-            if (agencySection && !agencySection.classList.contains('hidden')) {
-                runAgencyAnalysis();
-            } else if (chatterSection && !chatterSection.classList.contains('hidden')) {
-                runChatterAnalysis();
-            }
-        } else if (context === 'analytics') {
-            currentAnalyticsInterval = 'custom';
-            loadAnalyticsData();
-        }
-        
-        showNotification(`Custom range applied: ${startDate} to ${endDate}`, 'success');
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">Start Date</label>
+                    <input type="date" id="modalStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-gray-300">End Date</label>
+                    <input type="date" id="modalEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                </div>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="applyCustomDateRange('${context}')" class="flex-1 premium-button text-white px-4 py-2 rounded-lg">
+                    Apply Range
+                </button>
+                <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Set default dates
+    document.body.appendChild(modal);
+    
+    const today = new Date();
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7);
+    
+    document.getElementById('modalStartDate').value = lastWeek.toISOString().split('T')[0];
+    document.getElementById('modalEndDate').value = today.toISOString().split('T')[0];
+}
+
+function applyCustomDateRange(context) {
+    const startDate = document.getElementById('modalStartDate').value;
+    const endDate = document.getElementById('modalEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
     }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date cannot be after end date');
+        return;
+    }
+    
+    if (context === 'ai-analysis') {
+        currentAIAnalysisInterval = 'custom';
+        // Reload analysis
+        const agencySection = document.getElementById('agencyAnalysisSection');
+        const chatterSection = document.getElementById('chatterAnalysisSection');
+        
+        if (agencySection && !agencySection.classList.contains('hidden')) {
+            runAgencyAnalysis();
+        } else if (chatterSection && !chatterSection.classList.contains('hidden')) {
+            runChatterAnalysis();
+        }
+    } else if (context === 'analytics') {
+        currentAnalyticsInterval = 'custom';
+        loadAnalyticsData();
+    }
+    
+    // Close modal
+    document.querySelector('.fixed.inset-0').remove();
+    
+    showNotification(`Custom range applied: ${startDate} to ${endDate}`, 'success');
 }
 
 // Show Agency Analysis
@@ -1474,32 +1530,35 @@ function renderAgencyAnalysisResults(data) {
         </div>
 
         <!-- Team Performance Analysis -->
-        <div class="glass-card rounded-xl p-6 mb-6">
-            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
-                <i class="fas fa-users text-cyan-400 mr-3"></i>
+        <div class="glass-card rounded-xl p-8 mb-10">
+            <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-4"></i>
                 Team Performance Intelligence
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <div class="text-lg font-semibold text-white mb-2">Top Performer</div>
-                    <div class="text-2xl font-bold text-green-400">${data.teamAnalysis.topPerformer}</div>
-                    <div class="text-sm text-gray-400">Leading team performance</div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
+                    <div class="text-lg font-semibold text-white mb-3">Top Performer</div>
+                    <div class="text-3xl font-bold text-green-400 mb-2">${data.teamAnalysis.topPerformer}</div>
+                    <div class="text-gray-400">Leading team performance</div>
                 </div>
-                <div>
-                    <div class="text-lg font-semibold text-white mb-2">Performance Spread</div>
-                    <div class="text-2xl font-bold text-red-400">${data.teamAnalysis.performanceSpread}%</div>
-                    <div class="text-sm text-gray-400">Gap between top and bottom</div>
+                <div class="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
+                    <div class="text-lg font-semibold text-white mb-3">Performance Spread</div>
+                    <div class="text-3xl font-bold text-red-400 mb-2">${data.teamAnalysis.performanceSpread}%</div>
+                    <div class="text-gray-400">Gap between top and bottom performers</div>
                 </div>
             </div>
             
-            <h5 class="font-semibold text-white mb-4">Recommended Team Actions</h5>
-            <div class="space-y-2">
-                ${data.teamAnalysis.recommendedActions.map(action => `
-                    <div class="flex items-center p-3 bg-gray-800/50 rounded-lg">
-                        <i class="fas fa-arrow-right text-blue-400 mr-3"></i>
-                        <span class="text-gray-300">${action}</span>
-                    </div>
-                `).join('')}
+            <div class="border-t border-gray-700 pt-8">
+                <h5 class="text-lg font-semibold text-white mb-6">Recommended Team Actions</h5>
+                <div class="space-y-4">
+                    ${data.teamAnalysis.recommendedActions.map(action => `
+                        <div class="flex items-center p-5 bg-gray-800/50 rounded-xl border border-gray-700 hover:bg-gray-700/30 transition-all">
+                            <i class="fas fa-arrow-right text-blue-400 mr-4"></i>
+                            <span class="text-gray-300 text-lg">${action}</span>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
 
@@ -1536,32 +1595,39 @@ function renderAgencyAnalysisResults(data) {
         </div>
 
         <!-- Action Plan -->
-        <div class="glass-card rounded-xl p-6">
-            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
-                <i class="fas fa-rocket text-green-400 mr-3"></i>
-                90-Day Action Plan
+        <div class="glass-card rounded-xl p-8 mb-8">
+            <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
+                <i class="fas fa-rocket text-green-400 mr-4"></i>
+                90-Day Strategic Action Plan
             </h4>
-            <div class="space-y-4">
-                ${data.actionPlan.map(action => `
-                    <div class="p-4 border border-gray-700 rounded-lg hover:bg-gray-800/30 transition-all">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center">
-                                <span class="px-2 py-1 rounded-full text-xs font-bold ${
-                                    action.priority === 'High' ? 'bg-red-500/20 text-red-400' :
-                                    action.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-blue-500/20 text-blue-400'
-                                }">${action.priority}</span>
-                                <span class="ml-3 font-semibold text-white">${action.task}</span>
+            <div class="space-y-6">
+                ${data.actionPlan.map((action, index) => `
+                    <div class="p-6 border border-gray-600 rounded-xl hover:bg-gray-800/30 transition-all">
+                        <div class="flex items-start justify-between mb-5">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4 mt-1">
+                                    ${index + 1}
+                                </div>
+                                <div>
+                                    <div class="flex items-center mb-2">
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold ${
+                                            action.priority === 'High' ? 'bg-red-500/20 text-red-400' :
+                                            action.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                            'bg-blue-500/20 text-blue-400'
+                                        }">${action.priority} Priority</span>
+                                    </div>
+                                    <div class="text-lg font-semibold text-white mb-2">${action.task}</div>
+                                    <div class="text-gray-400">Effort Required: ${action.effort}</div>
+                                </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-green-400 font-bold text-sm">${action.expectedROI}</div>
-                                <div class="text-gray-500 text-xs">${action.timeline}</div>
+                                <div class="text-xl font-bold text-green-400 mb-1">${action.expectedROI}</div>
+                                <div class="text-gray-400 text-sm">${action.timeline}</div>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-400">Effort Required: ${action.effort}</span>
-                            <button class="text-blue-400 hover:text-blue-300 font-medium">
-                                <i class="fas fa-play mr-1"></i>Start Task
+                        <div class="flex justify-end">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all">
+                                <i class="fas fa-play mr-2"></i>Start Implementation
                             </button>
                         </div>
                     </div>
@@ -2293,19 +2359,19 @@ function createAnalyticsSection() {
                 Intelligent Combined Metrics
                 <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">SMART</span>
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="glass-card rounded-xl p-8">
+                    <div class="flex items-center justify-between mb-6">
                         <div>
-                            <p class="text-gray-400 text-sm">Click-to-Subscriber Rate</p>
+                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Percentage of profile clicks that convert to paying subscribers">Click-to-Subscriber Rate</p>
                             <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">2.6%</p>
                         </div>
                         <i class="fas fa-funnel-dollar text-yellow-400 text-2xl"></i>
                     </div>
-                    <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
-                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-2 rounded-full" style="width: 26%"></div>
+                    <div class="w-full bg-gray-700/50 rounded-full h-3 mb-3">
+                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-3 rounded-full" style="width: 26%"></div>
                     </div>
-                    <div class="text-xs text-gray-500">Profile clicks → subscribers conversion</div>
+                    <div class="text-sm text-gray-400">Profile clicks → subscribers conversion</div>
                 </div>
                 
                 <div class="glass-card rounded-xl p-6">
