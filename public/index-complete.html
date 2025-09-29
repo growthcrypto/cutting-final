@@ -150,6 +150,29 @@
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
             background: rgba(156, 163, 175, 0.7);
         }
+
+        /* Custom Date Picker Styles */
+        .date-picker {
+            position: relative;
+        }
+
+        .date-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            z-index: 1000;
+        }
+
+        .nav-link.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6 !important;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
@@ -287,8 +310,8 @@
             <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 lg:relative lg:translate-x-0 pt-20 lg:pt-0">
                 <nav class="p-6 space-y-2">
                     <!-- Manager Navigation -->
-                    <div id="managerNav" class="space-y-1">
-                        <a href="#" onclick="showSection('dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
+                    <div id="managerNav" class="space-y-1 hidden">
+                        <a href="#" onclick="showSection('dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all active">
                             <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>Dashboard
                         </a>
                         <a href="#" onclick="showSection('analytics')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
@@ -314,7 +337,7 @@
                     </div>
 
                     <!-- Chatter Navigation -->
-                    <div id="chatterNav" class="space-y-1">
+                    <div id="chatterNav" class="space-y-1 hidden">
                         <a href="#" onclick="showSection('chatter-dashboard')" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all">
                             <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>My Dashboard
                         </a>
@@ -345,18 +368,40 @@
                         <!-- Time Interval Controls -->
                         <div class="flex items-center space-x-2 mt-4 lg:mt-0">
                             <span class="text-sm text-gray-400 mr-3">Time Period:</span>
-                            <button onclick="setTimeInterval('24h')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">
+                            <button onclick="setTimeInterval('24h')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="24h">
                                 24h
                             </button>
-                            <button onclick="setTimeInterval('7d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">
+                            <button onclick="setTimeInterval('7d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white" data-interval="7d">
                                 7d
                             </button>
-                            <button onclick="setTimeInterval('30d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">
+                            <button onclick="setTimeInterval('30d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="30d">
                                 30d
                             </button>
-                            <button onclick="setTimeInterval('custom')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                                <i class="fas fa-calendar mr-1"></i>Custom
-                            </button>
+                            <div class="date-picker relative">
+                                <button onclick="toggleCustomDatePicker()" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
+                                    <i class="fas fa-calendar mr-1"></i>Custom
+                                </button>
+                                <div id="customDatePicker" class="date-picker-dropdown hidden">
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Start Date</label>
+                                            <input type="date" id="customStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">End Date</label>
+                                            <input type="date" id="customEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button onclick="applyCustomDateRange()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                                Apply
+                                            </button>
+                                            <button onclick="closeCustomDatePicker()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -509,11 +554,9 @@
                     </div>
                 </div>
 
-                <!-- Other sections will be built next -->
-                <div id="analytics" class="section hidden p-8">
-                    <h2 class="text-2xl font-bold mb-4">Detailed Analytics</h2>
-                    <p class="text-gray-400">Building comprehensive analytics...</p>
-                </div>
+                <!-- All other sections... (Analytics, AI Analysis, Data Upload, etc.) -->
+                <!-- Content will be dynamically loaded -->
+                
             </main>
         </div>
     </div>
