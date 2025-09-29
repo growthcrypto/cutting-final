@@ -360,7 +360,7 @@ app.get('/api/daily-reports', authenticateToken, async (req, res) => {
 
 // Serve static files
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index-new.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Check for required environment variables
