@@ -221,6 +221,26 @@ function setDefaultDate() {
     }
 }
 
+function setDefaultDateRanges() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Set default date ranges for data upload forms
+    const ofStartDate = document.getElementById('ofAccountStartDate');
+    const ofEndDate = document.getElementById('ofAccountEndDate');
+    const chatterStartDate = document.getElementById('chatterDataStartDate');
+    const chatterEndDate = document.getElementById('chatterDataEndDate');
+    
+    if (ofStartDate && ofEndDate) {
+        ofStartDate.value = today;
+        ofEndDate.value = today;
+    }
+    
+    if (chatterStartDate && chatterEndDate) {
+        chatterStartDate.value = today;
+        chatterEndDate.value = today;
+    }
+}
+
 function showLoginForm() {
     document.getElementById('loginForm').classList.remove('hidden');
     document.getElementById('createAccountForm').classList.add('hidden');
@@ -424,6 +444,7 @@ function loadSectionData(sectionId) {
             break;
         case 'data-upload':
             loadChattersForInfloww();
+            setDefaultDateRanges();
             break;
         case 'my-performance':
             loadMyPerformanceData();
@@ -3152,10 +3173,18 @@ function createDataUploadSection() {
             <form id="ofAccountDataForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Date</label>
-                        <input type="date" id="ofAccountDate" required
+                        <label class="block text-sm font-medium mb-2">Start Date</label>
+                        <input type="date" id="ofAccountStartDate" required
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">End Date</label>
+                        <input type="date" id="ofAccountEndDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">Creator Account</label>
                         <select id="ofAccountCreator" required
@@ -3165,6 +3194,16 @@ function createDataUploadSection() {
                               <option value="iris">Iris</option>
                               <option value="lilla">Lilla</option>
                           </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Data Period</label>
+                        <select id="ofAccountPeriod" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Period...</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
                     </div>
                 </div>
 
@@ -3212,16 +3251,34 @@ function createDataUploadSection() {
             <form id="chatterDataForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Date</label>
-                        <input type="date" id="chatterDataDate" required
+                        <label class="block text-sm font-medium mb-2">Start Date</label>
+                        <input type="date" id="chatterDataStartDate" required
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">End Date</label>
+                        <input type="date" id="chatterDataEndDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">Chatter Name</label>
                         <select id="chatterDataChatter" required
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                             <option value="">Select Chatter...</option>
                             <!-- Chatters will be loaded dynamically from created accounts -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Data Period</label>
+                        <select id="chatterDataPeriod" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Period...</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
                         </select>
                     </div>
                 </div>
@@ -3960,18 +4017,20 @@ async function runChatterAnalysis() {
 // Form handlers
 async function handleOFAccountDataSubmit(event) {
     const formData = {
-        date: document.getElementById('ofAccountDate').value,
+        startDate: document.getElementById('ofAccountStartDate').value,
+        endDate: document.getElementById('ofAccountEndDate').value,
+        period: document.getElementById('ofAccountPeriod').value,
         creator: document.getElementById('ofAccountCreator').value,
-        netRevenue: parseFloat(document.getElementById('ofNetRevenue').value) || 0,
-        recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
-        totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
-        newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
-        profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
+        netRevenue: parseFloat(document.getElementById('ofAccountNetRevenue').value) || 0,
+        recurringRevenue: parseFloat(document.getElementById('ofAccountRecurringRevenue').value) || 0,
+        totalSubs: parseInt(document.getElementById('ofAccountTotalSubs').value) || 0,
+        newSubs: parseInt(document.getElementById('ofAccountNewSubs').value) || 0,
+        profileClicks: parseInt(document.getElementById('ofAccountProfileClicks').value) || 0,
         dataType: 'of_account'
     };
 
-    if (!formData.date || !formData.creator) {
-        showError('Please fill in Date and Creator Account fields');
+    if (!formData.startDate || !formData.endDate || !formData.period || !formData.creator) {
+        showError('Please fill in all required fields: Start Date, End Date, Period, and Creator Account');
         return;
     }
 
@@ -4008,7 +4067,9 @@ async function handleOFAccountDataSubmit(event) {
 
 async function handleChatterDataSubmit(event) {
     const formData = {
-        date: document.getElementById('chatterDataDate').value,
+        startDate: document.getElementById('chatterDataStartDate').value,
+        endDate: document.getElementById('chatterDataEndDate').value,
+        period: document.getElementById('chatterDataPeriod').value,
         chatter: document.getElementById('chatterDataChatter').value,
         messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
         ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
@@ -4018,8 +4079,8 @@ async function handleChatterDataSubmit(event) {
         dataType: 'chatter'
     };
 
-    if (!formData.date || !formData.chatter) {
-        showError('Please fill in Date and Chatter fields');
+    if (!formData.startDate || !formData.endDate || !formData.period || !formData.chatter) {
+        showError('Please fill in all required fields: Start Date, End Date, Period, and Chatter Name');
         return;
     }
 
