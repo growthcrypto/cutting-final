@@ -1384,6 +1384,8 @@ async function runAgencyAnalysis() {
             requestBody.endDate = window.customDateRange.end;
         }
 
+        console.log('Sending AI analysis request:', requestBody);
+        
         const response = await fetch('/api/ai/analysis', {
             method: 'POST',
             headers: {
@@ -1393,8 +1395,12 @@ async function runAgencyAnalysis() {
             body: JSON.stringify(requestBody)
         });
 
+        console.log('AI analysis response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error('Failed to get AI analysis');
+            const errorText = await response.text();
+            console.error('AI analysis error response:', errorText);
+            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
         }
 
         const analysis = await response.json();
@@ -1569,6 +1575,8 @@ async function runChatterAnalysis() {
             requestBody.endDate = window.customDateRange.end;
         }
 
+        console.log('Sending AI analysis request:', requestBody);
+        
         const response = await fetch('/api/ai/analysis', {
             method: 'POST',
             headers: {
@@ -1578,8 +1586,12 @@ async function runChatterAnalysis() {
             body: JSON.stringify(requestBody)
         });
 
+        console.log('AI analysis response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error('Failed to get AI analysis');
+            const errorText = await response.text();
+            console.error('AI analysis error response:', errorText);
+            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
         }
 
         const analysisData = await response.json();
