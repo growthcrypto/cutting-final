@@ -363,10 +363,17 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index-new.html'));
 });
 
+// Check for required environment variables
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET not set - using default (not secure for production)');
+}
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 OnlyFans Agency Analytics System running on port ${PORT}`);
+  console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);
   console.log(`🌐 Visit: http://localhost:${PORT}`);
+  console.log(`📊 New system deployed successfully!`);
+  console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
 });
 
 // Handle errors
