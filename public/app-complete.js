@@ -1538,32 +1538,34 @@ function renderAgencyAnalysisResults(data) {
         </div>
 
         <!-- Team Performance Analysis -->
-        <div class="glass-card rounded-xl p-8 mb-10">
-            <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
-                <i class="fas fa-users text-cyan-400 mr-4"></i>
+        <div class="glass-card rounded-xl p-10 mb-12">
+            <h4 class="text-3xl font-semibold text-white mb-10 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-5"></i>
                 Team Performance Intelligence
             </h4>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                    <div class="text-lg font-semibold text-white mb-3">Top Performer</div>
-                    <div class="text-3xl font-bold text-green-400 mb-2">${data.teamAnalysis.topPerformer}</div>
-                    <div class="text-gray-400">Leading team performance</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+                <div class="p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-xl font-semibold text-white mb-4">Top Performer</div>
+                    <div class="text-4xl font-bold text-green-400 mb-4">${data.teamAnalysis.topPerformer}</div>
+                    <div class="text-gray-400 text-lg">Leading team performance</div>
                 </div>
-                <div class="p-6 bg-gray-800/30 rounded-xl border border-gray-700">
-                    <div class="text-lg font-semibold text-white mb-3">Performance Spread</div>
-                    <div class="text-3xl font-bold text-red-400 mb-2">${data.teamAnalysis.performanceSpread}%</div>
-                    <div class="text-gray-400">Gap between top and bottom performers</div>
+                <div class="p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-xl font-semibold text-white mb-4">Performance Spread</div>
+                    <div class="text-4xl font-bold text-red-400 mb-4">${data.teamAnalysis.performanceSpread}%</div>
+                    <div class="text-gray-400 text-lg">Gap between top and bottom performers</div>
                 </div>
             </div>
             
-            <div class="border-t border-gray-700 pt-8">
-                <h5 class="text-lg font-semibold text-white mb-6">Recommended Team Actions</h5>
-                <div class="space-y-4">
-                    ${data.teamAnalysis.recommendedActions.map(action => `
-                        <div class="flex items-center p-5 bg-gray-800/50 rounded-xl border border-gray-700 hover:bg-gray-700/30 transition-all">
-                            <i class="fas fa-arrow-right text-blue-400 mr-4"></i>
-                            <span class="text-gray-300 text-lg">${action}</span>
+            <div class="border-t border-gray-600 pt-10">
+                <h5 class="text-xl font-semibold text-white mb-8">Recommended Team Actions</h5>
+                <div class="space-y-6">
+                    ${data.teamAnalysis.recommendedActions.map((action, index) => `
+                        <div class="flex items-center p-8 bg-gray-800/50 rounded-2xl border border-gray-600 hover:bg-gray-700/30 transition-all">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-6">
+                                ${index + 1}
+                            </div>
+                            <span class="text-gray-200 text-xl">${action}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -1571,34 +1573,39 @@ function renderAgencyAnalysisResults(data) {
         </div>
 
         <!-- Market Position -->
-        <div class="glass-card rounded-xl p-6 mb-6">
-            <h4 class="text-xl font-semibold text-white mb-6 flex items-center">
-                <i class="fas fa-globe text-yellow-400 mr-3"></i>
+        <div class="glass-card rounded-xl p-10 mb-12">
+            <h4 class="text-3xl font-semibold text-white mb-10 flex items-center">
+                <i class="fas fa-globe text-yellow-400 mr-5"></i>
                 Market Position Analysis
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="text-center">
-                    <div class="text-xl font-bold text-yellow-400 mb-2">${data.marketPosition.competitiveRank}</div>
-                    <div class="text-sm text-gray-400">Industry Ranking</div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-3xl font-bold text-yellow-400 mb-4">${data.marketPosition.competitiveRank}</div>
+                    <div class="text-lg text-gray-300">Industry Ranking</div>
                 </div>
-                <div class="text-center">
-                    <div class="text-xl font-bold text-green-400 mb-2">${data.marketPosition.growthTrend}</div>
-                    <div class="text-sm text-gray-400">Growth Trend</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-3xl font-bold text-green-400 mb-4">${data.marketPosition.growthTrend}</div>
+                    <div class="text-lg text-gray-300">Growth Trend</div>
                 </div>
-                <div class="text-center">
-                    <div class="text-xl font-bold text-blue-400 mb-2">${data.marketPosition.marketShare}</div>
-                    <div class="text-sm text-gray-400">Market Share</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-3xl font-bold text-blue-400 mb-4">${data.marketPosition.marketShare}</div>
+                    <div class="text-lg text-gray-300">Market Share</div>
                 </div>
             </div>
             
-            <h5 class="font-semibold text-white mb-4">Strategic Recommendations</h5>
-            <div class="space-y-2">
-                ${data.marketPosition.recommendations.map(rec => `
-                    <div class="flex items-center p-3 bg-gray-800/50 rounded-lg">
-                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
-                        <span class="text-gray-300">${rec}</span>
-                    </div>
-                `).join('')}
+            <div class="border-t border-gray-600 pt-10">
+                <h5 class="text-xl font-semibold text-white mb-8">Strategic Recommendations</h5>
+                <div class="space-y-6">
+                    ${data.marketPosition.recommendations.map((rec, index) => `
+                        <div class="flex items-center p-8 bg-gray-800/50 rounded-2xl border border-gray-600 hover:bg-gray-700/30 transition-all">
+                            <div class="w-10 h-10 bg-yellow-600 rounded-full flex items-center justify-center text-white font-bold mr-6">
+                                ${index + 1}
+                            </div>
+                            <span class="text-gray-200 text-xl">${rec}</span>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
 
@@ -1652,79 +1659,92 @@ function renderChatterAnalysisResults(data) {
     
     container.innerHTML = `
         <!-- Chatter Score Overview -->
-        <div class="glass-card rounded-xl p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
+        <div class="glass-card rounded-xl p-10 mb-10">
+            <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h4 class="text-xl font-semibold text-white">${data.chatterName} Performance</h4>
-                    <p class="text-gray-400 text-sm">Individual analysis for ${currentAIAnalysisInterval} period</p>
+                    <h4 class="text-3xl font-semibold text-white">${data.chatterName} Performance Analysis</h4>
+                    <p class="text-gray-400 text-lg mt-3">Individual deep-dive for ${currentAIAnalysisInterval} period</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-4xl font-bold text-cyan-400">${data.overallScore}/100</div>
-                    <div class="text-sm text-gray-400">Overall Score</div>
+                    <div class="text-6xl font-bold text-cyan-400">${data.overallScore}</div>
+                    <div class="text-xl text-gray-400">/ 100</div>
                 </div>
             </div>
-            <div class="w-full bg-gray-700/50 rounded-full h-3">
-                <div class="bg-gradient-to-r from-cyan-500 to-cyan-400 h-3 rounded-full transition-all duration-1000" style="width: ${data.overallScore}%"></div>
+            <div class="w-full bg-gray-700/50 rounded-full h-5 mb-3">
+                <div class="bg-gradient-to-r from-cyan-500 to-cyan-400 h-5 rounded-full transition-all duration-1000" style="width: ${data.overallScore}%"></div>
+            </div>
+            <div class="flex justify-between text-gray-400">
+                <span>Needs Improvement</span>
+                <span>Excellent Performance</span>
             </div>
         </div>
 
         <!-- Performance Metrics -->
-        <div class="glass-card rounded-xl p-6 mb-6">
-            <h4 class="text-lg font-semibold text-white mb-6 flex items-center">
-                <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
+        <div class="glass-card rounded-xl p-10 mb-12">
+            <h4 class="text-3xl font-semibold text-white mb-10 flex items-center">
+                <i class="fas fa-chart-bar text-blue-400 mr-5"></i>
                 Key Performance Metrics
             </h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
-                    <div class="text-2xl font-bold text-green-400 mb-2">$${data.performanceMetrics.revenueGenerated.toLocaleString()}</div>
-                    <div class="text-sm text-gray-400">Revenue Generated</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-4xl font-bold text-green-400 mb-4">$${data.performanceMetrics.revenueGenerated.toLocaleString()}</div>
+                    <div class="text-lg text-gray-300 mb-2">Revenue Generated</div>
+                    <div class="text-sm text-gray-500">Total earnings for period</div>
                 </div>
-                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
-                    <div class="text-2xl font-bold text-yellow-400 mb-2">${data.performanceMetrics.conversionRate}</div>
-                    <div class="text-sm text-gray-400">Conversion Rate</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-4xl font-bold text-yellow-400 mb-4">${data.performanceMetrics.conversionRate}</div>
+                    <div class="text-lg text-gray-300 mb-2">Conversion Rate</div>
+                    <div class="text-sm text-gray-500">Messages to sales ratio</div>
                 </div>
-                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
-                    <div class="text-2xl font-bold text-orange-400 mb-2">${data.performanceMetrics.responseTime}</div>
-                    <div class="text-sm text-gray-400">Response Time</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-4xl font-bold text-orange-400 mb-4">${data.performanceMetrics.responseTime}</div>
+                    <div class="text-lg text-gray-300 mb-2">Response Time</div>
+                    <div class="text-sm text-gray-500">Average reply speed</div>
                 </div>
-                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
-                    <div class="text-2xl font-bold text-purple-400 mb-2">${data.performanceMetrics.customerSatisfaction}</div>
-                    <div class="text-sm text-gray-400">Customer Rating</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-4xl font-bold text-purple-400 mb-4">${data.performanceMetrics.customerSatisfaction}</div>
+                    <div class="text-lg text-gray-300 mb-2">Customer Rating</div>
+                    <div class="text-sm text-gray-500">Subscriber feedback score</div>
                 </div>
-                <div class="text-center p-4 bg-gray-800/30 rounded-lg">
-                    <div class="text-2xl font-bold text-cyan-400 mb-2">${data.performanceMetrics.ppvSuccessRate}</div>
-                    <div class="text-sm text-gray-400">PPV Success Rate</div>
+                <div class="text-center p-8 bg-gray-800/30 rounded-2xl border border-gray-600">
+                    <div class="text-4xl font-bold text-cyan-400 mb-4">${data.performanceMetrics.ppvSuccessRate}</div>
+                    <div class="text-lg text-gray-300 mb-2">PPV Success Rate</div>
+                    <div class="text-sm text-gray-500">PPV unlock percentage</div>
                 </div>
             </div>
         </div>
 
         <!-- Strengths & Weaknesses -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-star text-green-400 mr-3"></i>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
+            <div class="glass-card rounded-xl p-10">
+                <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
+                    <i class="fas fa-star text-green-400 mr-4"></i>
                     Key Strengths
                 </h4>
-                <div class="space-y-3">
-                    ${data.strengths.map(strength => `
-                        <div class="flex items-start p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                            <i class="fas fa-check-circle text-green-400 mr-3 mt-0.5"></i>
-                            <span class="text-gray-300 text-sm">${strength}</span>
+                <div class="space-y-5">
+                    ${data.strengths.map((strength, index) => `
+                        <div class="flex items-start p-6 bg-green-500/10 border border-green-500/30 rounded-xl">
+                            <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold mr-5 mt-1">
+                                ${index + 1}
+                            </div>
+                            <span class="text-gray-200 text-lg leading-relaxed">${strength}</span>
                         </div>
                     `).join('')}
                 </div>
             </div>
             
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-lg font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+            <div class="glass-card rounded-xl p-10">
+                <h4 class="text-2xl font-semibold text-white mb-8 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-red-400 mr-4"></i>
                     Areas for Improvement
                 </h4>
-                <div class="space-y-3">
-                    ${data.weaknesses.map(weakness => `
-                        <div class="flex items-start p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <i class="fas fa-arrow-up text-red-400 mr-3 mt-0.5"></i>
-                            <span class="text-gray-300 text-sm">${weakness}</span>
+                <div class="space-y-5">
+                    ${data.weaknesses.map((weakness, index) => `
+                        <div class="flex items-start p-6 bg-red-500/10 border border-red-500/30 rounded-xl">
+                            <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold mr-5 mt-1">
+                                ${index + 1}
+                            </div>
+                            <span class="text-gray-200 text-lg leading-relaxed">${weakness}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -3955,4 +3975,5 @@ function showError(message) {
         showNotification(message, 'error');
     }
 }
+
 
