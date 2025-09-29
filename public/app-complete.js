@@ -1170,6 +1170,188 @@ async function loadChattersForAnalysis() {
     }
 }
 
+// Generate chatter analysis from real data
+function generateChatterAnalysisFromRealData(chatterData, chatterName, interval) {
+    // Calculate derived metrics from real data
+    const ppvUnlockRate = chatterData.ppvsSent > 0 ? (chatterData.ppvsUnlocked / chatterData.ppvsSent * 100) : 0;
+    const revenuePerPPV = chatterData.ppvsSent > 0 ? (chatterData.totalRevenue / chatterData.ppvsSent) : 0;
+    const messagesPerPPV = chatterData.ppvsSent > 0 ? (chatterData.messagesSent / chatterData.ppvsSent) : 0;
+    
+    // Calculate overall score based on real metrics
+    let overallScore = 0;
+    if (chatterData.totalRevenue > 0) overallScore += 25;
+    if (ppvUnlockRate > 50) overallScore += 25;
+    if (chatterData.avgResponseTime < 3) overallScore += 25;
+    if (revenuePerPPV > 30) overallScore += 25;
+    
+    // Generate insights based on real data
+    const strengths = [];
+    const weaknesses = [];
+    const opportunities = [];
+    const recommendations = [];
+    
+    if (chatterData.totalRevenue > 0) {
+        strengths.push(`Generated $${chatterData.totalRevenue.toLocaleString()} in revenue this ${interval} period`);
+    }
+    
+    if (ppvUnlockRate > 0) {
+        if (ppvUnlockRate > 60) {
+            strengths.push(`Excellent PPV unlock rate of ${ppvUnlockRate.toFixed(1)}% (above 60% target)`);
+        } else if (ppvUnlockRate < 40) {
+            weaknesses.push(`Low PPV unlock rate of ${ppvUnlockRate.toFixed(1)}% (target: 50-60%)`);
+            opportunities.push(`Improving PPV unlock rate to 50% could increase revenue by ${Math.round(chatterData.totalRevenue * 0.25)}`);
+        } else {
+            strengths.push(`Good PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%`);
+        }
+    }
+    
+    if (chatterData.avgResponseTime > 0) {
+        if (chatterData.avgResponseTime < 2) {
+            strengths.push(`Excellent response time of ${chatterData.avgResponseTime.toFixed(1)} minutes`);
+        } else if (chatterData.avgResponseTime > 4) {
+            weaknesses.push(`Slow response time of ${chatterData.avgResponseTime.toFixed(1)} minutes (target: <3 minutes)`);
+            opportunities.push(`Reducing response time to 2 minutes could increase conversions by 20%`);
+        } else {
+            strengths.push(`Good response time of ${chatterData.avgResponseTime.toFixed(1)} minutes`);
+        }
+    }
+    
+    if (revenuePerPPV > 0) {
+        if (revenuePerPPV > 40) {
+            strengths.push(`High revenue per PPV of $${revenuePerPPV.toFixed(2)}`);
+        } else if (revenuePerPPV < 25) {
+            weaknesses.push(`Low revenue per PPV of $${revenuePerPPV.toFixed(2)} (target: $30-50)`);
+            opportunities.push(`Increasing PPV prices could boost revenue per PPV by $${(35 - revenuePerPPV).toFixed(2)}`);
+        }
+    }
+    
+    if (chatterData.messagesSent > 0) {
+        strengths.push(`Active engagement with ${chatterData.messagesSent} messages sent`);
+    }
+    
+    // Generate recommendations based on weaknesses
+    if (chatterData.avgResponseTime > 3) {
+        recommendations.push('Focus on faster response times - aim for under 2 minutes');
+    }
+    if (ppvUnlockRate < 50) {
+        recommendations.push('Improve PPV content quality and pricing strategy');
+    }
+    if (revenuePerPPV < 30) {
+        recommendations.push('Test higher PPV prices to increase revenue per sale');
+    }
+    
+    // If no real insights, add guidance
+    if (strengths.length === 0 && weaknesses.length === 0) {
+        strengths.push('Upload more data to see detailed performance analysis');
+    }
+    
+    return {
+        chatterName,
+        overallScore,
+        totalRevenue: chatterData.totalRevenue,
+        messagesSent: chatterData.messagesSent,
+        ppvsSent: chatterData.ppvsSent,
+        ppvsUnlocked: chatterData.ppvsUnlocked,
+        avgResponseTime: chatterData.avgResponseTime,
+        ppvUnlockRate,
+        revenuePerPPV,
+        strengths,
+        weaknesses,
+        opportunities,
+        recommendations
+    };
+}
+
+// Generate analysis from real data
+function generateAnalysisFromRealData(analyticsData, interval) {
+    // Calculate derived metrics from real data
+    const clickToSubRate = analyticsData.profileClicks > 0 ? (analyticsData.newSubs / analyticsData.profileClicks * 100) : 0;
+    const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
+    const revenuePerSub = analyticsData.totalSubs > 0 ? (analyticsData.totalRevenue / analyticsData.totalSubs) : 0;
+    const avgPPVPrice = analyticsData.ppvsSent > 0 ? (analyticsData.totalRevenue / analyticsData.ppvsSent) : 0;
+    
+    // Calculate overall score based on real metrics
+    let overallScore = 0;
+    if (analyticsData.totalRevenue > 0) overallScore += 20;
+    if (clickToSubRate > 10) overallScore += 20;
+    if (ppvUnlockRate > 50) overallScore += 20;
+    if (analyticsData.avgResponseTime < 3) overallScore += 20;
+    if (revenuePerSub > 10) overallScore += 20;
+    
+    // Generate insights based on real data
+    const insights = [];
+    const weakPoints = [];
+    const opportunities = [];
+    const roiCalculations = [];
+    
+    if (analyticsData.totalRevenue > 0) {
+        insights.push(`Total revenue of $${analyticsData.totalRevenue.toLocaleString()} generated this ${interval} period`);
+    }
+    
+    if (clickToSubRate > 0) {
+        insights.push(`Click-to-subscription conversion rate is ${clickToSubRate.toFixed(1)}%`);
+        if (clickToSubRate < 10) {
+            weakPoints.push(`Low conversion rate (${clickToSubRate.toFixed(1)}%) - industry average is 12%`);
+            opportunities.push(`Improving conversion rate to 12% could increase revenue by ${Math.round(analyticsData.totalRevenue * 0.2)}`);
+        }
+    }
+    
+    if (analyticsData.avgResponseTime > 0) {
+        insights.push(`Average response time is ${analyticsData.avgResponseTime.toFixed(1)} minutes`);
+        if (analyticsData.avgResponseTime > 3) {
+            weakPoints.push(`Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes is above optimal (2-3 minutes)`);
+            opportunities.push(`Reducing response time to 2 minutes could increase conversions by 15-20%`);
+        }
+    }
+    
+    if (ppvUnlockRate > 0) {
+        insights.push(`PPV unlock rate is ${ppvUnlockRate.toFixed(1)}%`);
+        if (ppvUnlockRate < 50) {
+            weakPoints.push(`PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below industry average (45-60%)`);
+        }
+    }
+    
+    if (revenuePerSub > 0) {
+        insights.push(`Revenue per subscriber is $${revenuePerSub.toFixed(2)}`);
+        if (revenuePerSub < 10) {
+            weakPoints.push(`Revenue per subscriber ($${revenuePerSub.toFixed(2)}) is below target of $12.50`);
+        }
+    }
+    
+    // Add data-driven ROI calculations
+    if (analyticsData.totalRevenue > 0) {
+        const potentialResponseTimeGain = analyticsData.avgResponseTime > 3 ? Math.round(analyticsData.totalRevenue * 0.15) : 0;
+        if (potentialResponseTimeGain > 0) {
+            roiCalculations.push(`Response time improvement: $${potentialResponseTimeGain} potential monthly gain for $400 training cost = ${Math.round(potentialResponseTimeGain * 12 / 400)}% annual ROI`);
+        }
+        
+        const potentialConversionGain = clickToSubRate < 10 ? Math.round(analyticsData.totalRevenue * 0.2) : 0;
+        if (potentialConversionGain > 0) {
+            roiCalculations.push(`Conversion optimization: $${potentialConversionGain} potential monthly gain for $600 funnel improvements = ${Math.round(potentialConversionGain * 12 / 600)}% annual ROI`);
+        }
+    }
+    
+    // If no real insights, add guidance
+    if (insights.length === 0) {
+        insights.push('Upload more data to see detailed performance insights');
+    }
+    
+    return {
+        overallScore,
+        totalRevenue: analyticsData.totalRevenue,
+        totalSubs: analyticsData.totalSubs,
+        profileClicks: analyticsData.profileClicks,
+        conversionRate: clickToSubRate,
+        ppvUnlockRate,
+        avgResponseTime: analyticsData.avgResponseTime,
+        revenuePerSub,
+        insights,
+        weakPoints,
+        opportunities,
+        roiCalculations
+    };
+}
+
 // Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
     const resultsContainer = document.getElementById('agencyAnalysisResults');
@@ -1184,45 +1366,57 @@ async function runAgencyAnalysis() {
     `;
     
     try {
-        // Simulate API call for comprehensive analysis
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Fetch real data from API based on selected interval
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            throw new Error('Not authenticated');
+        }
+
+        // Get custom date range if applicable
+        let apiUrl = `/api/analytics/dashboard?interval=${currentAIAnalysisInterval}`;
+        if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
+            apiUrl += `&startDate=${window.customDateRange.start}&endDate=${window.customDateRange.end}`;
+        }
+
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch analytics data');
+        }
+
+        const analyticsData = await response.json();
         
-        // Generate analysis data directly here
-        const analysis = {
-            overallScore: 78,
-            totalRevenue: 12450,
-            totalSubs: 1234,
-            profileClicks: 8765,
-            conversionRate: 14.1,
-            ppvUnlockRate: 57.2,
-            avgResponseTime: 3.2,
-            weekOverWeekGrowth: 12.5,
-            insights: [
-                'Revenue trending upward with 12.5% growth this period ($12,450 vs $11,065 previous)',
-                'Click-to-subscription conversion rate is 14.1% (industry avg: 12%)',
-                'Response times averaging 3.2 minutes - competitive but can improve',
-                'PPV unlock rate of 57.2% significantly above industry average (45%)',
-                'Profile clicks increased by 15.2% indicating strong marketing performance',
-                'New subscriber acquisition cost decreased by 8.3% showing efficiency gains'
-            ],
-            weakPoints: [
-                'Response time fluctuation: ranges from 1.8min to 6.4min across chatters',
-                'Revenue per subscriber ($10.08) below target of $12.50',
-                'Weekend performance drops 23% compared to weekdays',
-                'Churn rate increased to 18.5% from 15.2% last month'
-            ],
-            opportunities: [
-                'Reduce response time variance could increase conversions by 18-25%',
-                'Weekend staffing optimization could recover $2,300 monthly revenue',
-                'Premium PPV pricing ($45-65 range) shows 32% higher unlock rates',
-                'Retention campaigns could reduce churn by 6-8 percentage points'
-            ],
-            roiCalculations: [
-                'Response time improvement ROI: $1,850 monthly gain for $400 training cost = 462% monthly ROI',
-                'Weekend staffing ROI: $2,300 monthly gain for $1,200 additional wages = 192% monthly ROI',
-                'Premium content strategy ROI: $3,200 monthly gain for $800 content cost = 400% monthly ROI'
-            ]
-        };
+        // Check if we have any real data
+        const hasData = analyticsData.totalRevenue > 0 || analyticsData.totalSubs > 0 || analyticsData.profileClicks > 0;
+        
+        if (!hasData) {
+            // Show empty state with guidance
+            resultsContainer.innerHTML = `
+                <div class="text-center py-16">
+                    <div class="w-24 h-24 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-chart-line text-4xl text-gray-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-white mb-4">No Data Available</h3>
+                    <p class="text-gray-400 text-lg mb-6 max-w-md mx-auto">
+                        Upload your daily reports and Infloww data to see comprehensive AI analysis.
+                    </p>
+                    <div class="space-y-3 text-sm text-gray-500">
+                        <p>• Submit Daily PPV & Tips Reports</p>
+                        <p>• Upload OF Account Data</p>
+                        <p>• Upload Chatter's Data</p>
+                        <p>• Export and upload message data</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Generate analysis based on real data
+        const analysis = generateAnalysisFromRealData(analyticsData, currentAIAnalysisInterval);
 
         resultsContainer.innerHTML = `
             <div class="space-y-8">
@@ -1375,11 +1569,57 @@ async function runChatterAnalysis() {
     `;
     
     try {
-        // Simulate API call for individual analysis
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Fetch real data for the selected chatter
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            throw new Error('Not authenticated');
+        }
+
+        // Get custom date range if applicable
+        let apiUrl = `/api/analytics/dashboard?interval=${currentAIAnalysisInterval}&chatterId=${select.value}`;
+        if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
+            apiUrl += `&startDate=${window.customDateRange.start}&endDate=${window.customDateRange.end}`;
+        }
+
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch chatter data');
+        }
+
+        const chatterData = await response.json();
         
+        // Check if we have any real data for this chatter
+        const hasData = chatterData.totalRevenue > 0 || chatterData.messagesSent > 0 || chatterData.ppvsSent > 0;
+        
+        if (!hasData) {
+            // Show empty state for this chatter
+            resultsContainer.innerHTML = `
+                <div class="text-center py-16">
+                    <div class="w-24 h-24 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-user text-4xl text-gray-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-white mb-4">No Data for Selected Chatter</h3>
+                    <p class="text-gray-400 text-lg mb-6 max-w-md mx-auto">
+                        This chatter hasn't submitted any daily reports or data for the selected time period.
+                    </p>
+                    <div class="space-y-3 text-sm text-gray-500">
+                        <p>• Ask them to submit Daily PPV & Tips Reports</p>
+                        <p>• Upload their Chatter's Data</p>
+                        <p>• Try a different time period</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Generate analysis based on real chatter data
         const selectedChatter = select.options[select.selectedIndex].text;
-        const analysisData = generateComprehensiveChatterAnalysis(selectedChatter);
+        const analysisData = generateChatterAnalysisFromRealData(chatterData, selectedChatter, currentAIAnalysisInterval);
         renderChatterAnalysisResults(analysisData);
         
     } catch (error) {
