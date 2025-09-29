@@ -90,6 +90,22 @@ function setupEventListeners() {
         sidebarClose.addEventListener('click', closeSidebar);
     }
 
+    // Click outside sidebar to close (mobile)
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        
+        if (sidebar && !sidebar.classList.contains('sidebar-hidden')) {
+            // If click is outside sidebar and not on toggle button
+            if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+                // Only auto-close on mobile (when sidebar is fixed positioned)
+                if (window.innerWidth < 1024) {
+                    closeSidebar();
+                }
+            }
+        }
+    });
+
     // Time interval buttons
     document.querySelectorAll('.time-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -296,6 +312,9 @@ function handleLogout() {
 
 // Navigation functions
 function showSection(sectionId) {
+    // Destroy all existing charts first to prevent canvas reuse errors
+    destroyAllCharts();
+    
     // Hide all sections
     document.querySelectorAll('.section').forEach(section => {
         section.classList.add('hidden');
@@ -428,12 +447,16 @@ async function loadChattersForInfloww() {
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('sidebar-hidden');
+    if (sidebar) {
+        sidebar.classList.toggle('sidebar-hidden');
+    }
 }
 
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.classList.add('sidebar-hidden');
+    if (sidebar) {
+        sidebar.classList.add('sidebar-hidden');
+    }
 }
 
 // Time interval functions
@@ -710,12 +733,35 @@ function updateAIRecommendations(recommendations) {
     `).join('');
 }
 
+// Chart storage for proper cleanup
+let chartInstances = {};
+
+// Function to destroy all existing charts
+function destroyAllCharts() {
+    Object.keys(chartInstances).forEach(chartId => {
+        if (chartInstances[chartId]) {
+            try {
+                chartInstances[chartId].destroy();
+                delete chartInstances[chartId];
+            } catch (error) {
+                console.warn('Error destroying chart:', chartId, error);
+                delete chartInstances[chartId];
+            }
+        }
+    });
+}
+
 // Chart functions
 function loadRevenueChart() {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
 
-    new Chart(ctx, {
+    // Destroy existing chart if it exists
+    if (chartInstances.revenueChart) {
+        chartInstances.revenueChart.destroy();
+    }
+
+    chartInstances.revenueChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -756,7 +802,12 @@ function loadAnalyticsCharts() {
     // Load revenue breakdown chart
     const revenueCtx = document.getElementById('revenueBreakdownChart');
     if (revenueCtx) {
-        new Chart(revenueCtx, {
+        // Destroy existing chart if it exists
+        if (chartInstances.revenueBreakdownChart) {
+            chartInstances.revenueBreakdownChart.destroy();
+        }
+
+        chartInstances.revenueBreakdownChart = new Chart(revenueCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Arya', 'Iris', 'Lilla'],
@@ -785,7 +836,12 @@ function loadAnalyticsCharts() {
     // Load chatter comparison chart
     const chatterCtx = document.getElementById('chatterComparisonChart');
     if (chatterCtx) {
-        new Chart(chatterCtx, {
+        // Destroy existing chart if it exists
+        if (chartInstances.chatterComparisonChart) {
+            chartInstances.chatterComparisonChart.destroy();
+        }
+
+        chartInstances.chatterComparisonChart = new Chart(chatterCtx, {
             type: 'bar',
             data: {
                 labels: ['Sarah M.', 'Alex K.', 'Jamie L.', 'Morgan T.'],
@@ -830,7 +886,12 @@ function loadAIInsightsChart() {
     const ctx = document.getElementById('aiInsightsChart');
     if (!ctx) return;
 
-    new Chart(ctx, {
+    // Destroy existing chart if it exists
+    if (chartInstances.aiInsightsChart) {
+        chartInstances.aiInsightsChart.destroy();
+    }
+
+    chartInstances.aiInsightsChart = new Chart(ctx, {
         type: 'radar',
         data: {
             labels: ['Response Time', 'Conversion Rate', 'Message Quality', 'PPV Performance', 'Customer Satisfaction', 'Revenue Growth'],
