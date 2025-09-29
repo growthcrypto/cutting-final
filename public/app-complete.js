@@ -1487,7 +1487,7 @@ async function runAgencyAnalysis() {
                     </div>
                 </div>
 
-                <!-- Employee Analytics -->
+                <!-- Core Employee Analytics -->
                 ${analysis.employeeAnalytics ? `
                 <div class="bg-purple-900/10 rounded-xl p-8 border border-purple-500/30">
                     <h4 class="text-2xl font-semibold mb-6 text-purple-400 flex items-center">
@@ -1499,91 +1499,41 @@ async function runAgencyAnalysis() {
                             <div class="text-sm text-gray-300">Active Chatters</div>
                         </div>
                         <div class="text-center p-4 bg-green-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-green-400 mb-2">$${analysis.employeeAnalytics.topPerformer ? analysis.employeeAnalytics.topPerformer.avgRevenue.toFixed(0) : '0'}</div>
-                            <div class="text-sm text-gray-300">Top Performer Avg</div>
+                            <div class="text-3xl font-bold text-green-400 mb-2">$${analysis.employeeAnalytics.averagePPVPrice ? analysis.employeeAnalytics.averagePPVPrice.toFixed(0) : '0'}</div>
+                            <div class="text-sm text-gray-300">Avg PPV Price</div>
                         </div>
                         <div class="text-center p-4 bg-blue-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.employeeAnalytics.teamConsistency.toFixed(0)}%</div>
-                            <div class="text-sm text-gray-300">Team Consistency</div>
+                            <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.employeeAnalytics.averageMessageScore ? analysis.employeeAnalytics.averageMessageScore.toFixed(0) : '0'}</div>
+                            <div class="text-sm text-gray-300">Avg Message Score</div>
                         </div>
                         <div class="text-center p-4 bg-yellow-900/20 rounded-lg">
-                            <div class="text-3xl font-bold text-yellow-400 mb-2">$${analysis.employeeAnalytics.performanceGap.toFixed(0)}</div>
-                            <div class="text-sm text-gray-300">Performance Gap</div>
+                            <div class="text-3xl font-bold text-yellow-400 mb-2">$${analysis.employeeAnalytics.averageRevenue ? analysis.employeeAnalytics.averageRevenue.toFixed(0) : '0'}</div>
+                            <div class="text-sm text-gray-300">Avg Revenue</div>
                         </div>
                     </div>
                     ${analysis.employeeAnalytics.topPerformer ? `
                     <div class="mt-6 p-4 bg-gray-800/30 rounded-lg">
                         <h5 class="text-lg font-semibold text-purple-400 mb-3">Top Performer Details</h5>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                             <div>
                                 <span class="text-gray-400">Avg Revenue:</span>
                                 <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.avgRevenue.toFixed(2)}</span>
                             </div>
                             <div>
-                                <span class="text-gray-400">Response Time:</span>
-                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.avgResponseTime.toFixed(1)} min</span>
+                                <span class="text-gray-400">Avg PPV Price:</span>
+                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.avgPPVPrice.toFixed(2)}</span>
                             </div>
                             <div>
-                                <span class="text-gray-400">Revenue per PPV:</span>
-                                <span class="text-white ml-2">$${analysis.employeeAnalytics.topPerformer.revenuePerPPV.toFixed(2)}</span>
+                                <span class="text-gray-400">Message Score:</span>
+                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.messageScore.toFixed(1)}/100</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">PPV Unlock Rate:</span>
+                                <span class="text-white ml-2">${analysis.employeeAnalytics.topPerformer.ppvUnlockRate.toFixed(1)}%</span>
                             </div>
                         </div>
                     </div>
                     ` : ''}
-                </div>
-                ` : ''}
-
-                <!-- Complex Agency Metrics -->
-                ${analysis.complexAgencyMetrics ? `
-                <div class="bg-indigo-900/10 rounded-xl p-8 border border-indigo-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-indigo-400 flex items-center">
-                        <i class="fas fa-chart-network mr-3 text-xl"></i>Complex Agency Analytics
-                    </h4>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-gray-800/30 rounded-lg p-6">
-                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Revenue Efficiency</h5>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Revenue per Hour:</span>
-                                    <span class="text-white font-semibold">$${analysis.complexAgencyMetrics.revenueEfficiency.toFixed(2)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Revenue per Sub:</span>
-                                    <span class="text-white font-semibold">$${analysis.complexAgencyMetrics.operationalMetrics.revenuePerSub.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-gray-800/30 rounded-lg p-6">
-                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Conversion Funnel</h5>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Clicks to Subs:</span>
-                                    <span class="text-white font-semibold">${analysis.complexAgencyMetrics.conversionFunnel.clicksToSubs.toFixed(1)}%</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Messages to PPV:</span>
-                                    <span class="text-white font-semibold">${analysis.complexAgencyMetrics.conversionFunnel.messagesToPPV.toFixed(1)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-gray-800/30 rounded-lg p-6">
-                            <h5 class="text-lg font-semibold text-indigo-400 mb-4">Growth Potential</h5>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Conversion Upside:</span>
-                                    <span class="text-green-400 font-semibold">${analysis.complexAgencyMetrics.growthPotential.conversionUpside.toFixed(1)}%</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Response Time Upside:</span>
-                                    <span class="text-green-400 font-semibold">${analysis.complexAgencyMetrics.growthPotential.responseTimeUpside.toFixed(1)} min</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">Team Upside:</span>
-                                    <span class="text-green-400 font-semibold">$${analysis.complexAgencyMetrics.growthPotential.teamUpside.toFixed(0)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 ` : ''}
 

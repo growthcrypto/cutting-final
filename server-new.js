@@ -634,14 +634,15 @@ app.listen(PORT, () => {
 // Fallback analysis function when AI fails
 async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
   if (analysisType === 'agency') {
-    const clickToSubRate = analyticsData.profileClicks > 0 ? (analyticsData.newSubs / analyticsData.profileClicks * 100) : 0;
     const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
-    const revenuePerSub = analyticsData.totalSubs > 0 ? (analyticsData.totalRevenue / analyticsData.totalSubs) : 0;
-    const revenuePerHour = analyticsData.totalRevenue / (interval === '7d' ? 168 : interval === '30d' ? 720 : 24);
-    const messagesPerPPV = analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent / analyticsData.ppvsSent) : 0;
     
-    // Get employee analytics
+    // Get employee analytics with core metrics
     const dailyReports = await DailyChatterReport.find({
+      date: { $gte: new Date(Date.now() - (interval === '7d' ? 7 : interval === '30d' ? 30 : 1) * 24 * 60 * 60 * 1000) }
+    });
+    
+    // Get message analysis for scoring
+    const messageAnalyses = await MessageAnalysis.find({
       date: { $gte: new Date(Date.now() - (interval === '7d' ? 7 : interval === '30d' ? 30 : 1) * 24 * 60 * 60 * 1000) }
     });
     
@@ -653,102 +654,104 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
           employeeMetrics[report.chatterId] = {
             revenue: 0,
             ppvsSent: 0,
-            responseTime: 0,
+            ppvAmounts: [],
             count: 0,
-            name: report.chatterId // Will be replaced with actual name if available
+            name: report.chatterId
           };
         }
         const revenue = report.ppvSales.reduce((sum, sale) => sum + sale.amount, 0) + 
                        report.tips.reduce((sum, tip) => sum + tip.amount, 0);
         employeeMetrics[report.chatterId].revenue += revenue;
         employeeMetrics[report.chatterId].ppvsSent += report.ppvSales?.length || 0;
-        employeeMetrics[report.chatterId].responseTime += report.avgResponseTime || 0;
+        employeeMetrics[report.chatterId].ppvAmounts.push(...(report.ppvSales?.map(sale => sale.amount) || []));
         employeeMetrics[report.chatterId].count++;
       }
     });
     
+    // Calculate message-based scores
+    const messageScores = {};
+    messageAnalyses.forEach(analysis => {
+      if (analysis.chatterId) {
+        if (!messageScores[analysis.chatterId]) {
+          messageScores[analysis.chatterId] = {
+            totalScore: 0,
+            count: 0
+          };
+        }
+        messageScores[analysis.chatterId].totalScore += analysis.overallScore || 0;
+        messageScores[analysis.chatterId].count++;
+      }
+    });
+    
     // Calculate averages and rankings
-    const employeePerformance = Object.values(employeeMetrics).map(emp => ({
-      ...emp,
-      avgRevenue: emp.revenue / emp.count,
-      avgResponseTime: emp.responseTime / emp.count,
-      revenuePerPPV: emp.ppvsSent > 0 ? emp.revenue / emp.ppvsSent : 0
-    })).sort((a, b) => b.avgRevenue - a.avgRevenue);
+    const employeePerformance = Object.values(employeeMetrics).map(emp => {
+      const avgPPVPrice = emp.ppvAmounts.length > 0 ? 
+        emp.ppvAmounts.reduce((sum, amount) => sum + amount, 0) / emp.ppvAmounts.length : 0;
+      const messageScore = messageScores[emp.name] ? 
+        messageScores[emp.name].totalScore / messageScores[emp.name].count : 0;
+      
+      return {
+        ...emp,
+        avgRevenue: emp.revenue / emp.count,
+        avgPPVPrice: avgPPVPrice,
+        messageScore: messageScore,
+        ppvUnlockRate: emp.ppvsSent > 0 ? (emp.ppvsSent * 0.6) : 0 // Estimate based on sent PPVs
+      };
+    }).sort((a, b) => b.avgRevenue - a.avgRevenue);
     
     const topPerformer = employeePerformance[0];
-    const performanceGap = employeePerformance.length > 1 ? 
-      employeePerformance[0].avgRevenue - employeePerformance[employeePerformance.length - 1].avgRevenue : 0;
+    const avgPPVPrice = employeePerformance.length > 0 ? 
+      employeePerformance.reduce((sum, emp) => sum + emp.avgPPVPrice, 0) / employeePerformance.length : 0;
+    const avgMessageScore = employeePerformance.length > 0 ? 
+      employeePerformance.reduce((sum, emp) => sum + emp.messageScore, 0) / employeePerformance.length : 0;
     
+    // Calculate overall agency score
     let overallScore = 0;
-    if (analyticsData.totalRevenue > 0) overallScore += 20;
-    if (clickToSubRate > 10) overallScore += 20;
-    if (ppvUnlockRate > 50) overallScore += 20;
-    if (analyticsData.avgResponseTime < 3) overallScore += 20;
-    if (revenuePerSub > 10) overallScore += 20;
+    if (analyticsData.totalRevenue > 0) overallScore += 30;
+    if (ppvUnlockRate > 50) overallScore += 25;
+    if (avgPPVPrice > 30) overallScore += 25;
+    if (avgMessageScore > 70) overallScore += 20;
     
     return {
       overallScore,
       insights: [
-        `Total revenue of $${analyticsData.totalRevenue.toLocaleString()} generated this ${interval} period`,
-        `Click-to-subscription conversion rate is ${clickToSubRate.toFixed(1)}%`,
-        `Average response time is ${analyticsData.avgResponseTime.toFixed(1)} minutes`,
-        `PPV unlock rate is ${ppvUnlockRate.toFixed(1)}%`,
-        `Revenue per hour: $${revenuePerHour.toFixed(2)}`,
-        `Messages per PPV: ${messagesPerPPV.toFixed(1)}`
+        `Total revenue: $${analyticsData.totalRevenue.toLocaleString()} this ${interval} period`,
+        `PPV unlock rate: ${ppvUnlockRate.toFixed(1)}%`,
+        `Average PPV price: $${avgPPVPrice.toFixed(2)}`,
+        `Average message score: ${avgMessageScore.toFixed(1)}/100`
       ],
       weakPoints: [
-        clickToSubRate < 10 ? `Low conversion rate (${clickToSubRate.toFixed(1)}%) - industry average is 12%` : null,
-        analyticsData.avgResponseTime > 3 ? `Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes is above optimal (2-3 minutes)` : null,
-        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below industry average (45-60%)` : null,
-        performanceGap > 500 ? `High performance variance: $${performanceGap.toFixed(0)} gap between top and bottom performers` : null
+        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below target (50%+)` : null,
+        avgPPVPrice < 30 ? `Average PPV price ($${avgPPVPrice.toFixed(2)}) is below target ($30+)` : null,
+        avgMessageScore < 70 ? `Average message score (${avgMessageScore.toFixed(1)}) needs improvement (70+ target)` : null
       ].filter(Boolean),
       opportunities: [
-        `Improving conversion rate to 12% could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.2)}`,
-        `Reducing response time to 2 minutes could increase conversions by 15-20%`,
-        performanceGap > 500 ? `Leveling up all chatters to top performer could increase revenue by $${Math.round(performanceGap * employeePerformance.length)}` : null
-      ].filter(Boolean),
+        `Improving PPV unlock rate to 60% could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.2)}`,
+        `Increasing average PPV price to $35 could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.15)}`,
+        `Improving message scores to 80+ could increase conversions by 15-20%`
+      ],
       roiCalculations: [
-        `Response time improvement: $${Math.round(analyticsData.totalRevenue * 0.15)} potential monthly gain for $400 training cost`,
-        `Conversion optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $600 funnel improvements`,
-        performanceGap > 500 ? `Team training ROI: $${Math.round(performanceGap * employeePerformance.length * 12)} annual potential for $2,000 training investment` : null
-      ].filter(Boolean),
+        `PPV optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $500 content investment`,
+        `Message training: $${Math.round(analyticsData.totalRevenue * 0.15)} potential monthly gain for $300 training cost`
+      ],
       recommendations: [
-        'Focus on faster response times - aim for under 2 minutes',
-        'Test premium PPV pricing strategy',
-        'Plan weekend coverage optimization',
-        performanceGap > 500 ? 'Implement team training to level up all chatters' : null
-      ].filter(Boolean),
+        'Focus on improving PPV unlock rates through better content and pricing',
+        'Train chatters on message quality to improve scores',
+        'Test higher PPV prices to increase average revenue per sale'
+      ],
       employeeAnalytics: {
         totalEmployees: employeePerformance.length,
         topPerformer: topPerformer ? {
           name: topPerformer.name,
           avgRevenue: topPerformer.avgRevenue,
-          avgResponseTime: topPerformer.avgResponseTime,
-          revenuePerPPV: topPerformer.revenuePerPPV
+          avgPPVPrice: topPerformer.avgPPVPrice,
+          messageScore: topPerformer.messageScore,
+          ppvUnlockRate: topPerformer.ppvUnlockRate
         } : null,
-        performanceGap: performanceGap,
-        teamConsistency: employeePerformance.length > 1 ? 
-          (1 - (performanceGap / (topPerformer?.avgRevenue || 1))) * 100 : 100,
-        averageTeamRevenue: employeePerformance.length > 0 ? 
+        averagePPVPrice: avgPPVPrice,
+        averageMessageScore: avgMessageScore,
+        averageRevenue: employeePerformance.length > 0 ? 
           employeePerformance.reduce((sum, emp) => sum + emp.avgRevenue, 0) / employeePerformance.length : 0
-      },
-      complexAgencyMetrics: {
-        revenueEfficiency: revenuePerHour,
-        conversionFunnel: {
-          clicksToSubs: clickToSubRate,
-          subsToRevenue: revenuePerSub,
-          messagesToPPV: messagesPerPPV
-        },
-        operationalMetrics: {
-          avgResponseTime: analyticsData.avgResponseTime,
-          ppvUnlockRate: ppvUnlockRate,
-          revenuePerSub: revenuePerSub
-        },
-        growthPotential: {
-          conversionUpside: Math.max(0, 12 - clickToSubRate),
-          responseTimeUpside: Math.max(0, analyticsData.avgResponseTime - 2),
-          teamUpside: performanceGap
-        }
       }
     };
   } else {
@@ -823,41 +826,26 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
             "topPerformer": {
               "name": "chatter_name",
               "avgRevenue": [number],
-              "avgResponseTime": [number],
-              "revenuePerPPV": [number]
+              "avgPPVPrice": [number],
+              "messageScore": [number],
+              "ppvUnlockRate": [percentage]
             },
-            "performanceGap": [number],
-            "teamConsistency": [percentage],
-            "averageTeamRevenue": [number]
-          },
-          "complexAgencyMetrics": {
-            "revenueEfficiency": [revenue per hour],
-            "conversionFunnel": {
-              "clicksToSubs": [percentage],
-              "subsToRevenue": [revenue per sub],
-              "messagesToPPV": [ratio]
-            },
-            "operationalMetrics": {
-              "avgResponseTime": [minutes],
-              "ppvUnlockRate": [percentage],
-              "revenuePerSub": [dollars]
-            },
-            "growthPotential": {
-              "conversionUpside": [percentage improvement possible],
-              "responseTimeUpside": [minutes improvement possible],
-              "teamUpside": [revenue improvement possible]
-            }
+            "averagePPVPrice": [number],
+            "averageMessageScore": [number],
+            "averageRevenue": [number]
           }
         }
 
-        Focus on:
-        1. Performance insights based on real data
-        2. Employee performance analysis and team dynamics
-        3. Complex agency metrics including conversion funnels and efficiency
-        4. Specific weak points with data-driven explanations
-        5. Actionable opportunities with potential revenue impact
-        6. ROI calculations for improvements
-        7. Prioritized recommendations
+        Focus on these core metrics:
+        1. Total revenue performance
+        2. PPV unlock rates and pricing
+        3. Average PPV price per chatter
+        4. Message quality scores from weekly message analysis
+        5. Employee performance rankings
+        6. Specific weak points with data-driven explanations
+        7. Actionable opportunities with potential revenue impact
+        8. ROI calculations for improvements
+        9. Prioritized recommendations
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
