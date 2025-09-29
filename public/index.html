@@ -231,6 +231,50 @@
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
             background: rgba(156, 163, 175, 0.7);
         }
+
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            border: 4px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .tooltip:hover::before,
+        .tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
@@ -555,7 +599,7 @@
                             </h3>
                             <div class="space-y-5">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Click-to-Sub Rate</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Percentage of profile clicks that convert to new subscribers">Click-to-Sub Rate</span>
                                     <span class="text-xl font-bold text-yellow-400" id="clickToSubRate">0%</span>
                                 </div>
                                 <div class="w-full bg-gray-700/50 rounded-full h-2">
@@ -563,7 +607,7 @@
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">PPV Unlock Rate</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Percentage of sent PPV messages that get unlocked and paid for">PPV Unlock Rate</span>
                                     <span class="text-xl font-bold text-green-400" id="ppvUnlockRate">0%</span>
                                 </div>
                                 <div class="w-full bg-gray-700/50 rounded-full h-2">
@@ -571,7 +615,7 @@
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Revenue per Sub</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average revenue generated per active subscriber">Revenue per Sub</span>
                                     <span class="text-xl font-bold text-blue-400" id="revenuePerSub">$0</span>
                                 </div>
                                 
@@ -597,17 +641,17 @@
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Revenue/Hour</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average revenue generated per working hour">Revenue/Hour</span>
                                     <span class="text-xl font-bold text-green-400" id="revenuePerHour">$0</span>
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Messages/PPV</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average number of messages sent before each PPV sale">Messages/PPV</span>
                                     <span class="text-xl font-bold text-purple-400" id="messagesPerPPV">0</span>
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Peak Performance Time</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Time of day when team performance is highest">Peak Performance Time</span>
                                     <span class="text-sm font-bold text-cyan-400" id="peakTime">--:--</span>
                                 </div>
                                 
