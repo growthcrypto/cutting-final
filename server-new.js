@@ -177,16 +177,36 @@ app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
+      console.log('Missing username or password');
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    const user = await User.findOne({ username, isActive: true });
+    // Check if user exists (including inactive users for debugging)
+    const user = await User.findOne({ username });
     if (!user) {
-      console.log('User not found:', username);
+      console.log('User not found in database:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('User found:', {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      chatterName: user.chatterName,
+      hasPassword: !!user.password,
+      passwordLength: user.password ? user.password.length : 0
+    });
+
+    if (!user.isActive) {
+      console.log('User account is inactive:', username);
+      return res.status(401).json({ error: 'Account is inactive' });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('Password validation result:', isValidPassword);
+    
     if (!isValidPassword) {
       console.log('Invalid password for user:', username);
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -214,6 +234,7 @@ app.post('/api/auth/login', checkDatabaseConnection, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -276,6 +297,12 @@ app.post('/api/auth/register-manager', checkDatabaseConnection, authenticateToke
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Password hashing:', {
+      originalLength: password.length,
+      hashedLength: hashedPassword.length,
+      hashedPrefix: hashedPassword.substring(0, 10) + '...'
+    });
+    
     const user = new User({
       username,
       email,
@@ -285,7 +312,16 @@ app.post('/api/auth/register-manager', checkDatabaseConnection, authenticateToke
     });
 
     await user.save();
-    console.log('User created by manager:', user.username, user.role);
+    console.log('User created by manager:', {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      chatterName: user.chatterName,
+      isActive: user.isActive,
+      hasPassword: !!user.password,
+      passwordLength: user.password ? user.password.length : 0
+    });
     res.status(201).json({ message: 'User created successfully', userId: user._id });
   } catch (error) {
     console.error('Manager registration error:', error);
@@ -441,6 +477,40 @@ app.get('/api/debug/users', checkDatabaseConnection, async (req, res) => {
         isActive: u.isActive,
         createdAt: u.createdAt
       }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint to test password for a specific user
+app.post('/api/debug/test-password', checkDatabaseConnection, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    
+    res.json({
+      username: user.username,
+      isActive: user.isActive,
+      hasPassword: !!user.password,
+      passwordLength: user.password ? user.password.length : 0,
+      passwordValid: isValid,
+      userDetails: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        chatterName: user.chatterName
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
