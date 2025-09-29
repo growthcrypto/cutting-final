@@ -748,6 +748,14 @@ function updateUsersTable(users) {
                         ${user.isActive ? 'Active' : 'Inactive'}
                     </span>
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    ${user.role !== 'manager' ? `
+                        <button onclick="deleteUser('${user._id}', '${user.username}')" 
+                                class="text-red-400 hover:text-red-300 transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : '<span class="text-gray-500">-</span>'}
+                </td>
             `;
             tbody.appendChild(row);
         });
@@ -3379,6 +3387,7 @@ function createTeamManagementSection() {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody" class="divide-y divide-gray-700">
@@ -3607,6 +3616,37 @@ async function handleCreateUser(event) {
         }
     } catch (error) {
         console.error('Registration error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification(`User "${username}" deleted successfully!`, 'success');
+            loadUsers();
+        } else {
+            showError(result.error || 'Failed to delete user');
+        }
+    } catch (error) {
+        console.error('Delete user error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);

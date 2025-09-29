@@ -360,6 +360,33 @@ app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager
   }
 });
 
+// Delete user endpoint
+app.delete('/api/users/:userId', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Prevent deleting the last manager
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (user.role === 'manager') {
+      const managerCount = await User.countDocuments({ role: 'manager' });
+      if (managerCount <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the last manager account' });
+      }
+    }
+    
+    await User.findByIdAndDelete(userId);
+    console.log('User deleted:', user.username, user.role);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get dashboard analytics
 app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
