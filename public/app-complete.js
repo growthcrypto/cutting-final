@@ -4071,25 +4071,19 @@ function addTipField() {
     const container = document.getElementById('tipsContainer');
     if (!container) return;
 
-    const index = container.children.length;
-
     const tipDiv = document.createElement('div');
-    tipDiv.className = 'flex gap-3 items-center';
+    tipDiv.className = 'tip-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
     tipDiv.innerHTML = `
-        <div class="flex-1">
-            <input type="number" name="tipAmount${index}" placeholder="Tip Amount ($)" min="0" step="0.01" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500">
+        <div>
+            <label class="block text-sm font-medium mb-1">Tip Amount ($)</label>
+            <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00" required
+                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
         </div>
-        <div class="flex-1">
-            <select name="tipAccount${index}" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500">
-                <option value="">Select Creator...</option>
-                ${creatorAccounts.map(account => `<option value="${account._id}">${account.name}</option>`).join('')}
-            </select>
+        <div class="flex items-end">
+            <button type="button" class="remove-tip bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
-        <button type="button" onclick="removeTip(this)" class="text-red-400 hover:text-red-300">
-            <i class="fas fa-times"></i>
-        </button>
     `;
 
     container.appendChild(tipDiv);
@@ -4100,7 +4094,7 @@ function removePPVSale(button) {
 }
 
 function removeTip(button) {
-    button.parentElement.remove();
+    button.closest('.tip-entry').remove();
 }
 
 // My Performance functions
@@ -4284,40 +4278,33 @@ async function handleDailyReportSubmit(event) {
     const data = {
         date: document.getElementById('reportDate').value,
         shift: document.getElementById('reportShift').value,
-        fansChatted: parseInt(document.getElementById('fansChatted').value) || 0,
-        avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput').value) || 0,
-        notes: document.getElementById('reportNotes').value,
+        shiftDuration: parseFloat(document.getElementById('shiftDuration').value) || 0,
+        notes: document.getElementById('shiftNotes').value || '',
         ppvSales: [],
         tips: []
     };
 
     // Collect PPV sales
     const ppvContainer = document.getElementById('ppvSalesContainer');
-    for (let i = 0; i < ppvContainer.children.length; i++) {
-        const amountInput = document.querySelector(`input[name="ppvAmount${i}"]`);
-        const accountSelect = document.querySelector(`select[name="ppvAccount${i}"]`);
-
-        if (amountInput && accountSelect && amountInput.value && accountSelect.value) {
+    const ppvInputs = ppvContainer.querySelectorAll('input[name="ppvAmount"]');
+    ppvInputs.forEach(input => {
+        if (input.value) {
             data.ppvSales.push({
-                amount: parseFloat(amountInput.value),
-                creatorAccount: accountSelect.value
+                amount: parseFloat(input.value)
             });
         }
-    }
+    });
 
     // Collect tips
     const tipsContainer = document.getElementById('tipsContainer');
-    for (let i = 0; i < tipsContainer.children.length; i++) {
-        const amountInput = document.querySelector(`input[name="tipAmount${i}"]`);
-        const accountSelect = document.querySelector(`select[name="tipAccount${i}"]`);
-
-        if (amountInput && accountSelect && amountInput.value && accountSelect.value) {
+    const tipInputs = tipsContainer.querySelectorAll('input[name="tipAmount"]');
+    tipInputs.forEach(input => {
+        if (input.value) {
             data.tips.push({
-                amount: parseFloat(amountInput.value),
-                creatorAccount: accountSelect.value
+                amount: parseFloat(input.value)
             });
         }
-    }
+    });
 
     showLoading(true);
 
