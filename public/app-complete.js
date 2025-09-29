@@ -760,19 +760,20 @@ async function loadDashboardData() {
         if (response.ok) {
             data = await response.json();
         } else {
-            // Fallback to mock data if API fails
-            console.warn('API failed, using mock data');
+            // Start completely blank - no mock data
+            console.warn('API failed, showing empty state');
             data = {
-                totalRevenue: 12450,
-                totalSubs: 1234,
-                profileClicks: 8765,
-                messagesSent: 2341,
-                ppvsSent: 156,
-                ppvsUnlocked: 89,
-                avgResponseTime: 3.2,
-                netRevenue: 8915,
-                newSubs: 89,
-                recurringRevenue: 5230
+                totalRevenue: 0,
+                totalSubs: 0,
+                profileClicks: 0,
+                messagesSent: 0,
+                ppvsSent: 0,
+                ppvsUnlocked: 0,
+                avgResponseTime: 0,
+                netRevenue: 0,
+                newSubs: 0,
+                recurringRevenue: 0,
+                avgPPVPrice: 0
             };
         }
 
@@ -791,26 +792,27 @@ async function loadDashboardData() {
         loadAIInsightsChart();
     } catch (error) {
         console.error('Error loading dashboard data:', error);
-        // Use mock data as fallback
-        const mockData = {
-            totalRevenue: 12450,
-            totalSubs: 1234,
-            profileClicks: 8765,
-            messagesSent: 2341,
-            ppvsSent: 156,
-            ppvsUnlocked: 89,
-            avgResponseTime: 3.2,
-            netRevenue: 8915,
-            newSubs: 89,
-            recurringRevenue: 5230
+        // Use empty data as fallback
+        const emptyData = {
+            totalRevenue: 0,
+            totalSubs: 0,
+            profileClicks: 0,
+            messagesSent: 0,
+            ppvsSent: 0,
+            ppvsUnlocked: 0,
+            avgResponseTime: 0,
+            netRevenue: 0,
+            newSubs: 0,
+            recurringRevenue: 0,
+            avgPPVPrice: 0
         };
-        updateDashboardMetrics(mockData);
+        updateDashboardMetrics(emptyData);
         
-        // Calculate and update intelligent metrics for fallback
-        const intelligentMetrics = calculateIntelligentMetrics(mockData);
-        updateIntelligentMetrics(mockData, intelligentMetrics);
-        loadLiveAIInsights(mockData, intelligentMetrics);
-        loadActionOpportunities(mockData, intelligentMetrics);
+        // Calculate and update intelligent metrics for empty state
+        const intelligentMetrics = calculateIntelligentMetrics(emptyData);
+        updateIntelligentMetrics(emptyData, intelligentMetrics);
+        loadLiveAIInsights(emptyData, intelligentMetrics);
+        loadActionOpportunities(emptyData, intelligentMetrics);
         
         loadRevenueChart();
         loadAIInsightsChart();
@@ -825,16 +827,16 @@ function calculateIntelligentMetrics(analytics) {
     const revenuePerHour = analytics.totalRevenue / (24 * 7); // Assuming 7-day period
     const messagesPerPPV = analytics.ppvsSent > 0 ? (analytics.messagesSent / analytics.ppvsSent) : 0;
     
-    // Team performance calculations (will be real with actual chatter data)
-    const topPerformer = 'Sarah M.';
-    const performanceGap = 35; // 35% gap between top and bottom performer
-    const teamConsistency = 72; // 72% consistency score
-    const synergyScore = 84; // Team collaboration effectiveness
+    // Team performance calculations - empty until real data uploaded
+    const topPerformer = analytics.totalRevenue > 0 ? 'Calculating from data...' : 'No data uploaded';
+    const performanceGap = 0; // Will be calculated from real chatter data
+    const teamConsistency = 0; // Will be calculated from real data
+    const synergyScore = 0; // Will be calculated from real team data
     
-    // Growth calculations (will be real with historical data)
-    const revenueGrowth = Math.floor(Math.random() * 20) + 5; // +5% to +25%
-    const subsGrowth = Math.floor(Math.random() * 15) + 3; // +3% to +18%
-    const clicksGrowth = Math.floor(Math.random() * 25) + 10; // +10% to +35%
+    // Growth calculations - empty until historical data available
+    const revenueGrowth = 0; // Will be calculated vs previous period
+    const subsGrowth = 0; // Will be calculated vs previous period
+    const clicksGrowth = 0; // Will be calculated vs previous period
     
     return {
         clickToSubRate: Math.round(clickToSubRate * 10) / 10,
@@ -849,7 +851,7 @@ function calculateIntelligentMetrics(analytics) {
         revenueGrowth,
         subsGrowth,
         clicksGrowth,
-        peakTime: '14:30' // Peak performance time
+        peakTime: analytics.totalRevenue > 0 ? '14:30' : '--:--' // Peak performance time
     };
 }
 
@@ -910,7 +912,9 @@ function updateConversionInsight(intelligent) {
     if (!element) return;
     
     let insight = '';
-    if (intelligent.clickToSubRate < 2) {
+    if (intelligent.clickToSubRate === 0 && intelligent.ppvUnlockRate === 0) {
+        insight = 'Upload data to see conversion analysis and optimization recommendations.';
+    } else if (intelligent.clickToSubRate < 2) {
         insight = 'Low click-to-sub rate detected. Consider improving profile appeal or pricing strategy.';
     } else if (intelligent.ppvUnlockRate < 30) {
         insight = 'PPV unlock rate below optimal. Focus on message quality and timing optimization.';
@@ -928,7 +932,9 @@ function updateEfficiencyInsight(intelligent) {
     if (!element) return;
     
     let insight = '';
-    if (intelligent.revenuePerHour < 50) {
+    if (intelligent.revenuePerHour === 0) {
+        insight = 'Upload sales data to see efficiency analysis and performance optimization tips.';
+    } else if (intelligent.revenuePerHour < 50) {
         insight = 'Revenue per hour below target. Focus on high-value conversations and automation.';
     } else if (intelligent.messagesPerPPV > 20) {
         insight = 'Too many messages per PPV. Consider more direct sales approaches.';
@@ -944,7 +950,9 @@ function updateTeamInsight(intelligent) {
     if (!element) return;
     
     let insight = '';
-    if (intelligent.performanceGap > 40) {
+    if (intelligent.performanceGap === 0 && intelligent.teamConsistency === 0) {
+        insight = 'Upload chatter performance data to see team dynamics and collaboration analysis.';
+    } else if (intelligent.performanceGap > 40) {
         insight = 'Large performance gap detected. Implement mentoring program for skill transfer.';
     } else if (intelligent.teamConsistency < 70) {
         insight = 'Team consistency needs improvement. Focus on standardized processes and training.';
@@ -1811,14 +1819,29 @@ function loadLiveAIInsights(analytics, intelligent) {
     const container = document.getElementById('liveAIInsights');
     if (!container) return;
     
+    // Check if we have any real data
+    if (analytics.totalRevenue === 0 && analytics.totalSubs === 0 && analytics.ppvsSent === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-12">
+                <i class="fas fa-upload text-gray-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-gray-300 mb-2">No Data Available</h4>
+                <p class="text-gray-400">Upload your analytics data to see live AI insights and recommendations</p>
+                <button onclick="showSection('data-upload')" class="mt-4 premium-button text-white px-6 py-3 rounded-xl">
+                    <i class="fas fa-upload mr-2"></i>Upload Data Now
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
     const insights = [
         {
             title: 'Revenue Optimization',
             icon: 'fas fa-chart-line text-green-400',
             priority: 'high',
-            content: `Your average PPV price of $${analytics.avgPPVPrice || 28.50} is 15% below industry leaders. Testing premium content at $35-45 could increase monthly revenue by $${Math.round((analytics.totalRevenue || 0) * 0.23)}.`,
-            action: 'Test Premium Pricing',
-            roi: '+23% Revenue'
+            content: `Your average PPV price of $${analytics.avgPPVPrice || 0} ${analytics.avgPPVPrice < 35 ? 'shows room for improvement. Testing premium content at $35-45 could increase monthly revenue.' : 'is competitive. Focus on volume and consistency.'}`,
+            action: analytics.avgPPVPrice < 35 ? 'Test Premium Pricing' : 'Maintain Quality',
+            roi: analytics.avgPPVPrice < 35 ? '+18% Revenue' : 'Stable Growth'
         },
         {
             title: 'Conversion Enhancement', 
@@ -1874,6 +1897,18 @@ function loadLiveAIInsights(analytics, intelligent) {
 function loadActionOpportunities(analytics, intelligent) {
     const container = document.getElementById('actionOpportunities');
     if (!container) return;
+    
+    // Check if we have any real data
+    if (analytics.totalRevenue === 0 && analytics.totalSubs === 0 && analytics.ppvsSent === 0) {
+        container.innerHTML = `
+            <div class="col-span-3 text-center py-12">
+                <i class="fas fa-chart-bar text-gray-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-gray-300 mb-2">No Opportunities Available</h4>
+                <p class="text-gray-400">Upload performance data to discover actionable opportunities and ROI calculations</p>
+            </div>
+        `;
+        return;
+    }
     
     const opportunities = [
         {
@@ -1963,10 +1998,10 @@ function updateDashboardMetrics(data) {
     const unlockRate = data.ppvsSent > 0 ? (data.ppvsUnlocked / data.ppvsSent * 100).toFixed(1) : '0';
     document.getElementById('unlockRate').textContent = `${unlockRate}% unlock rate`;
 
-    // Update change indicators (mock data)
-    document.getElementById('revenueChange').textContent = '+12.5%';
-    document.getElementById('subsChange').textContent = '+8.3%';
-    document.getElementById('clicksChange').textContent = '+15.2%';
+    // Update change indicators (will show real data when historical data available)
+    document.getElementById('revenueChange').textContent = '0%';
+    document.getElementById('subsChange').textContent = '0%';
+    document.getElementById('clicksChange').textContent = '0%';
 }
 
 async function loadAIRecommendations() {
@@ -2266,7 +2301,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <p class="text-gray-400 text-sm tooltip" data-tooltip="Combined revenue from PPVs, tips, and subscriptions">Total Revenue</p>
-                            <p class="text-2xl font-bold text-green-400" id="analytics-revenue">$15,847</p>
+                            <p class="text-2xl font-bold text-green-400" id="analytics-revenue">$0</p>
                         </div>
                         <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
                     </div>
@@ -2277,7 +2312,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <p class="text-gray-400 text-sm tooltip" data-tooltip="Revenue after OnlyFans platform fees are deducted">Net Revenue</p>
-                            <p class="text-2xl font-bold text-cyan-400" id="analytics-net-revenue">$12,583</p>
+                            <p class="text-2xl font-bold text-cyan-400" id="analytics-net-revenue">$0</p>
                         </div>
                         <i class="fas fa-chart-line text-cyan-400 text-2xl"></i>
                     </div>
@@ -2288,7 +2323,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <p class="text-gray-400 text-sm tooltip" data-tooltip="Total number of active paying subscribers across all creators">Total Subscribers</p>
-                            <p class="text-2xl font-bold text-blue-400" id="analytics-subs">1,247</p>
+                            <p class="text-2xl font-bold text-blue-400" id="analytics-subs">0</p>
                         </div>
                         <i class="fas fa-users text-blue-400 text-2xl"></i>
                     </div>
@@ -2364,12 +2399,12 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-6">
                         <div>
                             <p class="text-gray-400 text-sm tooltip" data-tooltip="Percentage of profile clicks that convert to paying subscribers">Click-to-Subscriber Rate</p>
-                            <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">2.6%</p>
+                            <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">0%</p>
                         </div>
                         <i class="fas fa-funnel-dollar text-yellow-400 text-2xl"></i>
                     </div>
                     <div class="w-full bg-gray-700/50 rounded-full h-3 mb-3">
-                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-3 rounded-full" style="width: 26%"></div>
+                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-3 rounded-full" style="width: 0%"></div>
                     </div>
                     <div class="text-sm text-gray-400">Profile clicks → subscribers conversion</div>
                 </div>
@@ -2378,12 +2413,12 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm">PPV Unlock Rate</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-ppv-rate">57.1%</p>
+                            <p class="text-3xl font-bold text-green-400" id="analytics-ppv-rate">0%</p>
                         </div>
                         <i class="fas fa-key text-green-400 text-2xl"></i>
                     </div>
                     <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
-                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: 57%"></div>
+                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: 0%"></div>
                     </div>
                     <div class="text-xs text-gray-500">PPV sent → unlocked conversion</div>
                 </div>
@@ -2392,7 +2427,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm">Revenue per Subscriber</p>
-                            <p class="text-3xl font-bold text-blue-400" id="analytics-revenue-per-sub">$12.71</p>
+                            <p class="text-3xl font-bold text-blue-400" id="analytics-revenue-per-sub">$0</p>
                         </div>
                         <i class="fas fa-user-dollar text-blue-400 text-2xl"></i>
                     </div>
@@ -2403,7 +2438,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm">Revenue per Hour</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-revenue-per-hour">$94.33</p>
+                            <p class="text-3xl font-bold text-green-400" id="analytics-revenue-per-hour">$0</p>
                         </div>
                         <i class="fas fa-stopwatch text-green-400 text-2xl"></i>
                     </div>
@@ -2414,7 +2449,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm">Messages per PPV</p>
-                            <p class="text-3xl font-bold text-purple-400" id="analytics-messages-per-ppv">5.7</p>
+                            <p class="text-3xl font-bold text-purple-400" id="analytics-messages-per-ppv">0</p>
                         </div>
                         <i class="fas fa-exchange-alt text-purple-400 text-2xl"></i>
                     </div>
@@ -2425,7 +2460,7 @@ function createAnalyticsSection() {
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm">Platform Fee Impact</p>
-                            <p class="text-3xl font-bold text-red-400" id="analytics-fee-impact">20.6%</p>
+                            <p class="text-3xl font-bold text-red-400" id="analytics-fee-impact">0%</p>
                         </div>
                         <i class="fas fa-percentage text-red-400 text-2xl"></i>
                     </div>
