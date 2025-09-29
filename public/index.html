@@ -354,9 +354,31 @@
                             <button onclick="setTimeInterval('30d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">
                                 30d
                             </button>
-                            <button onclick="setTimeInterval('custom')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                                <i class="fas fa-calendar mr-1"></i>Custom
-                            </button>
+                            <div class="date-picker relative">
+                                <button id="customDateBtn" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
+                                    <i class="fas fa-calendar mr-1"></i>Custom
+                                </button>
+                                <div id="customDatePicker" class="date-picker-dropdown hidden">
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">Start Date</label>
+                                            <input type="date" id="customStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">End Date</label>
+                                            <input type="date" id="customEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button id="applyCustomRange" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                                Apply
+                                            </button>
+                                            <button id="cancelCustomRange" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

@@ -90,8 +90,24 @@ function setupEventListeners() {
             const interval = this.getAttribute('data-interval');
             if (interval !== 'custom') {
                 setTimeInterval(interval);
+            } else {
+                toggleCustomDatePicker();
             }
         });
+    });
+
+    // Custom date picker buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'customDateBtn') {
+            e.preventDefault();
+            toggleCustomDatePicker();
+        } else if (e.target.id === 'applyCustomRange') {
+            e.preventDefault();
+            applyCustomDateRange();
+        } else if (e.target.id === 'cancelCustomRange') {
+            e.preventDefault();
+            closeCustomDatePicker();
+        }
     });
 
     // Daily report form
@@ -361,6 +377,11 @@ function loadSectionData(sectionId) {
             break;
         case 'guidelines':
             loadGuidelines();
+            break;
+        case 'analytics':
+            setTimeout(() => {
+                loadAnalyticsCharts();
+            }, 100);
             break;
         case 'ai-analysis':
             loadChattersForAnalysis();
@@ -708,6 +729,80 @@ function loadRevenueChart() {
     });
 }
 
+function loadAnalyticsCharts() {
+    // Load revenue breakdown chart
+    const revenueCtx = document.getElementById('revenueBreakdownChart');
+    if (revenueCtx) {
+        new Chart(revenueCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Arya', 'Iris', 'Lilla'],
+                datasets: [{
+                    data: [4850, 4200, 3400],
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                    borderWidth: 2,
+                    borderColor: '#1f2937'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#e5e7eb',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Load chatter comparison chart
+    const chatterCtx = document.getElementById('chatterComparisonChart');
+    if (chatterCtx) {
+        new Chart(chatterCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Sarah M.', 'Alex K.', 'Jamie L.', 'Morgan T.'],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [3240, 2890, 2650, 2420],
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#1d4ed8',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#9ca3af'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
 function loadAIInsightsChart() {
     const ctx = document.getElementById('aiInsightsChart');
     if (!ctx) return;
@@ -770,14 +865,123 @@ function createAnalyticsSection() {
             <h2 class="text-3xl font-bold mb-2">Detailed Analytics</h2>
             <p class="text-gray-400">Comprehensive performance metrics and insights</p>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Analytics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Conversion Rate</p>
+                        <p class="text-2xl font-bold text-blue-400">14.2%</p>
+                    </div>
+                    <i class="fas fa-percentage text-blue-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Revenue/Chatter</p>
+                        <p class="text-2xl font-bold text-green-400">$3,112</p>
+                    </div>
+                    <i class="fas fa-user-dollar text-green-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">PPV Success Rate</p>
+                        <p class="text-2xl font-bold text-purple-400">67.8%</p>
+                    </div>
+                    <i class="fas fa-unlock text-purple-400 text-2xl"></i>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Avg Response Time</p>
+                        <p class="text-2xl font-bold text-orange-400">2.8m</p>
+                    </div>
+                    <i class="fas fa-stopwatch text-orange-400 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Revenue Breakdown</h3>
+                <h3 class="text-lg font-semibold mb-4">Revenue Breakdown by Creator</h3>
                 <canvas id="revenueBreakdownChart" width="400" height="200"></canvas>
             </div>
             <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Chatter Performance</h3>
+                <h3 class="text-lg font-semibold mb-4">Chatter Performance Comparison</h3>
                 <canvas id="chatterComparisonChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Creator Performance -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Creator Performance</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Creator</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Revenue</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Subscribers</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            <tr>
+                                <td class="px-4 py-3 text-white font-medium">Arya</td>
+                                <td class="px-4 py-3 text-green-400">$4,850</td>
+                                <td class="px-4 py-3 text-blue-400">445</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 text-white font-medium">Iris</td>
+                                <td class="px-4 py-3 text-green-400">$4,200</td>
+                                <td class="px-4 py-3 text-blue-400">398</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3 text-white font-medium">Lilla</td>
+                                <td class="px-4 py-3 text-green-400">$3,400</td>
+                                <td class="px-4 py-3 text-blue-400">391</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Performing Chatters -->
+            <div class="glass-card rounded-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Top Performing Chatters</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm">1</div>
+                            <span class="text-white font-medium">Sarah M.</span>
+                        </div>
+                        <span class="text-green-400 font-bold">$3,240</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-black font-bold text-sm">2</div>
+                            <span class="text-white font-medium">Alex K.</span>
+                        </div>
+                        <span class="text-green-400 font-bold">$2,890</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold text-sm">3</div>
+                            <span class="text-white font-medium">Jamie L.</span>
+                        </div>
+                        <span class="text-green-400 font-bold">$2,650</span>
+                    </div>
+                </div>
             </div>
         </div>
     `;
