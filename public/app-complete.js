@@ -3485,6 +3485,7 @@ async function loadChattersForAnalysis() {
         showLoading(false);
     }
 }
+END OLD CODE REMOVED */
 
 async function runChatterAnalysis() {
     const chatterId = document.getElementById('chatterSelect').value;
