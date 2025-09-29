@@ -1475,15 +1475,25 @@ function renderAgencyAnalysisResults(data) {
         <div class="relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-3xl"></div>
             <div class="relative p-12 mb-12">
-                <div class="text-center mb-12">
-                    <div class="inline-flex items-center justify-center w-40 h-40 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-4 border-purple-400/30 mb-8">
-                        <div class="text-center">
-                            <div class="text-7xl font-black text-purple-400">${data.overallScore}</div>
-                            <div class="text-2xl text-purple-300 font-semibold">/ 100</div>
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center">
+                        <div class="w-20 h-20 rounded-xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-2 border-purple-400/30 mr-6 flex items-center justify-center">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-purple-400">${data.overallScore}</div>
+                                <div class="text-sm text-purple-300">/100</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-2xl font-bold text-white mb-2">Overall Performance Score</h4>
+                            <p class="text-gray-300">Analysis based on ${currentAIAnalysisInterval} of performance data</p>
                         </div>
                     </div>
-                    <h4 class="text-4xl font-bold text-white mb-4">Agency Performance Score</h4>
-                    <p class="text-gray-300 text-xl max-w-2xl mx-auto">Comprehensive intelligence analysis based on ${currentAIAnalysisInterval} of performance data</p>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-purple-400 mb-1">Performance Level</div>
+                        <div class="text-gray-400">
+                            ${data.overallScore >= 80 ? 'Excellent' : data.overallScore >= 60 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="w-full max-w-4xl mx-auto">
@@ -1507,36 +1517,36 @@ function renderAgencyAnalysisResults(data) {
                         <i class="fas fa-chart-line text-green-400 text-4xl"></i>
                     </div>
                     <div>
-                        <h4 class="text-4xl font-bold text-white mb-2">Revenue Intelligence</h4>
-                        <p class="text-green-200 text-xl">Smart optimization opportunities and growth potential</p>
+                        <h4 class="text-2xl font-bold text-white mb-2">Revenue Intelligence</h4>
+                        <p class="text-green-200">Smart optimization opportunities and growth potential</p>
                     </div>
                 </div>
                 
                 <!-- Revenue Metrics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-green-500/20 text-center">
-                        <div class="w-16 h-16 bg-green-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="glass-card rounded-xl p-6 text-center border border-green-500/20">
+                        <div class="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-dollar-sign text-green-400"></i>
                         </div>
-                        <div class="text-4xl font-black text-green-400 mb-3">$${data.revenueAnalysis.current.toLocaleString()}</div>
-                        <div class="text-xl text-white font-semibold mb-2">Current Monthly</div>
-                        <div class="text-gray-400">Based on uploaded data</div>
+                        <div class="text-2xl font-bold text-green-400 mb-2">$${data.revenueAnalysis.current.toLocaleString()}</div>
+                        <div class="text-white font-medium mb-1">Current Monthly</div>
+                        <div class="text-gray-400 text-sm">From uploaded data</div>
                     </div>
-                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-blue-500/20 text-center">
-                        <div class="w-16 h-16 bg-blue-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-rocket text-blue-400 text-2xl"></i>
+                    <div class="glass-card rounded-xl p-6 text-center border border-blue-500/20">
+                        <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-rocket text-blue-400"></i>
                         </div>
-                        <div class="text-4xl font-black text-blue-400 mb-3">$${data.revenueAnalysis.potential.toLocaleString()}</div>
-                        <div class="text-xl text-white font-semibold mb-2">Optimization Potential</div>
-                        <div class="text-gray-400">With AI recommendations</div>
+                        <div class="text-2xl font-bold text-blue-400 mb-2">$${data.revenueAnalysis.potential.toLocaleString()}</div>
+                        <div class="text-white font-medium mb-1">Optimization Potential</div>
+                        <div class="text-gray-400 text-sm">With recommendations</div>
                     </div>
-                    <div class="bg-gradient-to-br from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-yellow-500/20 text-center">
-                        <div class="w-16 h-16 bg-yellow-600/20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                            <i class="fas fa-target text-yellow-400 text-2xl"></i>
+                    <div class="glass-card rounded-xl p-6 text-center border border-yellow-500/20">
+                        <div class="w-12 h-12 bg-yellow-600/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-target text-yellow-400"></i>
                         </div>
-                        <div class="text-4xl font-black text-yellow-400 mb-3">$${data.revenueAnalysis.gap.toLocaleString()}</div>
-                        <div class="text-xl text-white font-semibold mb-2">Growth Opportunity</div>
-                        <div class="text-gray-400">Immediate potential</div>
+                        <div class="text-2xl font-bold text-yellow-400 mb-2">$${data.revenueAnalysis.gap.toLocaleString()}</div>
+                        <div class="text-white font-medium mb-1">Growth Opportunity</div>
+                        <div class="text-gray-400 text-sm">Actionable potential</div>
                     </div>
                 </div>
                 
@@ -1546,24 +1556,24 @@ function renderAgencyAnalysisResults(data) {
                         <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>
                         Revenue Optimization Opportunities
                     </h5>
-                    <div class="grid grid-cols-1 gap-6">
+                    <div class="space-y-4">
                         ${data.revenueAnalysis.opportunities.map((opp, index) => `
-                            <div class="bg-gradient-to-r from-gray-900/50 to-gray-800/50 p-8 rounded-2xl border border-gray-600 hover:border-green-500/30 transition-all group">
+                            <div class="glass-card rounded-xl p-6 border border-gray-600 hover:border-green-500/30 transition-all">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center flex-1">
-                                        <div class="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center text-white font-bold text-xl mr-6">
+                                        <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold mr-4">
                                             ${index + 1}
                                         </div>
                                         <div class="flex-1">
-                                            <div class="text-2xl font-bold text-white mb-2">${opp.area}</div>
-                                            <div class="text-gray-300 text-lg">Monthly Revenue Potential: <span class="text-green-400 font-bold">+$${opp.impact.toLocaleString()}</span></div>
-                                            <div class="text-gray-500 mt-2">AI Confidence Level: ${opp.confidence}% • Based on current performance data</div>
+                                            <div class="text-lg font-bold text-white mb-2">${opp.area}</div>
+                                            <div class="text-gray-300">Monthly Potential: <span class="text-green-400 font-bold">+$${opp.impact.toLocaleString()}</span></div>
+                                            <div class="text-gray-500 text-sm mt-1">Based on current performance data</div>
                                         </div>
                                     </div>
-                                    <div class="text-right ml-8">
-                                        <div class="text-3xl font-black text-green-400">${opp.confidence}%</div>
-                                        <div class="text-gray-400">Success Rate</div>
-                                        <button class="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition-all">
+                                    <div class="text-right ml-6">
+                                        <div class="text-2xl font-bold text-green-400">${opp.confidence}%</div>
+                                        <div class="text-gray-400 text-sm">Confidence</div>
+                                        <button class="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all text-sm">
                                             <i class="fas fa-play mr-2"></i>Implement
                                         </button>
                                     </div>
@@ -1656,8 +1666,8 @@ function renderAgencyAnalysisResults(data) {
                         <i class="fas fa-rocket text-blue-400 text-4xl"></i>
                     </div>
                     <div>
-                        <h4 class="text-4xl font-bold text-white mb-2">90-Day Strategic Action Plan</h4>
-                        <p class="text-blue-200 text-xl">Prioritized roadmap for maximum ROI impact</p>
+                        <h4 class="text-2xl font-bold text-white mb-2">90-Day Strategic Action Plan</h4>
+                        <p class="text-blue-200">Prioritized roadmap for maximum ROI impact</p>
                     </div>
                 </div>
                 
@@ -1677,7 +1687,7 @@ function renderAgencyAnalysisResults(data) {
                                                 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                                             }">${action.priority} Priority</span>
                                         </div>
-                                        <div class="text-3xl font-bold text-white mb-4">${action.task}</div>
+                                        <div class="text-xl font-bold text-white mb-4">${action.task}</div>
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                                             <div class="text-center p-4 bg-gray-800/40 rounded-xl">
                                                 <div class="text-xl font-bold text-green-400">${action.expectedROI}</div>
