@@ -1378,55 +1378,203 @@ function loadAIInsightsChart() {
 // Section creation functions
 function createAnalyticsSection() {
     return `
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">Detailed Analytics</h2>
-            <p class="text-gray-400">Comprehensive performance metrics and insights</p>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">Advanced Analytics</h2>
+                <p class="text-gray-400">Complete data visualization and intelligent metrics breakdown</p>
+            </div>
+            
+            <!-- Analytics Time Controls -->
+            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
+                <span class="text-sm text-gray-400 mr-3">Data Period:</span>
+                <button onclick="setAnalyticsInterval('7d')" class="analytics-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
+                <button onclick="setAnalyticsInterval('30d')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
+                <button onclick="setAnalyticsInterval('custom')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
+                </button>
+            </div>
         </div>
-        
-        <!-- Analytics Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="glass-card rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">Conversion Rate</p>
-                        <p class="text-2xl font-bold text-blue-400">14.2%</p>
+
+        <!-- Core Infloww Data -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-database text-blue-400 mr-3"></i>
+                Core Performance Data
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Revenue</p>
+                            <p class="text-2xl font-bold text-green-400" id="analytics-revenue">$15,847</p>
+                        </div>
+                        <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
                     </div>
-                    <i class="fas fa-percentage text-blue-400 text-2xl"></i>
+                    <div class="text-xs text-gray-500">All revenue sources combined</div>
                 </div>
-            </div>
-            
-            <div class="glass-card rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">Revenue/Chatter</p>
-                        <p class="text-2xl font-bold text-green-400">$3,112</p>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Net Revenue</p>
+                            <p class="text-2xl font-bold text-cyan-400" id="analytics-net-revenue">$12,583</p>
+                        </div>
+                        <i class="fas fa-chart-line text-cyan-400 text-2xl"></i>
                     </div>
-                    <i class="fas fa-user-dollar text-green-400 text-2xl"></i>
+                    <div class="text-xs text-gray-500">After platform fees</div>
                 </div>
-            </div>
-            
-            <div class="glass-card rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">PPV Success Rate</p>
-                        <p class="text-2xl font-bold text-purple-400">67.8%</p>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Subscribers</p>
+                            <p class="text-2xl font-bold text-blue-400" id="analytics-subs">1,247</p>
+                        </div>
+                        <i class="fas fa-users text-blue-400 text-2xl"></i>
                     </div>
-                    <i class="fas fa-unlock text-purple-400 text-2xl"></i>
+                    <div class="text-xs text-gray-500">Active subscriber base</div>
                 </div>
-            </div>
-            
-            <div class="glass-card rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-400 text-sm">Avg Response Time</p>
-                        <p class="text-2xl font-bold text-orange-400">2.8m</p>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Profile Clicks</p>
+                            <p class="text-2xl font-bold text-purple-400" id="analytics-clicks">3,421</p>
+                        </div>
+                        <i class="fas fa-mouse-pointer text-purple-400 text-2xl"></i>
                     </div>
-                    <i class="fas fa-stopwatch text-orange-400 text-2xl"></i>
+                    <div class="text-xs text-gray-500">Marketing funnel entry</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">PPVs Sent</p>
+                            <p class="text-2xl font-bold text-yellow-400" id="analytics-ppvs">156</p>
+                        </div>
+                        <i class="fas fa-paper-plane text-yellow-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Pay-per-view messages</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">PPVs Unlocked</p>
+                            <p class="text-2xl font-bold text-orange-400" id="analytics-ppv-unlocked">89</p>
+                        </div>
+                        <i class="fas fa-unlock text-orange-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Successfully converted</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Messages Sent</p>
+                            <p class="text-2xl font-bold text-pink-400" id="analytics-messages">892</p>
+                        </div>
+                        <i class="fas fa-comments text-pink-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Total conversations</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <p class="text-gray-400 text-sm">Avg Response Time</p>
+                            <p class="text-2xl font-bold text-red-400" id="analytics-response-time">2.3m</p>
+                        </div>
+                        <i class="fas fa-clock text-red-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Team efficiency metric</div>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Section -->
+        <!-- Intelligent Combined Metrics -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-brain text-purple-400 mr-3"></i>
+                Intelligent Combined Metrics
+                <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">SMART</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Click-to-Subscriber Rate</p>
+                            <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">2.6%</p>
+                        </div>
+                        <i class="fas fa-funnel-dollar text-yellow-400 text-2xl"></i>
+                    </div>
+                    <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
+                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-2 rounded-full" style="width: 26%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500">Profile clicks → subscribers conversion</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">PPV Unlock Rate</p>
+                            <p class="text-3xl font-bold text-green-400" id="analytics-ppv-rate">57.1%</p>
+                        </div>
+                        <i class="fas fa-key text-green-400 text-2xl"></i>
+                    </div>
+                    <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
+                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: 57%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500">PPV sent → unlocked conversion</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Revenue per Subscriber</p>
+                            <p class="text-3xl font-bold text-blue-400" id="analytics-revenue-per-sub">$12.71</p>
+                        </div>
+                        <i class="fas fa-user-dollar text-blue-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Average subscriber lifetime value</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Revenue per Hour</p>
+                            <p class="text-3xl font-bold text-green-400" id="analytics-revenue-per-hour">$94.33</p>
+                        </div>
+                        <i class="fas fa-stopwatch text-green-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Operational efficiency rate</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Messages per PPV</p>
+                            <p class="text-3xl font-bold text-purple-400" id="analytics-messages-per-ppv">5.7</p>
+                        </div>
+                        <i class="fas fa-exchange-alt text-purple-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Conversation-to-sale efficiency</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm">Platform Fee Impact</p>
+                            <p class="text-3xl font-bold text-red-400" id="analytics-fee-impact">20.6%</p>
+                        </div>
+                        <i class="fas fa-percentage text-red-400 text-2xl"></i>
+                    </div>
+                    <div class="text-xs text-gray-500">Revenue lost to platform fees</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Breakdown Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="chart-container">
                 <h3 class="text-lg font-semibold mb-4">Revenue Breakdown by Creator</h3>
