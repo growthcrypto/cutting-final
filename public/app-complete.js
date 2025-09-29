@@ -98,7 +98,37 @@ function setupEventListeners() {
         });
     });
 
-    initializeCalendar();
+    // Custom date picker event handlers
+    document.getElementById('customDateBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCustomDatePicker();
+    });
+
+    document.getElementById('applyCustomRange')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        applyCustomDateRange();
+    });
+
+    document.getElementById('cancelCustomRange')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeCustomDatePicker();
+    });
+
+    document.getElementById('closeDatePicker')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeCustomDatePicker();
+    });
+
+    // Close picker when clicking outside
+    document.addEventListener('click', function(event) {
+        const picker = document.getElementById('customDatePicker');
+        const button = document.getElementById('customDateBtn');
+        
+        if (picker && button && !picker.contains(event.target) && !button.contains(event.target)) {
+            closeCustomDatePicker();
+        }
+    });
 
     // Daily report form
     const dailyReportForm = document.getElementById('dailyReportForm');
@@ -429,15 +459,16 @@ function initializeSidebar() {
     function setCollapsedState(collapsed) {
         sidebar.classList.toggle('sidebar-hidden', collapsed);
         floatingSidebarToggle.classList.toggle('hidden', !collapsed);
-        sidebarToggleIcon.querySelector('i').className = collapsed
-            ? 'fas fa-angle-double-right text-xl'
-            : 'fas fa-angle-double-left text-xl';
-
-        if (window.innerWidth >= 1024) {
-            mainContent.style.marginLeft = collapsed ? '0' : '288px';
-        } else {
-            mainContent.style.marginLeft = '';
+        
+        const toggleIcon = sidebarToggleIcon.querySelector('i');
+        if (toggleIcon) {
+            toggleIcon.className = collapsed
+                ? 'fas fa-angle-double-right text-xl'
+                : 'fas fa-angle-double-left text-xl';
         }
+
+        // Always set margin to 0 - no automatic sidebar space
+        mainContent.style.marginLeft = '0';
     }
 
     function toggleSidebarState(forceState) {
@@ -445,6 +476,10 @@ function initializeSidebar() {
         const nextState = typeof forceState === 'boolean' ? forceState : !isCollapsed;
         setCollapsedState(nextState);
     }
+
+    // Make these functions global so they can be called from anywhere
+    window.toggleSidebarState = toggleSidebarState;
+    window.setCollapsedState = setCollapsedState;
 
     sidebarToggle.addEventListener('click', () => toggleSidebarState());
     sidebarToggleIcon.addEventListener('click', () => toggleSidebarState());
@@ -468,6 +503,7 @@ function initializeSidebar() {
         }
     });
 
+    // Start with sidebar open on desktop, closed on mobile
     toggleSidebarState(window.innerWidth < 1024);
 }
 
@@ -517,30 +553,34 @@ function toggleCustomDatePicker() {
     const picker = document.getElementById('customDatePicker');
     if (!picker) return;
 
-    const shouldShow = !picker.classList.contains('show');
+    const isVisible = picker.classList.contains('show');
 
-    if (shouldShow) {
-        reviveCalendarInputs();
+    if (isVisible) {
+        // Hide the picker
+        picker.classList.remove('show');
+        picker.classList.add('hide');
+    } else {
+        // Show the picker
         picker.classList.remove('hide');
-
-        requestAnimationFrame(() => {
-            picker.classList.add('show');
-        });
-
+        
+        // Set default dates
         const startInput = document.getElementById('customStartDate');
         const endInput = document.getElementById('customEndDate');
 
         if (startInput && endInput) {
-            const today = new Date();
-            const lastWeek = new Date(today);
-            lastWeek.setDate(today.getDate() - 7);
+            if (!startInput.value || !endInput.value) {
+                const today = new Date();
+                const lastWeek = new Date(today);
+                lastWeek.setDate(today.getDate() - 7);
 
-            startInput.value ||= lastWeek.toISOString().split('T')[0];
-            endInput.value ||= today.toISOString().split('T')[0];
-            startInput.focus({ preventScroll: true });
+                startInput.value = lastWeek.toISOString().split('T')[0];
+                endInput.value = today.toISOString().split('T')[0];
+            }
         }
-    } else {
-        closeCustomDatePicker();
+
+        requestAnimationFrame(() => {
+            picker.classList.add('show');
+        });
     }
 }
 
@@ -591,8 +631,8 @@ function closeCustomDatePicker(options = {}) {
         const startInput = document.getElementById('customStartDate');
         const endInput = document.getElementById('customEndDate');
 
-        startInput?.blur();
-        endInput?.blur();
+        if (startInput) startInput.blur();
+        if (endInput) endInput.blur();
     }
 }
 

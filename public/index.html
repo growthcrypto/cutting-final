@@ -105,15 +105,9 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @media (min-width: 1024px) {
-            .main-content {
-                margin-left: 288px;
-            }
-
-            .sidebar-collapsed + .main-content,
-            .main-content.sidebar-collapsed {
-                margin-left: 0;
-            }
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
         }
 
         .chart-container {
@@ -424,8 +418,8 @@
             </aside>
 
             <!-- Floating Sidebar Toggle Button (appears when collapsed) -->
-            <button id="floatingSidebarToggle" class="fixed top-6 left-6 z-40 hidden">
-                <span class="sr-only">Show navigation</span>
+            <button id="floatingSidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-lg transition-all hidden" title="Show Menu">
+                <i class="fas fa-bars text-lg"></i>
             </button>
 
             <!-- Main Content -->
