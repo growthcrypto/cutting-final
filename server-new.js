@@ -470,15 +470,30 @@ app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken
 // Submit Chatter data
 app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
+    console.log('Chatter data submission:', req.body);
+    
+    // Find the creator account (for now, we'll use a default or first available)
+    const creatorAccount = await CreatorAccount.findOne({ isActive: true });
+    if (!creatorAccount) {
+      return res.status(400).json({ error: 'No active creator account found' });
+    }
+    
     const chatterData = new ChatterPerformance({
-      ...req.body,
-      submittedBy: req.user.id,
-      submittedAt: new Date()
+      chatterName: req.body.chatter,
+      creatorAccount: creatorAccount._id,
+      weekStartDate: new Date(req.body.startDate),
+      weekEndDate: new Date(req.body.endDate),
+      messagesSent: req.body.messagesSent || 0,
+      ppvsSent: req.body.ppvsSent || 0,
+      ppvsUnlocked: req.body.ppvsUnlocked || 0,
+      fansChattedWith: req.body.fansChatted || 0
     });
     
     await chatterData.save();
+    console.log('Chatter data saved successfully:', chatterData._id);
     res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
+    console.error('Chatter data submission error:', error);
     res.status(500).json({ error: error.message });
   }
 });
