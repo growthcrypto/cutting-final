@@ -1688,6 +1688,40 @@ function updateAnalyticsPageData(data) {
             element.textContent = value;
         }
     });
+    
+    // Update creator performance table
+    updateCreatorPerformanceTable(data);
+    
+    // Update top performing chatters
+    updateTopPerformingChatters(data);
+}
+
+function updateCreatorPerformanceTable(data) {
+    const tableBody = document.getElementById('creator-performance-table');
+    if (!tableBody) return;
+    
+    // For now, show placeholder data since we don't have creator-specific data yet
+    // This will be populated when we have actual creator data
+    tableBody.innerHTML = `
+        <tr>
+            <td class="px-4 py-3 text-white font-medium">No Data</td>
+            <td class="px-4 py-3 text-gray-400">$0</td>
+            <td class="px-4 py-3 text-gray-400">0</td>
+        </tr>
+    `;
+}
+
+function updateTopPerformingChatters(data) {
+    const container = document.getElementById('top-performing-chatters');
+    if (!container) return;
+    
+    // For now, show placeholder data since we don't have chatter-specific data yet
+    // This will be populated when we have actual chatter performance data
+    container.innerHTML = `
+        <div class="flex items-center justify-center p-6 text-gray-400">
+            <span>No chatter data available</span>
+        </div>
+    `;
 }
 
 // Generate Comprehensive Agency Analysis - REAL DATA ONLY

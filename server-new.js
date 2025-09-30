@@ -673,6 +673,32 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
   }
 });
 
+// Debug endpoint to wipe all data
+app.delete('/api/debug/wipe-data', checkDatabaseConnection, async (req, res) => {
+  try {
+    const result = {
+      dailyReports: await DailyChatterReport.deleteMany({}),
+      accountData: await AccountData.deleteMany({}),
+      chatterPerformance: await ChatterPerformance.deleteMany({}),
+      messageAnalysis: await MessageAnalysis.deleteMany({}),
+      aiAnalysis: await AIAnalysis.deleteMany({})
+    };
+    
+    res.json({
+      message: 'All data wiped successfully',
+      deletedCounts: {
+        dailyReports: result.dailyReports.deletedCount,
+        accountData: result.accountData.deletedCount,
+        chatterPerformance: result.chatterPerformance.deletedCount,
+        messageAnalysis: result.messageAnalysis.deletedCount,
+        aiAnalysis: result.aiAnalysis.deletedCount
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // AI Analysis endpoint for comprehensive analysis
 app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
