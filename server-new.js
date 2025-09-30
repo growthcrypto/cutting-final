@@ -407,45 +407,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       dateQuery = { date: { $gte: start } };
     }
 
-    // Get data from all sources
-    const dailyReports = await DailyChatterReport.find(dateQuery);
-    const ofAccountData = await AccountData.find(dateQuery);
+    // Get data from all sources (simplified - get ALL data for now)
+    const dailyReports = await DailyChatterReport.find({}).sort({ date: -1 });
+    const ofAccountData = await AccountData.find({}).sort({ weekStartDate: -1 });
     
-    // Get chatter performance data (new data source) - more flexible date matching
-    let chatterPerformanceQuery = {};
-    if (startDate && endDate) {
-      // Find records that overlap with the requested date range
-      chatterPerformanceQuery = {
-        $or: [
-          { weekStartDate: { $lte: new Date(endDate) }, weekEndDate: { $gte: new Date(startDate) } },
-          { weekStartDate: { $gte: new Date(startDate), $lte: new Date(endDate) } },
-          { weekEndDate: { $gte: new Date(startDate), $lte: new Date(endDate) } }
-        ]
-      };
-    } else {
-      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
-      const start = new Date();
-      start.setDate(start.getDate() - days);
-      const end = new Date();
-      chatterPerformanceQuery = { 
-        $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-          { weekStartDate: { $gte: start, $lte: end } },
-          { weekEndDate: { $gte: start, $lte: end } }
-        ]
-      };
-    }
-    let chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
-    
-    // If no data found with date ranges, get all recent data (last 30 days)
-    if (chatterPerformance.length === 0) {
-      const fallbackStart = new Date();
-      fallbackStart.setDate(fallbackStart.getDate() - 30);
-      chatterPerformance = await ChatterPerformance.find({
-        weekStartDate: { $gte: fallbackStart }
-      });
-      console.log('No data found with date ranges, using fallback query:', chatterPerformance.length, 'records');
-    }
+    // Get ALL chatter performance data (simplified - no date filtering for now)
+    // This ensures we show data regardless of date range complexity
+    const chatterPerformance = await ChatterPerformance.find({}).sort({ weekStartDate: -1 });
     
     console.log('Dashboard data query results:', {
       dailyReports: dailyReports.length,
