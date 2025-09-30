@@ -1341,8 +1341,14 @@ DERIVED METRICS (you must compute and mention):
 - Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
 
 BENCHMARKS (use these for justification and cite them explicitly):
-- Response Time (minutes): <=2 = Excellent, 2-3 = Good, 3-5 = Fair, >5 = Needs Improvement
-  Example citation format: "Avg response is 9m (>5m benchmark), therefore Needs Improvement."
+- Response Time: <5 minutes = Acceptable, ≥5 minutes = Needs Improvement
+- PPV Unlock Rate: 32% = Current average, 50%+ = Target objective, higher is better
+- Grammar: Informal OnlyFans style is expected (u/you, whats up dude, etc.). Score should be as high as possible while accounting for informal chatting norms.
+- Guidelines: Avoid major violations. Score should be as high as possible.
+- Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
+- Overall Quality: Use as data point for pattern analysis.
+
+Example citation: "Response time of 6 minutes exceeds the <5 minute benchmark, indicating Needs Improvement."
 
 CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data.
 
