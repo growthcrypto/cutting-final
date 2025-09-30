@@ -807,13 +807,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
     }
 
-    // For individual chatter analysis, return a deterministic, data-driven analysis
-    if (analysisType === 'individual') {
-      const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval);
-      return res.json(deterministic);
-    }
-
-    // Generate AI analysis using OpenAI for agency analysis only
+    // Generate AI analysis using OpenAI (agency and individual)
     try {
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
       res.json(aiAnalysis);
@@ -822,8 +816,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       // Fallback to basic analysis if AI fails
       try {
-        const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
-        res.json(fallbackAnalysis);
+        if (analysisType === 'individual') {
+          const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval);
+          res.json(deterministic);
+        } else {
+          const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
+          res.json(fallbackAnalysis);
+        }
       } catch (fallbackError) {
         console.error('Fallback analysis also failed:', fallbackError);
         
@@ -1276,30 +1275,40 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
-      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze the following individual chatter performance data for the ${interval} period:
+      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis.
 
-CHATTER DATA:
-- Total Revenue: $${analyticsData.totalRevenue}
+CHATTER DATA (REAL):
 - PPVs Sent: ${analyticsData.ppvsSent}
+- PPVs Unlocked: ${analyticsData.ppvsUnlocked}
 - Messages Sent: ${analyticsData.messagesSent}
-- Average Response Time: ${analyticsData.avgResponseTime} minutes
+- Fans Chatted: ${analyticsData.fansChatted}
+- Average Response Time (minutes): ${analyticsData.avgResponseTime}
 
-Please provide a detailed analysis in JSON format with the following structure:
+DERIVED METRICS (you must compute and mention):
+- PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
+- Messages per PPV: ${analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1) : 0}
+- Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
+
+Respond in STRICT JSON with this exact shape:
 {
-  "overallScore": [0-100],
-  "strengths": ["strength1", "strength2"],
-  "weaknesses": ["weakness1", "weakness2"],
-  "opportunities": ["opportunity1", "opportunity2"],
-  "recommendations": ["recommendation1", "recommendation2"]
+  "overallScore": number,
+  "insights": string[],
+  "weakPoints": string[],
+  "opportunities": string[],
+  "roiCalculations": string[],
+  "recommendations": string[],
+  "ppvsSent": number,
+  "ppvsUnlocked": number,
+  "messagesSent": number,
+  "fansChatted": number,
+  "avgResponseTime": number
 }
 
-Focus on:
-1. Individual performance strengths and weaknesses
-2. Specific improvement opportunities
-3. Actionable recommendations for this chatter
-4. Performance metrics analysis
-
-Be specific with numbers and percentages. Don't make up data that isn't provided.`;
+Rules:
+- Use only the provided metrics and the derived metrics above.
+- Quote actual numbers in every point (e.g., "unlock rate 52.0%", "avg response 2.5m").
+- Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
+- Keep it concise and actionable.`;
     }
 
     const completion = await openai.chat.completions.create({
