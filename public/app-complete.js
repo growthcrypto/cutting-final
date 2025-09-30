@@ -786,9 +786,10 @@ function updateUsersTable(users) {
 async function loadDashboardData() {
     try {
         // Fetch real data from API
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}`, {
+        const response = await fetch(`/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`, {
             headers: {
-                'Authorization': `Bearer ${authToken}`
+                'Authorization': `Bearer ${authToken}`,
+                'Cache-Control': 'no-cache'
             }
         });
 
@@ -1640,9 +1641,10 @@ async function runChatterAnalysis() {
 // Load analytics data for analytics page
 async function loadAnalyticsData() {
     try {
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentAnalyticsInterval}`, {
+        const response = await fetch(`/api/analytics/dashboard?interval=${currentAnalyticsInterval}&_t=${Date.now()}`, {
             headers: {
-                'Authorization': `Bearer ${authToken}`
+                'Authorization': `Bearer ${authToken}`,
+                'Cache-Control': 'no-cache'
             }
         });
         
