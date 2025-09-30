@@ -556,8 +556,10 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       avgResponseTime: req.body.avgResponseTime || 0
     });
     
+    console.log('About to save chatter data:', chatterData);
     await chatterData.save();
     console.log('Chatter data saved successfully:', chatterData._id);
+    console.log('Saved data includes avgResponseTime:', chatterData.avgResponseTime);
     res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
     console.error('Chatter data submission error:', error);
@@ -665,7 +667,8 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
           messagesSent: c.messagesSent,
           ppvsSent: c.ppvsSent,
           ppvsUnlocked: c.ppvsUnlocked,
-          fansChattedWith: c.fansChattedWith
+          fansChattedWith: c.fansChattedWith,
+          avgResponseTime: c.avgResponseTime
         })),
         creatorAccounts: creatorAccounts.map(c => ({
           id: c._id,
