@@ -1449,7 +1449,7 @@ async function runAgencyAnalysis() {
 
         console.log('Sending AI analysis request:', requestBody);
         
-        const response = await fetch('/api/ai/analysis', {
+        const response = await fetch(`/api/ai/analysis?_t=${Date.now()}` , {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -1651,6 +1651,7 @@ async function runChatterAnalysis() {
         }
 
         const analysisData = await response.json();
+        console.log('AI analysis data:', analysisData);
         renderChatterAnalysisResults(analysisData);
         
     } catch (error) {
@@ -2459,6 +2460,23 @@ function renderChatterAnalysisResults(data) {
                             <div class="flex items-start p-4 bg-orange-900/10 rounded-lg border border-orange-500/20">
                                 <i class="fas fa-arrow-up text-orange-400 mr-4 mt-1"></i>
                                 <span class="text-gray-300 leading-relaxed">${point}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Root Causes (if provided by AI) -->
+                ${data.rootCauses && data.rootCauses.length > 0 ? `
+                <div class="glass-card rounded-xl p-8">
+                    <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-diagram-project text-red-400 mr-4"></i>Root Causes
+                    </h4>
+                    <div class="space-y-4">
+                        ${data.rootCauses.map(item => `
+                            <div class="flex items-start p-4 bg-red-900/10 rounded-lg border border-red-500/20">
+                                <i class="fas fa-link text-red-400 mr-4 mt-1"></i>
+                                <span class="text-gray-300 leading-relaxed">${item}</span>
                             </div>
                         `).join('')}
                     </div>
