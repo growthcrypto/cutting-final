@@ -2542,6 +2542,20 @@ function clearDashboardToZero() {
             element.textContent = value;
         }
     });
+    
+    // Also clear any progress bars
+    const clickToSubBar = document.getElementById('clickToSubBar');
+    const ppvUnlockBar = document.getElementById('ppvUnlockBar');
+    if (clickToSubBar) clickToSubBar.style.width = '0%';
+    if (ppvUnlockBar) ppvUnlockBar.style.width = '0%';
+    
+    // Clear insights
+    const conversionInsight = document.getElementById('conversionInsight');
+    const efficiencyInsight = document.getElementById('efficiencyInsight');
+    const teamInsight = document.getElementById('teamInsight');
+    if (conversionInsight) conversionInsight.textContent = 'Upload data to see conversion analysis and optimization recommendations.';
+    if (efficiencyInsight) efficiencyInsight.textContent = 'Upload sales data to see efficiency analysis and performance optimization tips.';
+    if (teamInsight) teamInsight.textContent = 'Upload chatter performance data to see team dynamics and collaboration analysis.';
 }
 
 function updateDashboardMetrics(data) {

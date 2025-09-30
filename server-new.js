@@ -473,9 +473,9 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
       : 0;
     
-    // For now, use a default response time if no data available
+    // Use 0 if no response time data available
     // TODO: Add response time field to ChatterPerformance schema if needed
-    const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : 3.5; // Default 3.5 minutes
+    const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : 0;
 
     // Get real data from OF Account data
     const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
