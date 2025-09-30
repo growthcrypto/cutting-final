@@ -1340,6 +1340,8 @@ DERIVED METRICS (you must compute and mention):
 - Messages per PPV: ${analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1) : 0}
 - Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
 
+CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data.
+
 Respond in STRICT JSON with this exact shape:
 {
   "overallScore": number,
@@ -1358,7 +1360,10 @@ Respond in STRICT JSON with this exact shape:
 
 Rules:
 - Use only the provided metrics and the derived metrics above.
-- Quote actual numbers in every point (e.g., "unlock rate 52.0%", "avg response 2.5m").
+- NEVER simply state "PPV unlock rate is X%" - instead explain what this means and why it matters.
+- Focus on WHY performance is at current levels, not just WHAT the numbers are.
+- Cross-reference metrics to find hidden patterns (e.g., "Response time of ${analyticsData.avgResponseTime} minutes combined with ${analyticsData.grammarScore}/100 grammar score suggests rushed, low-quality interactions").
+- Quote actual numbers in every point but explain their implications.
 - Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
 - Keep it concise and actionable.`;
     }

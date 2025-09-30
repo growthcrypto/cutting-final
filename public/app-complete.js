@@ -2391,8 +2391,6 @@ function renderChatterAnalysisResults(data) {
                 </div>
             </div>
 
-            <!-- Insight-first: raw metrics moved to the bottom as an optional section -->
-
             <!-- Performance Breakdown -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Key Insights -->
@@ -2527,52 +2525,6 @@ function renderChatterAnalysisResults(data) {
                 </div>
             </div>
 
-            <!-- Raw Uploaded Metrics (optional) -->
-            <details class="glass-card rounded-xl p-0 overflow-hidden" open={false}>
-                <summary class="cursor-pointer select-none px-6 py-4 text-sm text-gray-300 hover:text-white flex items-center justify-between">
-                    <span class="flex items-center"><i class="fas fa-database mr-3 text-gray-400"></i>Raw uploaded metrics</span>
-                    <span class="text-gray-400 text-xs">toggle</span>
-                </summary>
-                <div class="p-6 border-t border-gray-700/50">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="glass-card rounded-xl p-6 text-center">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-comments text-xl text-white"></i>
-                            </div>
-                            <div class="text-3xl font-bold text-white mb-2">${data.messagesSent || 0}</div>
-                            <div class="text-sm text-gray-400">Messages Sent</div>
-                            <div class="text-xs text-blue-400 mt-1">${messagesPerPPV} per PPV</div>
-                        </div>
-                        
-                        <div class="glass-card rounded-xl p-6 text-center">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-paper-plane text-xl text-white"></i>
-                            </div>
-                            <div class="text-3xl font-bold text-white mb-2">${data.ppvsSent || 0}</div>
-                            <div class="text-sm text-gray-400">PPVs Sent</div>
-                            <div class="text-xs text-purple-400 mt-1">${data.ppvsUnlocked || 0} unlocked</div>
-                        </div>
-                        
-                        <div class="glass-card rounded-xl p-6 text-center">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-percentage text-xl text-white"></i>
-                            </div>
-                            <div class="text-3xl font-bold text-white mb-2">${ppvUnlockRate}%</div>
-                            <div class="text-sm text-gray-400">Unlock Rate</div>
-                            <div class="text-xs text-green-400 mt-1">${ppvUnlockRate >= 50 ? 'Above Target' : 'Below Target'}</div>
-                        </div>
-                        
-                        <div class="glass-card rounded-xl p-6 text-center">
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-${responseTimeColor}-500 to-${responseTimeColor}-600 flex items-center justify-center mx-auto mb-4">
-                                <i class="fas fa-clock text-xl text-white"></i>
-                            </div>
-                            <div class="text-3xl font-bold text-white mb-2">${data.avgResponseTime || 0}m</div>
-                            <div class="text-sm text-gray-400">Response Time</div>
-                            <div class="text-xs text-${responseTimeColor}-400 mt-1">${responseTimeStatus}</div>
-                        </div>
-                    </div>
-                </div>
-            </details>
         </div>
     `;
 }
