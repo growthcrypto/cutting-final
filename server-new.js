@@ -763,28 +763,50 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         interval
       };
     } else if (analysisType === 'individual' && chatterId) {
-      // Query ChatterPerformance data instead of DailyChatterReport
-      const chatterPerformanceQuery = {};
+      // Resolve chatter identifier to match how data was stored
+      let nameCandidates = [String(chatterId)];
+      try {
+        const userDoc = await User.findById(chatterId).select('chatterName username');
+        if (userDoc) {
+          if (userDoc.chatterName) nameCandidates.push(userDoc.chatterName);
+          if (userDoc.username) nameCandidates.push(userDoc.username);
+        }
+      } catch (_) {}
+
+      // Build date-overlap query (same logic as dashboard)
+      let chatterPerformanceQuery = {};
       if (startDate && endDate) {
-        chatterPerformanceQuery.weekStartDate = {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        chatterPerformanceQuery = {
+          $or: [
+            { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+            { weekStartDate: { $gte: start, $lte: end } },
+            { weekEndDate: { $gte: start, $lte: end } }
+          ]
         };
       } else {
         const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
         const start = new Date();
         start.setDate(start.getDate() - days);
-        chatterPerformanceQuery.weekStartDate = { $gte: start };
+        const end = new Date();
+        chatterPerformanceQuery = {
+          $or: [
+            { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+            { weekStartDate: { $gte: start, $lte: end } },
+            { weekEndDate: { $gte: start, $lte: end } }
+          ]
+        };
       }
-      
+
       const chatterData = await ChatterPerformance.find({ 
-        ...chatterPerformanceQuery, 
-        chatterName: chatterId 
+        ...chatterPerformanceQuery,
+        chatterName: { $in: [...new Set(nameCandidates)] }
       });
       
       console.log('Found chatter performance data:', chatterData.length, 'records');
       
-      const totalRevenue = 0; // No revenue data in ChatterPerformance yet
+      const totalRevenue = 0; // Revenue not captured in ChatterPerformance
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
       const avgResponseTime = chatterData.length > 0 
