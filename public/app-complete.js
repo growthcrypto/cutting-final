@@ -2355,9 +2355,112 @@ function renderChatterAnalysisResults(data) {
 
 // Render Chatter Analysis Results
 function renderChatterAnalysisResults(data) {
-    // This function uses the same structure as renderAgencyAnalysisResults
-    // but with individual chatter data
-    renderAgencyAnalysisResults(data);
+    const container = document.getElementById('chatterAnalysisResults');
+    if (!container) return;
+    
+    // Handle the actual AI analysis response structure
+    container.innerHTML = `
+        <div class="space-y-6">
+            <!-- Performance Overview -->
+            <div class="glass-card rounded-xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h4 class="text-2xl font-semibold text-white">Individual Performance Analysis</h4>
+                        <p class="text-gray-400 mt-2">Analysis for ${currentAIAnalysisInterval} period</p>
+                    </div>
+                    <div class="text-center p-4 bg-green-900/20 rounded-lg">
+                        <div class="text-3xl font-bold text-green-400">${data.overallScore || 0}</div>
+                        <div class="text-sm text-gray-400">Overall Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Insights -->
+            ${data.insights && data.insights.length > 0 ? `
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>Key Insights
+                </h4>
+                <div class="space-y-3">
+                    ${data.insights.map(insight => `
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-400 mr-3 mt-1"></i>
+                            <span class="text-gray-300">${insight}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Weak Points -->
+            ${data.weakPoints && data.weakPoints.length > 0 ? `
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-orange-400 mr-3"></i>Areas for Improvement
+                </h4>
+                <div class="space-y-3">
+                    ${data.weakPoints.map(point => `
+                        <div class="flex items-start">
+                            <i class="fas fa-arrow-up text-orange-400 mr-3 mt-1"></i>
+                            <span class="text-gray-300">${point}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Opportunities -->
+            ${data.opportunities && data.opportunities.length > 0 ? `
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-rocket text-blue-400 mr-3"></i>Growth Opportunities
+                </h4>
+                <div class="space-y-3">
+                    ${data.opportunities.map(opportunity => `
+                        <div class="flex items-start">
+                            <i class="fas fa-star text-blue-400 mr-3 mt-1"></i>
+                            <span class="text-gray-300">${opportunity}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- ROI Calculations -->
+            ${data.roiCalculations && data.roiCalculations.length > 0 ? `
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-calculator text-purple-400 mr-3"></i>ROI Analysis
+                </h4>
+                <div class="space-y-3">
+                    ${data.roiCalculations.map(roi => `
+                        <div class="flex items-start">
+                            <i class="fas fa-dollar-sign text-purple-400 mr-3 mt-1"></i>
+                            <span class="text-gray-300">${roi}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Recommendations -->
+            ${data.recommendations && data.recommendations.length > 0 ? `
+            <div class="glass-card rounded-xl p-6">
+                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
+                    <i class="fas fa-clipboard-list text-cyan-400 mr-3"></i>Action Plan
+                </h4>
+                <div class="space-y-3">
+                    ${data.recommendations.map((rec, index) => `
+                        <div class="flex items-start p-3 bg-gray-800/30 rounded">
+                            <span class="bg-cyan-500 text-white text-xs px-2 py-1 rounded mr-3 mt-0.5">${index + 1}</span>
+                            <span class="text-gray-300">${rec}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
 }
 
 // Load live AI insights
