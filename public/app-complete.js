@@ -4617,4 +4617,74 @@ function showError(message) {
     }
 }
 
+// Sophisticated Chatter Analysis Results
+function renderSophisticatedChatterAnalysis(data) {
+    const container = document.getElementById('chatterAnalysisResults');
+    if (!container) return;
+    
+    // Handle sophisticated AI analysis response structure
+    container.innerHTML = `
+        <div class="space-y-8">
+            <!-- Executive Summary -->
+            ${data.executiveSummary ? `
+            <div class="relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-3xl"></div>
+                <div class="relative p-12 mb-12">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-6">
+                                <i class="fas fa-crown text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-3xl font-bold text-white">Elite Performance Analysis</h4>
+                                <p class="text-gray-400 text-lg mt-2">Strategic insights for ${currentAIAnalysisInterval} period</p>
+                            </div>
+                        </div>
+                        <div class="text-center p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/30">
+                            <div class="text-4xl font-bold text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
+                            <div class="text-sm text-gray-300 font-medium">Performance Grade</div>
+                            <div class="text-xs text-green-400 mt-1">Strategic Rating</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass-card rounded-xl p-6">
+                            <h5 class="text-xl font-bold text-white mb-4">Revenue Impact</h5>
+                            <p class="text-gray-300 leading-relaxed">${data.executiveSummary.revenueImpact}</p>
+                        </div>
+                        <div class="glass-card rounded-xl p-6">
+                            <h5 class="text-xl font-bold text-white mb-4">Critical Findings</h5>
+                            <ul class="space-y-2">
+                                ${data.executiveSummary.criticalFindings.map(finding => `
+                                    <li class="flex items-start text-gray-300">
+                                        <i class="fas fa-arrow-right text-cyan-400 mr-3 mt-1"></i>
+                                        <span>${finding}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Fallback for old format -->
+            ${!data.executiveSummary && data.insights ? `
+            <div class="glass-card rounded-xl p-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>Key Insights
+                </h4>
+                <div class="space-y-4">
+                    ${data.insights.map(insight => `
+                        <div class="flex items-start p-4 bg-green-900/10 rounded-lg border border-green-500/20">
+                            <i class="fas fa-check-circle text-green-400 mr-4 mt-1"></i>
+                            <span class="text-gray-300 leading-relaxed">${insight}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
 
