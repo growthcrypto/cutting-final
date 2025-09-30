@@ -805,6 +805,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       });
       
       console.log('Found chatter performance data:', chatterData.length, 'records');
+
+      // Also load message analysis for same chatter and date range
+      let messageQuery = { chatterName: { $in: [...new Set(nameCandidates)] } };
+      if (startDate && endDate) {
+        messageQuery.weekStartDate = { $gte: new Date(startDate) };
+        messageQuery.weekEndDate = { $lte: new Date(endDate) };
+      } else {
+        // approximate by using weekStartDate >= start
+        const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        messageQuery.weekStartDate = { $gte: start };
+      }
+      const messagesAnalysis = await MessageAnalysis.find(messageQuery);
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
@@ -816,6 +830,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const messagesSent = chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
       const fansChatted = chatterData.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
 
+      // Aggregate message analysis scores
+      const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : 0;
+      const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : 0;
+      const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : 0;
+      const totalMessages = messagesAnalysis.length > 0 ? messagesAnalysis.reduce((s,m)=> s + (m.totalMessages || 0), 0) : 0;
+
       analyticsData = {
         totalRevenue,
         ppvsSent: totalPPVsSent,
@@ -823,7 +843,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         messagesSent,
         fansChatted,
         avgResponseTime,
-        interval
+        interval,
+        // message analysis context
+        grammarScore,
+        guidelinesScore,
+        overallMessageScore,
+        totalMessages
       };
     } else {
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
@@ -1297,7 +1322,7 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
-      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis.
+      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis. Cross-reference message quality with performance metrics to find causal weaknesses.
 
 CHATTER DATA (REAL):
 - PPVs Sent: ${analyticsData.ppvsSent}
@@ -1305,6 +1330,10 @@ CHATTER DATA (REAL):
 - Messages Sent: ${analyticsData.messagesSent}
 - Fans Chatted: ${analyticsData.fansChatted}
 - Average Response Time (minutes): ${analyticsData.avgResponseTime}
+- Grammar Score (0-100): ${analyticsData.grammarScore}
+- Guidelines Score (0-100): ${analyticsData.guidelinesScore}
+- Message Quality Score (0-100): ${analyticsData.overallMessageScore}
+- Messages Analyzed: ${analyticsData.totalMessages}
 
 DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
@@ -1316,6 +1345,7 @@ Respond in STRICT JSON with this exact shape:
   "overallScore": number,
   "insights": string[],
   "weakPoints": string[],
+  "rootCauses": string[],
   "opportunities": string[],
   "roiCalculations": string[],
   "recommendations": string[],
