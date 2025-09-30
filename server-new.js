@@ -411,30 +411,55 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const dailyReports = await DailyChatterReport.find(dateQuery);
     const ofAccountData = await AccountData.find(dateQuery);
     
-    // Get chatter performance data (new data source)
+    // Get chatter performance data (new data source) - more flexible date matching
     let chatterPerformanceQuery = {};
     if (startDate && endDate) {
+      // Find records that overlap with the requested date range
       chatterPerformanceQuery = {
-        weekStartDate: { $gte: new Date(startDate) },
-        weekEndDate: { $lte: new Date(endDate) }
+        $or: [
+          { weekStartDate: { $lte: new Date(endDate) }, weekEndDate: { $gte: new Date(startDate) } },
+          { weekStartDate: { $gte: new Date(startDate), $lte: new Date(endDate) } },
+          { weekEndDate: { $gte: new Date(startDate), $lte: new Date(endDate) } }
+        ]
       };
     } else {
       const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
       const start = new Date();
       start.setDate(start.getDate() - days);
+      const end = new Date();
       chatterPerformanceQuery = { 
-        weekStartDate: { $gte: start },
-        weekEndDate: { $lte: new Date() }
+        $or: [
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+          { weekStartDate: { $gte: start, $lte: end } },
+          { weekEndDate: { $gte: start, $lte: end } }
+        ]
       };
     }
-    const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
+    let chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
+    
+    // If no data found with date ranges, get all recent data (last 30 days)
+    if (chatterPerformance.length === 0) {
+      const fallbackStart = new Date();
+      fallbackStart.setDate(fallbackStart.getDate() - 30);
+      chatterPerformance = await ChatterPerformance.find({
+        weekStartDate: { $gte: fallbackStart }
+      });
+      console.log('No data found with date ranges, using fallback query:', chatterPerformance.length, 'records');
+    }
     
     console.log('Dashboard data query results:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
       chatterPerformance: chatterPerformance.length,
       dateQuery,
-      chatterPerformanceQuery
+      chatterPerformanceQuery,
+      sampleChatterData: chatterPerformance.slice(0, 2).map(c => ({
+        chatterName: c.chatterName,
+        weekStartDate: c.weekStartDate,
+        weekEndDate: c.weekEndDate,
+        messagesSent: c.messagesSent,
+        ppvsSent: c.ppvsSent
+      }))
     });
     
     // Calculate metrics from daily reports (PPV sales and tips)
@@ -592,6 +617,59 @@ app.post('/api/debug/test-password', checkDatabaseConnection, async (req, res) =
         email: user.email,
         role: user.role,
         chatterName: user.chatterName
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint to check all data in database
+app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
+  try {
+    const dailyReports = await DailyChatterReport.find({});
+    const accountData = await AccountData.find({});
+    const chatterPerformance = await ChatterPerformance.find({});
+    const creatorAccounts = await CreatorAccount.find({});
+    
+    res.json({
+      message: 'Database data summary',
+      counts: {
+        dailyReports: dailyReports.length,
+        accountData: accountData.length,
+        chatterPerformance: chatterPerformance.length,
+        creatorAccounts: creatorAccounts.length
+      },
+      recentData: {
+        dailyReports: dailyReports.slice(-3).map(r => ({
+          id: r._id,
+          date: r.date,
+          chatterName: r.chatterName,
+          ppvSales: r.ppvSales?.length || 0,
+          tips: r.tips?.length || 0
+        })),
+        accountData: accountData.slice(-3).map(a => ({
+          id: a._id,
+          weekStartDate: a.weekStartDate,
+          weekEndDate: a.weekEndDate,
+          netRevenue: a.netRevenue,
+          totalSubs: a.totalSubs
+        })),
+        chatterPerformance: chatterPerformance.slice(-3).map(c => ({
+          id: c._id,
+          chatterName: c.chatterName,
+          weekStartDate: c.weekStartDate,
+          weekEndDate: c.weekEndDate,
+          messagesSent: c.messagesSent,
+          ppvsSent: c.ppvsSent,
+          ppvsUnlocked: c.ppvsUnlocked,
+          fansChattedWith: c.fansChattedWith
+        })),
+        creatorAccounts: creatorAccounts.map(c => ({
+          id: c._id,
+          name: c.name,
+          isActive: c.isActive
+        }))
       }
     });
   } catch (error) {
