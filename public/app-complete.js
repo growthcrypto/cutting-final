@@ -57,6 +57,8 @@ function showMainApp() {
     loadCreatorAccounts();
     if (currentUser.role === 'manager') {
         loadUsers();
+        // Force clear dashboard to ensure clean state
+        clearDashboardToZero();
         loadDashboardData();
         loadAIRecommendations();
     }
@@ -796,6 +798,7 @@ async function loadDashboardData() {
         let data;
         if (response.ok) {
             data = await response.json();
+            console.log('Dashboard API response:', data);
         } else {
             // Start completely blank - no mock data
             console.warn('API failed, showing empty state');
@@ -888,7 +891,7 @@ function calculateIntelligentMetrics(analytics) {
         revenueGrowth,
         subsGrowth,
         clicksGrowth,
-        peakTime: analytics.totalRevenue > 0 ? '14:30' : '--:--' // Peak performance time
+        peakTime: '--:--' // Will be calculated from real data
     };
 }
 
@@ -2504,6 +2507,41 @@ function loadActionOpportunities(analytics, intelligent) {
             </div>
         </div>
     `).join('');
+}
+
+function clearDashboardToZero() {
+    // Force clear all dashboard values to zero
+    const elements = {
+        'totalRevenue': '$0',
+        'totalSubs': '0',
+        'profileClicks': '0',
+        'messagesSent': '0',
+        'ppvsSent': '0',
+        'avgResponseTime': '0m',
+        'unlockRate': '0% unlock rate',
+        'revenueChange': '0%',
+        'subsChange': '0%',
+        'clicksChange': '0%',
+        'revenueGrowth': '+0%',
+        'subsGrowth': '+0%',
+        'clicksGrowth': '+0%',
+        'clickToSubRate': '0%',
+        'ppvUnlockRate': '0%',
+        'revenuePerSub': '$0',
+        'revenuePerHour': '$0',
+        'messagesPerPPV': '0',
+        'peakTime': '--:--',
+        'topPerformer': 'No data uploaded',
+        'performanceGap': '0%',
+        'teamConsistency': '0%'
+    };
+    
+    Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    });
 }
 
 function updateDashboardMetrics(data) {
