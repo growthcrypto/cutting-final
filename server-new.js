@@ -535,6 +535,8 @@ app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken
 app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     console.log('Chatter data submission:', req.body);
+    console.log('avgResponseTime value:', req.body.avgResponseTime);
+    console.log('avgResponseTime type:', typeof req.body.avgResponseTime);
     
     // Find the creator account (for now, we'll use a default or first available)
     const creatorAccount = await CreatorAccount.findOne({ isActive: true });
