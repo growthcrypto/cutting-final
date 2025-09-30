@@ -4617,213 +4617,173 @@ function showError(message) {
     }
 }
 
-// PREMIUM Million-Dollar Chatter Analysis UI - REPLACED
-// PREMIUM Million-Dollar Chatter Analysis UI
+// CLEAN PREMIUM Million-Dollar Analysis UI
 function renderSophisticatedChatterAnalysis(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
     
-    console.log('Rendering PREMIUM analysis:', data);
+    console.log('Rendering CLEAN PREMIUM analysis:', data);
+    
+    // Calculate derived metrics
+    const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
+    const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : 0;
+    const messagesPerFan = data.fansChatted > 0 ? (data.messagesSent / data.fansChatted).toFixed(1) : 0;
+    const responseStatus = data.avgResponseTime <= 2 ? 'Excellent' : data.avgResponseTime <= 3 ? 'Good' : data.avgResponseTime <= 5 ? 'Fair' : 'Needs Work';
+    const responseColor = data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime <= 5 ? 'yellow' : 'red';
     
     container.innerHTML = `
-        <div class="space-y-10">
+        <div class="space-y-6">
             
-            <!-- PREMIUM Executive Summary Hero -->
+            <!-- Compact Header -->
             ${data.executiveSummary ? `
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-blue-900/40 to-cyan-900/40 border-2 border-purple-500/30 shadow-2xl backdrop-blur-xl">
-                <div class="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-cyan-600/10"></div>
-                <div class="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-                
-                <div class="relative p-12">
-                    <div class="flex items-center justify-between mb-10">
-                        <div class="flex items-center space-x-6">
-                            <div class="relative">
-                                <div class="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl blur-xl opacity-50"></div>
-                                <div class="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl">
-                                    <i class="fas fa-crown text-3xl text-white"></i>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="text-4xl font-black text-white mb-2">Elite Performance Analysis</h4>
-                                <p class="text-lg text-gray-400 font-medium">Strategic Intelligence • ${currentAIAnalysisInterval}</p>
-                            </div>
+            <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/30">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                            <i class="fas fa-crown text-white text-xl"></i>
                         </div>
-                        <div class="relative">
-                            <div class="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl blur-xl opacity-50"></div>
-                            <div class="relative text-center p-8 bg-gradient-to-br from-green-900/80 to-emerald-900/80 rounded-2xl border-2 border-green-400/50 shadow-2xl">
-                                <div class="text-6xl font-black text-green-300 mb-2">${data.executiveSummary.performanceGrade || 'A+'}</div>
-                                <div class="text-sm font-bold text-green-300 uppercase tracking-wider">Grade</div>
-                            </div>
+                        <div>
+                            <h4 class="text-2xl font-bold text-white">Performance Analysis</h4>
+                            <p class="text-sm text-gray-400">${currentAIAnalysisInterval}</p>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="rounded-2xl bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-2 border-blue-500/30 p-8 shadow-xl">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mr-4">
-                                    <i class="fas fa-dollar-sign text-xl text-white"></i>
-                                </div>
-                                <h5 class="text-2xl font-bold text-white">Revenue Impact</h5>
-                            </div>
-                            <p class="text-gray-300 leading-relaxed text-lg">${data.executiveSummary.revenueImpact}</p>
-                        </div>
-                        
-                        <div class="rounded-2xl bg-gradient-to-br from-purple-900/50 to-purple-800/50 border-2 border-purple-500/30 p-8 shadow-xl">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center mr-4">
-                                    <i class="fas fa-exclamation-triangle text-xl text-white"></i>
-                                </div>
-                                <h5 class="text-2xl font-bold text-white">Critical Findings</h5>
-                            </div>
-                            <ul class="space-y-3">
-                                ${data.executiveSummary.criticalFindings.map(finding => `
-                                    <li class="flex items-start">
-                                        <div class="w-2 h-2 rounded-full bg-cyan-400 mt-2 mr-4"></div>
-                                        <span class="text-gray-300 leading-relaxed">${finding}</span>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
+                    <div class="text-center px-6 py-3 bg-green-500/20 rounded-xl border border-green-400/50">
+                        <div class="text-3xl font-black text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
+                        <div class="text-xs text-gray-400">Grade</div>
                     </div>
                 </div>
             </div>
             ` : ''}
             
-            <!-- Advanced Metrics -->
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-4 border border-blue-500/30">
+                    <div class="text-2xl font-bold text-blue-400">${data.ppvsSent || 0}</div>
+                    <div class="text-xs text-gray-400 uppercase">PPVs Sent</div>
+                </div>
+                <div class="glass-card rounded-xl p-4 border border-green-500/30">
+                    <div class="text-2xl font-bold text-green-400">${ppvUnlockRate}%</div>
+                    <div class="text-xs text-gray-400 uppercase">Unlock Rate</div>
+                </div>
+                <div class="glass-card rounded-xl p-4 border border-${responseColor}-500/30">
+                    <div class="text-2xl font-bold text-${responseColor}-400">${data.avgResponseTime || 0}m</div>
+                    <div class="text-xs text-gray-400 uppercase">Avg Response</div>
+                </div>
+                <div class="glass-card rounded-xl p-4 border border-purple-500/30">
+                    <div class="text-2xl font-bold text-purple-400">${messagesPerPPV}</div>
+                    <div class="text-xs text-gray-400 uppercase">Msgs/PPV</div>
+                </div>
+            </div>
+            
+            <!-- Executive Summary -->
+            ${data.executiveSummary ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass-card rounded-xl p-5 border border-blue-500/30">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-dollar-sign text-blue-400 mr-2"></i>
+                        <h5 class="text-lg font-bold text-white">Revenue Impact</h5>
+                    </div>
+                    <p class="text-sm text-gray-300 leading-relaxed">${data.executiveSummary.revenueImpact}</p>
+                </div>
+                <div class="glass-card rounded-xl p-5 border border-purple-500/30">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-bolt text-purple-400 mr-2"></i>
+                        <h5 class="text-lg font-bold text-white">Critical Findings</h5>
+                    </div>
+                    <ul class="space-y-2">
+                        ${data.executiveSummary.criticalFindings.slice(0, 3).map(finding => `
+                            <li class="text-sm text-gray-300 flex items-start">
+                                <span class="text-cyan-400 mr-2">•</span>${finding}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Advanced Metrics Tabs -->
             ${data.advancedMetrics ? `
-            <div class="space-y-8">
-                <h3 class="text-3xl font-black text-white flex items-center">
-                    <div class="w-1 h-12 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full mr-4"></div>
-                    Advanced Metrics Intelligence
-                </h3>
-                
-                ${data.advancedMetrics.efficiencyRatios ? `
-                <div>
-                    <h4 class="text-xl font-bold text-blue-400 mb-6">Efficiency Ratios</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        ${Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
-                            <div class="rounded-2xl bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-2 border-gray-700/50 p-6 shadow-lg hover:border-blue-400/50 transition-all duration-300 hover:scale-105">
-                                <h6 class="text-base font-bold text-blue-400 mb-3 uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
-                                <p class="text-gray-300 text-sm">${value}</p>
-                            </div>
+            <div class="glass-card rounded-xl p-5 border border-gray-700/50">
+                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-cyan-400 mr-2"></i>
+                    Advanced Metrics
+                </h5>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
+                        <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                            <h6 class="text-sm font-bold text-blue-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
+                            <p class="text-xs text-gray-400">${value}</p>
+                        </div>
+                    `).join('') : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Strategic Insights Compact -->
+            ${data.strategicInsights?.revenueOptimization ? `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${data.strategicInsights.revenueOptimization.leakagePoints?.length > 0 ? `
+                <div class="glass-card rounded-xl p-4 border border-red-500/30">
+                    <h5 class="text-sm font-bold text-red-400 mb-3 flex items-center">
+                        <i class="fas fa-exclamation-circle mr-2"></i>Revenue Leaks
+                    </h5>
+                    <ul class="space-y-2">
+                        ${data.strategicInsights.revenueOptimization.leakagePoints.slice(0, 2).map((point, idx) => `
+                            <li class="text-xs text-gray-300 flex items-start">
+                                <span class="text-red-400 mr-2">${idx + 1}.</span>${point}
+                            </li>
                         `).join('')}
-                    </div>
+                    </ul>
                 </div>
                 ` : ''}
                 
-                ${data.advancedMetrics.behavioralPatterns ? `
-                <div>
-                    <h4 class="text-xl font-bold text-purple-400 mb-6">Behavioral Patterns</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        ${Object.entries(data.advancedMetrics.behavioralPatterns).map(([key, value]) => `
-                            <div class="rounded-2xl bg-gradient-to-br from-purple-900/40 to-purple-800/40 border-2 border-purple-700/50 p-6 shadow-lg hover:border-purple-400/50 transition-all duration-300 hover:scale-105">
-                                <h6 class="text-base font-bold text-purple-400 mb-3 uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
-                                <p class="text-gray-300 text-sm">${value}</p>
-                            </div>
+                ${data.strategicInsights.revenueOptimization.growthOpportunities?.length > 0 ? `
+                <div class="glass-card rounded-xl p-4 border border-green-500/30">
+                    <h5 class="text-sm font-bold text-green-400 mb-3 flex items-center">
+                        <i class="fas fa-arrow-up mr-2"></i>Growth Opportunities
+                    </h5>
+                    <ul class="space-y-2">
+                        ${data.strategicInsights.revenueOptimization.growthOpportunities.slice(0, 2).map((opp, idx) => `
+                            <li class="text-xs text-gray-300 flex items-start">
+                                <span class="text-green-400 mr-2">${idx + 1}.</span>${opp}
+                            </li>
                         `).join('')}
-                    </div>
+                    </ul>
                 </div>
                 ` : ''}
                 
-                ${data.advancedMetrics.competitiveAnalysis ? `
-                <div>
-                    <h4 class="text-xl font-bold text-yellow-400 mb-6">Competitive Analysis</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        ${Object.entries(data.advancedMetrics.competitiveAnalysis).map(([key, value]) => `
-                            <div class="rounded-2xl bg-gradient-to-br from-yellow-900/40 to-orange-900/40 border-2 border-yellow-700/50 p-6 shadow-lg hover:border-yellow-400/50 transition-all duration-300 hover:scale-105">
-                                <h6 class="text-base font-bold text-yellow-400 mb-3 uppercase">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
-                                <p class="text-gray-300 text-sm">${value}</p>
-                            </div>
+                ${data.strategicInsights.revenueOptimization.efficiencyGains?.length > 0 ? `
+                <div class="glass-card rounded-xl p-4 border border-blue-500/30">
+                    <h5 class="text-sm font-bold text-blue-400 mb-3 flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i>Efficiency Gains
+                    </h5>
+                    <ul class="space-y-2">
+                        ${data.strategicInsights.revenueOptimization.efficiencyGains.slice(0, 2).map((gain, idx) => `
+                            <li class="text-xs text-gray-300 flex items-start">
+                                <span class="text-blue-400 mr-2">${idx + 1}.</span>${gain}
+                            </li>
                         `).join('')}
-                    </div>
+                    </ul>
                 </div>
                 ` : ''}
             </div>
             ` : ''}
             
-            <!-- Strategic Insights -->
-            ${data.strategicInsights ? `
-            <div class="space-y-8">
-                <h3 class="text-3xl font-black text-white flex items-center">
-                    <div class="w-1 h-12 bg-gradient-to-b from-purple-400 to-pink-400 rounded-full mr-4"></div>
-                    Strategic Insights
-                </h3>
-                
-                ${data.strategicInsights.revenueOptimization ? `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    ${data.strategicInsights.revenueOptimization.leakagePoints?.length > 0 ? `
-                    <div class="rounded-2xl bg-gradient-to-br from-red-900/40 to-red-800/40 border-2 border-red-700/50 p-6">
-                        <h5 class="text-lg font-bold text-red-400 mb-4 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-3"></i>Revenue Leaks
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.strategicInsights.revenueOptimization.leakagePoints.map((point, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-red-500/20 border border-red-400/50 flex items-center justify-center text-red-400 font-bold text-xs mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${point}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                    
-                    ${data.strategicInsights.revenueOptimization.growthOpportunities?.length > 0 ? `
-                    <div class="rounded-2xl bg-gradient-to-br from-green-900/40 to-emerald-900/40 border-2 border-green-700/50 p-6">
-                        <h5 class="text-lg font-bold text-green-400 mb-4 flex items-center">
-                            <i class="fas fa-rocket mr-3"></i>Growth Opportunities
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.strategicInsights.revenueOptimization.growthOpportunities.map((opp, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-green-500/20 border border-green-400/50 flex items-center justify-center text-green-400 font-bold text-xs mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${opp}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                    
-                    ${data.strategicInsights.revenueOptimization.efficiencyGains?.length > 0 ? `
-                    <div class="rounded-2xl bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border-2 border-blue-700/50 p-6">
-                        <h5 class="text-lg font-bold text-blue-400 mb-4 flex items-center">
-                            <i class="fas fa-chart-line mr-3"></i>Efficiency Gains
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.strategicInsights.revenueOptimization.efficiencyGains.map((gain, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-500/20 border border-blue-400/50 flex items-center justify-center text-blue-400 font-bold text-xs mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${gain}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                    ` : ''}
-                </div>
-                ` : ''}
-            </div>
-            ` : ''}
-            
-            <!-- Action Plan -->
+            <!-- Action Plan Compact -->
             ${data.actionPlan ? `
-            <div class="rounded-3xl bg-gradient-to-br from-cyan-900/40 via-blue-900/40 to-purple-900/40 border-2 border-cyan-500/30 p-10 shadow-2xl">
-                <div class="flex items-center mb-8">
-                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mr-5 shadow-xl">
-                        <i class="fas fa-chess text-2xl text-white"></i>
-                    </div>
-                    <h3 class="text-3xl font-black text-white">Strategic Action Plan</h3>
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="glass-card rounded-xl p-5 border border-cyan-500/30">
+                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-rocket text-cyan-400 mr-2"></i>
+                    Action Plan
+                </h5>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     ${data.actionPlan.immediateActions?.length > 0 ? `
-                    <div class="rounded-2xl bg-green-900/60 border-2 border-green-500/40 p-6">
-                        <h5 class="text-xl font-bold text-green-400 mb-4 flex items-center">
-                            <i class="fas fa-bolt mr-3"></i>Immediate Actions
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.actionPlan.immediateActions.map((action, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-green-500/20 border border-green-400/50 flex items-center justify-center text-green-400 font-bold text-sm mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${action}</span>
+                    <div>
+                        <h6 class="text-sm font-bold text-green-400 mb-2">Immediate Actions</h6>
+                        <ul class="space-y-1">
+                            ${data.actionPlan.immediateActions.slice(0, 3).map((action, idx) => `
+                                <li class="text-xs text-gray-300 flex items-start">
+                                    <span class="text-green-400 mr-2">${idx + 1}.</span>${action}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4831,15 +4791,12 @@ function renderSophisticatedChatterAnalysis(data) {
                     ` : ''}
                     
                     ${data.actionPlan.strategicInitiatives?.length > 0 ? `
-                    <div class="rounded-2xl bg-blue-900/60 border-2 border-blue-500/40 p-6">
-                        <h5 class="text-xl font-bold text-blue-400 mb-4 flex items-center">
-                            <i class="fas fa-flag mr-3"></i>Strategic Initiatives
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.actionPlan.strategicInitiatives.map((initiative, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-blue-500/20 border border-blue-400/50 flex items-center justify-center text-blue-400 font-bold text-sm mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${initiative}</span>
+                    <div>
+                        <h6 class="text-sm font-bold text-blue-400 mb-2">Strategic Initiatives</h6>
+                        <ul class="space-y-1">
+                            ${data.actionPlan.strategicInitiatives.slice(0, 3).map((initiative, idx) => `
+                                <li class="text-xs text-gray-300 flex items-start">
+                                    <span class="text-blue-400 mr-2">${idx + 1}.</span>${initiative}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4847,15 +4804,12 @@ function renderSophisticatedChatterAnalysis(data) {
                     ` : ''}
                     
                     ${data.actionPlan.successMetrics?.length > 0 ? `
-                    <div class="rounded-2xl bg-purple-900/60 border-2 border-purple-500/40 p-6">
-                        <h5 class="text-xl font-bold text-purple-400 mb-4 flex items-center">
-                            <i class="fas fa-target mr-3"></i>Success Metrics
-                        </h5>
-                        <ul class="space-y-3">
-                            ${data.actionPlan.successMetrics.map((metric, idx) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-400/50 flex items-center justify-center text-purple-400 font-bold text-sm mr-3">${idx + 1}</span>
-                                    <span class="text-gray-300 text-sm">${metric}</span>
+                    <div>
+                        <h6 class="text-sm font-bold text-purple-400 mb-2">Success Metrics</h6>
+                        <ul class="space-y-1">
+                            ${data.actionPlan.successMetrics.slice(0, 3).map((metric, idx) => `
+                                <li class="text-xs text-gray-300 flex items-start">
+                                    <span class="text-purple-400 mr-2">${idx + 1}.</span>${metric}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4864,22 +4818,22 @@ function renderSophisticatedChatterAnalysis(data) {
                 </div>
                 
                 ${data.actionPlan.roiProjections ? `
-                <div class="rounded-2xl bg-yellow-900/60 border-2 border-yellow-500/40 p-8">
-                    <h5 class="text-2xl font-bold text-yellow-400 mb-6 flex items-center">
-                        <i class="fas fa-coins mr-4"></i>ROI Projections
-                    </h5>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div class="text-center">
-                            <div class="text-sm font-bold text-yellow-400 uppercase mb-3">Current State</div>
-                            <p class="text-gray-300">${data.actionPlan.roiProjections.currentState}</p>
+                <div class="mt-4 p-4 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
+                    <h6 class="text-sm font-bold text-yellow-400 mb-2 flex items-center">
+                        <i class="fas fa-coins mr-2"></i>ROI Projections
+                    </h6>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Current</div>
+                            <div class="text-sm text-gray-300">${data.actionPlan.roiProjections.currentState}</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm font-bold text-green-400 uppercase mb-3">Optimized State</div>
-                            <p class="text-gray-300">${data.actionPlan.roiProjections.optimizedState}</p>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Optimized</div>
+                            <div class="text-sm text-green-400">${data.actionPlan.roiProjections.optimizedState}</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm font-bold text-cyan-400 uppercase mb-3">Improvement Value</div>
-                            <p class="text-gray-300 font-semibold">${data.actionPlan.roiProjections.improvementValue}</p>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Improvement</div>
+                            <div class="text-sm font-bold text-cyan-400">${data.actionPlan.roiProjections.improvementValue}</div>
                         </div>
                     </div>
                 </div>
@@ -4887,68 +4841,68 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- Fallback for old format -->
+            <!-- Fallback Compact Format -->
             ${!data.executiveSummary && data.insights ? `
-            <div class="rounded-3xl bg-gradient-to-br from-green-900/40 to-emerald-900/40 border-2 border-green-500/30 p-10 shadow-2xl">
-                <h4 class="text-3xl font-black text-white mb-8 flex items-center">
-                    <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>Key Insights
-                </h4>
-                <div class="space-y-4">
+            <div class="glass-card rounded-xl p-5 border border-green-500/30">
+                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                    <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>Key Insights
+                </h5>
+                <ul class="space-y-2">
                     ${data.insights.map((insight, idx) => `
-                        <div class="flex items-start p-6 bg-green-900/30 rounded-2xl border-2 border-green-500/20 hover:border-green-400/50 transition-all">
-                            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg mr-5">${idx + 1}</span>
-                            <span class="text-gray-300 leading-relaxed text-lg">${insight}</span>
-                        </div>
+                        <li class="text-sm text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
+                            <span class="flex-shrink-0 w-6 h-6 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                            ${insight}
+                        </li>
                     `).join('')}
-                </div>
+                </ul>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.weakPoints ? `
-            <div class="rounded-3xl bg-gradient-to-br from-orange-900/40 to-red-900/40 border-2 border-orange-500/30 p-10 shadow-2xl">
-                <h4 class="text-3xl font-black text-white mb-8 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-orange-400 mr-4"></i>Areas for Improvement
-                </h4>
-                <div class="space-y-4">
+            <div class="glass-card rounded-xl p-5 border border-orange-500/30">
+                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-orange-400 mr-2"></i>Areas for Improvement
+                </h5>
+                <ul class="space-y-2">
                     ${data.weakPoints.map((point, idx) => `
-                        <div class="flex items-start p-6 bg-orange-900/30 rounded-2xl border-2 border-orange-500/20 hover:border-orange-400/50 transition-all">
-                            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-lg mr-5">${idx + 1}</span>
-                            <span class="text-gray-300 leading-relaxed text-lg">${point}</span>
-                        </div>
+                        <li class="text-sm text-gray-300 flex items-start p-3 bg-orange-900/20 rounded-lg">
+                            <span class="flex-shrink-0 w-6 h-6 rounded bg-orange-500/20 text-orange-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                            ${point}
+                        </li>
                     `).join('')}
-                </div>
+                </ul>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.opportunities ? `
-            <div class="rounded-3xl bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border-2 border-blue-500/30 p-10 shadow-2xl">
-                <h4 class="text-3xl font-black text-white mb-8 flex items-center">
-                    <i class="fas fa-rocket text-blue-400 mr-4"></i>Opportunities
-                </h4>
-                <div class="space-y-4">
+            <div class="glass-card rounded-xl p-5 border border-blue-500/30">
+                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                    <i class="fas fa-rocket text-blue-400 mr-2"></i>Opportunities
+                </h5>
+                <ul class="space-y-2">
                     ${data.opportunities.map((opportunity, idx) => `
-                        <div class="flex items-start p-6 bg-blue-900/30 rounded-2xl border-2 border-blue-500/20 hover:border-blue-400/50 transition-all">
-                            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg mr-5">${idx + 1}</span>
-                            <span class="text-gray-300 leading-relaxed text-lg">${opportunity}</span>
-                        </div>
+                        <li class="text-sm text-gray-300 flex items-start p-3 bg-blue-900/20 rounded-lg">
+                            <span class="flex-shrink-0 w-6 h-6 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                            ${opportunity}
+                        </li>
                     `).join('')}
-                </div>
+                </ul>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.recommendations ? `
-            <div class="rounded-3xl bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-2 border-purple-500/30 p-10 shadow-2xl">
-                <h4 class="text-3xl font-black text-white mb-8 flex items-center">
-                    <i class="fas fa-target text-purple-400 mr-4"></i>Strategic Recommendations
-                </h4>
-                <div class="space-y-4">
+            <div class="glass-card rounded-xl p-5 border border-purple-500/30">
+                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                    <i class="fas fa-target text-purple-400 mr-2"></i>Recommendations
+                </h5>
+                <ul class="space-y-2">
                     ${data.recommendations.map((rec, idx) => `
-                        <div class="flex items-start p-6 bg-purple-900/30 rounded-2xl border-2 border-purple-500/20 hover:border-purple-400/50 transition-all">
-                            <span class="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-lg mr-5">${idx + 1}</span>
-                            <span class="text-gray-300 leading-relaxed text-lg">${rec}</span>
-                        </div>
+                        <li class="text-sm text-gray-300 flex items-start p-3 bg-purple-900/20 rounded-lg">
+                            <span class="flex-shrink-0 w-6 h-6 rounded bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                            ${rec}
+                        </li>
                     `).join('')}
-                </div>
+                </ul>
             </div>
             ` : ''}
         </div>
