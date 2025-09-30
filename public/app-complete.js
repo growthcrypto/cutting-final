@@ -4636,20 +4636,19 @@ function renderSophisticatedChatterAnalysis(data) {
             
             <!-- Compact Header -->
             ${data.executiveSummary ? `
-            <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/30">
+            <div class="glass-card rounded-xl p-5 border border-purple-500/30">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                            <i class="fas fa-crown text-white text-xl"></i>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                            <i class="fas fa-chart-line text-white"></i>
                         </div>
                         <div>
-                            <h4 class="text-2xl font-bold text-white">Performance Analysis</h4>
-                            <p class="text-sm text-gray-400">${currentAIAnalysisInterval}</p>
+                            <h4 class="text-xl font-bold text-white">Performance Analysis</h4>
+                            <p class="text-xs text-gray-400">${currentAIAnalysisInterval}</p>
                         </div>
                     </div>
-                    <div class="text-center px-6 py-3 bg-green-500/20 rounded-xl border border-green-400/50">
-                        <div class="text-3xl font-black text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
-                        <div class="text-xs text-gray-400">Grade</div>
+                    <div class="text-center px-5 py-2 bg-green-500/20 rounded-lg border border-green-400/50">
+                        <div class="text-2xl font-bold text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
                     </div>
                 </div>
             </div>
@@ -4681,14 +4680,14 @@ function renderSophisticatedChatterAnalysis(data) {
                 <div class="glass-card rounded-xl p-5 border border-blue-500/30">
                     <div class="flex items-center mb-3">
                         <i class="fas fa-dollar-sign text-blue-400 mr-2"></i>
-                        <h5 class="text-lg font-bold text-white">Revenue Impact</h5>
+                        <h5 class="text-base font-bold text-white">Revenue Impact</h5>
                     </div>
                     <p class="text-sm text-gray-300 leading-relaxed">${data.executiveSummary.revenueImpact}</p>
                 </div>
                 <div class="glass-card rounded-xl p-5 border border-purple-500/30">
                     <div class="flex items-center mb-3">
                         <i class="fas fa-bolt text-purple-400 mr-2"></i>
-                        <h5 class="text-lg font-bold text-white">Critical Findings</h5>
+                        <h5 class="text-base font-bold text-white">Critical Findings</h5>
                     </div>
                     <ul class="space-y-2">
                         ${data.executiveSummary.criticalFindings.slice(0, 3).map(finding => `
@@ -4701,10 +4700,10 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- Advanced Metrics Tabs -->
+            <!-- Advanced Metrics -->
             ${data.advancedMetrics ? `
             <div class="glass-card rounded-xl p-5 border border-gray-700/50">
-                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-chart-line text-cyan-400 mr-2"></i>
                     Advanced Metrics
                 </h5>
@@ -4712,14 +4711,14 @@ function renderSophisticatedChatterAnalysis(data) {
                     ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
                         <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
                             <h6 class="text-sm font-bold text-blue-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
-                            <p class="text-xs text-gray-400">${value}</p>
+                            <p class="text-sm text-gray-300">${value}</p>
                         </div>
                     `).join('') : ''}
                 </div>
             </div>
             ` : ''}
             
-            <!-- Strategic Insights Compact -->
+            <!-- Strategic Insights -->
             ${data.strategicInsights?.revenueOptimization ? `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 ${data.strategicInsights.revenueOptimization.leakagePoints?.length > 0 ? `
@@ -4729,8 +4728,8 @@ function renderSophisticatedChatterAnalysis(data) {
                     </h5>
                     <ul class="space-y-2">
                         ${data.strategicInsights.revenueOptimization.leakagePoints.slice(0, 2).map((point, idx) => `
-                            <li class="text-xs text-gray-300 flex items-start">
-                                <span class="text-red-400 mr-2">${idx + 1}.</span>${point}
+                            <li class="text-sm text-gray-300 flex items-start">
+                                <span class="text-red-400 mr-2 font-bold">${idx + 1}.</span>${point}
                             </li>
                         `).join('')}
                     </ul>
@@ -4744,8 +4743,8 @@ function renderSophisticatedChatterAnalysis(data) {
                     </h5>
                     <ul class="space-y-2">
                         ${data.strategicInsights.revenueOptimization.growthOpportunities.slice(0, 2).map((opp, idx) => `
-                            <li class="text-xs text-gray-300 flex items-start">
-                                <span class="text-green-400 mr-2">${idx + 1}.</span>${opp}
+                            <li class="text-sm text-gray-300 flex items-start">
+                                <span class="text-green-400 mr-2 font-bold">${idx + 1}.</span>${opp}
                             </li>
                         `).join('')}
                     </ul>
@@ -4759,8 +4758,8 @@ function renderSophisticatedChatterAnalysis(data) {
                     </h5>
                     <ul class="space-y-2">
                         ${data.strategicInsights.revenueOptimization.efficiencyGains.slice(0, 2).map((gain, idx) => `
-                            <li class="text-xs text-gray-300 flex items-start">
-                                <span class="text-blue-400 mr-2">${idx + 1}.</span>${gain}
+                            <li class="text-sm text-gray-300 flex items-start">
+                                <span class="text-blue-400 mr-2 font-bold">${idx + 1}.</span>${gain}
                             </li>
                         `).join('')}
                     </ul>
@@ -4769,21 +4768,21 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- Action Plan Compact -->
+            <!-- Action Plan -->
             ${data.actionPlan ? `
             <div class="glass-card rounded-xl p-5 border border-cyan-500/30">
-                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-rocket text-cyan-400 mr-2"></i>
                     Action Plan
                 </h5>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     ${data.actionPlan.immediateActions?.length > 0 ? `
                     <div>
-                        <h6 class="text-sm font-bold text-green-400 mb-2">Immediate Actions</h6>
-                        <ul class="space-y-1">
+                        <h6 class="text-sm font-bold text-green-400 mb-3">Immediate Actions</h6>
+                        <ul class="space-y-2">
                             ${data.actionPlan.immediateActions.slice(0, 3).map((action, idx) => `
-                                <li class="text-xs text-gray-300 flex items-start">
-                                    <span class="text-green-400 mr-2">${idx + 1}.</span>${action}
+                                <li class="text-sm text-gray-300 flex items-start">
+                                    <span class="text-green-400 mr-2 font-bold">${idx + 1}.</span>${action}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4792,11 +4791,11 @@ function renderSophisticatedChatterAnalysis(data) {
                     
                     ${data.actionPlan.strategicInitiatives?.length > 0 ? `
                     <div>
-                        <h6 class="text-sm font-bold text-blue-400 mb-2">Strategic Initiatives</h6>
-                        <ul class="space-y-1">
+                        <h6 class="text-sm font-bold text-blue-400 mb-3">Strategic Initiatives</h6>
+                        <ul class="space-y-2">
                             ${data.actionPlan.strategicInitiatives.slice(0, 3).map((initiative, idx) => `
-                                <li class="text-xs text-gray-300 flex items-start">
-                                    <span class="text-blue-400 mr-2">${idx + 1}.</span>${initiative}
+                                <li class="text-sm text-gray-300 flex items-start">
+                                    <span class="text-blue-400 mr-2 font-bold">${idx + 1}.</span>${initiative}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4805,11 +4804,11 @@ function renderSophisticatedChatterAnalysis(data) {
                     
                     ${data.actionPlan.successMetrics?.length > 0 ? `
                     <div>
-                        <h6 class="text-sm font-bold text-purple-400 mb-2">Success Metrics</h6>
-                        <ul class="space-y-1">
+                        <h6 class="text-sm font-bold text-purple-400 mb-3">Success Metrics</h6>
+                        <ul class="space-y-2">
                             ${data.actionPlan.successMetrics.slice(0, 3).map((metric, idx) => `
-                                <li class="text-xs text-gray-300 flex items-start">
-                                    <span class="text-purple-400 mr-2">${idx + 1}.</span>${metric}
+                                <li class="text-sm text-gray-300 flex items-start">
+                                    <span class="text-purple-400 mr-2 font-bold">${idx + 1}.</span>${metric}
                                 </li>
                             `).join('')}
                         </ul>
@@ -4819,7 +4818,7 @@ function renderSophisticatedChatterAnalysis(data) {
                 
                 ${data.actionPlan.roiProjections ? `
                 <div class="mt-4 p-4 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
-                    <h6 class="text-sm font-bold text-yellow-400 mb-2 flex items-center">
+                    <h6 class="text-sm font-bold text-yellow-400 mb-3 flex items-center">
                         <i class="fas fa-coins mr-2"></i>ROI Projections
                     </h6>
                     <div class="grid grid-cols-3 gap-4 text-center">
@@ -4829,7 +4828,7 @@ function renderSophisticatedChatterAnalysis(data) {
                         </div>
                         <div>
                             <div class="text-xs text-gray-400 mb-1">Optimized</div>
-                            <div class="text-sm text-green-400">${data.actionPlan.roiProjections.optimizedState}</div>
+                            <div class="text-sm text-green-400 font-semibold">${data.actionPlan.roiProjections.optimizedState}</div>
                         </div>
                         <div>
                             <div class="text-xs text-gray-400 mb-1">Improvement</div>
@@ -4841,13 +4840,13 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- Fallback Compact Format -->
+            <!-- Fallback Format -->
             ${!data.executiveSummary && data.insights ? `
             <div class="glass-card rounded-xl p-5 border border-green-500/30">
-                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>Key Insights
                 </h5>
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     ${data.insights.map((insight, idx) => `
                         <li class="text-sm text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
                             <span class="flex-shrink-0 w-6 h-6 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
@@ -4860,10 +4859,10 @@ function renderSophisticatedChatterAnalysis(data) {
             
             ${!data.executiveSummary && data.weakPoints ? `
             <div class="glass-card rounded-xl p-5 border border-orange-500/30">
-                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-exclamation-triangle text-orange-400 mr-2"></i>Areas for Improvement
                 </h5>
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     ${data.weakPoints.map((point, idx) => `
                         <li class="text-sm text-gray-300 flex items-start p-3 bg-orange-900/20 rounded-lg">
                             <span class="flex-shrink-0 w-6 h-6 rounded bg-orange-500/20 text-orange-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
@@ -4876,10 +4875,10 @@ function renderSophisticatedChatterAnalysis(data) {
             
             ${!data.executiveSummary && data.opportunities ? `
             <div class="glass-card rounded-xl p-5 border border-blue-500/30">
-                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-rocket text-blue-400 mr-2"></i>Opportunities
                 </h5>
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     ${data.opportunities.map((opportunity, idx) => `
                         <li class="text-sm text-gray-300 flex items-start p-3 bg-blue-900/20 rounded-lg">
                             <span class="flex-shrink-0 w-6 h-6 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
@@ -4892,10 +4891,10 @@ function renderSophisticatedChatterAnalysis(data) {
             
             ${!data.executiveSummary && data.recommendations ? `
             <div class="glass-card rounded-xl p-5 border border-purple-500/30">
-                <h5 class="text-lg font-bold text-white mb-3 flex items-center">
+                <h5 class="text-base font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-target text-purple-400 mr-2"></i>Recommendations
                 </h5>
-                <ul class="space-y-2">
+                <ul class="space-y-3">
                     ${data.recommendations.map((rec, idx) => `
                         <li class="text-sm text-gray-300 flex items-start p-3 bg-purple-900/20 rounded-lg">
                             <span class="flex-shrink-0 w-6 h-6 rounded bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
