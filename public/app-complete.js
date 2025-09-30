@@ -2358,107 +2358,193 @@ function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
     
-    // Handle the actual AI analysis response structure
+    // Calculate derived metrics from the data
+    const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
+    const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : 0;
+    const responseTimeStatus = data.avgResponseTime <= 2 ? 'Excellent' : data.avgResponseTime <= 3 ? 'Good' : data.avgResponseTime <= 5 ? 'Fair' : 'Needs Improvement';
+    const responseTimeColor = data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime <= 5 ? 'yellow' : 'red';
+    
+    // Handle the actual AI analysis response structure with comprehensive analytics
     container.innerHTML = `
-        <div class="space-y-6">
-            <!-- Performance Overview -->
-            <div class="glass-card rounded-xl p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h4 class="text-2xl font-semibold text-white">Individual Performance Analysis</h4>
-                        <p class="text-gray-400 mt-2">Analysis for ${currentAIAnalysisInterval} period</p>
+        <div class="space-y-8">
+            <!-- Performance Score Dashboard -->
+            <div class="relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-600/5 to-blue-600/5 rounded-3xl"></div>
+                <div class="relative p-12 mb-12">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mr-6">
+                                <i class="fas fa-user-chart text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-3xl font-bold text-white">Individual Performance Analysis</h4>
+                                <p class="text-gray-400 text-lg mt-2">Comprehensive analysis for ${currentAIAnalysisInterval} period</p>
+                            </div>
+                        </div>
+                        <div class="text-center p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/30">
+                            <div class="text-4xl font-bold text-green-400">${data.overallScore || 0}</div>
+                            <div class="text-sm text-gray-300 font-medium">Overall Score</div>
+                            <div class="text-xs text-green-400 mt-1">Performance Rating</div>
+                        </div>
                     </div>
-                    <div class="text-center p-4 bg-green-900/20 rounded-lg">
-                        <div class="text-3xl font-bold text-green-400">${data.overallScore || 0}</div>
-                        <div class="text-sm text-gray-400">Overall Score</div>
+                </div>
+            </div>
+
+            <!-- Core Performance Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="glass-card rounded-xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-comments text-xl text-white"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-white mb-2">${data.messagesSent || 0}</div>
+                    <div class="text-sm text-gray-400">Messages Sent</div>
+                    <div class="text-xs text-blue-400 mt-1">${messagesPerPPV} per PPV</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-paper-plane text-xl text-white"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-white mb-2">${data.ppvsSent || 0}</div>
+                    <div class="text-sm text-gray-400">PPVs Sent</div>
+                    <div class="text-xs text-purple-400 mt-1">${data.ppvsUnlocked || 0} unlocked</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-percentage text-xl text-white"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-white mb-2">${ppvUnlockRate}%</div>
+                    <div class="text-sm text-gray-400">Unlock Rate</div>
+                    <div class="text-xs text-green-400 mt-1">${ppvUnlockRate >= 50 ? 'Above Target' : 'Below Target'}</div>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-${responseTimeColor}-500 to-${responseTimeColor}-600 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-clock text-xl text-white"></i>
+                    </div>
+                    <div class="text-3xl font-bold text-white mb-2">${data.avgResponseTime || 0}m</div>
+                    <div class="text-sm text-gray-400">Response Time</div>
+                    <div class="text-xs text-${responseTimeColor}-400 mt-1">${responseTimeStatus}</div>
+                </div>
+            </div>
+
+            <!-- Performance Breakdown -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Key Insights -->
+                ${data.insights && data.insights.length > 0 ? `
+                <div class="glass-card rounded-xl p-8">
+                    <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>Key Insights
+                    </h4>
+                    <div class="space-y-4">
+                        ${data.insights.map(insight => `
+                            <div class="flex items-start p-4 bg-green-900/10 rounded-lg border border-green-500/20">
+                                <i class="fas fa-check-circle text-green-400 mr-4 mt-1"></i>
+                                <span class="text-gray-300 leading-relaxed">${insight}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
-            </div>
+                ` : ''}
 
-            <!-- Key Insights -->
-            ${data.insights && data.insights.length > 0 ? `
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>Key Insights
-                </h4>
-                <div class="space-y-3">
-                    ${data.insights.map(insight => `
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-400 mr-3 mt-1"></i>
-                            <span class="text-gray-300">${insight}</span>
-                        </div>
-                    `).join('')}
+                <!-- Areas for Improvement -->
+                ${data.weakPoints && data.weakPoints.length > 0 ? `
+                <div class="glass-card rounded-xl p-8">
+                    <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-orange-400 mr-4"></i>Areas for Improvement
+                    </h4>
+                    <div class="space-y-4">
+                        ${data.weakPoints.map(point => `
+                            <div class="flex items-start p-4 bg-orange-900/10 rounded-lg border border-orange-500/20">
+                                <i class="fas fa-arrow-up text-orange-400 mr-4 mt-1"></i>
+                                <span class="text-gray-300 leading-relaxed">${point}</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
+                ` : ''}
             </div>
-            ` : ''}
 
-            <!-- Weak Points -->
-            ${data.weakPoints && data.weakPoints.length > 0 ? `
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-orange-400 mr-3"></i>Areas for Improvement
-                </h4>
-                <div class="space-y-3">
-                    ${data.weakPoints.map(point => `
-                        <div class="flex items-start">
-                            <i class="fas fa-arrow-up text-orange-400 mr-3 mt-1"></i>
-                            <span class="text-gray-300">${point}</span>
-                        </div>
-                    `).join('')}
+            <!-- Growth Opportunities & ROI -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Growth Opportunities -->
+                ${data.opportunities && data.opportunities.length > 0 ? `
+                <div class="glass-card rounded-xl p-8">
+                    <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-rocket text-blue-400 mr-4"></i>Growth Opportunities
+                    </h4>
+                    <div class="space-y-4">
+                        ${data.opportunities.map(opportunity => `
+                            <div class="flex items-start p-4 bg-blue-900/10 rounded-lg border border-blue-500/20">
+                                <i class="fas fa-star text-blue-400 mr-4 mt-1"></i>
+                                <span class="text-gray-300 leading-relaxed">${opportunity}</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-            ` : ''}
+                ` : ''}
 
-            <!-- Opportunities -->
-            ${data.opportunities && data.opportunities.length > 0 ? `
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-rocket text-blue-400 mr-3"></i>Growth Opportunities
-                </h4>
-                <div class="space-y-3">
-                    ${data.opportunities.map(opportunity => `
-                        <div class="flex items-start">
-                            <i class="fas fa-star text-blue-400 mr-3 mt-1"></i>
-                            <span class="text-gray-300">${opportunity}</span>
-                        </div>
-                    `).join('')}
+                <!-- ROI Analysis -->
+                ${data.roiCalculations && data.roiCalculations.length > 0 ? `
+                <div class="glass-card rounded-xl p-8">
+                    <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-calculator text-purple-400 mr-4"></i>ROI Analysis
+                    </h4>
+                    <div class="space-y-4">
+                        ${data.roiCalculations.map(roi => `
+                            <div class="flex items-start p-4 bg-purple-900/10 rounded-lg border border-purple-500/20">
+                                <i class="fas fa-dollar-sign text-purple-400 mr-4 mt-1"></i>
+                                <span class="text-gray-300 leading-relaxed">${roi}</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
+                ` : ''}
             </div>
-            ` : ''}
 
-            <!-- ROI Calculations -->
-            ${data.roiCalculations && data.roiCalculations.length > 0 ? `
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-calculator text-purple-400 mr-3"></i>ROI Analysis
-                </h4>
-                <div class="space-y-3">
-                    ${data.roiCalculations.map(roi => `
-                        <div class="flex items-start">
-                            <i class="fas fa-dollar-sign text-purple-400 mr-3 mt-1"></i>
-                            <span class="text-gray-300">${roi}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-
-            <!-- Recommendations -->
+            <!-- Action Plan -->
             ${data.recommendations && data.recommendations.length > 0 ? `
-            <div class="glass-card rounded-xl p-6">
-                <h4 class="text-xl font-semibold text-white mb-4 flex items-center">
-                    <i class="fas fa-clipboard-list text-cyan-400 mr-3"></i>Action Plan
+            <div class="glass-card rounded-xl p-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-clipboard-list text-cyan-400 mr-4"></i>Personalized Action Plan
                 </h4>
-                <div class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     ${data.recommendations.map((rec, index) => `
-                        <div class="flex items-start p-3 bg-gray-800/30 rounded">
-                            <span class="bg-cyan-500 text-white text-xs px-2 py-1 rounded mr-3 mt-0.5">${index + 1}</span>
-                            <span class="text-gray-300">${rec}</span>
+                        <div class="flex items-start p-6 bg-gradient-to-r from-cyan-900/10 to-blue-900/10 rounded-xl border border-cyan-500/20">
+                            <div class="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 mt-1">${index + 1}</div>
+                            <div>
+                                <div class="text-gray-300 leading-relaxed">${rec}</div>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
             ` : ''}
+
+            <!-- Performance Summary -->
+            <div class="glass-card rounded-xl p-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-chart-line text-indigo-400 mr-4"></i>Performance Summary
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-xl border border-indigo-500/30">
+                        <div class="text-2xl font-bold text-indigo-400 mb-2">${data.fansChatted || 0}</div>
+                        <div class="text-sm text-gray-400">Fans Chatted</div>
+                        <div class="text-xs text-indigo-400 mt-1">Engagement Level</div>
+                    </div>
+                    <div class="text-center p-6 bg-gradient-to-br from-emerald-900/20 to-green-900/20 rounded-xl border border-emerald-500/30">
+                        <div class="text-2xl font-bold text-emerald-400 mb-2">${((data.messagesSent || 0) / (data.fansChatted || 1)).toFixed(1)}</div>
+                        <div class="text-sm text-gray-400">Messages per Fan</div>
+                        <div class="text-xs text-emerald-400 mt-1">Engagement Rate</div>
+                    </div>
+                    <div class="text-center p-6 bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-xl border border-amber-500/30">
+                        <div class="text-2xl font-bold text-amber-400 mb-2">${((data.ppvsUnlocked || 0) / (data.fansChatted || 1) * 100).toFixed(1)}%</div>
+                        <div class="text-sm text-gray-400">Conversion Rate</div>
+                        <div class="text-xs text-amber-400 mt-1">Fan to Sale</div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }
