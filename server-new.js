@@ -407,11 +407,37 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       dateQuery = { date: { $gte: start } };
     }
 
-    // Get daily reports data
+    // Get data from all sources
     const dailyReports = await DailyChatterReport.find(dateQuery);
     const ofAccountData = await AccountData.find(dateQuery);
     
-    // Calculate metrics from daily reports
+    // Get chatter performance data (new data source)
+    let chatterPerformanceQuery = {};
+    if (startDate && endDate) {
+      chatterPerformanceQuery = {
+        weekStartDate: { $gte: new Date(startDate) },
+        weekEndDate: { $lte: new Date(endDate) }
+      };
+    } else {
+      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      chatterPerformanceQuery = { 
+        weekStartDate: { $gte: start },
+        weekEndDate: { $lte: new Date() }
+      };
+    }
+    const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
+    
+    console.log('Dashboard data query results:', {
+      dailyReports: dailyReports.length,
+      ofAccountData: ofAccountData.length,
+      chatterPerformance: chatterPerformance.length,
+      dateQuery,
+      chatterPerformanceQuery
+    });
+    
+    // Calculate metrics from daily reports (PPV sales and tips)
     const totalRevenue = dailyReports.reduce((sum, report) => {
       const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
       const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
@@ -419,6 +445,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     }, 0);
 
     const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
+    
+    // Add metrics from chatter performance data
+    const chatterPPVsSent = chatterPerformance.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
+    const chatterPPVsUnlocked = chatterPerformance.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
+    const chatterMessagesSent = chatterPerformance.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
+    const chatterFansChatted = chatterPerformance.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
     const totalPPVsUnlocked = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0); // Assume sent = unlocked for now
     const avgResponseTime = dailyReports.length > 0 
       ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
@@ -431,6 +463,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
     const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
+    // Combine data from all sources
+    const combinedPPVsSent = totalPPVsSent + chatterPPVsSent;
+    const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked;
+    const combinedMessagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0) + chatterMessagesSent;
+    const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
+
     const analytics = {
       totalRevenue: Math.round(totalRevenue),
       netRevenue: Math.round(netRevenue),
@@ -438,11 +476,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       totalSubs: Math.round(totalSubs),
       newSubs: Math.round(newSubs),
       profileClicks: Math.round(profileClicks),
-      messagesSent: dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0), // Estimate
-      ppvsSent: totalPPVsSent,
-      ppvsUnlocked: totalPPVsUnlocked,
+      messagesSent: combinedMessagesSent,
+      ppvsSent: combinedPPVsSent,
+      ppvsUnlocked: combinedPPVsUnlocked,
+      fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
-      avgPPVPrice: totalPPVsSent > 0 ? Math.round((totalRevenue / totalPPVsSent) * 100) / 100 : 0
+      avgPPVPrice: combinedPPVsSent > 0 ? Math.round((totalRevenue / combinedPPVsSent) * 100) / 100 : 0,
+      conversionRate: combinedFansChatted > 0 ? Math.round((combinedPPVsUnlocked / combinedFansChatted) * 100) : 0
     };
 
     res.json(analytics);
