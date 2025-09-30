@@ -1375,7 +1375,9 @@ Rules:
 - Cross-reference metrics to find hidden patterns (e.g., "Response time of ${analyticsData.avgResponseTime} minutes combined with ${analyticsData.grammarScore}/100 grammar score suggests rushed, low-quality interactions").
 - Quote actual numbers in every point but explain their implications.
 - Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
-- Keep it concise and actionable.`;
+- Keep it concise and actionable.
+- NO DUPLICATION ACROSS SECTIONS: Each list (insights, weakPoints, rootCauses, opportunities, roiCalculations, recommendations) must contain unique points. If a concept appears in insights, do not repeat the same statement in weakPoints; instead, evolve it (e.g., add cause, action, or impact).
+- ACTION-ORIENTED: For weakPoints/opportunities/recommendations, include a concrete action and expected impact tied to the benchmarks (e.g., "Reduce avg response from 9m to <5m to align with benchmark; expect unlocks to improve if message quality is maintained").`;
     }
 
     const completion = await openai.chat.completions.create({
