@@ -137,6 +137,7 @@ const chatterPerformanceSchema = new mongoose.Schema({
   ppvsSent: { type: Number, default: 0 },
   ppvsUnlocked: { type: Number, default: 0 },
   fansChattedWith: { type: Number, default: 0 },
+  avgResponseTime: { type: Number, default: 0 }, // in minutes
   
   // Calculated Rates
   unlockRate: { type: Number, default: 0 }, // (ppvsUnlocked / ppvsSent) * 100

@@ -473,9 +473,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
       : 0;
     
-    // Use 0 if no response time data available
-    // TODO: Add response time field to ChatterPerformance schema if needed
-    const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : 0;
+    const chatterPerformanceResponseTime = chatterPerformance.length > 0
+      ? chatterPerformance.reduce((sum, data) => sum + (data.avgResponseTime || 0), 0) / chatterPerformance.length
+      : 0;
+    
+    // Use response time from either source, preferring daily reports if available
+    const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : chatterPerformanceResponseTime;
 
     // Get real data from OF Account data
     const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
@@ -547,7 +550,8 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       messagesSent: req.body.messagesSent || 0,
       ppvsSent: req.body.ppvsSent || 0,
       ppvsUnlocked: req.body.ppvsUnlocked || 0,
-      fansChattedWith: req.body.fansChatted || 0
+      fansChattedWith: req.body.fansChatted || 0,
+      avgResponseTime: req.body.avgResponseTime || 0
     });
     
     await chatterData.save();
