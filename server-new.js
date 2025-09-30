@@ -1322,7 +1322,7 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
-      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis. Cross-reference message quality with performance metrics to find causal weaknesses.
+      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis. Cross-reference message quality with performance metrics to find causal weaknesses. When you label something as "rushed" or "slow", cite the benchmark thresholds below.
 
 CHATTER DATA (REAL):
 - PPVs Sent: ${analyticsData.ppvsSent}
@@ -1339,6 +1339,10 @@ DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
 - Messages per PPV: ${analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1) : 0}
 - Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
+
+BENCHMARKS (use these for justification and cite them explicitly):
+- Response Time (minutes): <=2 = Excellent, 2-3 = Good, 3-5 = Fair, >5 = Needs Improvement
+  Example citation format: "Avg response is 9m (>5m benchmark), therefore Needs Improvement."
 
 CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data.
 
