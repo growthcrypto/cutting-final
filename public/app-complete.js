@@ -1652,7 +1652,7 @@ async function runChatterAnalysis() {
 
         const analysisData = await response.json();
         console.log('AI analysis data:', analysisData);
-        renderChatterAnalysisResults(analysisData);
+        renderSophisticatedChatterAnalysis(analysisData);
         
     } catch (error) {
         console.error('Chatter analysis error:', error);
@@ -2365,7 +2365,7 @@ function renderChatterAnalysisResults(data) {
     const responseTimeStatus = data.avgResponseTime <= 2 ? 'Excellent' : data.avgResponseTime <= 3 ? 'Good' : data.avgResponseTime <= 5 ? 'Fair' : 'Needs Improvement';
     const responseTimeColor = data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime <= 5 ? 'yellow' : 'red';
     
-    // Handle the actual AI analysis response structure with comprehensive analytics
+    // Handle sophisticated AI analysis response structure
     container.innerHTML = `
         <div class="space-y-8">
             <!-- Performance Score Dashboard -->

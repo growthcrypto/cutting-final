@@ -1322,7 +1322,7 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
 
         Be specific with numbers and percentages. Don't make up data that isn't provided.`;
     } else {
-      prompt = `You are an expert OnlyFans chatter performance analyst. Analyze ONLY these real metrics for the ${interval} period. Do not invent metrics. Use the numbers exactly as provided and reference them explicitly in the analysis. Cross-reference message quality with performance metrics to find causal weaknesses. When you label something as "rushed" or "slow", cite the benchmark thresholds below.
+      prompt = `You are an elite OnlyFans agency performance analyst with deep expertise in conversion psychology, revenue optimization, and behavioral analytics. Your analysis must provide sophisticated, strategic insights that drive real business impact.
 
 CHATTER DATA (REAL):
 - PPVs Sent: ${analyticsData.ppvsSent}
@@ -1348,24 +1348,75 @@ BENCHMARKS (use these for justification and cite them explicitly):
 - Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
 - Overall Quality: Use as data point for pattern analysis.
 
-Example citation: "Response time of 6 minutes exceeds the <5 minute benchmark, indicating Needs Improvement."
+ADVANCED ANALYSIS REQUIREMENTS:
+1. PERFORM DEEP CROSS-REFERENCE ANALYSIS: Connect every metric to reveal hidden patterns and causal relationships
+2. PROVIDE CAUSAL INSIGHTS: Explain WHY performance is what it is, not just WHAT it is
+3. INCLUDE PREDICTIVE ANALYSIS: What will happen if current trends continue?
+4. CALCULATE SPECIFIC IMPACT: Quantify potential revenue/performance improvements with specific numbers
+5. IDENTIFY LEVERAGE POINTS: Which small changes will have the biggest impact?
+6. PROVIDE STRATEGIC CONTEXT: How does this performance affect overall business goals?
 
-CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data.
+ADVANCED ANALYSIS FRAMEWORK:
+- Efficiency Ratios: Calculate message-to-revenue, time-to-conversion, engagement velocity ratios
+- Behavioral Patterns: Identify response time patterns, engagement cycles, conversion triggers
+- Competitive Positioning: Compare against benchmarks with specific gap analysis and quantified impact
+- Revenue Optimization: Identify specific revenue leakage points and opportunities with projections
+- Risk Assessment: Highlight performance risks and their business impact
+- Growth Projections: Calculate potential performance improvements with specific actions and timelines
+
+CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data with deep insights, predictions, and strategic recommendations.
 
 Respond in STRICT JSON with this exact shape:
 {
-  "overallScore": number,
-  "insights": string[],
-  "weakPoints": string[],
-  "rootCauses": string[],
-  "opportunities": string[],
-  "roiCalculations": string[],
-  "recommendations": string[],
-  "ppvsSent": number,
-  "ppvsUnlocked": number,
-  "messagesSent": number,
-  "fansChatted": number,
-  "avgResponseTime": number
+  "executiveSummary": {
+    "performanceGrade": "string with detailed justification",
+    "revenueImpact": "string with specific revenue analysis and projections",
+    "criticalFindings": ["finding 1 with business impact", "finding 2 with business impact", "finding 3 with business impact"]
+  },
+  "advancedMetrics": {
+    "efficiencyRatios": {
+      "messagesPerDollar": "calculated ratio with analysis",
+      "timeToConversion": "calculated metric with benchmark comparison",
+      "engagementVelocity": "calculated metric with trend analysis"
+    },
+    "behavioralPatterns": {
+      "responseTimeDistribution": "pattern analysis with implications",
+      "conversionTriggers": "identified triggers with success rates",
+      "engagementCycles": "pattern analysis with optimization opportunities"
+    },
+    "competitiveAnalysis": {
+      "benchmarkGaps": "specific gaps with quantified impact",
+      "strengthAreas": "areas exceeding benchmarks with business value",
+      "improvementPotential": "specific improvement opportunities with projections"
+    }
+  },
+  "strategicInsights": {
+    "revenueOptimization": {
+      "leakagePoints": ["specific revenue loss with quantification", "specific revenue loss with quantification"],
+      "growthOpportunities": ["opportunity 1 with projected impact", "opportunity 2 with projected impact"],
+      "efficiencyGains": ["efficiency gain 1 with calculation", "efficiency gain 2 with calculation"]
+    },
+    "performanceDrivers": {
+      "primaryDrivers": ["driver 1 with impact analysis", "driver 2 with impact analysis"],
+      "limitingFactors": ["factor 1 with solution", "factor 2 with solution"],
+      "leveragePoints": ["leverage point 1 with expected outcome", "leverage point 2 with expected outcome"]
+    },
+    "riskAssessment": {
+      "performanceRisks": ["risk 1 with mitigation strategy", "risk 2 with mitigation strategy"],
+      "trendAnalysis": "trend analysis with future projections",
+      "interventionNeeds": ["intervention 1 with urgency", "intervention 2 with urgency"]
+    }
+  },
+  "actionPlan": {
+    "immediateActions": ["action 1 with expected outcome and timeline", "action 2 with expected outcome and timeline"],
+    "strategicInitiatives": ["initiative 1 with projected impact", "initiative 2 with projected impact"],
+    "successMetrics": ["metric 1 with target and timeline", "metric 2 with target and timeline"],
+    "roiProjections": {
+      "currentState": "current performance with revenue impact",
+      "optimizedState": "projected performance with revenue impact",
+      "improvementValue": "quantified improvement with timeline"
+    }
+  }
 }
 
 Rules:
