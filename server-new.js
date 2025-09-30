@@ -807,7 +807,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
     }
 
-    // Generate AI analysis using OpenAI
+    // For individual chatter analysis, return a deterministic, data-driven analysis
+    if (analysisType === 'individual') {
+      const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval);
+      return res.json(deterministic);
+    }
+
+    // Generate AI analysis using OpenAI for agency analysis only
     try {
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
       res.json(aiAnalysis);
@@ -1005,6 +1011,73 @@ app.listen(PORT, () => {
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
 });
+
+// Deterministic analysis for individual chatter (no AI, data-only)
+function generateDeterministicIndividualAnalysis(analyticsData, interval) {
+  const ppvUnlockRate = analyticsData.ppvsSent > 0
+    ? Math.round((analyticsData.ppvsUnlocked / analyticsData.ppvsSent) * 1000) / 10
+    : 0;
+  const messagesPerPPV = analyticsData.ppvsSent > 0
+    ? Math.round((analyticsData.messagesSent / analyticsData.ppvsSent) * 10) / 10
+    : 0;
+  const messagesPerFan = analyticsData.fansChatted > 0
+    ? Math.round((analyticsData.messagesSent / analyticsData.fansChatted) * 10) / 10
+    : 0;
+
+  const insights = [];
+  if (analyticsData.messagesSent > 0) {
+    insights.push(`Sent ${analyticsData.messagesSent.toLocaleString()} messages this ${interval} period`);
+  }
+  if (analyticsData.ppvsSent > 0) {
+    insights.push(`PPVs sent: ${analyticsData.ppvsSent} with ${analyticsData.ppvsUnlocked} unlocks (${ppvUnlockRate}% unlock rate)`);
+  }
+  insights.push(`Average response time: ${Math.round((analyticsData.avgResponseTime || 0) * 10) / 10} minutes`);
+
+  const weakPoints = [];
+  if (ppvUnlockRate < 40 && analyticsData.ppvsSent > 0) weakPoints.push(`Low PPV unlock rate (${ppvUnlockRate}%). Target: 50-60%`);
+  if ((analyticsData.avgResponseTime || 0) > 3) weakPoints.push(`Response time is high (${Math.round(analyticsData.avgResponseTime * 10) / 10}m). Target: under 3m`);
+  if (messagesPerFan < 5 && analyticsData.fansChatted > 0) weakPoints.push(`Low messages per fan (${messagesPerFan}). Target: 6-8`);
+
+  const opportunities = [];
+  if (ppvUnlockRate < 50 && analyticsData.ppvsSent > 0) opportunities.push(`Improve PPV hooks and timing to reach 50%+ unlocks`);
+  if ((analyticsData.avgResponseTime || 0) > 3) opportunities.push(`Response templates and shortcuts to reduce response time`);
+  if (messagesPerFan < 6 && analyticsData.fansChatted > 0) opportunities.push(`Increase follow-ups per fan to lift conversions`);
+
+  const roiCalculations = [];
+  if (analyticsData.ppvsSent > 0) {
+    const potentialUnlocks = Math.max(0, Math.round(analyticsData.ppvsSent * 0.5 - (analyticsData.ppvsUnlocked || 0)));
+    if (potentialUnlocks > 0) {
+      roiCalculations.push(`Raising unlock rate to 50% adds ~${potentialUnlocks} unlocks this ${interval} period`);
+    }
+  }
+
+  const recommendations = [];
+  if ((analyticsData.avgResponseTime || 0) > 3) recommendations.push('Practice rapid-response routine: acknowledge, qualify, present, close');
+  if (ppvUnlockRate < 50 && analyticsData.ppvsSent > 0) recommendations.push('Test 3 new PPV openers and 2 urgency closers over next 3 days');
+  if (messagesPerFan < 6 && analyticsData.fansChatted > 0) recommendations.push('Add 2 extra value messages per fan before the pitch');
+
+  const overallScore = Math.max(0, Math.min(100,
+    (ppvUnlockRate >= 50 ? 35 : ppvUnlockRate >= 40 ? 25 : 15) +
+    ((analyticsData.avgResponseTime || 0) <= 2 ? 35 : (analyticsData.avgResponseTime || 0) <= 3 ? 25 : 10) +
+    (messagesPerFan >= 6 ? 30 : messagesPerFan >= 5 ? 20 : 10)
+  ));
+
+  return {
+    overallScore,
+    insights,
+    weakPoints,
+    opportunities,
+    roiCalculations,
+    recommendations,
+    // Echo raw metrics used
+    ppvsSent: analyticsData.ppvsSent || 0,
+    ppvsUnlocked: analyticsData.ppvsUnlocked || 0,
+    messagesSent: analyticsData.messagesSent || 0,
+    fansChatted: analyticsData.fansChatted || 0,
+    avgResponseTime: Math.round((analyticsData.avgResponseTime || 0) * 10) / 10,
+    interval
+  };
+}
 
 // Fallback analysis function when AI fails
 async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
