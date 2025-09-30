@@ -2656,9 +2656,9 @@ function loadAnalyticsCharts() {
         chartInstances.revenueBreakdownChart = new Chart(revenueCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Arya', 'Iris', 'Lilla'],
+                labels: ['No Data Available'],
                 datasets: [{
-                    data: [4850, 4200, 3400],
+                    data: [1],
                     backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
                     borderWidth: 2,
                     borderColor: '#1f2937'
@@ -2690,10 +2690,10 @@ function loadAnalyticsCharts() {
         chartInstances.chatterComparisonChart = new Chart(chatterCtx, {
             type: 'bar',
             data: {
-                labels: ['Sarah M.', 'Alex K.', 'Jamie L.', 'Morgan T.'],
+                labels: ['No Data Available'],
                 datasets: [{
                     label: 'Revenue ($)',
-                    data: [3240, 2890, 2650, 2420],
+                    data: [0],
                     backgroundColor: '#3b82f6',
                     borderColor: '#1d4ed8',
                     borderWidth: 1
