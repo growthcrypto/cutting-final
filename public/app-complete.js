@@ -3936,7 +3936,7 @@ async function loadChattersForAnalysis() {
             const users = await response.json();
             const chatters = users.filter(user => user.role === 'chatter');
             
-            const select = document.getElementById('chatterSelect');
+            const select = document.getElementById('chatterAnalysisSelect');
             if (select) {
                 select.innerHTML = '<option value="">Select Chatter...</option>' +
                     chatters.map(chatter => 
@@ -3950,7 +3950,7 @@ async function loadChattersForAnalysis() {
 }
 
 async function runChatterAnalysis() {
-    const chatterId = document.getElementById('chatterSelect').value;
+    const chatterId = document.getElementById('chatterAnalysisSelect').value;
     const resultsContainer = document.getElementById('chatterAnalysisResults');
     
     if (!chatterId) {
