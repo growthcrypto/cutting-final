@@ -1673,7 +1673,13 @@ function updateAnalyticsPageData(data) {
         'analytics-revenue-per-sub': data.totalSubs > 0 ? `$${(data.totalRevenue / data.totalSubs).toFixed(2)}` : '$0',
         'analytics-revenue-per-hour': `$${((data.totalRevenue || 0) / (24 * 7)).toFixed(2)}`,
         'analytics-messages-per-ppv': data.ppvsSent > 0 ? `${((data.messagesSent || 0) / data.ppvsSent).toFixed(1)}` : '0',
-        'analytics-fee-impact': data.totalRevenue > 0 && data.netRevenue > 0 ? `${(((data.totalRevenue - data.netRevenue) / data.totalRevenue) * 100).toFixed(1)}%` : '0%'
+        'analytics-fee-impact': data.totalRevenue > 0 && data.netRevenue > 0 ? `${(((data.totalRevenue - data.netRevenue) / data.totalRevenue) * 100).toFixed(1)}%` : '0%',
+        
+        // Analytics page specific metrics
+        'analytics-conversion-rate': data.conversionRate ? `${data.conversionRate.toFixed(1)}%` : '0%',
+        'analytics-revenue-per-chatter': data.totalRevenue > 0 ? `$${Math.round(data.totalRevenue / 4).toLocaleString()}` : '$0', // Assuming 4 chatters
+        'analytics-ppv-success-rate': data.ppvsSent > 0 ? `${((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1)}%` : '0%',
+        'analytics-avg-response-time': `${data.avgResponseTime || 0}m`
     };
     
     Object.entries(elements).forEach(([id, value]) => {
