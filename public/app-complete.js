@@ -3195,16 +3195,6 @@ function createDataUploadSection() {
                               <option value="lilla">Lilla</option>
                           </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Data Period</label>
-                        <select id="ofAccountPeriod" required
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Select Period...</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </div>
                 </div>
 
                 <div class="border-t border-gray-700 pt-6">
@@ -3269,16 +3259,6 @@ function createDataUploadSection() {
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                             <option value="">Select Chatter...</option>
                             <!-- Chatters will be loaded dynamically from created accounts -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Data Period</label>
-                        <select id="chatterDataPeriod" required
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Select Period...</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
                         </select>
                     </div>
                 </div>
@@ -4019,7 +3999,6 @@ async function handleOFAccountDataSubmit(event) {
     const formData = {
         startDate: document.getElementById('ofAccountStartDate').value,
         endDate: document.getElementById('ofAccountEndDate').value,
-        period: document.getElementById('ofAccountPeriod').value,
         creator: document.getElementById('ofAccountCreator').value,
         netRevenue: parseFloat(document.getElementById('ofAccountNetRevenue').value) || 0,
         recurringRevenue: parseFloat(document.getElementById('ofAccountRecurringRevenue').value) || 0,
@@ -4029,8 +4008,8 @@ async function handleOFAccountDataSubmit(event) {
         dataType: 'of_account'
     };
 
-    if (!formData.startDate || !formData.endDate || !formData.period || !formData.creator) {
-        showError('Please fill in all required fields: Start Date, End Date, Period, and Creator Account');
+    if (!formData.startDate || !formData.endDate || !formData.creator) {
+        showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
         return;
     }
 
@@ -4069,7 +4048,6 @@ async function handleChatterDataSubmit(event) {
     const formData = {
         startDate: document.getElementById('chatterDataStartDate').value,
         endDate: document.getElementById('chatterDataEndDate').value,
-        period: document.getElementById('chatterDataPeriod').value,
         chatter: document.getElementById('chatterDataChatter').value,
         messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
         ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
@@ -4079,8 +4057,8 @@ async function handleChatterDataSubmit(event) {
         dataType: 'chatter'
     };
 
-    if (!formData.startDate || !formData.endDate || !formData.period || !formData.chatter) {
-        showError('Please fill in all required fields: Start Date, End Date, Period, and Chatter Name');
+    if (!formData.startDate || !formData.endDate || !formData.chatter) {
+        showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
         return;
     }
 
