@@ -3281,8 +3281,8 @@ function createDataUploadSection() {
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-2">Avg PPV Price ($)</label>
-                            <input type="number" id="chatterAvgPPVPrice" min="0" step="0.01"
+                            <label class="block text-sm font-medium mb-2">Fans Chatted</label>
+                            <input type="number" id="chatterFansChatted" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                         <div>
@@ -4052,7 +4052,7 @@ async function handleChatterDataSubmit(event) {
         messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
         ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
         ppvsUnlocked: parseInt(document.getElementById('chatterPPVsUnlocked').value) || 0,
-        avgPPVPrice: parseFloat(document.getElementById('chatterAvgPPVPrice').value) || 0,
+        fansChatted: parseInt(document.getElementById('chatterFansChatted').value) || 0,
         avgResponseTime: parseFloat(document.getElementById('chatterAvgResponseTime').value) || 0,
         dataType: 'chatter'
     };
