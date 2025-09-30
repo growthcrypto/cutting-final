@@ -506,7 +506,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
       avgPPVPrice: combinedPPVsSent > 0 ? Math.round((totalRevenue / combinedPPVsSent) * 100) / 100 : 0,
-      conversionRate: combinedFansChatted > 0 ? Math.round((combinedPPVsUnlocked / combinedFansChatted) * 100) : 0
+      conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
 
     res.json(analytics);
