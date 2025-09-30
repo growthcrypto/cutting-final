@@ -821,6 +821,13 @@ async function loadDashboardData() {
         
         // Calculate and update intelligent metrics
         const intelligentMetrics = calculateIntelligentMetrics(data);
+        console.log('Intelligent metrics calculated:', intelligentMetrics);
+        
+        // Force clear specific metrics if no real data
+        if (data.totalRevenue === 0 && data.ppvsSent === 0) {
+            forceClearSpecificMetrics();
+        }
+        
         updateIntelligentMetrics(data, intelligentMetrics);
         
         // Load AI insights and opportunities
@@ -2556,6 +2563,30 @@ function clearDashboardToZero() {
     if (conversionInsight) conversionInsight.textContent = 'Upload data to see conversion analysis and optimization recommendations.';
     if (efficiencyInsight) efficiencyInsight.textContent = 'Upload sales data to see efficiency analysis and performance optimization tips.';
     if (teamInsight) teamInsight.textContent = 'Upload chatter performance data to see team dynamics and collaboration analysis.';
+}
+
+function forceClearSpecificMetrics() {
+    // Force clear the specific metrics that are still showing old data
+    const specificElements = {
+        'ppvUnlockRate': '0%',
+        'messagesPerPPV': '0',
+        'unlockRate': '0% unlock rate'
+    };
+    
+    Object.entries(specificElements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+            console.log(`Force cleared ${id} to ${value}`);
+        }
+    });
+    
+    // Also clear progress bars
+    const ppvUnlockBar = document.getElementById('ppvUnlockBar');
+    if (ppvUnlockBar) {
+        ppvUnlockBar.style.width = '0%';
+        console.log('Force cleared ppvUnlockBar to 0%');
+    }
 }
 
 function updateDashboardMetrics(data) {
