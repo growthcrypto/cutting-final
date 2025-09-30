@@ -4617,152 +4617,245 @@ function showError(message) {
     }
 }
 
-// CLEAN PREMIUM Million-Dollar Analysis UI
+// DYNAMIC SLEEK Million-Dollar Analysis UI
 function renderSophisticatedChatterAnalysis(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
     
-    console.log('Rendering CLEAN PREMIUM analysis:', data);
+    console.log('Rendering DYNAMIC analysis:', data);
     
     // Calculate derived metrics
     const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
     const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : 0;
     const messagesPerFan = data.fansChatted > 0 ? (data.messagesSent / data.fansChatted).toFixed(1) : 0;
-    const responseStatus = data.avgResponseTime <= 2 ? 'Excellent' : data.avgResponseTime <= 3 ? 'Good' : data.avgResponseTime <= 5 ? 'Fair' : 'Needs Work';
     const responseColor = data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime <= 5 ? 'yellow' : 'red';
     
     container.innerHTML = `
+        <style>
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.8; }
+            }
+            @keyframes shimmer {
+                0% { background-position: -1000px 0; }
+                100% { background-position: 1000px 0; }
+            }
+            .animate-slide-in { animation: slideIn 0.5s ease-out forwards; }
+            .animate-slide-in-delay-1 { animation: slideIn 0.5s ease-out 0.1s forwards; opacity: 0; }
+            .animate-slide-in-delay-2 { animation: slideIn 0.5s ease-out 0.2s forwards; opacity: 0; }
+            .animate-slide-in-delay-3 { animation: slideIn 0.5s ease-out 0.3s forwards; opacity: 0; }
+            .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+            .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5); }
+            .hover-glow { transition: all 0.3s ease; }
+            .hover-glow:hover { box-shadow: 0 0 30px -5px currentColor; }
+            .gradient-border {
+                background: linear-gradient(180deg, rgba(139, 92, 246, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%);
+                padding: 2px;
+                border-radius: 1rem;
+            }
+            .gradient-border-inner {
+                background: rgba(17, 24, 39, 0.95);
+                border-radius: 0.875rem;
+            }
+        </style>
+        
         <div class="space-y-6">
             
-            <!-- Compact Header -->
+            <!-- Dynamic Header -->
             ${data.executiveSummary ? `
-            <div class="glass-card rounded-xl p-5 border border-purple-500/30">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                            <i class="fas fa-chart-line text-white"></i>
+            <div class="gradient-border animate-slide-in">
+                <div class="gradient-border-inner p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl blur-lg opacity-50 animate-pulse"></div>
+                                <div class="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-xl">
+                                    <i class="fas fa-chart-line text-white text-xl"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-2xl font-bold text-white">Performance Analysis</h4>
+                                <p class="text-sm text-gray-400">${currentAIAnalysisInterval}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="text-xl font-bold text-white">Performance Analysis</h4>
-                            <p class="text-xs text-gray-400">${currentAIAnalysisInterval}</p>
+                        <div class="relative group">
+                            <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                            <div class="relative text-center px-6 py-3 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl border-2 border-green-400/50">
+                                <div class="text-3xl font-black text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
+                                <div class="text-xs text-green-300 font-semibold">Grade</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-center px-5 py-2 bg-green-500/20 rounded-lg border border-green-400/50">
-                        <div class="text-2xl font-bold text-green-400">${data.executiveSummary.performanceGrade || 'A'}</div>
                     </div>
                 </div>
             </div>
             ` : ''}
             
-            <!-- Key Metrics Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-card rounded-xl p-4 border border-blue-500/30">
-                    <div class="text-2xl font-bold text-blue-400">${data.ppvsSent || 0}</div>
-                    <div class="text-xs text-gray-400 uppercase">PPVs Sent</div>
+            <!-- Metrics Grid with Animation -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-in-delay-1">
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-blue-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-blue-500/30 hover-glow" style="color: rgb(96, 165, 250)">
+                        <div class="text-3xl font-black text-blue-400 mb-1">${data.ppvsSent || 0}</div>
+                        <div class="text-xs text-gray-400 uppercase tracking-wider">PPVs Sent</div>
+                    </div>
                 </div>
-                <div class="glass-card rounded-xl p-4 border border-green-500/30">
-                    <div class="text-2xl font-bold text-green-400">${ppvUnlockRate}%</div>
-                    <div class="text-xs text-gray-400 uppercase">Unlock Rate</div>
+                
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-green-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-green-500/30 hover-glow" style="color: rgb(74, 222, 128)">
+                        <div class="text-3xl font-black text-green-400 mb-1">${ppvUnlockRate}%</div>
+                        <div class="text-xs text-gray-400 uppercase tracking-wider">Unlock Rate</div>
+                    </div>
                 </div>
-                <div class="glass-card rounded-xl p-4 border border-${responseColor}-500/30">
-                    <div class="text-2xl font-bold text-${responseColor}-400">${data.avgResponseTime || 0}m</div>
-                    <div class="text-xs text-gray-400 uppercase">Avg Response</div>
+                
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-${responseColor}-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-${responseColor}-500/30 hover-glow" style="color: ${responseColor === 'green' ? 'rgb(74, 222, 128)' : responseColor === 'blue' ? 'rgb(96, 165, 250)' : responseColor === 'yellow' ? 'rgb(250, 204, 21)' : 'rgb(248, 113, 113)'}">
+                        <div class="text-3xl font-black text-${responseColor}-400 mb-1">${data.avgResponseTime || 0}m</div>
+                        <div class="text-xs text-gray-400 uppercase tracking-wider">Response Time</div>
+                    </div>
                 </div>
-                <div class="glass-card rounded-xl p-4 border border-purple-500/30">
-                    <div class="text-2xl font-bold text-purple-400">${messagesPerPPV}</div>
-                    <div class="text-xs text-gray-400 uppercase">Msgs/PPV</div>
+                
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-purple-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-purple-500/30 hover-glow" style="color: rgb(192, 132, 252)">
+                        <div class="text-3xl font-black text-purple-400 mb-1">${messagesPerPPV}</div>
+                        <div class="text-xs text-gray-400 uppercase tracking-wider">Msgs/PPV</div>
+                    </div>
                 </div>
             </div>
             
             <!-- Executive Summary -->
             ${data.executiveSummary ? `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass-card rounded-xl p-5 border border-blue-500/30">
-                    <div class="flex items-center mb-3">
-                        <i class="fas fa-dollar-sign text-blue-400 mr-2"></i>
-                        <h5 class="text-base font-bold text-white">Revenue Impact</h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-in-delay-2">
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-blue-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-6 border border-blue-500/30">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mr-3 shadow-lg">
+                                <i class="fas fa-dollar-sign text-white"></i>
+                            </div>
+                            <h5 class="text-lg font-bold text-white">Revenue Impact</h5>
+                        </div>
+                        <p class="text-sm text-gray-300 leading-relaxed">${data.executiveSummary.revenueImpact}</p>
                     </div>
-                    <p class="text-sm text-gray-300 leading-relaxed">${data.executiveSummary.revenueImpact}</p>
                 </div>
-                <div class="glass-card rounded-xl p-5 border border-purple-500/30">
-                    <div class="flex items-center mb-3">
-                        <i class="fas fa-bolt text-purple-400 mr-2"></i>
-                        <h5 class="text-base font-bold text-white">Critical Findings</h5>
+                
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-purple-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-6 border border-purple-500/30">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mr-3 shadow-lg">
+                                <i class="fas fa-exclamation-circle text-white"></i>
+                            </div>
+                            <h5 class="text-lg font-bold text-white">Critical Findings</h5>
+                        </div>
+                        <ul class="space-y-2">
+                            ${data.executiveSummary.criticalFindings.slice(0, 3).map((finding, idx) => `
+                                <li class="text-sm text-gray-300 flex items-start group/item hover:translate-x-1 transition-transform">
+                                    <span class="text-cyan-400 mr-2 text-lg">•</span>
+                                    <span class="group-hover/item:text-white transition-colors">${finding}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
                     </div>
-                    <ul class="space-y-2">
-                        ${data.executiveSummary.criticalFindings.slice(0, 3).map(finding => `
-                            <li class="text-sm text-gray-300 flex items-start">
-                                <span class="text-cyan-400 mr-2">•</span>${finding}
-                            </li>
-                        `).join('')}
-                    </ul>
                 </div>
             </div>
             ` : ''}
             
             <!-- Advanced Metrics -->
             ${data.advancedMetrics ? `
-            <div class="glass-card rounded-xl p-5 border border-gray-700/50">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-chart-line text-cyan-400 mr-2"></i>
-                    Advanced Metrics
-                </h5>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
-                        <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                            <h6 class="text-sm font-bold text-blue-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
-                            <p class="text-sm text-gray-300">${value}</p>
+            <div class="relative group hover-lift animate-slide-in-delay-3">
+                <div class="absolute inset-0 bg-cyan-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-cyan-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-chart-line text-white"></i>
                         </div>
-                    `).join('') : ''}
+                        <h5 class="text-lg font-bold text-white">Advanced Metrics</h5>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
+                            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:border-cyan-500/50 hover:bg-gray-800/70 transition-all hover-lift">
+                                <h6 class="text-sm font-bold text-cyan-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</h6>
+                                <p class="text-sm text-gray-300">${value}</p>
+                            </div>
+                        `).join('') : ''}
+                    </div>
                 </div>
             </div>
             ` : ''}
             
             <!-- Strategic Insights -->
             ${data.strategicInsights?.revenueOptimization ? `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-in-delay-3">
                 ${data.strategicInsights.revenueOptimization.leakagePoints?.length > 0 ? `
-                <div class="glass-card rounded-xl p-4 border border-red-500/30">
-                    <h5 class="text-sm font-bold text-red-400 mb-3 flex items-center">
-                        <i class="fas fa-exclamation-circle mr-2"></i>Revenue Leaks
-                    </h5>
-                    <ul class="space-y-2">
-                        ${data.strategicInsights.revenueOptimization.leakagePoints.slice(0, 2).map((point, idx) => `
-                            <li class="text-sm text-gray-300 flex items-start">
-                                <span class="text-red-400 mr-2 font-bold">${idx + 1}.</span>${point}
-                            </li>
-                        `).join('')}
-                    </ul>
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-red-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-red-500/30">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center mr-2 shadow-lg">
+                                <i class="fas fa-exclamation-circle text-white text-sm"></i>
+                            </div>
+                            <h5 class="text-sm font-bold text-red-400">Revenue Leaks</h5>
+                        </div>
+                        <ul class="space-y-3">
+                            ${data.strategicInsights.revenueOptimization.leakagePoints.slice(0, 2).map((point, idx) => `
+                                <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                    <span class="flex-shrink-0 w-5 h-5 rounded bg-red-500/20 text-red-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                    ${point}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
                 </div>
                 ` : ''}
                 
                 ${data.strategicInsights.revenueOptimization.growthOpportunities?.length > 0 ? `
-                <div class="glass-card rounded-xl p-4 border border-green-500/30">
-                    <h5 class="text-sm font-bold text-green-400 mb-3 flex items-center">
-                        <i class="fas fa-arrow-up mr-2"></i>Growth Opportunities
-                    </h5>
-                    <ul class="space-y-2">
-                        ${data.strategicInsights.revenueOptimization.growthOpportunities.slice(0, 2).map((opp, idx) => `
-                            <li class="text-sm text-gray-300 flex items-start">
-                                <span class="text-green-400 mr-2 font-bold">${idx + 1}.</span>${opp}
-                            </li>
-                        `).join('')}
-                    </ul>
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-green-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-green-500/30">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mr-2 shadow-lg">
+                                <i class="fas fa-rocket text-white text-sm"></i>
+                            </div>
+                            <h5 class="text-sm font-bold text-green-400">Growth Opportunities</h5>
+                        </div>
+                        <ul class="space-y-3">
+                            ${data.strategicInsights.revenueOptimization.growthOpportunities.slice(0, 2).map((opp, idx) => `
+                                <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                    <span class="flex-shrink-0 w-5 h-5 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                    ${opp}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
                 </div>
                 ` : ''}
                 
                 ${data.strategicInsights.revenueOptimization.efficiencyGains?.length > 0 ? `
-                <div class="glass-card rounded-xl p-4 border border-blue-500/30">
-                    <h5 class="text-sm font-bold text-blue-400 mb-3 flex items-center">
-                        <i class="fas fa-chart-line mr-2"></i>Efficiency Gains
-                    </h5>
-                    <ul class="space-y-2">
-                        ${data.strategicInsights.revenueOptimization.efficiencyGains.slice(0, 2).map((gain, idx) => `
-                            <li class="text-sm text-gray-300 flex items-start">
-                                <span class="text-blue-400 mr-2 font-bold">${idx + 1}.</span>${gain}
-                            </li>
-                        `).join('')}
-                    </ul>
+                <div class="relative group hover-lift">
+                    <div class="absolute inset-0 bg-blue-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative glass-card rounded-xl p-5 border border-blue-500/30">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mr-2 shadow-lg">
+                                <i class="fas fa-chart-line text-white text-sm"></i>
+                            </div>
+                            <h5 class="text-sm font-bold text-blue-400">Efficiency Gains</h5>
+                        </div>
+                        <ul class="space-y-3">
+                            ${data.strategicInsights.revenueOptimization.efficiencyGains.slice(0, 2).map((gain, idx) => `
+                                <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                    <span class="flex-shrink-0 w-5 h-5 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                    ${gain}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
                 </div>
                 ` : ''}
             </div>
@@ -4770,138 +4863,177 @@ function renderSophisticatedChatterAnalysis(data) {
             
             <!-- Action Plan -->
             ${data.actionPlan ? `
-            <div class="glass-card rounded-xl p-5 border border-cyan-500/30">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-rocket text-cyan-400 mr-2"></i>
-                    Action Plan
-                </h5>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    ${data.actionPlan.immediateActions?.length > 0 ? `
-                    <div>
-                        <h6 class="text-sm font-bold text-green-400 mb-3">Immediate Actions</h6>
-                        <ul class="space-y-2">
-                            ${data.actionPlan.immediateActions.slice(0, 3).map((action, idx) => `
-                                <li class="text-sm text-gray-300 flex items-start">
-                                    <span class="text-green-400 mr-2 font-bold">${idx + 1}.</span>${action}
-                                </li>
-                            `).join('')}
-                        </ul>
+            <div class="relative group hover-lift animate-slide-in-delay-3">
+                <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-cyan-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-rocket text-white"></i>
+                        </div>
+                        <h5 class="text-lg font-bold text-white">Action Plan</h5>
                     </div>
-                    ` : ''}
                     
-                    ${data.actionPlan.strategicInitiatives?.length > 0 ? `
-                    <div>
-                        <h6 class="text-sm font-bold text-blue-400 mb-3">Strategic Initiatives</h6>
-                        <ul class="space-y-2">
-                            ${data.actionPlan.strategicInitiatives.slice(0, 3).map((initiative, idx) => `
-                                <li class="text-sm text-gray-300 flex items-start">
-                                    <span class="text-blue-400 mr-2 font-bold">${idx + 1}.</span>${initiative}
-                                </li>
-                            `).join('')}
-                        </ul>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        ${data.actionPlan.immediateActions?.length > 0 ? `
+                        <div>
+                            <h6 class="text-sm font-bold text-green-400 mb-3 flex items-center">
+                                <i class="fas fa-bolt mr-2"></i>Immediate Actions
+                            </h6>
+                            <ul class="space-y-2">
+                                ${data.actionPlan.immediateActions.slice(0, 3).map((action, idx) => `
+                                    <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                        <span class="flex-shrink-0 w-5 h-5 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                        ${action}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                        
+                        ${data.actionPlan.strategicInitiatives?.length > 0 ? `
+                        <div>
+                            <h6 class="text-sm font-bold text-blue-400 mb-3 flex items-center">
+                                <i class="fas fa-flag mr-2"></i>Strategic Initiatives
+                            </h6>
+                            <ul class="space-y-2">
+                                ${data.actionPlan.strategicInitiatives.slice(0, 3).map((initiative, idx) => `
+                                    <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                        <span class="flex-shrink-0 w-5 h-5 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                        ${initiative}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                        
+                        ${data.actionPlan.successMetrics?.length > 0 ? `
+                        <div>
+                            <h6 class="text-sm font-bold text-purple-400 mb-3 flex items-center">
+                                <i class="fas fa-target mr-2"></i>Success Metrics
+                            </h6>
+                            <ul class="space-y-2">
+                                ${data.actionPlan.successMetrics.slice(0, 3).map((metric, idx) => `
+                                    <li class="text-sm text-gray-300 flex items-start hover:translate-x-1 transition-transform">
+                                        <span class="flex-shrink-0 w-5 h-5 rounded bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center mr-2 font-bold">${idx + 1}</span>
+                                        ${metric}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
                     </div>
-                    ` : ''}
                     
-                    ${data.actionPlan.successMetrics?.length > 0 ? `
-                    <div>
-                        <h6 class="text-sm font-bold text-purple-400 mb-3">Success Metrics</h6>
-                        <ul class="space-y-2">
-                            ${data.actionPlan.successMetrics.slice(0, 3).map((metric, idx) => `
-                                <li class="text-sm text-gray-300 flex items-start">
-                                    <span class="text-purple-400 mr-2 font-bold">${idx + 1}.</span>${metric}
-                                </li>
-                            `).join('')}
-                        </ul>
+                    ${data.actionPlan.roiProjections ? `
+                    <div class="mt-6 p-5 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-xl border border-yellow-500/30 hover:border-yellow-400/50 transition-colors">
+                        <h6 class="text-sm font-bold text-yellow-400 mb-4 flex items-center">
+                            <i class="fas fa-coins mr-2"></i>ROI Projections
+                        </h6>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center p-3 bg-gray-900/50 rounded-lg hover:bg-gray-900/70 transition-colors">
+                                <div class="text-xs text-gray-400 mb-2 uppercase tracking-wider">Current</div>
+                                <div class="text-sm text-gray-300 font-semibold">${data.actionPlan.roiProjections.currentState}</div>
+                            </div>
+                            <div class="text-center p-3 bg-green-900/30 rounded-lg hover:bg-green-900/50 transition-colors">
+                                <div class="text-xs text-green-400 mb-2 uppercase tracking-wider">Optimized</div>
+                                <div class="text-sm text-green-400 font-bold">${data.actionPlan.roiProjections.optimizedState}</div>
+                            </div>
+                            <div class="text-center p-3 bg-cyan-900/30 rounded-lg hover:bg-cyan-900/50 transition-colors">
+                                <div class="text-xs text-cyan-400 mb-2 uppercase tracking-wider">Gain</div>
+                                <div class="text-sm text-cyan-400 font-black">${data.actionPlan.roiProjections.improvementValue}</div>
+                            </div>
+                        </div>
                     </div>
                     ` : ''}
                 </div>
-                
-                ${data.actionPlan.roiProjections ? `
-                <div class="mt-4 p-4 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
-                    <h6 class="text-sm font-bold text-yellow-400 mb-3 flex items-center">
-                        <i class="fas fa-coins mr-2"></i>ROI Projections
-                    </h6>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">Current</div>
-                            <div class="text-sm text-gray-300">${data.actionPlan.roiProjections.currentState}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">Optimized</div>
-                            <div class="text-sm text-green-400 font-semibold">${data.actionPlan.roiProjections.optimizedState}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">Improvement</div>
-                            <div class="text-sm font-bold text-cyan-400">${data.actionPlan.roiProjections.improvementValue}</div>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
             </div>
             ` : ''}
             
-            <!-- Fallback Format -->
+            <!-- Fallback with animations -->
             ${!data.executiveSummary && data.insights ? `
-            <div class="glass-card rounded-xl p-5 border border-green-500/30">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>Key Insights
-                </h5>
-                <ul class="space-y-3">
-                    ${data.insights.map((insight, idx) => `
-                        <li class="text-sm text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
-                            <span class="flex-shrink-0 w-6 h-6 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
-                            ${insight}
-                        </li>
-                    `).join('')}
-                </ul>
+            <div class="relative group hover-lift animate-slide-in">
+                <div class="absolute inset-0 bg-green-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-green-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-lightbulb text-white"></i>
+                        </div>
+                        <h5 class="text-lg font-bold text-white">Key Insights</h5>
+                    </div>
+                    <ul class="space-y-3">
+                        ${data.insights.map((insight, idx) => `
+                            <li class="text-sm text-gray-300 flex items-start p-4 bg-green-900/20 rounded-lg hover:bg-green-900/30 transition-all hover-lift">
+                                <span class="flex-shrink-0 w-6 h-6 rounded bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                                ${insight}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.weakPoints ? `
-            <div class="glass-card rounded-xl p-5 border border-orange-500/30">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-exclamation-triangle text-orange-400 mr-2"></i>Areas for Improvement
-                </h5>
-                <ul class="space-y-3">
-                    ${data.weakPoints.map((point, idx) => `
-                        <li class="text-sm text-gray-300 flex items-start p-3 bg-orange-900/20 rounded-lg">
-                            <span class="flex-shrink-0 w-6 h-6 rounded bg-orange-500/20 text-orange-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
-                            ${point}
-                        </li>
-                    `).join('')}
-                </ul>
+            <div class="relative group hover-lift animate-slide-in-delay-1">
+                <div class="absolute inset-0 bg-orange-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-orange-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-exclamation-triangle text-white"></i>
+                        </div>
+                        <h5 class="text-lg font-bold text-white">Areas for Improvement</h5>
+                    </div>
+                    <ul class="space-y-3">
+                        ${data.weakPoints.map((point, idx) => `
+                            <li class="text-sm text-gray-300 flex items-start p-4 bg-orange-900/20 rounded-lg hover:bg-orange-900/30 transition-all hover-lift">
+                                <span class="flex-shrink-0 w-6 h-6 rounded bg-orange-500/20 text-orange-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                                ${point}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.opportunities ? `
-            <div class="glass-card rounded-xl p-5 border border-blue-500/30">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-rocket text-blue-400 mr-2"></i>Opportunities
-                </h5>
-                <ul class="space-y-3">
-                    ${data.opportunities.map((opportunity, idx) => `
-                        <li class="text-sm text-gray-300 flex items-start p-3 bg-blue-900/20 rounded-lg">
-                            <span class="flex-shrink-0 w-6 h-6 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
-                            ${opportunity}
-                        </li>
-                    `).join('')}
-                </ul>
+            <div class="relative group hover-lift animate-slide-in-delay-2">
+                <div class="absolute inset-0 bg-blue-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-blue-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-rocket text-white"></i>
+                        </div>
+                        <h5 class="text-lg font-bold text-white">Opportunities</h5>
+                    </div>
+                    <ul class="space-y-3">
+                        ${data.opportunities.map((opportunity, idx) => `
+                            <li class="text-sm text-gray-300 flex items-start p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-all hover-lift">
+                                <span class="flex-shrink-0 w-6 h-6 rounded bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                                ${opportunity}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
             </div>
             ` : ''}
             
             ${!data.executiveSummary && data.recommendations ? `
-            <div class="glass-card rounded-xl p-5 border border-purple-500/30">
-                <h5 class="text-base font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-target text-purple-400 mr-2"></i>Recommendations
-                </h5>
-                <ul class="space-y-3">
-                    ${data.recommendations.map((rec, idx) => `
-                        <li class="text-sm text-gray-300 flex items-start p-3 bg-purple-900/20 rounded-lg">
-                            <span class="flex-shrink-0 w-6 h-6 rounded bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
-                            ${rec}
-                        </li>
-                    `).join('')}
-                </ul>
+            <div class="relative group hover-lift animate-slide-in-delay-3">
+                <div class="absolute inset-0 bg-purple-500/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative glass-card rounded-xl p-6 border border-purple-500/30">
+                    <div class="flex items-center mb-5">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-target text-white"></i>
+                        </div>
+                        <h5 class="text-lg font-bold text-white">Recommendations</h5>
+                    </div>
+                    <ul class="space-y-3">
+                        ${data.recommendations.map((rec, idx) => `
+                            <li class="text-sm text-gray-300 flex items-start p-4 bg-purple-900/20 rounded-lg hover:bg-purple-900/30 transition-all hover-lift">
+                                <span class="flex-shrink-0 w-6 h-6 rounded bg-purple-500/20 text-purple-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
+                                ${rec}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
             </div>
             ` : ''}
         </div>
