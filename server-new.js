@@ -763,25 +763,43 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         interval
       };
     } else if (analysisType === 'individual' && chatterId) {
-      const dailyReports = await DailyChatterReport.find({ ...dateQuery, chatterId });
+      // Query ChatterPerformance data instead of DailyChatterReport
+      const chatterPerformanceQuery = {};
+      if (startDate && endDate) {
+        chatterPerformanceQuery.weekStartDate = {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        };
+      } else {
+        const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        chatterPerformanceQuery.weekStartDate = { $gte: start };
+      }
       
-      const totalRevenue = dailyReports.reduce((sum, report) => {
-        const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
-        const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
-        return sum + ppvRevenue + tipsRevenue;
-      }, 0);
-
-      const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
-      const avgResponseTime = dailyReports.length > 0 
-        ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
+      const chatterData = await ChatterPerformance.find({ 
+        ...chatterPerformanceQuery, 
+        chatterName: chatterId 
+      });
+      
+      console.log('Found chatter performance data:', chatterData.length, 'records');
+      
+      const totalRevenue = 0; // No revenue data in ChatterPerformance yet
+      const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
+      const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
+      const avgResponseTime = chatterData.length > 0 
+        ? chatterData.reduce((sum, data) => sum + (data.avgResponseTime || 0), 0) / chatterData.length 
         : 0;
 
-      const messagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0);
+      const messagesSent = chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
+      const fansChatted = chatterData.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
 
       analyticsData = {
         totalRevenue,
         ppvsSent: totalPPVsSent,
+        ppvsUnlocked: totalPPVsUnlocked,
         messagesSent,
+        fansChatted,
         avgResponseTime,
         interval
       };
