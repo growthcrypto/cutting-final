@@ -59,8 +59,16 @@ function showMainApp() {
         loadUsers();
         // Force clear dashboard to ensure clean state
         clearDashboardToZero();
+        // Aggressively clear specific metrics immediately
+        forceClearSpecificMetrics();
         loadDashboardData();
         loadAIRecommendations();
+        
+        // Also clear again after a short delay to override any cached values
+        setTimeout(() => {
+            forceClearSpecificMetrics();
+            console.log('Delayed metric clearing executed');
+        }, 1000);
     }
 }
 
@@ -381,6 +389,14 @@ function showSection(sectionId) {
 
     // Load section-specific data
     loadSectionData(sectionId);
+    
+    // If showing dashboard, aggressively clear metrics
+    if (sectionId === 'dashboard' && currentUser?.role === 'manager') {
+        setTimeout(() => {
+            forceClearSpecificMetrics();
+            console.log('Dashboard section shown - clearing metrics');
+        }, 100);
+    }
 }
 
 function createSection(sectionId) {
@@ -2573,19 +2589,29 @@ function forceClearSpecificMetrics() {
         'unlockRate': '0% unlock rate'
     };
     
-    Object.entries(specificElements).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-            console.log(`Force cleared ${id} to ${value}`);
+    // Clear multiple times to ensure it sticks
+    for (let i = 0; i < 3; i++) {
+        Object.entries(specificElements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                element.innerHTML = value; // Also set innerHTML
+                console.log(`Force cleared ${id} to ${value} (attempt ${i + 1})`);
+            }
+        });
+        
+        // Also clear progress bars
+        const ppvUnlockBar = document.getElementById('ppvUnlockBar');
+        if (ppvUnlockBar) {
+            ppvUnlockBar.style.width = '0%';
+            ppvUnlockBar.setAttribute('style', 'width: 0%'); // Force set attribute
+            console.log(`Force cleared ppvUnlockBar to 0% (attempt ${i + 1})`);
         }
-    });
-    
-    // Also clear progress bars
-    const ppvUnlockBar = document.getElementById('ppvUnlockBar');
-    if (ppvUnlockBar) {
-        ppvUnlockBar.style.width = '0%';
-        console.log('Force cleared ppvUnlockBar to 0%');
+        
+        // Small delay between attempts
+        if (i < 2) {
+            setTimeout(() => {}, 100);
+        }
     }
 }
 
