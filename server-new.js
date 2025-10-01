@@ -1240,12 +1240,42 @@ if (!process.env.JWT_SECRET) {
   console.warn('⚠️  JWT_SECRET not set - using default (not secure for production)');
 }
 
+// Update creator names on startup (one-time migration)
+async function updateCreatorNames() {
+  try {
+    const creators = await CreatorAccount.find().sort({ _id: 1 });
+    const names = ['Arya', 'Iris', 'Lilla'];
+    const accounts = ['@arya_of', '@iris_of', '@lilla_of'];
+    
+    let updated = 0;
+    for (let i = 0; i < Math.min(creators.length, 3); i++) {
+      if (creators[i].name.startsWith('Creator')) {
+        creators[i].name = names[i];
+        creators[i].accountName = accounts[i];
+        await creators[i].save();
+        console.log(`✅ Updated ${creators[i]._id} to ${names[i]}`);
+        updated++;
+      }
+    }
+    if (updated > 0) {
+      console.log(`🎉 Updated ${updated} creator names!`);
+    }
+  } catch (error) {
+    console.log('Creator name migration skipped:', error.message);
+  }
+}
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);
   console.log(`🌐 Visit: http://localhost:${PORT}`);
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
+  
+  // Run migrations after 2 seconds
+  setTimeout(() => {
+    updateCreatorNames();
+  }, 2000);
 });
 
 // Deterministic analysis for individual chatter (no AI, data-only)
