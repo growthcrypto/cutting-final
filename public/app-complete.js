@@ -3982,10 +3982,11 @@ function createDataUploadSection() {
                         <label class="block text-sm font-medium mb-2">Chatter Name</label>
                         <select id="chatterDataChatter" required
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Select Chatter...</option>
-                            <option value="arya">Arya</option>
-                            <option value="iris">Iris</option>
-                            <option value="lilla">Lilla</option>
+                            <option value="">Select Employee...</option>
+                            <option value="sarah">Sarah Johnson</option>
+                            <option value="mike">Mike Chen</option>
+                            <option value="emma">Emma Davis</option>
+                            <option value="alex">Alex Rodriguez</option>
                         </select>
                     </div>
                 </div>
@@ -4037,7 +4038,7 @@ function createDataUploadSection() {
                 <div class="text-sm font-mono text-center py-2 bg-gray-800/50 rounded">
                     <div class="text-blue-400">• message_text</div>
                 </div>
-                <p class="text-xs text-gray-400 mt-2">Select which chatter/employee these messages belong to.</p>
+                <p class="text-xs text-gray-400 mt-2">Select which employee these messages belong to.</p>
             </div>
             <form id="messagesUploadForm" class="space-y-4">
                 <div>
@@ -4045,9 +4046,10 @@ function createDataUploadSection() {
                     <select id="messagesChatter" required
                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         <option value="">Select Employee...</option>
-                        <option value="arya">Arya</option>
-                        <option value="iris">Iris</option>
-                        <option value="lilla">Lilla</option>
+                        <option value="sarah">Sarah Johnson</option>
+                        <option value="mike">Mike Chen</option>
+                        <option value="emma">Emma Davis</option>
+                        <option value="alex">Alex Rodriguez</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
