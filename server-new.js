@@ -393,18 +393,27 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
   try {
     const { interval = '7d', startDate, endDate } = req.query;
 
+    // Define start and end dates first
+    let start, end;
+    if (startDate && endDate) {
+      start = new Date(startDate);
+      end = new Date(endDate);
+    } else {
+      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - days);
+    }
+
     let dateQuery = {};
     if (startDate && endDate) {
       dateQuery = {
         date: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate)
+          $gte: start,
+          $lte: end
         }
       };
     } else {
-      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
-      const start = new Date();
-      start.setDate(start.getDate() - days);
       dateQuery = { date: { $gte: start } };
     }
 
@@ -418,17 +427,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       // Find records that overlap with the requested date range
       chatterPerformanceQuery = {
         $or: [
-          { weekStartDate: { $lte: new Date(endDate) }, weekEndDate: { $gte: new Date(startDate) } },
-          { weekStartDate: { $gte: new Date(startDate), $lte: new Date(endDate) } },
-          { weekEndDate: { $gte: new Date(startDate), $lte: new Date(endDate) } }
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+          { weekStartDate: { $gte: start, $lte: end } },
+          { weekEndDate: { $gte: start, $lte: end } }
         ]
       };
     } else {
-      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - days);
-      
       // For now, query last 30 days of data to catch any uploads
       const wideStart = new Date();
       wideStart.setDate(wideStart.getDate() - 30);
