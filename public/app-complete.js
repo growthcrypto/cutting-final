@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load employees from database
 async function loadEmployees() {
+    console.log('Loading employees...', authToken ? 'Token available' : 'No token');
     try {
         const response = await fetch('/api/chatters', {
             headers: {
@@ -22,8 +23,11 @@ async function loadEmployees() {
             }
         });
         
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
             const chatters = await response.json();
+            console.log('Loaded chatters:', chatters);
             const activeChatters = chatters.filter(chatter => chatter.isActive);
             
             // Update both dropdowns
@@ -45,8 +49,12 @@ async function loadEmployees() {
 
 // Update employee dropdown with real data
 function updateEmployeeDropdown(selectId, employees) {
+    console.log(`Updating dropdown ${selectId} with ${employees.length} employees:`, employees);
     const select = document.getElementById(selectId);
-    if (!select) return;
+    if (!select) {
+        console.error(`Dropdown ${selectId} not found`);
+        return;
+    }
     
     // Clear existing options
     select.innerHTML = '';
@@ -64,6 +72,8 @@ function updateEmployeeDropdown(selectId, employees) {
         option.textContent = employee.chatterName || employee.username;
         select.appendChild(option);
     });
+    
+    console.log(`Dropdown ${selectId} updated with ${employees.length} options`);
 }
 
 function checkAuthStatus() {
