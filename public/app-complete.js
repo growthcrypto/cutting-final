@@ -3914,9 +3914,19 @@ function createDataUploadSection() {
                 <div class="text-sm font-mono text-center py-2 bg-gray-800/50 rounded">
                     <div class="text-blue-400">• message_text</div>
                 </div>
-                <p class="text-xs text-gray-400 mt-2">The chatter name will be automatically detected from your login account.</p>
+                <p class="text-xs text-gray-400 mt-2">Select which chatter/employee these messages belong to.</p>
             </div>
             <form id="messagesUploadForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Chatter/Employee</label>
+                    <select id="messagesChatter" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <option value="">Select Chatter...</option>
+                        <option value="arya">Arya</option>
+                        <option value="iris">Iris</option>
+                        <option value="lilla">Lilla</option>
+                    </select>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-2">Start Date</label>
@@ -4528,11 +4538,17 @@ async function handleChatterDataSubmit(event) {
 
 async function handleMessagesUpload(event) {
     const file = document.getElementById('messagesFile').files[0];
+    const chatter = document.getElementById('messagesChatter').value;
     const startDate = document.getElementById('messagesStartDate').value;
     const endDate = document.getElementById('messagesEndDate').value;
     
     if (!file) {
         showError('Please select a file first');
+        return;
+    }
+    
+    if (!chatter) {
+        showError('Please select a chatter/employee');
         return;
     }
     
@@ -4548,6 +4564,7 @@ async function handleMessagesUpload(event) {
 
     const formData = new FormData();
     formData.append('messages', file);
+    formData.append('chatter', chatter);
     formData.append('startDate', startDate);
     formData.append('endDate', endDate);
 

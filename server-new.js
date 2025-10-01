@@ -727,19 +727,17 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       return res.status(400).json({ error: 'No file uploaded' });
     }
     
-    const { startDate, endDate } = req.body;
+    const { chatter, startDate, endDate } = req.body;
+    
+    if (!chatter) {
+      return res.status(400).json({ error: 'Chatter/employee selection is required' });
+    }
     
     if (!startDate || !endDate) {
       return res.status(400).json({ error: 'Start date and end date are required' });
     }
     
-    // Get chatter name from authenticated user
-    const user = await User.findById(req.user.userId);
-    if (!user || !user.chatterName) {
-      return res.status(400).json({ error: 'Chatter name not found for user' });
-    }
-    
-    const chatterName = user.chatterName;
+    const chatterName = chatter;
     
     // Parse CSV file
     const messages = [];
