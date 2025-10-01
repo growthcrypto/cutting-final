@@ -1590,21 +1590,32 @@ async function runAgencyAnalysis() {
 async function loadPerformanceTrends(chatterName) {
     try {
         const authToken = localStorage.getItem('authToken');
-        const response = await fetch(`/api/performance/trends/${encodeURIComponent(chatterName)}?weeks=8`, {
+        
+        // Determine how many periods to show based on current interval
+        let periodsToShow = 4; // Default for 7d interval (last 4 weeks)
+        if (currentAIAnalysisInterval === '30d') {
+            periodsToShow = 4; // Last 4 months for 30d interval
+        } else if (currentAIAnalysisInterval === '24h') {
+            periodsToShow = 7; // Last 7 days for 24h interval
+        }
+        
+        const response = await fetch(`/api/performance/trends/${encodeURIComponent(chatterName)}?weeks=${periodsToShow}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         
         if (!response.ok) {
             console.log('No trend data available yet');
-            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload data for multiple weeks to see trends!</p>';
+            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload more weeks to see trends!</p>';
             return;
         }
         
         const { trends } = await response.json();
         
+        console.log('Trends data:', trends);
+        
         if (!trends || trends.unlockRate.length === 0) {
             console.log('No trend data to display');
-            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload data for multiple weeks to see trends!</p>';
+            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload more weeks to see trends!</p>';
             return;
         }
         
@@ -1614,11 +1625,11 @@ async function loadPerformanceTrends(chatterName) {
         const ctx = document.getElementById('inlineTrendCanvas').getContext('2d');
         
         // Destroy existing chart if exists
-        if (window.performanceTrendChart) {
-            window.performanceTrendChart.destroy();
+        if (window.inlineTrendChart) {
+            window.inlineTrendChart.destroy();
         }
         
-        window.performanceTrendChart = new Chart(ctx, {
+        window.inlineTrendChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
