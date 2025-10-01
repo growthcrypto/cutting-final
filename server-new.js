@@ -955,6 +955,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       try {
         if (analysisType === 'individual') {
           const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval);
+          // Add raw metrics
+          deterministic.ppvsSent = analyticsData.ppvsSent;
+          deterministic.ppvsUnlocked = analyticsData.ppvsUnlocked;
+          deterministic.messagesSent = analyticsData.messagesSent;
+          deterministic.fansChatted = analyticsData.fansChatted;
+          deterministic.avgResponseTime = analyticsData.avgResponseTime;
+          deterministic.grammarScore = analyticsData.grammarScore;
+          deterministic.guidelinesScore = analyticsData.guidelinesScore;
+          deterministic.overallScore = analyticsData.overallMessageScore;
           res.json(deterministic);
         } else {
           const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
@@ -983,14 +992,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           recommendations: [
             'Focus on faster response times - aim for under 2 minutes',
             'Test premium PPV pricing strategy'
-          ]
+          ],
+          // Add raw metrics
+          ppvsSent: analyticsData.ppvsSent,
+          ppvsUnlocked: analyticsData.ppvsUnlocked,
+          messagesSent: analyticsData.messagesSent,
+          fansChatted: analyticsData.fansChatted,
+          avgResponseTime: analyticsData.avgResponseTime,
+          grammarScore: analyticsData.grammarScore || 0,
+          guidelinesScore: analyticsData.guidelinesScore || 0
         };
         res.json(simpleAnalysis);
       }
     }
   } catch (error) {
     console.error('AI Analysis Error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
