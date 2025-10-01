@@ -484,14 +484,7 @@ async function loadChattersForInfloww() {
             const users = await response.json();
             const chatters = users.filter(user => user.role === 'chatter');
             
-            // Load for chatter data form
-            const chatterSelect = document.getElementById('chatterDataChatter');
-            if (chatterSelect) {
-                chatterSelect.innerHTML = '<option value="">Select Chatter...</option>' +
-                    chatters.map(chatter => 
-                        `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
-                    ).join('');
-            }
+            // Chatter data form now uses static options (Arya, Iris, Lilla)
         }
         
         // Load creator accounts for OF Account Data form
@@ -3862,7 +3855,9 @@ function createDataUploadSection() {
                         <select id="chatterDataChatter" required
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                             <option value="">Select Chatter...</option>
-                            <!-- Chatters will be loaded dynamically from created accounts -->
+                            <option value="arya">Arya</option>
+                            <option value="iris">Iris</option>
+                            <option value="lilla">Lilla</option>
                         </select>
                     </div>
                 </div>
@@ -3921,7 +3916,7 @@ function createDataUploadSection() {
                     <label class="block text-sm font-medium mb-2">Chatter/Employee</label>
                     <select id="messagesChatter" required
                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        <option value="">Select Chatter...</option>
+                        <option value="">Select Employee...</option>
                         <option value="arya">Arya</option>
                         <option value="iris">Iris</option>
                         <option value="lilla">Lilla</option>
