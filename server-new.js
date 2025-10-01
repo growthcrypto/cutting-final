@@ -21,6 +21,7 @@ const {
   AccountData,
   ChatterPerformance,
   AIAnalysis,
+  PerformanceHistory,
   Chatter,
   Analytics
 } = require('./models');
@@ -1595,6 +1596,129 @@ async function generateAIRecommendations(analytics, chatters, interval) {
     }];
   }
 }
+
+// ===== PERFORMANCE TRACKING SYSTEM =====
+
+// Save performance snapshot after analysis
+app.post('/api/performance/snapshot', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { chatterName, weekStartDate, weekEndDate, metrics, recommendedActions } = req.body;
+    
+    // Calculate week-over-week changes
+    const previousWeek = await PerformanceHistory.findOne({
+      chatterName,
+      weekEndDate: { $lt: new Date(weekStartDate) }
+    }).sort({ weekEndDate: -1 });
+    
+    const improvements = {
+      unlockRateChange: previousWeek ? metrics.unlockRate - previousWeek.metrics.unlockRate : 0,
+      responseTimeChange: previousWeek ? previousWeek.metrics.avgResponseTime - metrics.avgResponseTime : 0,
+      qualityScoreChange: previousWeek ? metrics.overallScore - previousWeek.metrics.overallScore : 0,
+      messagesPerPPVChange: previousWeek ? metrics.messagesPerPPV - previousWeek.metrics.messagesPerPPV : 0
+    };
+    
+    // Calculate improvement score (0-100)
+    let improvementScore = 50; // baseline
+    if (improvements.unlockRateChange > 0) improvementScore += Math.min(improvements.unlockRateChange * 2, 20);
+    if (improvements.responseTimeChange > 0) improvementScore += Math.min(improvements.responseTimeChange * 5, 15);
+    if (improvements.qualityScoreChange > 0) improvementScore += Math.min(improvements.qualityScoreChange / 2, 15);
+    improvementScore = Math.min(Math.max(improvementScore, 0), 100);
+    
+    const snapshot = await PerformanceHistory.create({
+      chatterName,
+      weekStartDate,
+      weekEndDate,
+      metrics,
+      recommendedActions,
+      improvements,
+      improvementScore
+    });
+    
+    res.json({ success: true, snapshot });
+  } catch (error) {
+    console.error('Performance snapshot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get performance history for a chatter
+app.get('/api/performance/history/:chatterName', authenticateToken, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    const { limit = 12 } = req.query; // Last 12 weeks by default
+    
+    const history = await PerformanceHistory.find({ chatterName })
+      .sort({ weekEndDate: -1 })
+      .limit(parseInt(limit));
+    
+    res.json({ history });
+  } catch (error) {
+    console.error('Performance history error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark action as implemented
+app.post('/api/performance/action/implement', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { snapshotId, actionIndex, notes } = req.body;
+    
+    const snapshot = await PerformanceHistory.findById(snapshotId);
+    if (!snapshot) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+    
+    snapshot.recommendedActions[actionIndex].implemented = true;
+    snapshot.recommendedActions[actionIndex].implementedDate = new Date();
+    if (notes) snapshot.recommendedActions[actionIndex].notes = notes;
+    
+    await snapshot.save();
+    
+    res.json({ success: true, snapshot });
+  } catch (error) {
+    console.error('Action implementation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get improvement trends
+app.get('/api/performance/trends/:chatterName', authenticateToken, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    const { weeks = 8 } = req.query;
+    
+    const history = await PerformanceHistory.find({ chatterName })
+      .sort({ weekEndDate: -1 })
+      .limit(parseInt(weeks));
+    
+    // Calculate trends
+    const trends = {
+      unlockRate: history.map(h => ({ date: h.weekEndDate, value: h.metrics.unlockRate })).reverse(),
+      responseTime: history.map(h => ({ date: h.weekEndDate, value: h.metrics.avgResponseTime })).reverse(),
+      qualityScore: history.map(h => ({ date: h.weekEndDate, value: h.metrics.overallScore })).reverse(),
+      improvementScore: history.map(h => ({ date: h.weekEndDate, value: h.improvementScore })).reverse(),
+      actionsImplemented: history.reduce((sum, h) => sum + h.recommendedActions.filter(a => a.implemented).length, 0),
+      totalActions: history.reduce((sum, h) => sum + h.recommendedActions.length, 0)
+    };
+    
+    // Calculate overall improvement percentage
+    if (history.length >= 2) {
+      const latest = history[0].metrics;
+      const oldest = history[history.length - 1].metrics;
+      
+      trends.overallImprovement = {
+        unlockRate: ((latest.unlockRate - oldest.unlockRate) / oldest.unlockRate * 100).toFixed(1),
+        responseTime: ((oldest.avgResponseTime - latest.avgResponseTime) / oldest.avgResponseTime * 100).toFixed(1),
+        qualityScore: ((latest.overallScore - oldest.overallScore) / oldest.overallScore * 100).toFixed(1)
+      };
+    }
+    
+    res.json({ trends });
+  } catch (error) {
+    console.error('Performance trends error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Handle errors
 process.on('uncaughtException', (err) => {

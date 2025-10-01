@@ -188,6 +188,56 @@ const aiAnalysisSchema = new mongoose.Schema({
   generatedAt: { type: Date, default: Date.now }
 });
 
+// Performance History - Track improvement over time
+const performanceHistorySchema = new mongoose.Schema({
+  chatterName: { type: String, required: true },
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  // Key Metrics Snapshot
+  metrics: {
+    ppvsSent: { type: Number, default: 0 },
+    ppvsUnlocked: { type: Number, default: 0 },
+    unlockRate: { type: Number, default: 0 },
+    messagesSent: { type: Number, default: 0 },
+    fansChatted: { type: Number, default: 0 },
+    avgResponseTime: { type: Number, default: 0 },
+    messagesPerPPV: { type: Number, default: 0 },
+    messagesPerFan: { type: Number, default: 0 },
+    
+    // Message Quality Scores
+    grammarScore: { type: Number, default: 0 },
+    guidelinesScore: { type: Number, default: 0 },
+    overallScore: { type: Number, default: 0 }
+  },
+  
+  // Actions Recommended from AI Analysis
+  recommendedActions: [{
+    action: { type: String },
+    priority: { type: String, enum: ['low', 'medium', 'high'] },
+    expectedImpact: { type: String },
+    implemented: { type: Boolean, default: false },
+    implementedDate: { type: Date },
+    notes: { type: String }
+  }],
+  
+  // Week-over-Week Changes
+  improvements: {
+    unlockRateChange: { type: Number, default: 0 }, // percentage points
+    responseTimeChange: { type: Number, default: 0 }, // minutes
+    qualityScoreChange: { type: Number, default: 0 }, // points
+    messagesPerPPVChange: { type: Number, default: 0 }
+  },
+  
+  // Overall Improvement Score (0-100)
+  improvementScore: { type: Number, default: 0 },
+  
+  // Analysis Summary
+  aiAnalysisId: { type: mongoose.Schema.Types.ObjectId, ref: 'AIAnalysis' },
+  
+  createdAt: { type: Date, default: Date.now }
+});
+
 // Export all models
 const User = mongoose.model('User', userSchema);
 const CreatorAccount = mongoose.model('CreatorAccount', creatorAccountSchema);
@@ -197,6 +247,7 @@ const MessageAnalysis = mongoose.model('MessageAnalysis', messageAnalysisSchema)
 const AccountData = mongoose.model('AccountData', accountDataSchema);
 const ChatterPerformance = mongoose.model('ChatterPerformance', chatterPerformanceSchema);
 const AIAnalysis = mongoose.model('AIAnalysis', aiAnalysisSchema);
+const PerformanceHistory = mongoose.model('PerformanceHistory', performanceHistorySchema);
 
 // Legacy models for compatibility
 const chatterSchema = new mongoose.Schema({
@@ -239,6 +290,7 @@ module.exports = {
   AccountData,
   ChatterPerformance,
   AIAnalysis,
+  PerformanceHistory,
   Chatter,
   Analytics
 };
