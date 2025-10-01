@@ -512,18 +512,26 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     
     // Calculate period-over-period changes
     const duration = end - start;
-    const prevStart = new Date(start - duration);
-    const prevEnd = new Date(start);
+    const prevStart = new Date(start.getTime() - duration);
+    const prevEnd = new Date(start.getTime());
+    
+    console.log('Period comparison:', { 
+      current: { start, end },
+      previous: { start: prevStart, end: prevEnd }
+    });
     
     const prevDateQuery = {
       $or: [
         { weekStartDate: { $gte: prevStart, $lt: prevEnd } },
-        { weekEndDate: { $gte: prevStart, $lt: prevEnd } }
+        { weekEndDate: { $gte: prevStart, $lt: prevEnd } },
+        { $and: [{ weekStartDate: { $lte: prevStart } }, { weekEndDate: { $gte: prevEnd } }] }
       ]
     };
     
     const prevChatterData = await ChatterPerformance.find(prevDateQuery);
     const prevAccountData = await AccountData.find(prevDateQuery);
+    
+    console.log('Previous period data found:', { chatter: prevChatterData.length, account: prevAccountData.length });
     
     const sumField = (data, field) => data.reduce((sum, item) => sum + (item[field] || 0), 0);
     const avgField = (data, field) => data.length > 0 ? sumField(data, field) / data.length : 0;
@@ -548,15 +556,23 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     prevMetrics.conversionRate = prevMetrics.profileClicks > 0 ? (prevMetrics.newSubs / prevMetrics.profileClicks * 100) : 0;
     prevMetrics.messagesPerPPV = prevMetrics.ppvsSent > 0 ? (prevMetrics.messagesSent / prevMetrics.ppvsSent) : 0;
     
+    // Calculate current unlock rate
+    const currentUnlockRate = analytics.ppvsSent > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
+    
     analytics.changes = {
-      totalRevenue: calcChange(analytics.totalRevenue, sumField(prevAccountData, 'netRevenue')),
+      totalRevenue: calcChange(analytics.totalRevenue, prevMetrics.netRevenue),
+      netRevenue: calcChange(analytics.netRevenue, prevMetrics.netRevenue),
       ppvsSent: calcChange(analytics.ppvsSent, prevMetrics.ppvsSent),
       ppvsUnlocked: calcChange(analytics.ppvsUnlocked, prevMetrics.ppvsUnlocked),
-      unlockRate: calcChange(analytics.conversionRate, prevMetrics.unlockRate),
+      unlockRate: calcChange(currentUnlockRate, prevMetrics.unlockRate),
       messagesSent: calcChange(analytics.messagesSent, prevMetrics.messagesSent),
-      avgResponseTime: calcChange(prevMetrics.avgResponseTime, analytics.avgResponseTime), // reversed
+      fansChatted: calcChange(analytics.fansChatted, prevMetrics.fansChatted),
+      avgResponseTime: calcChange(prevMetrics.avgResponseTime, analytics.avgResponseTime), // reversed (lower is better)
       conversionRate: calcChange(analytics.conversionRate, prevMetrics.conversionRate),
-      messagesPerPPV: calcChange(parseFloat(analytics.avgPPVPrice), parseFloat(prevMetrics.messagesPerPPV))
+      messagesPerPPV: calcChange((analytics.messagesSent / analytics.ppvsSent), prevMetrics.messagesPerPPV),
+      newSubs: calcChange(analytics.newSubs, prevMetrics.newSubs),
+      profileClicks: calcChange(analytics.profileClicks, prevMetrics.profileClicks),
+      totalSubs: calcChange(analytics.totalSubs, prevMetrics.totalSubs || sumField(prevAccountData, 'totalSubs'))
     };
 
     res.json(analytics);
@@ -919,6 +935,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
     // Generate AI analysis using OpenAI (agency and individual)
     try {
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
+      
+      // Add raw metrics to response for UI display
+      aiAnalysis.ppvsSent = analyticsData.ppvsSent;
+      aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
+      aiAnalysis.messagesSent = analyticsData.messagesSent;
+      aiAnalysis.fansChatted = analyticsData.fansChatted;
+      aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
+      aiAnalysis.grammarScore = analyticsData.grammarScore;
+      aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
+      aiAnalysis.overallScore = analyticsData.overallMessageScore;
+      
       res.json(aiAnalysis);
     } catch (aiError) {
       console.error('AI Analysis failed, falling back to basic analysis:', aiError);
