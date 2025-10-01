@@ -493,6 +493,24 @@ async function loadChattersForInfloww() {
                     ).join('');
             }
         }
+        
+        // Load creator accounts for OF Account Data form
+        const creatorsResponse = await fetch('/api/creators', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (creatorsResponse.ok) {
+            const creators = await creatorsResponse.json();
+            const creatorSelect = document.getElementById('ofAccountCreator');
+            if (creatorSelect) {
+                creatorSelect.innerHTML = '<option value="">Select Creator...</option>' +
+                    creators.map(creator => 
+                        `<option value="${creator.name}">${creator.name}</option>`
+                    ).join('');
+            }
+        }
     } catch (error) {
         console.error('Error loading chatters for Infloww:', error);
     }
