@@ -4386,11 +4386,11 @@ async function handleOFAccountDataSubmit(event) {
         startDate: document.getElementById('ofAccountStartDate').value,
         endDate: document.getElementById('ofAccountEndDate').value,
         creator: document.getElementById('ofAccountCreator').value,
-        netRevenue: parseFloat(document.getElementById('ofAccountNetRevenue').value) || 0,
-        recurringRevenue: parseFloat(document.getElementById('ofAccountRecurringRevenue').value) || 0,
-        totalSubs: parseInt(document.getElementById('ofAccountTotalSubs').value) || 0,
-        newSubs: parseInt(document.getElementById('ofAccountNewSubs').value) || 0,
-        profileClicks: parseInt(document.getElementById('ofAccountProfileClicks').value) || 0,
+        netRevenue: parseFloat(document.getElementById('ofNetRevenue').value) || 0,
+        recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
+        totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
+        newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
+        profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
         dataType: 'of_account'
     };
 
