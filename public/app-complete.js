@@ -10,7 +10,61 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
     setupEventListeners();
     setDefaultDate();
+    loadEmployees();
 });
+
+// Load employees from database
+async function loadEmployees() {
+    try {
+        const response = await fetch('/api/chatters', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const chatters = await response.json();
+            const activeChatters = chatters.filter(chatter => chatter.isActive);
+            
+            // Update both dropdowns
+            updateEmployeeDropdown('chatterDataChatter', activeChatters);
+            updateEmployeeDropdown('messagesChatter', activeChatters);
+        } else {
+            console.error('Failed to load employees:', response.statusText);
+            // Fallback to empty dropdowns
+            updateEmployeeDropdown('chatterDataChatter', []);
+            updateEmployeeDropdown('messagesChatter', []);
+        }
+    } catch (error) {
+        console.error('Error loading employees:', error);
+        // Fallback to empty dropdowns
+        updateEmployeeDropdown('chatterDataChatter', []);
+        updateEmployeeDropdown('messagesChatter', []);
+    }
+}
+
+// Update employee dropdown with real data
+function updateEmployeeDropdown(selectId, employees) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Clear existing options
+    select.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = employees.length > 0 ? 'Select Employee...' : 'No employees found';
+    select.appendChild(defaultOption);
+    
+    // Add employee options
+    employees.forEach(employee => {
+        const option = document.createElement('option');
+        option.value = employee._id || employee.name.toLowerCase().replace(' ', '_');
+        option.textContent = employee.name;
+        select.appendChild(option);
+    });
+}
 
 function checkAuthStatus() {
     const token = localStorage.getItem('authToken');
@@ -3982,11 +4036,7 @@ function createDataUploadSection() {
                         <label class="block text-sm font-medium mb-2">Chatter Name</label>
                         <select id="chatterDataChatter" required
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="">Select Employee...</option>
-                            <option value="sarah">Sarah Johnson</option>
-                            <option value="mike">Mike Chen</option>
-                            <option value="emma">Emma Davis</option>
-                            <option value="alex">Alex Rodriguez</option>
+                            <option value="">Loading employees...</option>
                         </select>
                     </div>
                 </div>
@@ -4045,11 +4095,7 @@ function createDataUploadSection() {
                     <label class="block text-sm font-medium mb-2">Chatter/Employee</label>
                     <select id="messagesChatter" required
                             class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        <option value="">Select Employee...</option>
-                        <option value="sarah">Sarah Johnson</option>
-                        <option value="mike">Mike Chen</option>
-                        <option value="emma">Emma Davis</option>
-                        <option value="alex">Alex Rodriguez</option>
+                        <option value="">Loading employees...</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

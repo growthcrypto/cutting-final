@@ -361,6 +361,17 @@ app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager
   }
 });
 
+// Get all chatters/employees
+app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const chatters = await User.find({ role: 'chatter' }, { password: 0 });
+    res.json(chatters);
+  } catch (error) {
+    console.error('Error fetching chatters:', error);
+    res.status(500).json({ error: 'Failed to fetch chatters' });
+  }
+});
+
 // Delete user endpoint
 app.delete('/api/users/:userId', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
   try {
