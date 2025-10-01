@@ -2845,7 +2845,6 @@ function getTitleFromCategory(category) {
         'efficiency': 'Response Time Impact',
         'training': 'Team Performance Gap',
         'conversion_optimization': 'Conversion Enhancement',
-        'profitability_optimization': 'Profitability Analysis',
         'scheduling': 'Scheduling Optimization',
         'maintenance': 'Performance Maintenance',
         'system': 'System Status'
@@ -2860,7 +2859,6 @@ function getIconFromCategory(category) {
         'efficiency': 'fas fa-clock text-orange-400',
         'training': 'fas fa-users text-cyan-400',
         'conversion_optimization': 'fas fa-funnel-dollar text-yellow-400',
-        'profitability_optimization': 'fas fa-dollar-sign text-emerald-400',
         'scheduling': 'fas fa-calendar text-purple-400',
         'maintenance': 'fas fa-check-circle text-green-400',
         'system': 'fas fa-exclamation-triangle text-red-400'
@@ -2875,7 +2873,6 @@ function getActionFromCategory(category) {
         'efficiency': 'Improve Response Time',
         'training': 'Implement Training',
         'conversion_optimization': 'Improve Conversions',
-        'profitability_optimization': 'Optimize Costs',
         'scheduling': 'Optimize Schedule',
         'maintenance': 'Maintain Performance',
         'system': 'Check System'
