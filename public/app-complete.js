@@ -1586,6 +1586,147 @@ async function runAgencyAnalysis() {
     }
 }
 
+// Load Performance Trend Chart
+async function loadPerformanceTrends(chatterName) {
+    try {
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`/api/performance/trends/${encodeURIComponent(chatterName)}?weeks=8`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!response.ok) {
+            console.log('No trend data available yet');
+            return;
+        }
+        
+        const { trends } = await response.json();
+        
+        if (!trends || trends.unlockRate.length === 0) {
+            console.log('No trend data to display');
+            return;
+        }
+        
+        // Show trend section
+        document.getElementById('performanceTrendSection').classList.remove('hidden');
+        
+        // Prepare chart data
+        const labels = trends.unlockRate.map(item => new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        
+        const ctx = document.getElementById('performanceTrendChart').getContext('2d');
+        
+        // Destroy existing chart if exists
+        if (window.performanceTrendChart) {
+            window.performanceTrendChart.destroy();
+        }
+        
+        window.performanceTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'PPV Unlock Rate (%)',
+                        data: trends.unlockRate.map(item => item.value),
+                        borderColor: 'rgb(74, 222, 128)',
+                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Quality Score',
+                        data: trends.qualityScore.map(item => item.value),
+                        borderColor: 'rgb(147, 51, 234)',
+                        backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Response Time (min)',
+                        data: trends.responseTime.map(item => item.value),
+                        borderColor: 'rgb(96, 165, 250)',
+                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'Improvement Score',
+                        data: trends.improvementScore.map(item => item.value),
+                        borderColor: 'rgb(250, 204, 21)',
+                        backgroundColor: 'rgba(250, 204, 21, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#fff',
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#d1d5db',
+                        borderColor: '#4b5563',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Percentage / Score',
+                            color: '#9ca3af'
+                        },
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Response Time (min)',
+                            color: '#9ca3af'
+                        },
+                        ticks: { color: '#9ca3af' },
+                        grid: { drawOnChartArea: false }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error loading performance trends:', error);
+    }
+}
+
 // Enhanced Chatter Analysis
 async function runChatterAnalysis() {
     const select = document.getElementById('chatterAnalysisSelect');
@@ -1654,6 +1795,14 @@ async function runChatterAnalysis() {
         console.log('AI analysis data:', analysisData);
         renderSophisticatedChatterAnalysis(analysisData);
         
+        // Load performance trends for this chatter
+        const selectedUser = await fetch(`/api/users/${chatterId}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        }).then(r => r.json());
+        if (selectedUser.chatterName || selectedUser.username) {
+            loadPerformanceTrends(selectedUser.chatterName || selectedUser.username);
+        }
+        
     } catch (error) {
         console.error('Chatter analysis error:', error);
         resultsContainer.innerHTML = `
@@ -1685,36 +1834,36 @@ async function loadAnalyticsData() {
 }
 
 function updateAnalyticsPageData(data) {
-    // Update core metrics from real data
+    const changes = data.changes || {};
+    
+    // Update core metrics from real data with change indicators
+    const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked || 0) / data.ppvsSent * 100).toFixed(1) : 0;
+    const conversionRate = data.profileClicks > 0 ? ((data.newSubs || 0) / data.profileClicks * 100).toFixed(1) : 0;
+    const messagesPerPPV = data.ppvsSent > 0 ? ((data.messagesSent || 0) / data.ppvsSent).toFixed(1) : 0;
+    
     const elements = {
-        'analytics-revenue': `$${data.totalRevenue?.toLocaleString() || '0'}`,
-        'analytics-net-revenue': `$${data.netRevenue?.toLocaleString() || '0'}`,
-        'analytics-subs': data.totalSubs?.toLocaleString() || '0',
-        'analytics-clicks': data.profileClicks?.toLocaleString() || '0',
-        'analytics-ppvs': data.ppvsSent?.toLocaleString() || '0',
-        'analytics-ppv-unlocked': data.ppvsUnlocked?.toLocaleString() || '0',
-        'analytics-messages': data.messagesSent?.toLocaleString() || '0',
-        'analytics-response-time': `${data.avgResponseTime || 0}m`,
-        
-        // Real calculated metrics
-        'analytics-click-to-sub': data.profileClicks > 0 ? `${((data.newSubs || 0) / data.profileClicks * 100).toFixed(1)}%` : '0%',
-        'analytics-ppv-rate': data.ppvsSent > 0 ? `${((data.ppvsUnlocked || 0) / data.ppvsSent * 100).toFixed(1)}%` : '0%',
-        'analytics-revenue-per-sub': data.totalSubs > 0 ? `$${(data.totalRevenue / data.totalSubs).toFixed(2)}` : '$0',
-        'analytics-revenue-per-hour': `$${((data.totalRevenue || 0) / (24 * 7)).toFixed(2)}`,
-        'analytics-messages-per-ppv': data.ppvsSent > 0 ? `${((data.messagesSent || 0) / data.ppvsSent).toFixed(1)}` : '0',
-        'analytics-fee-impact': data.totalRevenue > 0 && data.netRevenue > 0 ? `${(((data.totalRevenue - data.netRevenue) / data.totalRevenue) * 100).toFixed(1)}%` : '0%',
-        
-        // Analytics page specific metrics
-        'analytics-conversion-rate': data.conversionRate ? `${data.conversionRate.toFixed(1)}%` : '0%',
-        'analytics-revenue-per-chatter': data.totalRevenue > 0 ? `$${Math.round(data.totalRevenue / 4).toLocaleString()}` : '$0', // Assuming 4 chatters
-        'analytics-ppv-success-rate': data.ppvsSent > 0 ? `${((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1)}%` : '0%',
-        'analytics-avg-response-time': `${data.avgResponseTime || 0}m`
+        'analytics-revenue': { value: `$${data.totalRevenue?.toLocaleString() || '0'}`, change: changes.totalRevenue },
+        'analytics-net-revenue': { value: `$${data.netRevenue?.toLocaleString() || '0'}`, change: changes.netRevenue },
+        'analytics-subs': { value: data.totalSubs?.toLocaleString() || '0', change: changes.totalSubs },
+        'analytics-clicks': { value: data.profileClicks?.toLocaleString() || '0', change: changes.profileClicks },
+        'analytics-ppvs': { value: data.ppvsSent?.toLocaleString() || '0', change: changes.ppvsSent },
+        'analytics-ppv-unlocked': { value: data.ppvsUnlocked?.toLocaleString() || '0', change: changes.ppvsUnlocked },
+        'analytics-messages': { value: data.messagesSent?.toLocaleString() || '0', change: changes.messagesSent },
+        'analytics-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true },
+        'analytics-click-to-sub': { value: `${conversionRate}%`, change: changes.conversionRate },
+        'analytics-ppv-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
+        'analytics-revenue-per-sub': { value: data.totalSubs > 0 ? `$${(data.totalRevenue / data.totalSubs).toFixed(2)}` : '$0', change: null },
+        'analytics-messages-per-ppv': { value: messagesPerPPV, change: changes.messagesPerPPV },
+        'analytics-conversion-rate': { value: `${conversionRate}%`, change: changes.conversionRate },
+        'analytics-revenue-per-chatter': { value: data.totalRevenue > 0 ? `$${Math.round(data.totalRevenue / 4).toLocaleString()}` : '$0', change: null },
+        'analytics-ppv-success-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
+        'analytics-avg-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true }
     };
     
-    Object.entries(elements).forEach(([id, value]) => {
+    Object.entries(elements).forEach(([id, config]) => {
         const element = document.getElementById(id);
         if (element) {
-            element.textContent = value;
+            element.innerHTML = config.value + (config.change ? renderChangeIndicator(config.change, config.reversed) : '');
         }
     });
     
@@ -2785,21 +2934,61 @@ function forceClearSpecificMetrics() {
 }
 
 function updateDashboardMetrics(data) {
-    document.getElementById('totalRevenue').textContent = `$${data.totalRevenue.toLocaleString()}`;
-    document.getElementById('totalSubs').textContent = data.totalSubs.toLocaleString();
-    document.getElementById('profileClicks').textContent = data.profileClicks.toLocaleString();
-    document.getElementById('messagesSent').textContent = data.messagesSent.toLocaleString();
-    document.getElementById('ppvsSent').textContent = data.ppvsSent.toLocaleString();
-    document.getElementById('avgResponseTime').textContent = `${data.avgResponseTime}m`;
+    const changes = data.changes || {};
+    
+    // Update metrics with change indicators
+    const revenueEl = document.getElementById('totalRevenue');
+    if (revenueEl) {
+        revenueEl.innerHTML = `$${data.totalRevenue.toLocaleString()}${renderChangeIndicator(changes.totalRevenue)}`;
+    }
+    
+    const subsEl = document.getElementById('totalSubs');
+    if (subsEl) {
+        subsEl.innerHTML = `${data.totalSubs.toLocaleString()}${renderChangeIndicator(changes.totalSubs)}`;
+    }
+    
+    const clicksEl = document.getElementById('profileClicks');
+    if (clicksEl) {
+        clicksEl.innerHTML = `${data.profileClicks.toLocaleString()}${renderChangeIndicator(changes.profileClicks)}`;
+    }
+    
+    const messagesEl = document.getElementById('messagesSent');
+    if (messagesEl) {
+        messagesEl.innerHTML = `${data.messagesSent.toLocaleString()}${renderChangeIndicator(changes.messagesSent)}`;
+    }
+    
+    const ppvsEl = document.getElementById('ppvsSent');
+    if (ppvsEl) {
+        ppvsEl.innerHTML = `${data.ppvsSent.toLocaleString()}${renderChangeIndicator(changes.ppvsSent)}`;
+    }
+    
+    const responseEl = document.getElementById('avgResponseTime');
+    if (responseEl) {
+        responseEl.innerHTML = `${data.avgResponseTime}m${renderChangeIndicator(changes.avgResponseTime, true)}`; // reversed colors
+    }
 
     // Calculate unlock rate
     const unlockRate = data.ppvsSent > 0 ? (data.ppvsUnlocked / data.ppvsSent * 100).toFixed(1) : '0';
-    document.getElementById('unlockRate').textContent = `${unlockRate}% unlock rate`;
+    const unlockRateEl = document.getElementById('unlockRate');
+    if (unlockRateEl) {
+        unlockRateEl.innerHTML = `${unlockRate}% unlock rate${renderChangeIndicator(changes.unlockRate)}`;
+    }
 
-    // Update change indicators (will show real data when historical data available)
-    document.getElementById('revenueChange').textContent = '0%';
-    document.getElementById('subsChange').textContent = '0%';
-    document.getElementById('clicksChange').textContent = '0%';
+    // Update change indicators in separate elements (backward compatibility)
+    const revenueChangeEl = document.getElementById('revenueChange');
+    if (revenueChangeEl) {
+        revenueChangeEl.innerHTML = renderChangeIndicator(changes.totalRevenue) || '0%';
+    }
+    
+    const subsChangeEl = document.getElementById('subsChange');
+    if (subsChangeEl) {
+        subsChangeEl.innerHTML = renderChangeIndicator(changes.totalSubs) || '0%';
+    }
+    
+    const clicksChangeEl = document.getElementById('clicksChange');
+    if (clicksChangeEl) {
+        clicksChangeEl.innerHTML = renderChangeIndicator(changes.profileClicks) || '0%';
+    }
 }
 
 async function loadAIRecommendations() {
@@ -3474,6 +3663,17 @@ function createAIAnalysisSection() {
                 </div>
                 <div id="chatterAnalysisResults" class="space-y-6">
                     <!-- Chatter analysis results will be loaded here -->
+                </div>
+                
+                <!-- Performance Trend Chart -->
+                <div id="performanceTrendSection" class="mt-8 hidden">
+                    <div class="glass-card rounded-xl p-6 border border-purple-500/30">
+                        <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                            <i class="fas fa-chart-line text-purple-400 mr-3"></i>
+                            Performance Trends (Last 8 Weeks)
+                        </h5>
+                        <canvas id="performanceTrendChart" height="80"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4615,6 +4815,20 @@ function showError(message) {
     } else {
         showNotification(message, 'error');
     }
+}
+
+// Helper: Render change indicator (green/red %)
+function renderChangeIndicator(change, reverseColors = false) {
+    if (!change || change === '0' || change === '+0.0' || change === '-0.0') return '';
+    
+    const numChange = parseFloat(change);
+    const isPositive = reverseColors ? numChange < 0 : numChange > 0;
+    const color = isPositive ? 'green' : 'red';
+    const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
+    
+    return `<span class="ml-2 text-xs font-semibold text-${color}-400">
+        <i class="fas ${icon}"></i> ${Math.abs(numChange).toFixed(1)}%
+    </span>`;
 }
 
 // LEAN DYNAMIC Million-Dollar Analysis UI - Only High-Value Insights

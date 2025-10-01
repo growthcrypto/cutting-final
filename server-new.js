@@ -509,6 +509,55 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       avgPPVPrice: combinedPPVsSent > 0 ? Math.round((totalRevenue / combinedPPVsSent) * 100) / 100 : 0,
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
+    
+    // Calculate period-over-period changes
+    const duration = end - start;
+    const prevStart = new Date(start - duration);
+    const prevEnd = new Date(start);
+    
+    const prevDateQuery = {
+      $or: [
+        { weekStartDate: { $gte: prevStart, $lt: prevEnd } },
+        { weekEndDate: { $gte: prevStart, $lt: prevEnd } }
+      ]
+    };
+    
+    const prevChatterData = await ChatterPerformance.find(prevDateQuery);
+    const prevAccountData = await AccountData.find(prevDateQuery);
+    
+    const sumField = (data, field) => data.reduce((sum, item) => sum + (item[field] || 0), 0);
+    const avgField = (data, field) => data.length > 0 ? sumField(data, field) / data.length : 0;
+    const calcChange = (current, previous) => {
+      if (!previous || previous === 0) return current > 0 ? '+100' : '0';
+      const change = ((current - previous) / previous * 100).toFixed(1);
+      return change > 0 ? `+${change}` : change;
+    };
+    
+    const prevMetrics = {
+      ppvsSent: sumField(prevChatterData, 'ppvsSent'),
+      ppvsUnlocked: sumField(prevChatterData, 'ppvsUnlocked'),
+      messagesSent: sumField(prevChatterData, 'messagesSent'),
+      fansChatted: sumField(prevChatterData, 'fansChattedWith'),
+      avgResponseTime: avgField(prevChatterData, 'avgResponseTime'),
+      netRevenue: sumField(prevAccountData, 'netRevenue'),
+      newSubs: sumField(prevAccountData, 'newSubs'),
+      profileClicks: sumField(prevAccountData, 'profileClicks')
+    };
+    
+    prevMetrics.unlockRate = prevMetrics.ppvsSent > 0 ? (prevMetrics.ppvsUnlocked / prevMetrics.ppvsSent * 100) : 0;
+    prevMetrics.conversionRate = prevMetrics.profileClicks > 0 ? (prevMetrics.newSubs / prevMetrics.profileClicks * 100) : 0;
+    prevMetrics.messagesPerPPV = prevMetrics.ppvsSent > 0 ? (prevMetrics.messagesSent / prevMetrics.ppvsSent) : 0;
+    
+    analytics.changes = {
+      totalRevenue: calcChange(analytics.totalRevenue, sumField(prevAccountData, 'netRevenue')),
+      ppvsSent: calcChange(analytics.ppvsSent, prevMetrics.ppvsSent),
+      ppvsUnlocked: calcChange(analytics.ppvsUnlocked, prevMetrics.ppvsUnlocked),
+      unlockRate: calcChange(analytics.conversionRate, prevMetrics.unlockRate),
+      messagesSent: calcChange(analytics.messagesSent, prevMetrics.messagesSent),
+      avgResponseTime: calcChange(prevMetrics.avgResponseTime, analytics.avgResponseTime), // reversed
+      conversionRate: calcChange(analytics.conversionRate, prevMetrics.conversionRate),
+      messagesPerPPV: calcChange(parseFloat(analytics.avgPPVPrice), parseFloat(prevMetrics.messagesPerPPV))
+    };
 
     res.json(analytics);
   } catch (error) {
@@ -561,6 +610,18 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     await chatterData.save();
     console.log('Chatter data saved successfully:', chatterData._id);
     console.log('Saved data includes avgResponseTime:', chatterData.avgResponseTime);
+    
+    // Auto-save performance snapshot for trend tracking
+    const messageData = await MessageAnalysis.findOne({
+      chatterName: req.body.chatter,
+      $or: [
+        { weekStartDate: { $gte: new Date(req.body.startDate), $lte: new Date(req.body.endDate) } },
+        { weekEndDate: { $gte: new Date(req.body.startDate), $lte: new Date(req.body.endDate) } }
+      ]
+    });
+    
+    autoSavePerformanceSnapshot(req.body.chatter, req.body.startDate, req.body.endDate, chatterData, messageData);
+    
     res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
     console.error('Chatter data submission error:', error);
@@ -1597,7 +1658,73 @@ async function generateAIRecommendations(analytics, chatters, interval) {
   }
 }
 
+// Get user by ID
+app.get('/api/users/:userId', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== PERFORMANCE TRACKING SYSTEM =====
+
+// Auto-save performance snapshot when chatter data is uploaded
+async function autoSavePerformanceSnapshot(chatterName, weekStartDate, weekEndDate, chatterData, messageData) {
+  try {
+    const metrics = {
+      ppvsSent: chatterData.ppvsSent || 0,
+      ppvsUnlocked: chatterData.ppvsUnlocked || 0,
+      unlockRate: chatterData.unlockRate || 0,
+      messagesSent: chatterData.messagesSent || 0,
+      fansChatted: chatterData.fansChattedWith || 0,
+      avgResponseTime: chatterData.avgResponseTime || 0,
+      messagesPerPPV: chatterData.ppvsSent > 0 ? chatterData.messagesSent / chatterData.ppvsSent : 0,
+      messagesPerFan: chatterData.fansChattedWith > 0 ? chatterData.messagesSent / chatterData.fansChattedWith : 0,
+      grammarScore: messageData?.grammarScore || 0,
+      guidelinesScore: messageData?.guidelinesScore || 0,
+      overallScore: messageData?.overallScore || 0
+    };
+    
+    // Calculate week-over-week changes
+    const previousWeek = await PerformanceHistory.findOne({
+      chatterName,
+      weekEndDate: { $lt: new Date(weekStartDate) }
+    }).sort({ weekEndDate: -1 });
+    
+    const improvements = {
+      unlockRateChange: previousWeek ? metrics.unlockRate - previousWeek.metrics.unlockRate : 0,
+      responseTimeChange: previousWeek ? previousWeek.metrics.avgResponseTime - metrics.avgResponseTime : 0,
+      qualityScoreChange: previousWeek ? metrics.overallScore - previousWeek.metrics.overallScore : 0,
+      messagesPerPPVChange: previousWeek ? metrics.messagesPerPPV - previousWeek.metrics.messagesPerPPV : 0
+    };
+    
+    // Calculate improvement score (0-100)
+    let improvementScore = 50; // baseline
+    if (improvements.unlockRateChange > 0) improvementScore += Math.min(improvements.unlockRateChange * 2, 20);
+    if (improvements.responseTimeChange > 0) improvementScore += Math.min(improvements.responseTimeChange * 5, 15);
+    if (improvements.qualityScoreChange > 0) improvementScore += Math.min(improvements.qualityScoreChange / 2, 15);
+    improvementScore = Math.min(Math.max(improvementScore, 0), 100);
+    
+    await PerformanceHistory.create({
+      chatterName,
+      weekStartDate,
+      weekEndDate,
+      metrics,
+      recommendedActions: [],
+      improvements,
+      improvementScore
+    });
+    
+    console.log(`✅ Auto-saved performance snapshot for ${chatterName}`);
+  } catch (error) {
+    console.error('Auto-save performance snapshot error:', error);
+  }
+}
 
 // Save performance snapshot after analysis
 app.post('/api/performance/snapshot', authenticateToken, requireManager, async (req, res) => {
@@ -1677,6 +1804,152 @@ app.post('/api/performance/action/implement', authenticateToken, requireManager,
     res.json({ success: true, snapshot });
   } catch (error) {
     console.error('Action implementation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get period-over-period comparison for any metric
+app.get('/api/analytics/comparison', authenticateToken, async (req, res) => {
+  try {
+    const { startDate, endDate, chatterId } = req.query;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const duration = end - start;
+    
+    // Calculate previous period dates
+    const prevEnd = new Date(start);
+    const prevStart = new Date(start - duration);
+    
+    // Build query
+    let query = {};
+    if (chatterId) {
+      const user = await User.findById(chatterId);
+      if (user) query.chatterName = user.chatterName || user.username;
+    }
+    
+    // Current period data
+    const currentChatterData = await ChatterPerformance.find({
+      ...query,
+      $or: [
+        { weekStartDate: { $gte: start, $lte: end } },
+        { weekEndDate: { $gte: start, $lte: end } },
+        { $and: [{ weekStartDate: { $lte: start } }, { weekEndDate: { $gte: end } }] }
+      ]
+    });
+    
+    const currentAccountData = await AccountData.find({
+      $or: [
+        { weekStartDate: { $gte: start, $lte: end } },
+        { weekEndDate: { $gte: start, $lte: end } },
+        { $and: [{ weekStartDate: { $lte: start } }, { weekEndDate: { $gte: end } }] }
+      ]
+    });
+    
+    const currentMessageData = await MessageAnalysis.find({
+      ...query,
+      $or: [
+        { weekStartDate: { $gte: start, $lte: end } },
+        { weekEndDate: { $gte: start, $lte: end } },
+        { $and: [{ weekStartDate: { $lte: start } }, { weekEndDate: { $gte: end } }] }
+      ]
+    });
+    
+    // Previous period data
+    const prevChatterData = await ChatterPerformance.find({
+      ...query,
+      $or: [
+        { weekStartDate: { $gte: prevStart, $lt: start } },
+        { weekEndDate: { $gte: prevStart, $lt: start } },
+        { $and: [{ weekStartDate: { $lte: prevStart } }, { weekEndDate: { $gte: start } }] }
+      ]
+    });
+    
+    const prevAccountData = await AccountData.find({
+      $or: [
+        { weekStartDate: { $gte: prevStart, $lt: start } },
+        { weekEndDate: { $gte: prevStart, $lt: start } },
+        { $and: [{ weekStartDate: { $lte: prevStart } }, { weekEndDate: { $gte: start } }] }
+      ]
+    });
+    
+    const prevMessageData = await MessageAnalysis.find({
+      ...query,
+      $or: [
+        { weekStartDate: { $gte: prevStart, $lt: start } },
+        { weekEndDate: { $gte: prevStart, $lt: start } },
+        { $and: [{ weekStartDate: { $lte: prevStart } }, { weekEndDate: { $gte: start } }] }
+      ]
+    });
+    
+    // Calculate aggregates
+    const calcChange = (current, previous) => {
+      if (!previous || previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous * 100).toFixed(1);
+    };
+    
+    const sumField = (data, field) => data.reduce((sum, item) => sum + (item[field] || 0), 0);
+    const avgField = (data, field) => data.length > 0 ? sumField(data, field) / data.length : 0;
+    
+    // Current metrics
+    const current = {
+      ppvsSent: sumField(currentChatterData, 'ppvsSent'),
+      ppvsUnlocked: sumField(currentChatterData, 'ppvsUnlocked'),
+      messagesSent: sumField(currentChatterData, 'messagesSent'),
+      fansChatted: sumField(currentChatterData, 'fansChattedWith'),
+      avgResponseTime: avgField(currentChatterData, 'avgResponseTime'),
+      netRevenue: sumField(currentAccountData, 'netRevenue'),
+      newSubs: sumField(currentAccountData, 'newSubs'),
+      profileClicks: sumField(currentAccountData, 'profileClicks'),
+      grammarScore: avgField(currentMessageData, 'grammarScore'),
+      guidelinesScore: avgField(currentMessageData, 'guidelinesScore'),
+      overallScore: avgField(currentMessageData, 'overallScore')
+    };
+    
+    current.unlockRate = current.ppvsSent > 0 ? (current.ppvsUnlocked / current.ppvsSent * 100).toFixed(1) : 0;
+    current.conversionRate = current.profileClicks > 0 ? (current.newSubs / current.profileClicks * 100).toFixed(1) : 0;
+    current.messagesPerPPV = current.ppvsSent > 0 ? (current.messagesSent / current.ppvsSent).toFixed(1) : 0;
+    
+    // Previous metrics
+    const previous = {
+      ppvsSent: sumField(prevChatterData, 'ppvsSent'),
+      ppvsUnlocked: sumField(prevChatterData, 'ppvsUnlocked'),
+      messagesSent: sumField(prevChatterData, 'messagesSent'),
+      fansChatted: sumField(prevChatterData, 'fansChattedWith'),
+      avgResponseTime: avgField(prevChatterData, 'avgResponseTime'),
+      netRevenue: sumField(prevAccountData, 'netRevenue'),
+      newSubs: sumField(prevAccountData, 'newSubs'),
+      profileClicks: sumField(prevAccountData, 'profileClicks'),
+      grammarScore: avgField(prevMessageData, 'grammarScore'),
+      guidelinesScore: avgField(prevMessageData, 'guidelinesScore'),
+      overallScore: avgField(prevMessageData, 'overallScore')
+    };
+    
+    previous.unlockRate = previous.ppvsSent > 0 ? (previous.ppvsUnlocked / previous.ppvsSent * 100).toFixed(1) : 0;
+    previous.conversionRate = previous.profileClicks > 0 ? (previous.newSubs / previous.profileClicks * 100).toFixed(1) : 0;
+    previous.messagesPerPPV = previous.ppvsSent > 0 ? (previous.messagesSent / previous.ppvsSent).toFixed(1) : 0;
+    
+    // Calculate changes
+    const changes = {
+      ppvsSent: calcChange(current.ppvsSent, previous.ppvsSent),
+      ppvsUnlocked: calcChange(current.ppvsUnlocked, previous.ppvsUnlocked),
+      unlockRate: calcChange(parseFloat(current.unlockRate), parseFloat(previous.unlockRate)),
+      messagesSent: calcChange(current.messagesSent, previous.messagesSent),
+      fansChatted: calcChange(current.fansChatted, previous.fansChatted),
+      avgResponseTime: calcChange(previous.avgResponseTime, current.avgResponseTime), // reversed (lower is better)
+      netRevenue: calcChange(current.netRevenue, previous.netRevenue),
+      newSubs: calcChange(current.newSubs, previous.newSubs),
+      profileClicks: calcChange(current.profileClicks, previous.profileClicks),
+      conversionRate: calcChange(parseFloat(current.conversionRate), parseFloat(previous.conversionRate)),
+      messagesPerPPV: calcChange(parseFloat(current.messagesPerPPV), parseFloat(previous.messagesPerPPV)),
+      grammarScore: calcChange(current.grammarScore, previous.grammarScore),
+      guidelinesScore: calcChange(current.guidelinesScore, previous.guidelinesScore),
+      overallScore: calcChange(current.overallScore, previous.overallScore)
+    };
+    
+    res.json({ current, previous, changes });
+  } catch (error) {
+    console.error('Comparison error:', error);
     res.status(500).json({ error: error.message });
   }
 });
