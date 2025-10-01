@@ -444,12 +444,14 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
+    console.log('=== DASHBOARD QUERY DEBUG ===');
+    console.log('Query used:', JSON.stringify(chatterPerformanceQuery, null, 2));
     console.log('Dashboard data query results:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
       chatterPerformance: chatterPerformance.length
     });
-    console.log('ChatterPerformance data found:', chatterPerformance);
+    console.log('ChatterPerformance data found:', JSON.stringify(chatterPerformance, null, 2));
     
     console.log('Dashboard query:', {
       dailyReports: dailyReports.length,
