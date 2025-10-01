@@ -521,7 +521,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Get real data from OF Account data
     const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
     const recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
-    const totalSubs = ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0);
+    
+    // Total subs should be averaged (it's a snapshot, not cumulative)
+    const totalSubs = ofAccountData.length > 0 
+      ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
+      : 0;
+    
+    // New subs and clicks are cumulative (sum them)
     const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
     const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
