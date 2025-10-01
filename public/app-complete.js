@@ -2931,56 +2931,68 @@ function loadActionOpportunities(analytics, intelligent) {
         return;
     }
     
-    const opportunities = [
-        {
-            title: 'Weekend Revenue Recovery',
-            urgency: 'urgent',
-            impact: '$' + Math.round(analytics.totalRevenue * 0.15),
-            description: 'Weekend performance 22% below weekdays',
-            action: 'Deploy weekend specialists',
-            timeframe: '1 week'
-        },
-        {
-            title: 'Peak Hour Optimization',
-            urgency: 'high',
-            impact: '$' + Math.round(analytics.totalRevenue * 0.12),
-            description: `Peak hours (${intelligent.peakTime}) underutilized`,
-            action: 'Increase staffing 2-4 PM',
-            timeframe: '3 days'
-        },
-        {
-            title: 'Low Performers Training',
+    // Only show opportunities when we have meaningful data to analyze
+    const opportunities = [];
+    
+    // Weekend performance analysis (only if we have enough data)
+    if (analytics.totalRevenue > 1000) { // Only show if we have substantial data
+        opportunities.push({
+            title: 'Weekend Performance Analysis',
             urgency: 'medium',
-            impact: '$' + Math.round(analytics.totalRevenue * 0.08),
-            description: 'Bottom 25% performers need skill development',
-            action: 'Schedule training sessions',
+            impact: 'Data analysis required',
+            description: 'Upload weekend vs weekday data to identify performance gaps',
+            action: 'Upload detailed daily reports',
+            timeframe: '1 week'
+        });
+    }
+    
+    // Response time optimization (only if we have response time data)
+    if (analytics.avgResponseTime > 0 && analytics.avgResponseTime < 10) {
+        opportunities.push({
+            title: 'Response Time Optimization',
+            urgency: analytics.avgResponseTime > 5 ? 'high' : 'low',
+            impact: 'Performance improvement opportunity',
+            description: `Current response time: ${analytics.avgResponseTime}min (target: <5min)`,
+            action: analytics.avgResponseTime > 5 ? 'Implement response time improvements' : 'Monitor consistency',
+            timeframe: '1 week'
+        });
+    }
+    
+    // PPV pricing analysis (only if we have PPV data)
+    if (analytics.ppvsSent > 0 && analytics.avgPPVPrice > 0) {
+        opportunities.push({
+            title: 'PPV Pricing Analysis',
+            urgency: 'medium',
+            impact: 'Revenue optimization opportunity',
+            description: `Current avg PPV price: $${analytics.avgPPVPrice.toFixed(2)}`,
+            action: 'Upload team PPV data for pricing comparison',
             timeframe: '2 weeks'
-        },
-        {
-            title: 'PPV Price Testing',
-            urgency: 'low',
-            impact: '$' + Math.round(analytics.totalRevenue * 0.25),
-            description: 'Premium pricing strategy untested',
-            action: 'A/B test $35-45 PPVs',
-            timeframe: '1 month'
-        },
-        {
-            title: 'Response Time Alerts',
-            urgency: analytics.avgResponseTime > 3 ? 'urgent' : 'low',
-            impact: '$' + Math.round(analytics.totalRevenue * (analytics.avgResponseTime > 3 ? 0.18 : 0.05)),
-            description: `Avg response time: ${analytics.avgResponseTime}min`,
-            action: analytics.avgResponseTime > 3 ? 'Implement alerts' : 'Monitor consistency',
-            timeframe: '1 week'
-        },
-        {
-            title: 'Content Personalization',
+        });
+    }
+    
+    // Team performance analysis (only if we have multiple chatters)
+    if (analytics.totalRevenue > 500) {
+        opportunities.push({
+            title: 'Team Performance Analysis',
             urgency: 'medium',
-            impact: '$' + Math.round(analytics.totalRevenue * 0.14),
-            description: 'Generic content reducing engagement',
-            action: 'Create personalized templates',
-            timeframe: '10 days'
-        }
-    ];
+            impact: 'Team optimization opportunity',
+            description: 'Upload data from multiple chatters to identify performance gaps',
+            action: 'Upload individual chatter reports',
+            timeframe: '2 weeks'
+        });
+    }
+    
+    // If no opportunities can be generated from current data, show data requirements
+    if (opportunities.length === 0) {
+        opportunities.push({
+            title: 'Data Collection Required',
+            urgency: 'high',
+            impact: 'Analysis not possible',
+            description: 'Upload daily chatter reports and message data to generate actionable opportunities',
+            action: 'Upload performance data',
+            timeframe: 'Immediate'
+        });
+    }
     
     container.innerHTML = opportunities.slice(0, 6).map(opp => `
         <div class="glass-card rounded-lg p-4 hover:bg-gray-700/20 transition-all cursor-pointer">
