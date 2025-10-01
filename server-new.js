@@ -810,6 +810,39 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
   }
 });
 
+// Debug endpoint to update creator names
+app.get('/api/debug/update-creator-names', async (req, res) => {
+  try {
+    const creators = await CreatorAccount.find().sort({ _id: 1 });
+    
+    const updates = [];
+    if (creators[0]) {
+      creators[0].name = 'Arya';
+      creators[0].accountName = '@arya_of';
+      await creators[0].save();
+      updates.push('Arya');
+    }
+    
+    if (creators[1]) {
+      creators[1].name = 'Iris';
+      creators[1].accountName = '@iris_of';
+      await creators[1].save();
+      updates.push('Iris');
+    }
+    
+    if (creators[2]) {
+      creators[2].name = 'Lilla';
+      creators[2].accountName = '@lilla_of';
+      await creators[2].save();
+      updates.push('Lilla');
+    }
+    
+    res.json({ message: 'Creator names updated!', updated: updates });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to wipe all data
 app.delete('/api/debug/wipe-data', checkDatabaseConnection, async (req, res) => {
   try {
