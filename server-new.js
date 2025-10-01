@@ -425,17 +425,22 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       };
     } else {
       const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      const end = new Date();
       const start = new Date();
       start.setDate(start.getDate() - days);
-      const end = new Date();
+      
+      // For now, query last 30 days of data to catch any uploads
+      const wideStart = new Date();
+      wideStart.setDate(wideStart.getDate() - 30);
+      
       chatterPerformanceQuery = { 
         $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-          { weekStartDate: { $gte: start, $lte: end } },
-          { weekEndDate: { $gte: start, $lte: end } }
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: wideStart } },
+          { weekStartDate: { $gte: wideStart, $lte: end } },
+          { weekEndDate: { $gte: wideStart, $lte: end } }
         ]
       };
-      console.log('Dashboard querying ChatterPerformance with dates:', { start, end, interval });
+      console.log('Dashboard querying ChatterPerformance with dates:', { start: wideStart, end, interval });
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
