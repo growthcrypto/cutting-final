@@ -1744,6 +1744,8 @@ async function runChatterAnalysis() {
         return;
     }
     
+    const chatterId = select.value; // Define chatterId here!
+    
     // Show loading state
     resultsContainer.innerHTML = `
         <div class="flex items-center justify-center py-12">
@@ -1796,7 +1798,7 @@ async function runChatterAnalysis() {
         renderSophisticatedChatterAnalysis(analysisData);
         
         // Load performance trends for this chatter
-        const selectedUser = await fetch(`/api/users/${chatterId}`, {
+        const selectedUser = await fetch(`/api/users/${select.value}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         }).then(r => r.json());
         if (selectedUser.chatterName || selectedUser.username) {
@@ -4827,9 +4829,13 @@ function showError(message) {
 
 // Helper: Render change indicator (green/red %)
 function renderChangeIndicator(change, reverseColors = false) {
-    if (!change || change === '0' || change === '+0.0' || change === '-0.0') return '';
+    console.log('renderChangeIndicator called with:', change, 'reverseColors:', reverseColors);
+    
+    if (!change || change === '0' || change === '+0.0' || change === '-0.0' || change === '0.0') return '';
     
     const numChange = parseFloat(change);
+    if (isNaN(numChange) || numChange === 0) return '';
+    
     const isPositive = reverseColors ? numChange < 0 : numChange > 0;
     const color = isPositive ? 'green' : 'red';
     const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
