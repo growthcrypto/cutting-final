@@ -431,14 +431,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
         ]
       };
     } else {
-      const wideStart = new Date();
-      wideStart.setDate(wideStart.getDate() - 30);
+      // Strict overlap: data period must actually overlap with query period
       accountDataQuery = {
-        $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: wideStart } },
-          { weekStartDate: { $gte: wideStart, $lte: end } },
-          { weekEndDate: { $gte: wideStart, $lte: end } }
-        ]
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
       };
     }
     const ofAccountData = await AccountData.find(accountDataQuery);
@@ -455,12 +451,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
         ]
       };
     } else {
+      // Strict overlap: data period must actually overlap with query period
       chatterPerformanceQuery = { 
-        $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-          { weekStartDate: { $gte: start, $lte: end } },
-          { weekEndDate: { $gte: start, $lte: end } }
-        ]
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
       };
       console.log('Dashboard querying ChatterPerformance with dates:', { start, end, interval });
     }
