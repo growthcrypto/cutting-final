@@ -1909,85 +1909,143 @@ async function generateAIRecommendations(analytics, chatters, interval) {
       const maxPrice = allPPVPrices.length > 0 ? Math.max(...allPPVPrices) : 0;
       const minPrice = allPPVPrices.length > 0 ? Math.min(...allPPVPrices) : 0;
       
-      // Analyze pricing performance vs revenue per PPV
+      // INTELLIGENT pricing analysis: Find correlation between price and performance
       const pricingAnalysis = [];
       
+      // Group chatters by price ranges to analyze performance patterns
+      const priceGroups = {
+        low: [],    // Bottom 25% of prices
+        medium: [], // Middle 50% of prices  
+        high: []    // Top 25% of prices
+      };
+      
+      // Sort all PPV prices to find quartiles
+      const sortedPrices = allPPVPrices.sort((a, b) => a - b);
+      const q1Index = Math.floor(sortedPrices.length * 0.25);
+      const q3Index = Math.floor(sortedPrices.length * 0.75);
+      const q1Price = sortedPrices[q1Index] || 0;
+      const q3Price = sortedPrices[q3Index] || 0;
+      
+      // Categorize chatters by their average price
       Object.keys(chatterPricing).forEach(chatter => {
         const data = chatterPricing[chatter];
         const chatterAvgPrice = data.totalRevenue / data.count;
         const chatterPPVCount = data.count;
         
-        // Calculate revenue per PPV to see if pricing is effective
-        const revenuePerPPV = chatterAvgPrice;
-        
-        // Compare to team average and identify pricing issues
-        if (chatterAvgPrice < avgPrice * 0.7 && chatterPPVCount >= 3) {
-          // Underpricing: Low prices but decent volume
-          pricingAnalysis.push({
+        if (chatterPPVCount >= 3) { // Only analyze with sufficient data
+          const chatterData = {
             chatter,
-            issue: 'underpricing',
-            currentPrice: chatterAvgPrice,
-            teamAvg: avgPrice,
-            potential: 'increase'
-          });
-        } else if (chatterAvgPrice > avgPrice * 1.3 && chatterPPVCount >= 3) {
-          // Overpricing: High prices but potentially low volume
-          pricingAnalysis.push({
-            chatter,
-            issue: 'overpricing', 
-            currentPrice: chatterAvgPrice,
-            teamAvg: avgPrice,
-            potential: 'decrease'
-          });
+            avgPrice: chatterAvgPrice,
+            totalRevenue: data.totalRevenue,
+            ppvCount: chatterPPVCount,
+            revenuePerPPV: chatterAvgPrice
+          };
+          
+          if (chatterAvgPrice <= q1Price) {
+            priceGroups.low.push(chatterData);
+          } else if (chatterAvgPrice >= q3Price) {
+            priceGroups.high.push(chatterData);
+          } else {
+            priceGroups.medium.push(chatterData);
+          }
         }
       });
       
-      // Generate recommendations based on actual pricing analysis
-      const underpricedChatters = pricingAnalysis.filter(p => p.issue === 'underpricing');
-      const overpricedChatters = pricingAnalysis.filter(p => p.issue === 'overpricing');
+      // Calculate average performance by price group
+      const groupPerformance = {};
+      Object.keys(priceGroups).forEach(group => {
+        const data = priceGroups[group];
+        if (data.length > 0) {
+          groupPerformance[group] = {
+            avgPrice: data.reduce((sum, d) => sum + d.avgPrice, 0) / data.length,
+            avgRevenue: data.reduce((sum, d) => sum + d.totalRevenue, 0) / data.length,
+            avgPPVCount: data.reduce((sum, d) => sum + d.ppvCount, 0) / data.length,
+            sampleSize: data.length
+          };
+        }
+      });
       
-      if (underpricedChatters.length > 0) {
-        const totalPotentialIncrease = underpricedChatters.reduce((sum, chatter) => {
-          const targetPrice = avgPrice * 0.9; // Conservative target
-          const currentRevenue = chatterPricing[chatter.chatter].totalRevenue;
-          const priceIncrease = (targetPrice - chatter.currentPrice) / chatter.currentPrice;
-          return sum + (currentRevenue * priceIncrease * 0.75); // Assume 75% conversion
-        }, 0);
+      // Analyze correlation: Do higher prices lead to better performance?
+      if (groupPerformance.low && groupPerformance.high && 
+          groupPerformance.low.sampleSize >= 2 && groupPerformance.high.sampleSize >= 2) {
         
-        recommendations.push({
-          description: `${underpricedChatters.map(c => c.chatter).join(', ')} are underpricing PPVs (avg $${underpricedChatters[0].currentPrice.toFixed(2)} vs team avg $${avgPrice.toFixed(2)}). Based on team performance data, increasing PPV prices could increase revenue.`,
-          expectedImpact: `Revenue optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
-          category: 'pricing_optimization',
-          priority: 'high',
-          data: {
-            currentAvgPrice: avgPrice.toFixed(2),
-            underpricedChatters: underpricedChatters.map(c => c.chatter),
-            potentialIncrease: totalPotentialIncrease.toFixed(0)
-          }
-        });
+        const lowPricePerf = groupPerformance.low;
+        const highPricePerf = groupPerformance.high;
+        
+        // Calculate performance metrics
+        const lowRevenuePerPPV = lowPricePerf.avgRevenue / lowPricePerf.avgPPVCount;
+        const highRevenuePerPPV = highPricePerf.avgRevenue / highPricePerf.avgPPVCount;
+        
+        // Determine if higher prices correlate with better performance
+        const pricePerformanceCorrelation = highRevenuePerPPV / lowRevenuePerPPV;
+        
+        if (pricePerformanceCorrelation > 1.2) {
+          // Higher prices correlate with better performance - recommend price increases
+          const lowPriceChatters = priceGroups.low.map(d => d.chatter);
+          const potentialIncrease = lowPriceChatters.reduce((sum, chatter) => {
+            const currentRevenue = chatterPricing[chatter].totalRevenue;
+            const priceIncrease = (highPricePerf.avgPrice - chatterPricing[chatter].totalRevenue / chatterPricing[chatter].count) / (chatterPricing[chatter].totalRevenue / chatterPricing[chatter].count);
+            return sum + (currentRevenue * priceIncrease * 0.7); // Conservative 70% conversion
+          }, 0);
+          
+          pricingAnalysis.push({
+            type: 'increase',
+            chatters: lowPriceChatters,
+            currentAvgPrice: lowPricePerf.avgPrice.toFixed(2),
+            targetAvgPrice: highPricePerf.avgPrice.toFixed(2),
+            performanceGap: ((pricePerformanceCorrelation - 1) * 100).toFixed(1),
+            potentialIncrease: potentialIncrease
+          });
+        } else if (pricePerformanceCorrelation < 0.8) {
+          // Higher prices correlate with worse performance - recommend price decreases
+          const highPriceChatters = priceGroups.high.map(d => d.chatter);
+          const potentialIncrease = highPriceChatters.reduce((sum, chatter) => {
+            const currentRevenue = chatterPricing[chatter].totalRevenue;
+            // Assume lower prices increase volume by 25%
+            return sum + (currentRevenue * 0.25);
+          }, 0);
+          
+          pricingAnalysis.push({
+            type: 'decrease',
+            chatters: highPriceChatters,
+            currentAvgPrice: highPricePerf.avgPrice.toFixed(2),
+            targetAvgPrice: lowPricePerf.avgPrice.toFixed(2),
+            performanceGap: ((1 - pricePerformanceCorrelation) * 100).toFixed(1),
+            potentialIncrease: potentialIncrease
+          });
+        }
       }
       
-      if (overpricedChatters.length > 0) {
-        const totalPotentialIncrease = overpricedChatters.reduce((sum, chatter) => {
-          const targetPrice = avgPrice * 1.1; // Conservative target
-          const currentRevenue = chatterPricing[chatter.chatter].totalRevenue;
-          const priceDecrease = (chatter.currentPrice - targetPrice) / chatter.currentPrice;
-          // Assume lower prices increase volume by 20%
-          return sum + (currentRevenue * 0.2); // Volume increase from lower prices
-        }, 0);
-        
-        recommendations.push({
-          description: `${overpricedChatters.map(c => c.chatter).join(', ')} are overpricing PPVs (avg $${overpricedChatters[0].currentPrice.toFixed(2)} vs team avg $${avgPrice.toFixed(2)}). Based on team performance data, decreasing PPV prices could increase volume and revenue.`,
-          expectedImpact: `Volume optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
-          category: 'pricing_optimization',
-          priority: 'medium',
-          data: {
-            currentAvgPrice: avgPrice.toFixed(2),
-            overpricedChatters: overpricedChatters.map(c => c.chatter),
-            potentialIncrease: totalPotentialIncrease.toFixed(0)
-          }
-        });
-      }
+      // Generate recommendations based on intelligent correlation analysis
+      pricingAnalysis.forEach(analysis => {
+        if (analysis.type === 'increase') {
+          recommendations.push({
+            description: `Data analysis shows higher PPV prices correlate with ${analysis.performanceGap}% better performance. ${analysis.chatters.join(', ')} are in the low-price group (avg $${analysis.currentAvgPrice}) and could benefit from increasing prices toward $${analysis.targetAvgPrice}.`,
+            expectedImpact: `Revenue optimization opportunity identified ($${Math.round(analysis.potentialIncrease)} monthly potential)`,
+            category: 'pricing_optimization',
+            priority: 'high',
+            data: {
+              correlation: analysis.performanceGap,
+              lowPriceChatters: analysis.chatters,
+              currentAvgPrice: analysis.currentAvgPrice,
+              targetAvgPrice: analysis.targetAvgPrice
+            }
+          });
+        } else if (analysis.type === 'decrease') {
+          recommendations.push({
+            description: `Data analysis shows higher PPV prices correlate with ${analysis.performanceGap}% worse performance. ${analysis.chatters.join(', ')} are in the high-price group (avg $${analysis.currentAvgPrice}) and could benefit from decreasing prices toward $${analysis.targetAvgPrice}.`,
+            expectedImpact: `Volume optimization opportunity identified ($${Math.round(analysis.potentialIncrease)} monthly potential)`,
+            category: 'pricing_optimization',
+            priority: 'medium',
+            data: {
+              correlation: analysis.performanceGap,
+              highPriceChatters: analysis.chatters,
+              currentAvgPrice: analysis.currentAvgPrice,
+              targetAvgPrice: analysis.targetAvgPrice
+            }
+          });
+        }
+      });
     }
 
     // Response time analysis based on real performance data (only if we have meaningful data)
