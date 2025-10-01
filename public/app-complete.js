@@ -989,7 +989,11 @@ function calculateIntelligentMetrics(analytics) {
     const clickToSubRate = analytics.profileClicks > 0 ? (analytics.newSubs / analytics.profileClicks * 100) : 0;
     const ppvUnlockRate = analytics.ppvsSent > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
     const revenuePerSub = analytics.totalSubs > 0 ? (analytics.totalRevenue / analytics.totalSubs) : 0;
-    const revenuePerHour = analytics.totalRevenue / (24 * 7); // Assuming 7-day period
+    // Calculate revenue per hour based on actual time period
+    const timePeriodHours = currentTimeInterval === '24h' ? 24 : 
+                           currentTimeInterval === '7d' ? 24 * 7 : 
+                           currentTimeInterval === '30d' ? 24 * 30 : 24 * 7; // Default to 7 days
+    const revenuePerHour = analytics.totalRevenue / timePeriodHours;
     const messagesPerPPV = analytics.ppvsSent > 0 ? (analytics.messagesSent / analytics.ppvsSent) : 0;
     
     // Team performance calculations - empty until real data uploaded

@@ -2152,13 +2152,22 @@ async function generateAIRecommendations(analytics, chatters, interval) {
       }, 0) / weekdayReports.length;
 
       if (weekendAvg < weekdayAvg * 0.8) { // Weekend performance is 20%+ below weekdays
-        const potentialWeekendGain = Math.round((weekdayAvg - weekendAvg) * 8.5); // 8.5 weekends per month
+        // Calculate potential gain based on actual time period, not hardcoded monthly assumption
+        const timePeriodDays = interval === '24h' ? 1 : interval === '7d' ? 7 : 30;
+        const weekendDaysInPeriod = Math.ceil(timePeriodDays * 2/7); // 2 weekend days per 7 days
+        const potentialWeekendGain = Math.round((weekdayAvg - weekendAvg) * weekendDaysInPeriod);
+        
         recommendations.push({
           description: `Weekend performance is ${Math.round((1 - weekendAvg/weekdayAvg) * 100)}% below weekday average. Weekend optimization could recover significant revenue.`,
-          expectedImpact: `$${potentialWeekendGain} monthly recovery potential`,
+          expectedImpact: `Weekend optimization opportunity identified ($${potentialWeekendGain} potential gain)`,
           category: 'scheduling',
           priority: 'medium',
-          roiCalculation: `Weekend optimization opportunity identified`
+          data: {
+            weekendAvg: weekendAvg.toFixed(0),
+            weekdayAvg: weekdayAvg.toFixed(0),
+            performanceGap: Math.round((1 - weekendAvg/weekdayAvg) * 100),
+            potentialGain: potentialWeekendGain
+          }
         });
       }
     }
@@ -2207,15 +2216,20 @@ async function generateAIRecommendations(analytics, chatters, interval) {
         chatterPerformance[chatter].avgRevenuePerDay === maxPerf
       );
       
-      if (maxPerf > avgPerf * 1.3) { // Top performer is 30%+ above average
+      if (maxPerf > avgPerf * 1.3 && Object.keys(chatterPerformance).length >= 3) { // Top performer is 30%+ above average AND we have at least 3 chatters
         const performanceGap = ((maxPerf - avgPerf) / avgPerf) * 100;
         const teamSize = Object.keys(chatterPerformance).length;
-        const potentialTeamIncrease = Math.min(performanceGap * 0.4, 20); // Conservative 40% of gap
-        const potentialMonthlyIncrease = avgPerf * teamSize * (potentialTeamIncrease / 100) * 30; // 30 days
+        
+        // More conservative training impact estimate (20% of gap, max 15%)
+        const potentialTeamIncrease = Math.min(performanceGap * 0.2, 15); 
+        
+        // Calculate potential based on actual time period, not hardcoded 30 days
+        const timePeriodDays = interval === '24h' ? 1 : interval === '7d' ? 7 : 30;
+        const potentialPeriodIncrease = avgPerf * teamSize * (potentialTeamIncrease / 100) * timePeriodDays;
         
         recommendations.push({
           description: `${topPerformer} generates ${performanceGap.toFixed(1)}% more revenue than team average ($${avgPerf.toFixed(0)}/day). Based on actual performance data, skills transfer could level up entire team.`,
-          expectedImpact: `Team performance optimization opportunity identified`,
+          expectedImpact: `Team performance optimization opportunity identified ($${Math.round(potentialPeriodIncrease)} potential gain)`,
           category: 'training',
           priority: 'medium',
           data: {
@@ -2223,7 +2237,9 @@ async function generateAIRecommendations(analytics, chatters, interval) {
             performanceGap: performanceGap.toFixed(1),
             teamSize,
             avgRevenuePerDay: avgPerf.toFixed(0),
-            topPerformerRevenue: maxPerf.toFixed(0)
+            topPerformerRevenue: maxPerf.toFixed(0),
+            potentialIncrease: potentialTeamIncrease.toFixed(1),
+            timePeriod: timePeriodDays
           }
         });
       }
@@ -2638,7 +2654,7 @@ function analyzeChatterConversions(dailyReports) {
       const metrics = chatterMetrics[chatterName];
       metrics.totalPPVsSent += report.ppvSales?.length || 0;
       // Note: We don't have real unlock data, so we can't calculate unlock rates
-      metrics.totalMessagesSent += report.fansChatted * 15 || 0; // Estimate messages per fan
+      // Note: We don't have real message count data, so we can't calculate message-to-sale rates
       metrics.totalRevenue += (report.totalPPVRevenue || 0) + (report.totalTipRevenue || 0);
       metrics.totalFansChatted += report.fansChatted || 0;
       metrics.days += 1;
@@ -2649,37 +2665,15 @@ function analyzeChatterConversions(dailyReports) {
   Object.keys(chatterMetrics).forEach(chatter => {
     const data = chatterMetrics[chatter];
     // Note: We don't have real unlock data, so we can't calculate unlock rates
-    data.messageToSaleRate = data.totalMessagesSent > 0 ? (data.totalRevenue / data.totalMessagesSent) : 0;
+    // Note: We don't have real message count data, so we can't calculate message-to-sale rates
     data.revenuePerFan = data.totalFansChatted > 0 ? (data.totalRevenue / data.totalFansChatted) : 0;
     data.avgRevenuePerDay = data.days > 0 ? (data.totalRevenue / data.days) : 0;
   });
 
   // Find conversion opportunities (only for metrics we have real data for)
-  const messageToSaleRates = Object.values(chatterMetrics).map(m => m.messageToSaleRate).filter(r => r > 0);
+  // Note: Removed message-to-sale analysis since we don't have real message count data
 
-  // Check message-to-sale conversion opportunities
-  if (messageToSaleRates.length > 1) {
-    const avgMessageToSale = messageToSaleRates.reduce((sum, rate) => sum + rate, 0) / messageToSaleRates.length;
-    const lowMessageToSaleChatters = Object.keys(chatterMetrics).filter(chatter => 
-      chatterMetrics[chatter].messageToSaleRate < avgMessageToSale * 0.7 && chatterMetrics[chatter].messageToSaleRate > 0
-    );
-    
-    if (lowMessageToSaleChatters.length > 0) {
-      const potentialIncrease = calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatters, avgMessageToSale);
-      
-      return {
-        hasOpportunities: true,
-        description: `${lowMessageToSaleChatters.join(', ')} have low message-to-sale conversion rates ($${avgMessageToSale.toFixed(2)}/message). Based on team performance data, improving message effectiveness could increase revenue.`,
-        expectedImpact: `Message optimization opportunity identified`,
-        priority: 'medium',
-        data: {
-          lowMessageToSaleChatters,
-          teamAvgMessageToSale: avgMessageToSale.toFixed(2),
-          potentialIncrease: potentialIncrease.toFixed(1)
-        }
-      };
-    }
-  }
+  // Note: Removed message-to-sale conversion analysis since we don't have real message count data
 
   return { hasOpportunities: false };
 }
