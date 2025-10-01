@@ -3917,9 +3917,21 @@ function createDataUploadSection() {
                 <p class="text-xs text-gray-400 mt-2">The chatter name will be automatically detected from your login account.</p>
             </div>
             <form id="messagesUploadForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Start Date</label>
+                        <input type="date" id="messagesStartDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">End Date</label>
+                        <input type="date" id="messagesEndDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">Weekly Message CSV</label>
-                    <input type="file" id="messagesFile" accept=".csv"
+                    <input type="file" id="messagesFile" accept=".csv" required
                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700">
                 </div>
                 <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
@@ -4516,13 +4528,28 @@ async function handleChatterDataSubmit(event) {
 
 async function handleMessagesUpload(event) {
     const file = document.getElementById('messagesFile').files[0];
+    const startDate = document.getElementById('messagesStartDate').value;
+    const endDate = document.getElementById('messagesEndDate').value;
+    
     if (!file) {
         showError('Please select a file first');
+        return;
+    }
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date cannot be after end date');
         return;
     }
 
     const formData = new FormData();
     formData.append('messages', file);
+    formData.append('startDate', startDate);
+    formData.append('endDate', endDate);
 
     showLoading(true);
 

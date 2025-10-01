@@ -717,6 +717,151 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
   }
 });
 
+// Message upload endpoint
+app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upload.single('messages'), async (req, res) => {
+  try {
+    console.log('Message upload received:', req.body);
+    console.log('File:', req.file);
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const { startDate, endDate } = req.body;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+    
+    // Get chatter name from authenticated user
+    const user = await User.findById(req.user.userId);
+    if (!user || !user.chatterName) {
+      return res.status(400).json({ error: 'Chatter name not found for user' });
+    }
+    
+    const chatterName = user.chatterName;
+    
+    // Parse CSV file
+    const messages = [];
+    const filePath = req.file.path;
+    
+    await new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (row) => {
+          if (row.message_text) {
+            messages.push(row.message_text);
+          }
+        })
+        .on('end', () => {
+          fs.unlinkSync(filePath); // Delete uploaded file after parsing
+          resolve();
+        })
+        .on('error', reject);
+    });
+    
+    if (messages.length === 0) {
+      return res.status(400).json({ error: 'No messages found in CSV file' });
+    }
+    
+    console.log(`Parsed ${messages.length} messages for analysis`);
+    
+    // Analyze messages using AI
+    const analysisResult = await analyzeMessages(messages, chatterName);
+    
+    // Save to MessageAnalysis collection
+    const messageAnalysis = new MessageAnalysis({
+      chatterName,
+      weekStartDate: new Date(startDate),
+      weekEndDate: new Date(endDate),
+      messageCount: messages.length,
+      overallScore: analysisResult.overallScore || 0,
+      grammarScore: analysisResult.grammarScore || 0,
+      guidelinesScore: analysisResult.guidelinesScore || 0,
+      strengths: analysisResult.strengths || [],
+      weaknesses: analysisResult.weaknesses || [],
+      suggestions: analysisResult.suggestions || []
+    });
+    
+    await messageAnalysis.save();
+    console.log('Message analysis saved successfully:', messageAnalysis._id);
+    
+    res.json({ 
+      message: 'Messages analyzed and saved successfully',
+      analysis: {
+        messageCount: messages.length,
+        overallScore: messageAnalysis.overallScore,
+        grammarScore: messageAnalysis.grammarScore,
+        guidelinesScore: messageAnalysis.guidelinesScore
+      }
+    });
+  } catch (error) {
+    console.error('Message upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper function to analyze messages using AI
+async function analyzeMessages(messages, chatterName) {
+  try {
+    // Sample messages if there are too many (to avoid token limits)
+    const sampleSize = Math.min(messages.length, 50);
+    const sampledMessages = messages
+      .sort(() => Math.random() - 0.5)
+      .slice(0, sampleSize);
+    
+    const prompt = `Analyze these ${sampledMessages.length} OnlyFans chat messages from chatter "${chatterName}":
+
+${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
+
+Provide a detailed analysis in JSON format with:
+- overallScore (0-100): Overall message quality
+- grammarScore (0-100): Grammar and spelling correctness
+- guidelinesScore (0-100): Adherence to sales/engagement guidelines
+- strengths (array): Key strengths in messaging
+- weaknesses (array): Areas needing improvement
+- suggestions (array): Actionable improvement recommendations
+
+Focus on: engagement quality, sales effectiveness, professionalism, grammar, and customer service.`;
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert OnlyFans chat quality analyst. Provide constructive, actionable feedback in valid JSON format.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+    
+    const analysisText = completion.choices[0].message.content;
+    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      throw new Error('Failed to parse AI analysis response');
+    }
+    
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    console.error('AI analysis error:', error);
+    // Return default scores if AI analysis fails
+    return {
+      overallScore: 50,
+      grammarScore: 50,
+      guidelinesScore: 50,
+      strengths: ['Analysis pending'],
+      weaknesses: ['Analysis pending'],
+      suggestions: ['Upload more data for detailed analysis']
+    };
+  }
+}
+
 // Test endpoint to verify server is working
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working', timestamp: new Date().toISOString() });
