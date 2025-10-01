@@ -435,10 +435,18 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
           { weekEndDate: { $gte: start, $lte: end } }
         ]
       };
+      console.log('Dashboard querying ChatterPerformance with dates:', { start, end, interval });
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
     console.log('Dashboard data query results:', {
+      dailyReports: dailyReports.length,
+      ofAccountData: ofAccountData.length,
+      chatterPerformance: chatterPerformance.length
+    });
+    console.log('ChatterPerformance data found:', chatterPerformance);
+    
+    console.log('Dashboard query:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
       chatterPerformance: chatterPerformance.length,
