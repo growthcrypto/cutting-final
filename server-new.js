@@ -1776,6 +1776,26 @@ app.get('/api/creators', authenticateToken, async (req, res) => {
   }
 });
 
+// Update creator names (one-time fix)
+app.post('/api/creators/update-names', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const creators = await CreatorAccount.find().sort({ _id: 1 });
+    
+    const names = ['Arya', 'Iris', 'Lilla'];
+    const accounts = ['@arya_of', '@iris_of', '@lilla_of'];
+    
+    for (let i = 0; i < Math.min(creators.length, 3); i++) {
+      creators[i].name = names[i];
+      creators[i].accountName = accounts[i];
+      await creators[i].save();
+    }
+    
+    res.json({ message: 'Creator names updated!', creators });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== PERFORMANCE TRACKING SYSTEM =====
 
 // Auto-save performance snapshot when chatter data is uploaded
