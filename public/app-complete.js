@@ -2845,6 +2845,7 @@ function getTitleFromCategory(category) {
         'efficiency': 'Response Time Impact',
         'training': 'Team Performance Gap',
         'conversion_optimization': 'Conversion Enhancement',
+        'profitability_optimization': 'Profitability Analysis',
         'scheduling': 'Scheduling Optimization',
         'maintenance': 'Performance Maintenance',
         'system': 'System Status'
@@ -2859,6 +2860,7 @@ function getIconFromCategory(category) {
         'efficiency': 'fas fa-clock text-orange-400',
         'training': 'fas fa-users text-cyan-400',
         'conversion_optimization': 'fas fa-funnel-dollar text-yellow-400',
+        'profitability_optimization': 'fas fa-dollar-sign text-emerald-400',
         'scheduling': 'fas fa-calendar text-purple-400',
         'maintenance': 'fas fa-check-circle text-green-400',
         'system': 'fas fa-exclamation-triangle text-red-400'
@@ -2873,6 +2875,7 @@ function getActionFromCategory(category) {
         'efficiency': 'Improve Response Time',
         'training': 'Implement Training',
         'conversion_optimization': 'Improve Conversions',
+        'profitability_optimization': 'Optimize Costs',
         'scheduling': 'Optimize Schedule',
         'maintenance': 'Maintain Performance',
         'system': 'Check System'
@@ -4077,6 +4080,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="border-t border-gray-700 pt-6">
+                    <h4 class="text-lg font-medium mb-4 text-blue-400">Performance Metrics</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Messages Sent</label>
@@ -4102,6 +4106,24 @@ function createDataUploadSection() {
                             <label class="block text-sm font-medium mb-2">Avg Response Time (min)</label>
                             <input type="number" id="chatterAvgResponseTime" min="0" step="0.1"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-700 pt-6">
+                    <h4 class="text-lg font-medium mb-4 text-green-400">Revenue & Profitability</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Total Revenue</label>
+                            <input type="number" id="chatterTotalRevenue" min="0" step="0.01"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <p class="text-xs text-gray-400 mt-1">Gross revenue from PPVs, tips, subscriptions</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Net Sales (Revenue - Costs)</label>
+                            <input type="number" id="chatterNetSales" min="0" step="0.01"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <p class="text-xs text-gray-400 mt-1">Net revenue after platform fees, content costs, etc.</p>
                         </div>
                     </div>
                 </div>
@@ -4679,6 +4701,8 @@ async function handleChatterDataSubmit(event) {
         ppvsUnlocked: parseInt(document.getElementById('chatterPPVsUnlocked').value) || 0,
         fansChatted: parseInt(document.getElementById('chatterFansChatted').value) || 0,
         avgResponseTime: parseFloat(document.getElementById('chatterAvgResponseTime').value) || 0,
+        totalRevenue: parseFloat(document.getElementById('chatterTotalRevenue').value) || 0,
+        netSales: parseFloat(document.getElementById('chatterNetSales').value) || 0,
         dataType: 'chatter'
     };
 

@@ -139,9 +139,15 @@ const chatterPerformanceSchema = new mongoose.Schema({
   fansChattedWith: { type: Number, default: 0 },
   avgResponseTime: { type: Number, default: 0 }, // in minutes
   
+  // Revenue & Profitability
+  totalRevenue: { type: Number, default: 0 }, // Gross revenue
+  netSales: { type: Number, default: 0 }, // Net revenue after costs
+  
   // Calculated Rates
   unlockRate: { type: Number, default: 0 }, // (ppvsUnlocked / ppvsSent) * 100
   revenuePerMessage: { type: Number, default: 0 },
+  profitMargin: { type: Number, default: 0 }, // (netSales / totalRevenue) * 100
+  netRevenuePerFan: { type: Number, default: 0 }, // netSales / fansChattedWith
   
   createdAt: { type: Date, default: Date.now }
 });

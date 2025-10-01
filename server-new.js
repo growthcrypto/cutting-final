@@ -702,7 +702,9 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       ppvsSent: req.body.ppvsSent || 0,
       ppvsUnlocked: req.body.ppvsUnlocked || 0,
       fansChattedWith: req.body.fansChatted || 0,
-      avgResponseTime: req.body.avgResponseTime || 0
+      avgResponseTime: req.body.avgResponseTime || 0,
+      totalRevenue: req.body.totalRevenue || 0,
+      netSales: req.body.netSales || 0
     });
     
     console.log('About to save chatter data:', chatterData);
@@ -2130,6 +2132,18 @@ async function generateAIRecommendations(analytics, chatters, interval) {
       });
     }
 
+    // Profitability analysis based on net sales data
+    const profitabilityAnalysis = await analyzeChatterProfitability(interval);
+    if (profitabilityAnalysis.hasOpportunities) {
+      recommendations.push({
+        description: profitabilityAnalysis.description,
+        expectedImpact: profitabilityAnalysis.expectedImpact,
+        category: 'profitability_optimization',
+        priority: profitabilityAnalysis.priority,
+        data: profitabilityAnalysis.data
+      });
+    }
+
     // Weekend performance analysis
     const weekendReports = dailyReports.filter(report => {
       const day = new Date(report.date).getDay();
@@ -2679,6 +2693,126 @@ function analyzeChatterConversions(dailyReports) {
 }
 
 // Note: Removed calculateUnlockRateImprovement function since we don't have real unlock rate data
+
+// INTELLIGENT Profitability Analysis based on net sales data
+async function analyzeChatterProfitability(interval) {
+  try {
+    // Get chatter performance data with net sales
+    const timePeriodDays = interval === '24h' ? 1 : interval === '7d' ? 7 : 30;
+    const startDate = new Date(Date.now() - timePeriodDays * 24 * 60 * 60 * 1000);
+    
+    const chatterData = await ChatterPerformance.find({
+      weekStartDate: { $gte: startDate },
+      totalRevenue: { $gt: 0 }, // Only analyze chatters with revenue
+      netSales: { $exists: true, $ne: null } // Only analyze chatters with net sales data
+    });
+
+    if (chatterData.length < 2) {
+      return { hasOpportunities: false }; // Need at least 2 chatters for comparison
+    }
+
+    // Calculate profitability metrics for each chatter
+    const profitabilityMetrics = {};
+    
+    chatterData.forEach(data => {
+      const chatterName = data.chatterName;
+      if (!profitabilityMetrics[chatterName]) {
+        profitabilityMetrics[chatterName] = {
+          totalRevenue: 0,
+          netSales: 0,
+          fansChatted: 0,
+          days: 0,
+          records: 0
+        };
+      }
+      
+      const metrics = profitabilityMetrics[chatterName];
+      metrics.totalRevenue += data.totalRevenue || 0;
+      metrics.netSales += data.netSales || 0;
+      metrics.fansChatted += data.fansChattedWith || 0;
+      metrics.days += Math.ceil((new Date(data.weekEndDate) - new Date(data.weekStartDate)) / (1000 * 60 * 60 * 24));
+      metrics.records += 1;
+    });
+
+    // Calculate derived metrics
+    Object.keys(profitabilityMetrics).forEach(chatter => {
+      const data = profitabilityMetrics[chatter];
+      data.profitMargin = data.totalRevenue > 0 ? (data.netSales / data.totalRevenue) * 100 : 0;
+      data.netRevenuePerFan = data.fansChatted > 0 ? data.netSales / data.fansChatted : 0;
+      data.netRevenuePerDay = data.days > 0 ? data.netSales / data.days : 0;
+      data.avgRevenuePerDay = data.days > 0 ? data.totalRevenue / data.days : 0;
+    });
+
+    // Find profitability opportunities
+    const profitMargins = Object.values(profitabilityMetrics).map(m => m.profitMargin).filter(m => m > 0);
+    const netRevenuePerFan = Object.values(profitabilityMetrics).map(m => m.netRevenuePerFan).filter(m => m > 0);
+    
+    if (profitMargins.length >= 2) {
+      const avgProfitMargin = profitMargins.reduce((sum, margin) => sum + margin, 0) / profitMargins.length;
+      const lowMarginChatters = Object.keys(profitabilityMetrics).filter(chatter => {
+        const margin = profitabilityMetrics[chatter].profitMargin;
+        return margin < avgProfitMargin * 0.7 && margin > 0; // 30% below average
+      });
+      
+      if (lowMarginChatters.length > 0) {
+        const totalPotentialIncrease = lowMarginChatters.reduce((sum, chatter) => {
+          const data = profitabilityMetrics[chatter];
+          const targetMargin = avgProfitMargin * 0.9; // Conservative target
+          const currentMargin = data.profitMargin;
+          const marginImprovement = (targetMargin - currentMargin) / 100;
+          return sum + (data.totalRevenue * marginImprovement);
+        }, 0);
+        
+        return {
+          hasOpportunities: true,
+          description: `${lowMarginChatters.join(', ')} have profit margins below team average (${avgProfitMargin.toFixed(1)}%). Cost optimization could improve profitability.`,
+          expectedImpact: `Profitability optimization opportunity identified ($${Math.round(totalPotentialIncrease)} potential gain)`,
+          priority: 'high',
+          data: {
+            lowMarginChatters,
+            teamAvgMargin: avgProfitMargin.toFixed(1),
+            potentialIncrease: Math.round(totalPotentialIncrease)
+          }
+        };
+      }
+    }
+
+    // Analyze net revenue per fan efficiency
+    if (netRevenuePerFan.length >= 2) {
+      const avgNetRevenuePerFan = netRevenuePerFan.reduce((sum, revenue) => sum + revenue, 0) / netRevenuePerFan.length;
+      const lowEfficiencyChatters = Object.keys(profitabilityMetrics).filter(chatter => {
+        const efficiency = profitabilityMetrics[chatter].netRevenuePerFan;
+        return efficiency < avgNetRevenuePerFan * 0.6 && efficiency > 0; // 40% below average
+      });
+      
+      if (lowEfficiencyChatters.length > 0) {
+        const totalPotentialIncrease = lowEfficiencyChatters.reduce((sum, chatter) => {
+          const data = profitabilityMetrics[chatter];
+          const targetEfficiency = avgNetRevenuePerFan * 0.8; // Conservative target
+          const efficiencyGap = targetEfficiency - data.netRevenuePerFan;
+          return sum + (data.fansChatted * efficiencyGap);
+        }, 0);
+        
+        return {
+          hasOpportunities: true,
+          description: `${lowEfficiencyChatters.join(', ')} have low net revenue per fan efficiency ($${avgNetRevenuePerFan.toFixed(2)}/fan). Focus on higher-value interactions could improve profitability.`,
+          expectedImpact: `Efficiency optimization opportunity identified ($${Math.round(totalPotentialIncrease)} potential gain)`,
+          priority: 'medium',
+          data: {
+            lowEfficiencyChatters,
+            teamAvgEfficiency: avgNetRevenuePerFan.toFixed(2),
+            potentialIncrease: Math.round(totalPotentialIncrease)
+          }
+        };
+      }
+    }
+
+    return { hasOpportunities: false };
+  } catch (error) {
+    console.error('Profitability analysis error:', error);
+    return { hasOpportunities: false };
+  }
+}
 
 // Calculate potential improvement from better message-to-sale conversion
 function calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatters, teamAvgMessageToSale) {
