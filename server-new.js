@@ -605,17 +605,27 @@ app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken
   try {
     console.log('OF Account data submission:', req.body);
     
-    // Find the creator account
-    const creatorAccount = await CreatorAccount.findOne({ 
-      $or: [
-        { _id: req.body.creator },
-        { name: req.body.creator }
-      ]
-    });
+    // Find the creator account - try by name first (dropdown sends name not ID)
+    let creatorAccount = await CreatorAccount.findOne({ name: req.body.creator });
+    
+    // If not found by name, try to find by ID
+    if (!creatorAccount) {
+      try {
+        creatorAccount = await CreatorAccount.findById(req.body.creator);
+      } catch (e) {
+        console.log('Not a valid ObjectId, trying case-insensitive name match');
+        creatorAccount = await CreatorAccount.findOne({ 
+          name: new RegExp(`^${req.body.creator}$`, 'i') 
+        });
+      }
+    }
     
     if (!creatorAccount) {
-      return res.status(400).json({ error: 'Creator account not found' });
+      console.error('Creator account not found for:', req.body.creator);
+      return res.status(400).json({ error: `Creator account not found: ${req.body.creator}` });
     }
+    
+    console.log('Found creator account:', creatorAccount.name);
     
     const accountData = new AccountData({
       creatorAccount: creatorAccount._id,
