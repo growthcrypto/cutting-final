@@ -4400,6 +4400,8 @@ async function loadChattersForAnalysis() {
 
 // Form handlers
 async function handleOFAccountDataSubmit(event) {
+    console.log('OF Account form submit triggered');
+    
     const formData = {
         startDate: document.getElementById('ofAccountStartDate').value,
         endDate: document.getElementById('ofAccountEndDate').value,
@@ -4411,6 +4413,13 @@ async function handleOFAccountDataSubmit(event) {
         profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
         dataType: 'of_account'
     };
+    
+    console.log('OF Account form data collected:', formData);
+    console.log('Raw values:', {
+        netRevenue: document.getElementById('ofNetRevenue').value,
+        totalSubs: document.getElementById('ofTotalSubs').value,
+        newSubs: document.getElementById('ofNewSubs').value
+    });
 
     if (!formData.startDate || !formData.endDate || !formData.creator) {
         showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
