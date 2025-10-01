@@ -4729,7 +4729,7 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- ROI Projections (Most Valuable) -->
+            <!-- ROI Projections (Consistent Fonts) -->
             ${data.actionPlan?.roiProjections ? `
             <div class="glass-card rounded-xl p-6 border border-yellow-500/30 slide-up-2 hover-lift bg-gradient-to-r from-yellow-900/20 to-orange-900/20">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
@@ -4739,15 +4739,15 @@ function renderSophisticatedChatterAnalysis(data) {
                 <div class="grid grid-cols-3 gap-6">
                     <div class="text-center">
                         <div class="text-xs text-gray-400 mb-2 uppercase font-semibold">Current State</div>
-                        <div class="text-lg text-white font-bold">${data.actionPlan.roiProjections.currentState}</div>
+                        <div class="text-xl text-white font-bold">${data.actionPlan.roiProjections.currentState}</div>
                     </div>
                     <div class="text-center">
                         <div class="text-xs text-green-400 mb-2 uppercase font-semibold">If Optimized</div>
-                        <div class="text-lg text-green-400 font-black">${data.actionPlan.roiProjections.optimizedState}</div>
+                        <div class="text-xl text-green-400 font-bold">${data.actionPlan.roiProjections.optimizedState}</div>
                     </div>
                     <div class="text-center">
                         <div class="text-xs text-cyan-400 mb-2 uppercase font-semibold">Potential Gain</div>
-                        <div class="text-2xl text-cyan-400 font-black">${data.actionPlan.roiProjections.improvementValue}</div>
+                        <div class="text-xl text-cyan-400 font-bold">${data.actionPlan.roiProjections.improvementValue}</div>
                     </div>
                 </div>
             </div>
