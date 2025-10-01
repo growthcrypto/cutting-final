@@ -4421,10 +4421,13 @@ async function handleOFAccountDataSubmit(event) {
 }
 
 async function handleChatterDataSubmit(event) {
+    const chatterSelect = document.getElementById('chatterDataChatter');
+    const selectedChatterText = chatterSelect.options[chatterSelect.selectedIndex].text;
+    
     const formData = {
         startDate: document.getElementById('chatterDataStartDate').value,
         endDate: document.getElementById('chatterDataEndDate').value,
-        chatter: document.getElementById('chatterDataChatter').value,
+        chatter: selectedChatterText, // Use the name, not the ID!
         messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
         ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
         ppvsUnlocked: parseInt(document.getElementById('chatterPPVsUnlocked').value) || 0,
@@ -4433,7 +4436,7 @@ async function handleChatterDataSubmit(event) {
         dataType: 'chatter'
     };
 
-    if (!formData.startDate || !formData.endDate || !formData.chatter) {
+    if (!formData.startDate || !formData.endDate || !formData.chatter || formData.chatter === 'Select Chatter...') {
         showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
         return;
     }
