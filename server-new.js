@@ -433,18 +433,14 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
         ]
       };
     } else {
-      // For now, query last 30 days of data to catch any uploads
-      const wideStart = new Date();
-      wideStart.setDate(wideStart.getDate() - 30);
-      
       chatterPerformanceQuery = { 
         $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: wideStart } },
-          { weekStartDate: { $gte: wideStart, $lte: end } },
-          { weekEndDate: { $gte: wideStart, $lte: end } }
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+          { weekStartDate: { $gte: start, $lte: end } },
+          { weekEndDate: { $gte: start, $lte: end } }
         ]
       };
-      console.log('Dashboard querying ChatterPerformance with dates:', { start: wideStart, end, interval });
+      console.log('Dashboard querying ChatterPerformance with dates:', { start, end, interval });
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
