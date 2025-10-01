@@ -1290,15 +1290,14 @@ function hideAnalysisResults() {
 // Load chatters for analysis dropdown
 async function loadChattersForAnalysis() {
     try {
-        const response = await fetch('/api/users', {
+        const response = await fetch('/api/chatters', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
         });
         
         if (response.ok) {
-            const users = await response.json();
-            const chatters = users.filter(user => user.role === 'chatter');
+            const chatters = await response.json();
             
             const select = document.getElementById('chatterAnalysisSelect');
             if (select) {
@@ -4570,30 +4569,6 @@ function updateGuidelinesList(guidelines) {
     `).join('');
 }
 
-async function loadChattersForAnalysis() {
-    try {
-        const response = await fetch('/api/users', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
-
-        if (response.ok) {
-            const users = await response.json();
-            const chatters = users.filter(user => user.role === 'chatter');
-            
-            const select = document.getElementById('chatterAnalysisSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Select Chatter...</option>' +
-                    chatters.map(chatter => 
-                        `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
-                    ).join('');
-            }
-        }
-    } catch (error) {
-        console.error('Error loading chatters:', error);
-    }
-}
 
 
 // Form handlers
