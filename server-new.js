@@ -2734,13 +2734,12 @@ async function analyzeChatterProfitability(interval) {
       metrics.records += 1;
     });
 
-    // Calculate derived metrics
+    // Calculate derived metrics (only chatter-specific ones)
     Object.keys(profitabilityMetrics).forEach(chatter => {
       const data = profitabilityMetrics[chatter];
       data.profitMargin = data.totalRevenue > 0 ? (data.netSales / data.totalRevenue) * 100 : 0;
       data.netRevenuePerFan = data.fansChatted > 0 ? data.netSales / data.fansChatted : 0;
-      data.netRevenuePerDay = data.days > 0 ? data.netSales / data.days : 0;
-      data.avgRevenuePerDay = data.days > 0 ? data.totalRevenue / data.days : 0;
+      // Removed global metrics that can be calculated from global revenue
     });
 
     // Find profitability opportunities

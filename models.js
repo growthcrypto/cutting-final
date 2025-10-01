@@ -143,11 +143,10 @@ const chatterPerformanceSchema = new mongoose.Schema({
   totalRevenue: { type: Number, default: 0 }, // Gross revenue
   netSales: { type: Number, default: 0 }, // Net revenue after costs
   
-  // Calculated Rates
+  // Calculated Rates (only chatter-specific metrics)
   unlockRate: { type: Number, default: 0 }, // (ppvsUnlocked / ppvsSent) * 100
-  revenuePerMessage: { type: Number, default: 0 },
-  profitMargin: { type: Number, default: 0 }, // (netSales / totalRevenue) * 100
-  netRevenuePerFan: { type: Number, default: 0 }, // netSales / fansChattedWith
+  profitMargin: { type: Number, default: 0 }, // (netSales / totalRevenue) * 100 - chatter-specific
+  netRevenuePerFan: { type: Number, default: 0 }, // netSales / fansChattedWith - chatter-specific
   
   createdAt: { type: Date, default: Date.now }
 });
