@@ -1909,45 +1909,84 @@ async function generateAIRecommendations(analytics, chatters, interval) {
       const maxPrice = allPPVPrices.length > 0 ? Math.max(...allPPVPrices) : 0;
       const minPrice = allPPVPrices.length > 0 ? Math.min(...allPPVPrices) : 0;
       
-      // Find chatters with below-average pricing
-      const lowPriceChatters = Object.keys(chatterPricing).filter(chatter => {
-        const chatterAvg = chatterPricing[chatter].totalRevenue / chatterPricing[chatter].count;
-        return chatterAvg < avgPrice * 0.8 && chatterAvg > 0;
-      });
+      // Analyze pricing performance vs revenue per PPV
+      const pricingAnalysis = [];
       
-      if (lowPriceChatters.length > 0) {
-        // Calculate real potential based on actual data
-        let totalPotentialIncrease = 0;
-        let totalCurrentRevenue = 0;
+      Object.keys(chatterPricing).forEach(chatter => {
+        const data = chatterPricing[chatter];
+        const chatterAvgPrice = data.totalRevenue / data.count;
+        const chatterPPVCount = data.count;
         
-        lowPriceChatters.forEach(chatter => {
-          const data = chatterPricing[chatter];
-          const currentAvg = data.totalRevenue / data.count;
-          const targetPrice = avgPrice * 0.9; // Conservative 90% of team average
-          const priceIncrease = (targetPrice - currentAvg) / currentAvg;
-          // Assume 75% conversion rate at higher price (conservative)
-          const potentialRevenue = data.totalRevenue * (1 + priceIncrease * 0.75);
-          totalPotentialIncrease += potentialRevenue - data.totalRevenue;
-          totalCurrentRevenue += data.totalRevenue;
-        });
+        // Calculate revenue per PPV to see if pricing is effective
+        const revenuePerPPV = chatterAvgPrice;
         
-        const potentialIncreasePercent = totalCurrentRevenue > 0 ? 
-          (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
-        
-        if (potentialIncreasePercent > 5) {
-          recommendations.push({
-            description: `${lowPriceChatters.join(', ')} are pricing PPVs below team average ($${avgPrice.toFixed(2)}). Based on team performance data, increasing PPV prices could increase revenue.`,
-            expectedImpact: `Revenue optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
-            category: 'pricing_optimization',
-            priority: 'high',
-            data: {
-              currentAvgPrice: avgPrice.toFixed(2),
-              lowPriceChatters,
-              potentialIncrease: potentialIncreasePercent.toFixed(1),
-              priceRange: `${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
-            }
+        // Compare to team average and identify pricing issues
+        if (chatterAvgPrice < avgPrice * 0.7 && chatterPPVCount >= 3) {
+          // Underpricing: Low prices but decent volume
+          pricingAnalysis.push({
+            chatter,
+            issue: 'underpricing',
+            currentPrice: chatterAvgPrice,
+            teamAvg: avgPrice,
+            potential: 'increase'
+          });
+        } else if (chatterAvgPrice > avgPrice * 1.3 && chatterPPVCount >= 3) {
+          // Overpricing: High prices but potentially low volume
+          pricingAnalysis.push({
+            chatter,
+            issue: 'overpricing', 
+            currentPrice: chatterAvgPrice,
+            teamAvg: avgPrice,
+            potential: 'decrease'
           });
         }
+      });
+      
+      // Generate recommendations based on actual pricing analysis
+      const underpricedChatters = pricingAnalysis.filter(p => p.issue === 'underpricing');
+      const overpricedChatters = pricingAnalysis.filter(p => p.issue === 'overpricing');
+      
+      if (underpricedChatters.length > 0) {
+        const totalPotentialIncrease = underpricedChatters.reduce((sum, chatter) => {
+          const targetPrice = avgPrice * 0.9; // Conservative target
+          const currentRevenue = chatterPricing[chatter.chatter].totalRevenue;
+          const priceIncrease = (targetPrice - chatter.currentPrice) / chatter.currentPrice;
+          return sum + (currentRevenue * priceIncrease * 0.75); // Assume 75% conversion
+        }, 0);
+        
+        recommendations.push({
+          description: `${underpricedChatters.map(c => c.chatter).join(', ')} are underpricing PPVs (avg $${underpricedChatters[0].currentPrice.toFixed(2)} vs team avg $${avgPrice.toFixed(2)}). Based on team performance data, increasing PPV prices could increase revenue.`,
+          expectedImpact: `Revenue optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
+          category: 'pricing_optimization',
+          priority: 'high',
+          data: {
+            currentAvgPrice: avgPrice.toFixed(2),
+            underpricedChatters: underpricedChatters.map(c => c.chatter),
+            potentialIncrease: totalPotentialIncrease.toFixed(0)
+          }
+        });
+      }
+      
+      if (overpricedChatters.length > 0) {
+        const totalPotentialIncrease = overpricedChatters.reduce((sum, chatter) => {
+          const targetPrice = avgPrice * 1.1; // Conservative target
+          const currentRevenue = chatterPricing[chatter.chatter].totalRevenue;
+          const priceDecrease = (chatter.currentPrice - targetPrice) / chatter.currentPrice;
+          // Assume lower prices increase volume by 20%
+          return sum + (currentRevenue * 0.2); // Volume increase from lower prices
+        }, 0);
+        
+        recommendations.push({
+          description: `${overpricedChatters.map(c => c.chatter).join(', ')} are overpricing PPVs (avg $${overpricedChatters[0].currentPrice.toFixed(2)} vs team avg $${avgPrice.toFixed(2)}). Based on team performance data, decreasing PPV prices could increase volume and revenue.`,
+          expectedImpact: `Volume optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
+          category: 'pricing_optimization',
+          priority: 'medium',
+          data: {
+            currentAvgPrice: avgPrice.toFixed(2),
+            overpricedChatters: overpricedChatters.map(c => c.chatter),
+            potentialIncrease: totalPotentialIncrease.toFixed(0)
+          }
+        });
       }
     }
 
