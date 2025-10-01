@@ -2982,12 +2982,12 @@ function updateDashboardMetrics(data) {
     
     const changes = data.changes || {};
     
-    // Update metrics with change indicators
+    // Update metrics with change indicators (showing NET revenue, not total)
     const revenueEl = document.getElementById('totalRevenue');
     if (revenueEl) {
-        const changeHTML = renderChangeIndicator(changes.totalRevenue);
+        const changeHTML = renderChangeIndicator(changes.netRevenue);
         console.log('Revenue change HTML:', changeHTML);
-        revenueEl.innerHTML = `$${data.totalRevenue.toLocaleString()}${changeHTML}`;
+        revenueEl.innerHTML = `$${data.netRevenue.toLocaleString()}${changeHTML}`;
     }
     
     const subsEl = document.getElementById('totalSubs');
@@ -3056,7 +3056,7 @@ function updateDashboardMetrics(data) {
     // Update change indicators in separate elements (backward compatibility)
     const revenueChangeEl = document.getElementById('revenueChange');
     if (revenueChangeEl) {
-        revenueChangeEl.innerHTML = renderChangeIndicator(changes.totalRevenue) || '';
+        revenueChangeEl.innerHTML = renderChangeIndicator(changes.netRevenue) || '';
     }
     
     const subsChangeEl = document.getElementById('subsChange');
