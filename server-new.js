@@ -1766,6 +1766,16 @@ app.get('/api/users/:userId', authenticateToken, async (req, res) => {
   }
 });
 
+// Get all creator accounts
+app.get('/api/creators', authenticateToken, async (req, res) => {
+  try {
+    const creators = await CreatorAccount.find({ isActive: true }).sort({ name: 1 });
+    res.json(creators);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== PERFORMANCE TRACKING SYSTEM =====
 
 // Auto-save performance snapshot when chatter data is uploaded
