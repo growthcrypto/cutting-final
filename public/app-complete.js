@@ -1128,8 +1128,11 @@ function showCustomDatePicker(context) {
 }
 
 function applyCustomDateRange(context) {
-    const startDate = document.getElementById('modalStartDate').value;
-    const endDate = document.getElementById('modalEndDate').value;
+    // Try multiple possible element IDs
+    const startDate = document.getElementById('modalStartDate')?.value || 
+                     document.getElementById('customStartDate')?.value;
+    const endDate = document.getElementById('modalEndDate')?.value || 
+                   document.getElementById('customEndDate')?.value;
     
     if (!startDate || !endDate) {
         showError('Please select both start and end dates');
@@ -1141,9 +1144,15 @@ function applyCustomDateRange(context) {
         return;
     }
     
-    if (context === 'ai-analysis') {
+    // Set custom date range based on context
+    if (context === 'dashboard') {
+        customDateRange = { start: startDate, end: endDate };
+        currentTimeInterval = 'custom';
+        updateTimeIntervalButtons();
+        loadDashboardData();
+    } else if (context === 'ai-analysis') {
+        window.customDateRange = { start: startDate, end: endDate };
         currentAIAnalysisInterval = 'custom';
-        // Reload analysis
         const agencySection = document.getElementById('agencyAnalysisSection');
         const chatterSection = document.getElementById('chatterAnalysisSection');
         
@@ -1158,7 +1167,8 @@ function applyCustomDateRange(context) {
     }
     
     // Close modal
-    document.querySelector('.fixed.inset-0').remove();
+    const modal = document.querySelector('.fixed.inset-0');
+    if (modal) modal.remove();
     
     showNotification(`Custom range applied: ${startDate} to ${endDate}`, 'success');
 }
