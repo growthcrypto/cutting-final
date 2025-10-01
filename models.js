@@ -139,8 +139,7 @@ const chatterPerformanceSchema = new mongoose.Schema({
   fansChattedWith: { type: Number, default: 0 },
   avgResponseTime: { type: Number, default: 0 }, // in minutes
   
-  // Revenue & Profitability
-  totalRevenue: { type: Number, default: 0 }, // Gross revenue
+  // Revenue
   netSales: { type: Number, default: 0 }, // Net revenue after costs
   
   // Calculated Rates (only chatter-specific metrics)

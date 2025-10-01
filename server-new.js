@@ -703,7 +703,6 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       ppvsUnlocked: req.body.ppvsUnlocked || 0,
       fansChattedWith: req.body.fansChatted || 0,
       avgResponseTime: req.body.avgResponseTime || 0,
-      totalRevenue: req.body.totalRevenue || 0,
       netSales: req.body.netSales || 0
     });
     
