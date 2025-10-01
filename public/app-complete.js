@@ -1596,6 +1596,7 @@ async function loadPerformanceTrends(chatterName) {
         
         if (!response.ok) {
             console.log('No trend data available yet');
+            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload data for multiple weeks to see trends!</p>';
             return;
         }
         
@@ -1603,16 +1604,14 @@ async function loadPerformanceTrends(chatterName) {
         
         if (!trends || trends.unlockRate.length === 0) {
             console.log('No trend data to display');
+            document.getElementById('inlinePerformanceTrendChart').innerHTML = '<p class="text-center text-gray-400 py-8">No historical data yet. Upload data for multiple weeks to see trends!</p>';
             return;
         }
-        
-        // Show trend section
-        document.getElementById('performanceTrendSection').classList.remove('hidden');
         
         // Prepare chart data
         const labels = trends.unlockRate.map(item => new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
         
-        const ctx = document.getElementById('performanceTrendChart').getContext('2d');
+        const ctx = document.getElementById('inlineTrendCanvas').getContext('2d');
         
         // Destroy existing chart if exists
         if (window.performanceTrendChart) {
@@ -4988,29 +4987,34 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- ROI Projections (Consistent Fonts) -->
-            ${data.actionPlan?.roiProjections ? `
-            <div class="glass-card rounded-xl p-6 border border-yellow-500/30 slide-up-2 hover-lift bg-gradient-to-r from-yellow-900/20 to-orange-900/20">
+            <!-- Performance Trend Chart -->
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 slide-up-2">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-coins text-yellow-400 mr-3"></i>
-                    ROI Projection
+                    <i class="fas fa-chart-line text-purple-400 mr-3"></i>
+                    Performance Trends (Last 8 Weeks)
                 </h5>
-                <div class="grid grid-cols-3 gap-6">
-                    <div class="text-center">
-                        <div class="text-xs text-gray-400 mb-2 uppercase font-semibold">Current State</div>
-                        <div class="text-xl text-white font-bold">${data.actionPlan.roiProjections.currentState}</div>
+                <div id="inlinePerformanceTrendChart" style="min-height: 300px;">
+                    <canvas id="inlineTrendCanvas"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs">
+                    <div class="p-2 bg-green-500/10 rounded">
+                        <div class="w-3 h-3 bg-green-400 rounded-full mx-auto mb-1"></div>
+                        <div class="text-gray-400">PPV Unlock Rate</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-xs text-green-400 mb-2 uppercase font-semibold">If Optimized</div>
-                        <div class="text-xl text-green-400 font-bold">${data.actionPlan.roiProjections.optimizedState}</div>
+                    <div class="p-2 bg-purple-500/10 rounded">
+                        <div class="w-3 h-3 bg-purple-400 rounded-full mx-auto mb-1"></div>
+                        <div class="text-gray-400">Quality Score</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-xs text-cyan-400 mb-2 uppercase font-semibold">Potential Gain</div>
-                        <div class="text-xl text-cyan-400 font-bold">${data.actionPlan.roiProjections.improvementValue}</div>
+                    <div class="p-2 bg-blue-500/10 rounded">
+                        <div class="w-3 h-3 bg-blue-400 rounded-full mx-auto mb-1"></div>
+                        <div class="text-gray-400">Response Time</div>
+                    </div>
+                    <div class="p-2 bg-yellow-500/10 rounded">
+                        <div class="w-3 h-3 bg-yellow-400 rounded-full mx-auto mb-1"></div>
+                        <div class="text-gray-400">Improvement Score</div>
                     </div>
                 </div>
             </div>
-            ` : ''}
             
             <!-- Top 3 Actions (Immediate) -->
             ${data.actionPlan?.immediateActions?.length > 0 ? `
