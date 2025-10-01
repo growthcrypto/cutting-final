@@ -1231,7 +1231,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             analyticsData.avgResponseTime > 3 ? `Response time of ${analyticsData.avgResponseTime} minutes is above optimal` : null
           ].filter(Boolean),
           opportunities: [
-            `Improving response time could increase conversions by 15-20%`
+            `Improving response time could increase conversions`
           ],
           roiCalculations: [
             `Response time improvement: $${Math.round(analyticsData.totalRevenue * 0.15)} potential monthly gain for $400 training cost`
@@ -1608,9 +1608,9 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
         avgMessageScore < 70 ? `Average message score (${avgMessageScore.toFixed(1)}) needs improvement (70+ target)` : null
       ].filter(Boolean),
       opportunities: [
-        `Improving PPV unlock rate to 60% could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.2)}`,
-        `Increasing average PPV price to $35 could increase revenue by $${Math.round(analyticsData.totalRevenue * 0.15)}`,
-        `Improving message scores to 80+ could increase conversions by 15-20%`
+        `Improving PPV unlock rate could increase revenue`,
+        `Optimizing PPV pricing could increase revenue`,
+        `Improving message scores could increase conversions`
       ],
       roiCalculations: [
         `PPV optimization: $${Math.round(analyticsData.totalRevenue * 0.2)} potential monthly gain for $500 content investment`,
@@ -1645,8 +1645,8 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
         revenuePerPPV < 25 ? `Low revenue per PPV of $${revenuePerPPV.toFixed(2)} (target: $30-50)` : null
       ].filter(Boolean),
       opportunities: [
-        `Improving PPV unlock rate to 50% could increase revenue by ${Math.round(analyticsData.totalRevenue * 0.25)}`,
-        `Reducing response time to 2 minutes could increase conversions by 20%`
+        `Improving PPV unlock rate could increase revenue`,
+        `Reducing response time could increase conversions`
       ],
       recommendations: [
         'Focus on faster response times - aim for under 2 minutes',
@@ -1868,30 +1868,157 @@ async function generateAIRecommendations(analytics, chatters, interval) {
 
     const recommendations = [];
 
-    // Analyze revenue patterns and ROI opportunities
-    if (totalRevenue > 0) {
-      const revenuePerPPV = totalPPVs > 0 ? totalRevenue / totalPPVs : 0;
+    // Analyze PPV pricing patterns from real data
+    if (totalRevenue > 0 && totalPPVs > 0) {
+      const revenuePerPPV = totalRevenue / totalPPVs;
       
-      if (revenuePerPPV < 35) {
-        recommendations.push({
-          description: `Average PPV value is $${revenuePerPPV.toFixed(2)}. Industry leaders achieve $45-65 per PPV. Testing premium content could increase revenue by 40-60%.`,
-          expectedImpact: `Potential $${Math.round((45 - revenuePerPPV) * totalPPVs)} monthly increase`,
-          category: 'pricing_optimization',
-          priority: 'high',
-          roiCalculation: `ROI: ${Math.round(((45 - revenuePerPPV) * totalPPVs * 12) / 800 * 100)}% annually for $800 content investment`
+      // Analyze individual PPV sales to find pricing patterns
+      const allPPVPrices = [];
+      const chatterPricing = {};
+      
+      dailyReports.forEach(report => {
+        if (report.ppvSales && report.ppvSales.length > 0) {
+          const chatterName = report.chatterName;
+          if (!chatterPricing[chatterName]) {
+            chatterPricing[chatterName] = { prices: [], totalRevenue: 0, count: 0 };
+          }
+          
+          report.ppvSales.forEach(sale => {
+            allPPVPrices.push(sale.amount);
+            chatterPricing[chatterName].prices.push(sale.amount);
+            chatterPricing[chatterName].totalRevenue += sale.amount;
+            chatterPricing[chatterName].count += 1;
+          });
+        }
+      });
+      
+      // Calculate actual pricing statistics
+      const avgPrice = allPPVPrices.length > 0 ? 
+        allPPVPrices.reduce((sum, price) => sum + price, 0) / allPPVPrices.length : 0;
+      const maxPrice = allPPVPrices.length > 0 ? Math.max(...allPPVPrices) : 0;
+      const minPrice = allPPVPrices.length > 0 ? Math.min(...allPPVPrices) : 0;
+      
+      // Find chatters with below-average pricing
+      const lowPriceChatters = Object.keys(chatterPricing).filter(chatter => {
+        const chatterAvg = chatterPricing[chatter].totalRevenue / chatterPricing[chatter].count;
+        return chatterAvg < avgPrice * 0.8 && chatterAvg > 0;
+      });
+      
+      if (lowPriceChatters.length > 0) {
+        // Calculate real potential based on actual data
+        let totalPotentialIncrease = 0;
+        let totalCurrentRevenue = 0;
+        
+        lowPriceChatters.forEach(chatter => {
+          const data = chatterPricing[chatter];
+          const currentAvg = data.totalRevenue / data.count;
+          const targetPrice = avgPrice * 0.9; // Conservative 90% of team average
+          const priceIncrease = (targetPrice - currentAvg) / currentAvg;
+          // Assume 75% conversion rate at higher price (conservative)
+          const potentialRevenue = data.totalRevenue * (1 + priceIncrease * 0.75);
+          totalPotentialIncrease += potentialRevenue - data.totalRevenue;
+          totalCurrentRevenue += data.totalRevenue;
         });
+        
+        const potentialIncreasePercent = totalCurrentRevenue > 0 ? 
+          (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
+        
+        if (potentialIncreasePercent > 5) {
+          recommendations.push({
+            description: `${lowPriceChatters.join(', ')} are pricing PPVs below team average ($${avgPrice.toFixed(2)}). Based on team performance data, optimizing pricing could increase revenue.`,
+            expectedImpact: `Revenue optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
+            category: 'pricing_optimization',
+            priority: 'high',
+            data: {
+              currentAvgPrice: avgPrice.toFixed(2),
+              lowPriceChatters,
+              potentialIncrease: potentialIncreasePercent.toFixed(1),
+              priceRange: `${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
+            }
+          });
+        }
       }
     }
 
-    // Response time analysis with specific ROI
-    if (avgResponseTime > 3) {
-      const potentialIncrease = Math.round(totalRevenue * 0.18); // 18% increase for sub-2min responses
+    // Response time analysis based on real performance data (only if we have meaningful data)
+    if (avgResponseTime > 0 && avgResponseTime < 10) { // Reasonable response time range
+      // Group reports by response time performance
+      const responseTimeGroups = {
+        fast: [], // < 3 minutes
+        medium: [], // 3-5 minutes  
+        slow: [] // > 5 minutes
+      };
+
+      dailyReports.forEach(report => {
+        if (report.avgResponseTime) {
+          const revenue = (report.totalPPVRevenue || 0) + (report.totalTipRevenue || 0);
+          const ppvCount = report.ppvSales?.length || 0;
+          
+          if (report.avgResponseTime < 3) {
+            responseTimeGroups.fast.push({ revenue, ppvCount, responseTime: report.avgResponseTime });
+          } else if (report.avgResponseTime <= 5) {
+            responseTimeGroups.medium.push({ revenue, ppvCount, responseTime: report.avgResponseTime });
+          } else {
+            responseTimeGroups.slow.push({ revenue, ppvCount, responseTime: report.avgResponseTime });
+          }
+        }
+      });
+
+      // Calculate average performance by response time group
+      const groupAverages = {};
+      Object.keys(responseTimeGroups).forEach(group => {
+        const data = responseTimeGroups[group];
+        if (data.length > 0) {
+          groupAverages[group] = {
+            avgRevenue: data.reduce((sum, d) => sum + d.revenue, 0) / data.length,
+            avgPPVCount: data.reduce((sum, d) => sum + d.ppvCount, 0) / data.length,
+            avgResponseTime: data.reduce((sum, d) => sum + d.responseTime, 0) / data.length,
+            sampleSize: data.length
+          };
+        }
+      });
+
+      // Calculate potential impact if we have both fast and slow responders
+      if (groupAverages.fast && groupAverages.slow && 
+          groupAverages.fast.sampleSize >= 2 && groupAverages.slow.sampleSize >= 2) {
+        
+        const fastRevenue = groupAverages.fast.avgRevenue;
+        const slowRevenue = groupAverages.slow.avgRevenue;
+        
+        if (slowRevenue > 0) {
+          const potentialIncrease = ((fastRevenue - slowRevenue) / slowRevenue) * 100;
+          
+          if (potentialIncrease > 5) {
+            const slowReports = responseTimeGroups.slow.length;
+            const potentialMonthlyIncrease = slowRevenue * slowReports * potentialIncrease / 100;
+            
+            recommendations.push({
+              description: `Fast responders (${groupAverages.fast.avgResponseTime.toFixed(1)}min) generate $${fastRevenue.toFixed(0)} avg revenue vs slow responders (${groupAverages.slow.avgResponseTime.toFixed(1)}min) at $${slowRevenue.toFixed(0)}. Based on your data, improving response times to under 5 minutes could boost performance.`,
+              expectedImpact: `Response time optimization opportunity identified`,
+              category: 'efficiency',
+              priority: 'high',
+              data: {
+                potentialRevenueIncrease: potentialIncrease.toFixed(1),
+                currentSlowAvg: slowRevenue.toFixed(0),
+                targetFastAvg: fastRevenue.toFixed(0),
+                fastSampleSize: groupAverages.fast.sampleSize,
+                slowSampleSize: groupAverages.slow.sampleSize
+              }
+            });
+          }
+        }
+      }
+    }
+
+    // Chatter-specific conversion analysis (PPV unlock rates, message-to-sale conversion)
+    const chatterConversionAnalysis = analyzeChatterConversions(dailyReports);
+    if (chatterConversionAnalysis.hasOpportunities) {
       recommendations.push({
-        description: `Response time averaging ${avgResponseTime.toFixed(1)} minutes. Reducing to under 2 minutes increases conversion rates by 18-25%.`,
-        expectedImpact: `$${potentialIncrease} monthly revenue increase`,
-        category: 'efficiency',
-        priority: 'high',
-        roiCalculation: `ROI: ${Math.round(potentialIncrease * 12 / 400 * 100)}% annually for $400 training program`
+        description: chatterConversionAnalysis.description,
+        expectedImpact: chatterConversionAnalysis.expectedImpact,
+        category: 'conversion_optimization',
+        priority: chatterConversionAnalysis.priority,
+        data: chatterConversionAnalysis.data
       });
     }
 
@@ -1923,38 +2050,73 @@ async function generateAIRecommendations(analytics, chatters, interval) {
           expectedImpact: `$${potentialWeekendGain} monthly recovery potential`,
           category: 'scheduling',
           priority: 'medium',
-          roiCalculation: `ROI: ${Math.round(potentialWeekendGain * 12 / 1200 * 100)}% annually for $1,200 weekend staffing`
+          roiCalculation: `Weekend optimization opportunity identified`
         });
       }
     }
 
-    // Chatter performance variance
+    // Chatter performance variance analysis based on real data
     const chatterPerformance = {};
     dailyReports.forEach(report => {
-      if (report.chatterId) {
-        if (!chatterPerformance[report.chatterId]) {
-          chatterPerformance[report.chatterId] = { revenue: 0, responseTime: 0, count: 0 };
+      if (report.chatterName) {
+        if (!chatterPerformance[report.chatterName]) {
+          chatterPerformance[report.chatterName] = { 
+            revenue: 0, 
+            responseTime: 0, 
+            count: 0,
+            ppvCount: 0,
+            tipCount: 0,
+            fansChatted: 0
+          };
         }
-        const revenue = report.ppvSales.reduce((s, sale) => s + sale.amount, 0) + report.tips.reduce((s, tip) => s + tip.amount, 0);
-        chatterPerformance[report.chatterId].revenue += revenue;
-        chatterPerformance[report.chatterId].responseTime += report.avgResponseTime || 0;
-        chatterPerformance[report.chatterId].count++;
+        const revenue = (report.totalPPVRevenue || 0) + (report.totalTipRevenue || 0);
+        chatterPerformance[report.chatterName].revenue += revenue;
+        chatterPerformance[report.chatterName].responseTime += report.avgResponseTime || 0;
+        chatterPerformance[report.chatterName].ppvCount += report.ppvSales?.length || 0;
+        chatterPerformance[report.chatterName].tipCount += report.tips?.length || 0;
+        chatterPerformance[report.chatterName].fansChatted += report.fansChatted || 0;
+        chatterPerformance[report.chatterName].count++;
       }
     });
 
-    const performanceValues = Object.values(chatterPerformance).map(p => p.revenue / p.count);
+    // Calculate performance metrics per chatter
+    Object.keys(chatterPerformance).forEach(chatter => {
+      const perf = chatterPerformance[chatter];
+      perf.avgRevenuePerDay = perf.count > 0 ? perf.revenue / perf.count : 0;
+      perf.avgResponseTime = perf.count > 0 ? perf.responseTime / perf.count : 0;
+      perf.avgPPVPerDay = perf.count > 0 ? perf.ppvCount / perf.count : 0;
+      perf.avgFansPerDay = perf.count > 0 ? perf.fansChatted / perf.count : 0;
+    });
+
+    const performanceValues = Object.values(chatterPerformance).map(p => p.avgRevenuePerDay);
     if (performanceValues.length > 1) {
       const maxPerf = Math.max(...performanceValues);
       const minPerf = Math.min(...performanceValues);
+      const avgPerf = performanceValues.reduce((sum, p) => sum + p, 0) / performanceValues.length;
       
-      if (maxPerf > minPerf * 1.5) { // Top performer is 50%+ better
-        const performanceGap = Math.round((maxPerf - minPerf) * dailyReports.length / performanceValues.length);
+      // Find top performer
+      const topPerformer = Object.keys(chatterPerformance).find(chatter => 
+        chatterPerformance[chatter].avgRevenuePerDay === maxPerf
+      );
+      
+      if (maxPerf > avgPerf * 1.3) { // Top performer is 30%+ above average
+        const performanceGap = ((maxPerf - avgPerf) / avgPerf) * 100;
+        const teamSize = Object.keys(chatterPerformance).length;
+        const potentialTeamIncrease = Math.min(performanceGap * 0.4, 20); // Conservative 40% of gap
+        const potentialMonthlyIncrease = avgPerf * teamSize * (potentialTeamIncrease / 100) * 30; // 30 days
+        
         recommendations.push({
-          description: `Performance variance detected: Top chatter generates ${Math.round((maxPerf/minPerf - 1) * 100)}% more revenue. Training programs could level up all chatters.`,
-          expectedImpact: `$${performanceGap} monthly potential if all reach top performance`,
+          description: `${topPerformer} generates ${performanceGap.toFixed(1)}% more revenue than team average ($${avgPerf.toFixed(0)}/day). Based on actual performance data, skills transfer could level up entire team.`,
+          expectedImpact: `Team performance optimization opportunity identified`,
           category: 'training',
           priority: 'medium',
-          roiCalculation: `ROI: ${Math.round(performanceGap * 12 / 600 * 100)}% annually for $600 comprehensive training`
+          data: {
+            topPerformer,
+            performanceGap: performanceGap.toFixed(1),
+            teamSize,
+            avgRevenuePerDay: avgPerf.toFixed(0),
+            topPerformerRevenue: maxPerf.toFixed(0)
+          }
         });
       }
     }
@@ -2345,6 +2507,146 @@ app.get('/api/performance/trends/:chatterName', authenticateToken, async (req, r
     res.status(500).json({ error: error.message });
   }
 });
+
+// Analyze chatter-specific conversion metrics (PPV unlock rates, message-to-sale conversion)
+function analyzeChatterConversions(dailyReports) {
+  const chatterMetrics = {};
+  
+  // Aggregate chatter-specific conversion data
+  dailyReports.forEach(report => {
+    if (report.chatterName) {
+      const chatterName = report.chatterName;
+      if (!chatterMetrics[chatterName]) {
+        chatterMetrics[chatterName] = {
+          totalPPVsSent: 0,
+          totalPPVsUnlocked: 0,
+          totalMessagesSent: 0,
+          totalRevenue: 0,
+          totalFansChatted: 0,
+          days: 0
+        };
+      }
+      
+      const metrics = chatterMetrics[chatterName];
+      metrics.totalPPVsSent += report.ppvSales?.length || 0;
+      metrics.totalPPVsUnlocked += report.ppvSales?.length || 0; // Assume sent = unlocked for now
+      metrics.totalMessagesSent += report.fansChatted * 15 || 0; // Estimate messages per fan
+      metrics.totalRevenue += (report.totalPPVRevenue || 0) + (report.totalTipRevenue || 0);
+      metrics.totalFansChatted += report.fansChatted || 0;
+      metrics.days += 1;
+    }
+  });
+
+  // Calculate conversion rates per chatter
+  Object.keys(chatterMetrics).forEach(chatter => {
+    const data = chatterMetrics[chatter];
+    data.ppvUnlockRate = data.totalPPVsSent > 0 ? (data.totalPPVsUnlocked / data.totalPPVsSent * 100) : 0;
+    data.messageToSaleRate = data.totalMessagesSent > 0 ? (data.totalRevenue / data.totalMessagesSent) : 0;
+    data.revenuePerFan = data.totalFansChatted > 0 ? (data.totalRevenue / data.totalFansChatted) : 0;
+    data.avgRevenuePerDay = data.days > 0 ? (data.totalRevenue / data.days) : 0;
+  });
+
+  // Find conversion opportunities
+  const unlockRates = Object.values(chatterMetrics).map(m => m.ppvUnlockRate).filter(r => r > 0);
+  const messageToSaleRates = Object.values(chatterMetrics).map(m => m.messageToSaleRate).filter(r => r > 0);
+  
+  if (unlockRates.length > 1) {
+    const avgUnlockRate = unlockRates.reduce((sum, rate) => sum + rate, 0) / unlockRates.length;
+    const lowUnlockChatters = Object.keys(chatterMetrics).filter(chatter => 
+      chatterMetrics[chatter].ppvUnlockRate < avgUnlockRate * 0.8 && chatterMetrics[chatter].ppvUnlockRate > 0
+    );
+    
+    if (lowUnlockChatters.length > 0) {
+      const potentialIncrease = calculateUnlockRateImprovement(chatterMetrics, lowUnlockChatters, avgUnlockRate);
+      
+      return {
+        hasOpportunities: true,
+        description: `${lowUnlockChatters.join(', ')} have PPV unlock rates below team average (${avgUnlockRate.toFixed(1)}%). Based on team performance data, improving unlock rates could increase revenue.`,
+        expectedImpact: `Revenue optimization opportunity identified`,
+        priority: 'high',
+        data: {
+          lowUnlockChatters,
+          teamAvgUnlockRate: avgUnlockRate.toFixed(1),
+          potentialIncrease: potentialIncrease.toFixed(1)
+        }
+      };
+    }
+  }
+
+  // Check message-to-sale conversion opportunities
+  if (messageToSaleRates.length > 1) {
+    const avgMessageToSale = messageToSaleRates.reduce((sum, rate) => sum + rate, 0) / messageToSaleRates.length;
+    const lowMessageToSaleChatters = Object.keys(chatterMetrics).filter(chatter => 
+      chatterMetrics[chatter].messageToSaleRate < avgMessageToSale * 0.7 && chatterMetrics[chatter].messageToSaleRate > 0
+    );
+    
+    if (lowMessageToSaleChatters.length > 0) {
+      const potentialIncrease = calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatters, avgMessageToSale);
+      
+      return {
+        hasOpportunities: true,
+        description: `${lowMessageToSaleChatters.join(', ')} have low message-to-sale conversion rates ($${avgMessageToSale.toFixed(2)}/message). Based on team performance data, improving message effectiveness could increase revenue.`,
+        expectedImpact: `Message optimization opportunity identified`,
+        priority: 'medium',
+        data: {
+          lowMessageToSaleChatters,
+          teamAvgMessageToSale: avgMessageToSale.toFixed(2),
+          potentialIncrease: potentialIncrease.toFixed(1)
+        }
+      };
+    }
+  }
+
+  return { hasOpportunities: false };
+}
+
+// Calculate potential improvement from better PPV unlock rates
+function calculateUnlockRateImprovement(chatterMetrics, lowUnlockChatters, teamAvgUnlockRate) {
+  let totalPotentialIncrease = 0;
+  let totalCurrentRevenue = 0;
+  
+  lowUnlockChatters.forEach(chatter => {
+    const data = chatterMetrics[chatter];
+    const currentUnlockRate = data.ppvUnlockRate;
+    const targetUnlockRate = teamAvgUnlockRate * 0.9; // Conservative 90% of team average
+    
+    if (currentUnlockRate > 0) {
+      const unlockRateIncrease = (targetUnlockRate - currentUnlockRate) / currentUnlockRate;
+      // Assume 80% of potential unlock rate improvement translates to revenue
+      const potentialRevenue = data.totalRevenue * (1 + unlockRateIncrease * 0.8);
+      const potentialIncrease = potentialRevenue - data.totalRevenue;
+      
+      totalPotentialIncrease += potentialIncrease;
+      totalCurrentRevenue += data.totalRevenue;
+    }
+  });
+  
+  return totalCurrentRevenue > 0 ? (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
+}
+
+// Calculate potential improvement from better message-to-sale conversion
+function calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatters, teamAvgMessageToSale) {
+  let totalPotentialIncrease = 0;
+  let totalCurrentRevenue = 0;
+  
+  lowMessageToSaleChatters.forEach(chatter => {
+    const data = chatterMetrics[chatter];
+    const currentMessageToSale = data.messageToSaleRate;
+    const targetMessageToSale = teamAvgMessageToSale * 0.8; // Conservative 80% of team average
+    
+    if (currentMessageToSale > 0) {
+      const messageToSaleIncrease = (targetMessageToSale - currentMessageToSale) / currentMessageToSale;
+      // Assume 70% of potential message-to-sale improvement translates to revenue
+      const potentialRevenue = data.totalRevenue * (1 + messageToSaleIncrease * 0.7);
+      const potentialIncrease = potentialRevenue - data.totalRevenue;
+      
+      totalPotentialIncrease += potentialIncrease;
+      totalCurrentRevenue += data.totalRevenue;
+    }
+  });
+  
+  return totalCurrentRevenue > 0 ? (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
+}
 
 // Handle errors
 process.on('uncaughtException', (err) => {

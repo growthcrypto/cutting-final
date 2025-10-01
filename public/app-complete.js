@@ -938,9 +938,9 @@ function calculateIntelligentMetrics(analytics) {
 function updateIntelligentMetrics(analytics, intelligent) {
     // Update growth indicators
     const elements = {
-        revenueGrowth: `+${intelligent.revenueGrowth}%`,
-        subsGrowth: `+${intelligent.subsGrowth}%`,
-        clicksGrowth: `+${intelligent.clicksGrowth}%`,
+        revenueGrowth: intelligent.revenueGrowth > 0 ? `+${intelligent.revenueGrowth}%` : 'No growth data',
+        subsGrowth: intelligent.subsGrowth > 0 ? `+${intelligent.subsGrowth}%` : 'No growth data',
+        clicksGrowth: intelligent.clicksGrowth > 0 ? `+${intelligent.clicksGrowth}%` : 'No growth data',
         
         // Conversion intelligence
         clickToSubRate: `${intelligent.clickToSubRate}%`,
@@ -1299,7 +1299,7 @@ function generateChatterAnalysisFromRealData(chatterData, chatterName, interval)
             strengths.push(`Excellent response time of ${chatterData.avgResponseTime.toFixed(1)} minutes`);
         } else if (chatterData.avgResponseTime > 4) {
             weaknesses.push(`Slow response time of ${chatterData.avgResponseTime.toFixed(1)} minutes (target: <3 minutes)`);
-            opportunities.push(`Reducing response time to 2 minutes could increase conversions by 20%`);
+            opportunities.push(`Reducing response time could increase conversions`);
         } else {
             strengths.push(`Good response time of ${chatterData.avgResponseTime.toFixed(1)} minutes`);
         }
@@ -1389,7 +1389,7 @@ function generateAnalysisFromRealData(analyticsData, interval) {
         insights.push(`Average response time is ${analyticsData.avgResponseTime.toFixed(1)} minutes`);
         if (analyticsData.avgResponseTime > 3) {
             weakPoints.push(`Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes is above optimal (2-3 minutes)`);
-            opportunities.push(`Reducing response time to 2 minutes could increase conversions by 15-20%`);
+            opportunities.push(`Reducing response time could increase conversions`);
         }
     }
     
@@ -1411,12 +1411,12 @@ function generateAnalysisFromRealData(analyticsData, interval) {
     if (analyticsData.totalRevenue > 0) {
         const potentialResponseTimeGain = analyticsData.avgResponseTime > 3 ? Math.round(analyticsData.totalRevenue * 0.15) : 0;
         if (potentialResponseTimeGain > 0) {
-            roiCalculations.push(`Response time improvement: $${potentialResponseTimeGain} potential monthly gain for $400 training cost = ${Math.round(potentialResponseTimeGain * 12 / 400)}% annual ROI`);
+            roiCalculations.push(`Response time improvement: $${potentialResponseTimeGain} potential monthly gain`);
         }
         
         const potentialConversionGain = clickToSubRate < 10 ? Math.round(analyticsData.totalRevenue * 0.2) : 0;
         if (potentialConversionGain > 0) {
-            roiCalculations.push(`Conversion optimization: $${potentialConversionGain} potential monthly gain for $600 funnel improvements = ${Math.round(potentialConversionGain * 12 / 600)}% annual ROI`);
+            roiCalculations.push(`Conversion optimization: $${potentialConversionGain} potential monthly gain`);
         }
     }
     
@@ -2013,7 +2013,7 @@ async function generateComprehensiveAgencyAnalysis() {
             },
             marketPosition: {
                 competitiveRank: ppvUnlockRate > 60 ? 'Above Average' : ppvUnlockRate > 40 ? 'Average' : 'Below Average',
-                growthTrend: data.newSubs > 0 ? `+${Math.round((data.newSubs / (data.totalSubs - data.newSubs)) * 100)}%` : 'No growth data',
+                growthTrend: data.newSubs > 0 ? 'Growth detected' : 'No growth data',
                 marketShare: 'Requires industry benchmarking data',
                 recommendations: [
                     ...(avgPPVPrice < 30 ? ['Test higher PPV price points'] : []),
@@ -2061,7 +2061,7 @@ async function generateComprehensiveAgencyAnalysis() {
 // Generate Comprehensive Chatter Analysis
 function generateComprehensiveChatterAnalysis(chatterName) {
     const baseRevenue = 3800;
-    const efficiency = Math.floor(Math.random() * 30) + 70; // 70-100%
+    const efficiency = Math.floor(Math.random() * 30) + 70; // 70-100
     
     return {
         chatterName,
@@ -2076,18 +2076,18 @@ function generateComprehensiveChatterAnalysis(chatterName) {
         strengths: [
             'Excellent relationship building with subscribers',
             'Consistent high-value PPV content creation',
-            'Strong weekend performance (+15% above average)',
+            'Strong weekend performance above average',
             'Effective upselling techniques'
         ],
         weaknesses: [
             'Response time during peak hours needs improvement',
-            'Could increase PPV frequency by 20%',
+            'Could increase PPV frequency',
             'Opportunity to improve closing techniques',
             'Grammar and spelling consistency'
         ],
         benchmarking: {
-            vsTopPerformer: efficiency > 85 ? 'Matching top tier' : `${Math.floor((85 - efficiency) * 1.2)}% below top performer`,
-            vsTeamAverage: efficiency > 76 ? `+${efficiency - 76}% above average` : `${76 - efficiency}% below average`,
+            vsTopPerformer: efficiency > 85 ? 'Matching top tier' : 'Below top performer',
+            vsTeamAverage: efficiency > 76 ? 'Above average' : 'Below average',
             industryRank: efficiency > 80 ? 'Top 25%' : efficiency > 70 ? 'Top 50%' : 'Below Average'
         },
         improvementPlan: [
@@ -2719,6 +2719,175 @@ function renderChatterAnalysisResults(data) {
     `;
 }
 
+// Generate real data-driven insights based on actual performance data
+async function generateRealDataInsights(analytics, intelligent) {
+    try {
+        // Fetch real AI recommendations from backend
+        const response = await fetch(`/api/ai/recommendations?interval=${currentTimeInterval}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const recommendations = await response.json();
+            return recommendations.map(rec => ({
+                title: getTitleFromCategory(rec.category),
+                icon: getIconFromCategory(rec.category),
+                priority: rec.priority,
+                content: rec.description,
+                action: getActionFromCategory(rec.category),
+                roi: rec.expectedImpact,
+                data: rec.data || {}
+            }));
+        }
+    } catch (error) {
+        console.error('Error fetching real AI insights:', error);
+    }
+
+    // Fallback to basic insights if API fails
+    return generateBasicInsights(analytics, intelligent);
+}
+
+// Convert category to display title
+function getTitleFromCategory(category) {
+    const titles = {
+        'pricing_optimization': 'Revenue Optimization',
+        'efficiency': 'Response Time Impact',
+        'training': 'Team Performance Gap',
+        'conversion_optimization': 'Conversion Enhancement',
+        'scheduling': 'Scheduling Optimization',
+        'maintenance': 'Performance Maintenance',
+        'system': 'System Status'
+    };
+    return titles[category] || 'Performance Insight';
+}
+
+// Convert category to icon
+function getIconFromCategory(category) {
+    const icons = {
+        'pricing_optimization': 'fas fa-chart-line text-green-400',
+        'efficiency': 'fas fa-clock text-orange-400',
+        'training': 'fas fa-users text-cyan-400',
+        'conversion_optimization': 'fas fa-funnel-dollar text-yellow-400',
+        'scheduling': 'fas fa-calendar text-purple-400',
+        'maintenance': 'fas fa-check-circle text-green-400',
+        'system': 'fas fa-exclamation-triangle text-red-400'
+    };
+    return icons[category] || 'fas fa-lightbulb text-blue-400';
+}
+
+// Convert category to action
+function getActionFromCategory(category) {
+    const actions = {
+        'pricing_optimization': 'Optimize Pricing',
+        'efficiency': 'Improve Response Time',
+        'training': 'Implement Training',
+        'conversion_optimization': 'Improve Conversions',
+        'scheduling': 'Optimize Schedule',
+        'maintenance': 'Maintain Performance',
+        'system': 'Check System'
+    };
+    return actions[category] || 'Take Action';
+}
+
+// Generate basic insights as fallback
+function generateBasicInsights(analytics, intelligent) {
+    const insights = [];
+
+    // Revenue Optimization - Basic analysis
+    if (analytics.totalRevenue > 0) {
+        const avgPPVPrice = analytics.ppvsSent > 0 ? analytics.totalRevenue / analytics.ppvsSent : 0;
+        if (avgPPVPrice > 0 && avgPPVPrice < 30) {
+            insights.push({
+                title: 'Revenue Optimization',
+                icon: 'fas fa-chart-line text-green-400',
+                priority: 'high',
+                content: `Average PPV price is $${avgPPVPrice.toFixed(2)}. Upload more data to get personalized pricing recommendations.`,
+                action: 'Upload Data for Analysis',
+                roi: 'Data Required'
+            });
+        }
+    }
+
+    // Response Time - Only show if we have meaningful data
+    if (analytics.avgResponseTime > 0 && analytics.avgResponseTime < 10) { // Reasonable response time range
+        insights.push({
+            title: 'Response Time Impact',
+            icon: 'fas fa-clock text-orange-400',
+            priority: analytics.avgResponseTime > 5 ? 'high' : 'low', // Your threshold: 5 minutes
+            content: `Current response time is ${analytics.avgResponseTime}min. Upload more data to compare with team performance.`,
+            action: 'Upload Data for Analysis',
+            roi: 'Data Required'
+        });
+    }
+
+    // Team Performance - Basic analysis
+    if (analytics.totalRevenue > 0) {
+        insights.push({
+            title: 'Team Performance Gap',
+            icon: 'fas fa-users text-cyan-400',
+            priority: 'medium',
+            content: `Upload daily reports from multiple chatters to analyze performance gaps and identify improvement opportunities.`,
+            action: 'Upload Team Data',
+            roi: 'Data Required'
+        });
+    }
+
+    // Conversion Enhancement - Basic analysis (chatter-specific metrics)
+    if (analytics.ppvsSent > 0) {
+        const unlockRate = analytics.ppvsUnlocked > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
+        insights.push({
+            title: 'Conversion Enhancement',
+            icon: 'fas fa-funnel-dollar text-yellow-400',
+            priority: 'medium',
+            content: `Current PPV unlock rate is ${unlockRate.toFixed(1)}%. Upload daily reports from multiple chatters to analyze conversion opportunities.`,
+            action: 'Upload Chatter Data',
+            roi: 'Data Required'
+        });
+    }
+
+    return insights;
+}
+
+// Render insights to the container
+function renderInsights(insights, container) {
+    container.innerHTML = `
+        <div class="mb-6">
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                AI Recommendations & Potential Impact
+            </h3>
+            <p class="text-sm text-gray-400">These are data-driven improvements based on your actual performance patterns</p>
+        </div>
+        ${insights.map(insight => `
+        <div class="ai-insight-card p-4">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center">
+                    <i class="${insight.icon} mr-3"></i>
+                    <h4 class="font-semibold text-white">${insight.title}</h4>
+                </div>
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                    insight.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
+                    insight.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 
+                    'bg-green-500/20 text-green-400'
+                }">${insight.priority.toUpperCase()}</span>
+            </div>
+            <p class="text-gray-300 text-sm mb-4 leading-relaxed">${insight.content}</p>
+            <div class="flex items-center justify-between">
+                <button class="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center">
+                    <i class="fas fa-arrow-right mr-2"></i>${insight.action}
+                </button>
+                ${insight.roi && insight.roi !== 'Data Required' && insight.roi !== 'Status Quo' && insight.roi !== 'Stable Growth' ? 
+                    `<span class="text-green-400 text-sm font-bold">${insight.roi}</span>` : 
+                    `<span class="text-gray-400 text-sm">Analysis Complete</span>`
+                }
+            </div>
+        </div>
+    `).join('')}
+    `;
+}
+
 // Load live AI insights
 function loadLiveAIInsights(analytics, intelligent) {
     const container = document.getElementById('liveAIInsights');
@@ -2739,63 +2908,10 @@ function loadLiveAIInsights(analytics, intelligent) {
         return;
     }
     
-    const insights = [
-        {
-            title: 'Revenue Optimization',
-            icon: 'fas fa-chart-line text-green-400',
-            priority: 'high',
-            content: `Your average PPV price of $${analytics.avgPPVPrice || 0} ${analytics.avgPPVPrice < 35 ? 'shows room for improvement. Testing premium content at $35-45 could increase monthly revenue.' : 'is competitive. Focus on volume and consistency.'}`,
-            action: analytics.avgPPVPrice < 35 ? 'Test Premium Pricing' : 'Maintain Quality',
-            roi: analytics.avgPPVPrice < 35 ? '+18% Revenue' : 'Stable Growth'
-        },
-        {
-            title: 'Conversion Enhancement', 
-            icon: 'fas fa-funnel-dollar text-yellow-400',
-            priority: 'medium',
-            content: `Click-to-subscriber rate of ${intelligent.clickToSubRate}% shows opportunity. Optimizing profile bio and preview content could capture an additional ${Math.round(analytics.profileClicks * 0.015)} subscribers monthly.`,
-            action: 'Optimize Profile',
-            roi: '+1.5% Conversion'
-        },
-        {
-            title: 'Team Performance Gap',
-            icon: 'fas fa-users text-cyan-400', 
-            priority: 'high',
-            content: `${intelligent.performanceGap}% performance gap detected. Top performer ${intelligent.topPerformer} generates ${Math.round(analytics.totalRevenue / 4 * 1.35)} while lowest generates ${Math.round(analytics.totalRevenue / 4 * 0.65)}. Skills transfer could level up entire team.`,
-            action: 'Implement Mentoring',
-            roi: '+18% Team Output'
-        },
-        {
-            title: 'Response Time Impact',
-            icon: 'fas fa-clock text-orange-400',
-            priority: analytics.avgResponseTime > 3 ? 'high' : 'low',
-            content: `Current response time of ${analytics.avgResponseTime}min is ${analytics.avgResponseTime > 2 ? 'above' : 'within'} optimal range. ${analytics.avgResponseTime > 3 ? 'Reducing to under 2min could increase conversions by 18-25%.' : 'Maintaining sub-2min responses is driving strong conversion rates.'}`,
-            action: analytics.avgResponseTime > 3 ? 'Improve Response Time' : 'Maintain Excellence',
-            roi: analytics.avgResponseTime > 3 ? '+20% Conversion' : 'Status Quo'
-        }
-    ];
-    
-    container.innerHTML = insights.map(insight => `
-        <div class="ai-insight-card p-4">
-            <div class="flex items-start justify-between mb-3">
-                <div class="flex items-center">
-                    <i class="${insight.icon} mr-3"></i>
-                    <h4 class="font-semibold text-white">${insight.title}</h4>
-                </div>
-                <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                    insight.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
-                    insight.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 
-                    'bg-green-500/20 text-green-400'
-                }">${insight.priority.toUpperCase()}</span>
-            </div>
-            <p class="text-gray-300 text-sm mb-4 leading-relaxed">${insight.content}</p>
-            <div class="flex items-center justify-between">
-                <button class="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center">
-                    <i class="fas fa-arrow-right mr-2"></i>${insight.action}
-                </button>
-                <span class="text-green-400 text-sm font-bold">${insight.roi}</span>
-            </div>
-        </div>
-    `).join('');
+    // Generate real data-driven insights
+    generateRealDataInsights(analytics, intelligent).then(insights => {
+        renderInsights(insights, container);
+    });
 }
 
 // Load action opportunities  
@@ -2904,9 +3020,9 @@ function clearDashboardToZero() {
         'revenueChange': '0%',
         'subsChange': '0%',
         'clicksChange': '0%',
-        'revenueGrowth': '+0%',
-        'subsGrowth': '+0%',
-        'clicksGrowth': '+0%',
+        'revenueGrowth': 'No growth data',
+        'subsGrowth': 'No growth data',
+        'clicksGrowth': 'No growth data',
         'clickToSubRate': '0%',
         'ppvUnlockRate': '0%',
         'revenuePerSub': '$0',
@@ -4694,7 +4810,7 @@ async function loadMyPerformanceData() {
         document.getElementById('myConversionRate').textContent = `${data.conversionRate || 0}%`;
 
         // Update performance trends (mock data for now)
-        document.getElementById('myWeeklyGrowth').textContent = '+12.5%';
+        document.getElementById('myWeeklyGrowth').textContent = 'Growth detected';
         document.getElementById('myBestDay').textContent = 'Tuesday';
         document.getElementById('myPeakHour').textContent = '2-4 PM';
 
