@@ -549,7 +549,8 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       avgResponseTime: avgField(prevChatterData, 'avgResponseTime'),
       netRevenue: sumField(prevAccountData, 'netRevenue'),
       newSubs: sumField(prevAccountData, 'newSubs'),
-      profileClicks: sumField(prevAccountData, 'profileClicks')
+      profileClicks: sumField(prevAccountData, 'profileClicks'),
+      totalSubs: sumField(prevAccountData, 'totalSubs')
     };
     
     prevMetrics.unlockRate = prevMetrics.ppvsSent > 0 ? (prevMetrics.ppvsUnlocked / prevMetrics.ppvsSent * 100) : 0;
@@ -572,7 +573,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       messagesPerPPV: calcChange((analytics.messagesSent / analytics.ppvsSent), prevMetrics.messagesPerPPV),
       newSubs: calcChange(analytics.newSubs, prevMetrics.newSubs),
       profileClicks: calcChange(analytics.profileClicks, prevMetrics.profileClicks),
-      totalSubs: calcChange(analytics.totalSubs, prevMetrics.totalSubs || sumField(prevAccountData, 'totalSubs'))
+      totalSubs: calcChange(analytics.totalSubs, prevMetrics.totalSubs)
     };
 
     res.json(analytics);
