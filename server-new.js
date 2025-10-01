@@ -1936,7 +1936,7 @@ async function generateAIRecommendations(analytics, chatters, interval) {
         
         if (potentialIncreasePercent > 5) {
           recommendations.push({
-            description: `${lowPriceChatters.join(', ')} are pricing PPVs below team average ($${avgPrice.toFixed(2)}). Based on team performance data, optimizing pricing could increase revenue.`,
+            description: `${lowPriceChatters.join(', ')} are pricing PPVs below team average ($${avgPrice.toFixed(2)}). Based on team performance data, increasing PPV prices could increase revenue.`,
             expectedImpact: `Revenue optimization opportunity identified ($${Math.round(totalPotentialIncrease)} monthly potential)`,
             category: 'pricing_optimization',
             priority: 'high',
@@ -2004,7 +2004,7 @@ async function generateAIRecommendations(analytics, chatters, interval) {
             const potentialMonthlyIncrease = slowRevenue * slowReports * potentialIncrease / 100;
             
             recommendations.push({
-              description: `Fast responders (${groupAverages.fast.avgResponseTime.toFixed(1)}min) generate $${fastRevenue.toFixed(0)} avg revenue vs slow responders (${groupAverages.slow.avgResponseTime.toFixed(1)}min) at $${slowRevenue.toFixed(0)}. Based on your data, improving response times to under 5 minutes could boost performance.`,
+              description: `Fast responders (${groupAverages.fast.avgResponseTime.toFixed(1)}min) generate $${fastRevenue.toFixed(0)} avg daily revenue vs slow responders (${groupAverages.slow.avgResponseTime.toFixed(1)}min) at $${slowRevenue.toFixed(0)}. Based on your data, improving response times to under 5 minutes could boost performance.`,
               expectedImpact: `Response time optimization opportunity identified`,
               category: 'efficiency',
               priority: 'high',
@@ -2540,7 +2540,7 @@ function analyzeChatterConversions(dailyReports) {
       
       const metrics = chatterMetrics[chatterName];
       metrics.totalPPVsSent += report.ppvSales?.length || 0;
-      metrics.totalPPVsUnlocked += report.ppvSales?.length || 0; // Assume sent = unlocked for now
+      // Note: We don't have real unlock data, so we can't calculate unlock rates
       metrics.totalMessagesSent += report.fansChatted * 15 || 0; // Estimate messages per fan
       metrics.totalRevenue += (report.totalPPVRevenue || 0) + (report.totalTipRevenue || 0);
       metrics.totalFansChatted += report.fansChatted || 0;
@@ -2548,41 +2548,17 @@ function analyzeChatterConversions(dailyReports) {
     }
   });
 
-  // Calculate conversion rates per chatter
+  // Calculate conversion rates per chatter (only for metrics we have real data for)
   Object.keys(chatterMetrics).forEach(chatter => {
     const data = chatterMetrics[chatter];
-    data.ppvUnlockRate = data.totalPPVsSent > 0 ? (data.totalPPVsUnlocked / data.totalPPVsSent * 100) : 0;
+    // Note: We don't have real unlock data, so we can't calculate unlock rates
     data.messageToSaleRate = data.totalMessagesSent > 0 ? (data.totalRevenue / data.totalMessagesSent) : 0;
     data.revenuePerFan = data.totalFansChatted > 0 ? (data.totalRevenue / data.totalFansChatted) : 0;
     data.avgRevenuePerDay = data.days > 0 ? (data.totalRevenue / data.days) : 0;
   });
 
-  // Find conversion opportunities
-  const unlockRates = Object.values(chatterMetrics).map(m => m.ppvUnlockRate).filter(r => r > 0);
+  // Find conversion opportunities (only for metrics we have real data for)
   const messageToSaleRates = Object.values(chatterMetrics).map(m => m.messageToSaleRate).filter(r => r > 0);
-  
-  if (unlockRates.length > 1) {
-    const avgUnlockRate = unlockRates.reduce((sum, rate) => sum + rate, 0) / unlockRates.length;
-    const lowUnlockChatters = Object.keys(chatterMetrics).filter(chatter => 
-      chatterMetrics[chatter].ppvUnlockRate < avgUnlockRate * 0.8 && chatterMetrics[chatter].ppvUnlockRate > 0
-    );
-    
-    if (lowUnlockChatters.length > 0) {
-      const potentialIncrease = calculateUnlockRateImprovement(chatterMetrics, lowUnlockChatters, avgUnlockRate);
-      
-      return {
-        hasOpportunities: true,
-        description: `${lowUnlockChatters.join(', ')} have PPV unlock rates below team average (${avgUnlockRate.toFixed(1)}%). Based on team performance data, improving unlock rates could increase revenue.`,
-        expectedImpact: `Revenue optimization opportunity identified`,
-        priority: 'high',
-        data: {
-          lowUnlockChatters,
-          teamAvgUnlockRate: avgUnlockRate.toFixed(1),
-          potentialIncrease: potentialIncrease.toFixed(1)
-        }
-      };
-    }
-  }
 
   // Check message-to-sale conversion opportunities
   if (messageToSaleRates.length > 1) {
@@ -2611,29 +2587,7 @@ function analyzeChatterConversions(dailyReports) {
   return { hasOpportunities: false };
 }
 
-// Calculate potential improvement from better PPV unlock rates
-function calculateUnlockRateImprovement(chatterMetrics, lowUnlockChatters, teamAvgUnlockRate) {
-  let totalPotentialIncrease = 0;
-  let totalCurrentRevenue = 0;
-  
-  lowUnlockChatters.forEach(chatter => {
-    const data = chatterMetrics[chatter];
-    const currentUnlockRate = data.ppvUnlockRate;
-    const targetUnlockRate = teamAvgUnlockRate * 0.9; // Conservative 90% of team average
-    
-    if (currentUnlockRate > 0) {
-      const unlockRateIncrease = (targetUnlockRate - currentUnlockRate) / currentUnlockRate;
-      // Assume 80% of potential unlock rate improvement translates to revenue
-      const potentialRevenue = data.totalRevenue * (1 + unlockRateIncrease * 0.8);
-      const potentialIncrease = potentialRevenue - data.totalRevenue;
-      
-      totalPotentialIncrease += potentialIncrease;
-      totalCurrentRevenue += data.totalRevenue;
-    }
-  });
-  
-  return totalCurrentRevenue > 0 ? (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
-}
+// Note: Removed calculateUnlockRateImprovement function since we don't have real unlock rate data
 
 // Calculate potential improvement from better message-to-sale conversion
 function calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatters, teamAvgMessageToSale) {
