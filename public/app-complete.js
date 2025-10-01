@@ -1834,6 +1834,9 @@ async function loadAnalyticsData() {
 }
 
 function updateAnalyticsPageData(data) {
+    console.log('Analytics page data received:', data);
+    console.log('Analytics changes object:', data.changes);
+    
     const changes = data.changes || {};
     
     // Update core metrics from real data with change indicators
@@ -2934,12 +2937,17 @@ function forceClearSpecificMetrics() {
 }
 
 function updateDashboardMetrics(data) {
+    console.log('Dashboard data received:', data);
+    console.log('Changes object:', data.changes);
+    
     const changes = data.changes || {};
     
     // Update metrics with change indicators
     const revenueEl = document.getElementById('totalRevenue');
     if (revenueEl) {
-        revenueEl.innerHTML = `$${data.totalRevenue.toLocaleString()}${renderChangeIndicator(changes.totalRevenue)}`;
+        const changeHTML = renderChangeIndicator(changes.totalRevenue);
+        console.log('Revenue change HTML:', changeHTML);
+        revenueEl.innerHTML = `$${data.totalRevenue.toLocaleString()}${changeHTML}`;
     }
     
     const subsEl = document.getElementById('totalSubs');
