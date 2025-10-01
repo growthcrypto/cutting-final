@@ -821,8 +821,13 @@ function updateUsersTable(users) {
 
 async function loadDashboardData() {
     try {
+        const url = `/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`;
+        console.log('Loading dashboard with URL:', url);
+        console.log('Current interval:', currentTimeInterval);
+        console.log('Custom date range:', customDateRange);
+        
         // Fetch real data from API
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`, {
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Cache-Control': 'no-cache'
