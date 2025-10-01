@@ -504,20 +504,22 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 
     const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
     
-    // Add metrics from chatter performance data
+    // Add metrics from chatter performance data (only count non-null values)
     const chatterPPVsSent = chatterPerformance.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
     const chatterPPVsUnlocked = chatterPerformance.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
     const chatterMessagesSent = chatterPerformance.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
     const chatterFansChatted = chatterPerformance.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
     const totalPPVsUnlocked = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0); // Assume sent = unlocked for now
     
-    // Calculate response time from both sources
-    const dailyReportsResponseTime = dailyReports.length > 0 
-      ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
+    // Calculate response time from both sources (only count non-null values)
+    const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
+    const dailyReportsResponseTime = dailyReportsWithResponseTime.length > 0 
+      ? dailyReportsWithResponseTime.reduce((sum, report) => sum + report.avgResponseTime, 0) / dailyReportsWithResponseTime.length 
       : 0;
     
-    const chatterPerformanceResponseTime = chatterPerformance.length > 0
-      ? chatterPerformance.reduce((sum, data) => sum + (data.avgResponseTime || 0), 0) / chatterPerformance.length
+    const chatterPerformanceWithResponseTime = chatterPerformance.filter(data => data.avgResponseTime != null && data.avgResponseTime > 0);
+    const chatterPerformanceResponseTime = chatterPerformanceWithResponseTime.length > 0
+      ? chatterPerformanceWithResponseTime.reduce((sum, data) => sum + data.avgResponseTime, 0) / chatterPerformanceWithResponseTime.length
       : 0;
     
     // Use response time from either source, preferring daily reports if available
@@ -693,18 +695,23 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       return res.status(400).json({ error: 'No active creator account found' });
     }
     
-    const chatterData = new ChatterPerformance({
+    // Create chatter data object with only provided fields
+    const chatterDataObj = {
       chatterName: req.body.chatter,
       creatorAccount: creatorAccount._id,
       weekStartDate: new Date(req.body.startDate),
-      weekEndDate: new Date(req.body.endDate),
-      messagesSent: req.body.messagesSent || 0,
-      ppvsSent: req.body.ppvsSent || 0,
-      ppvsUnlocked: req.body.ppvsUnlocked || 0,
-      fansChattedWith: req.body.fansChatted || 0,
-      avgResponseTime: req.body.avgResponseTime || 0,
-      netSales: req.body.netSales || 0
-    });
+      weekEndDate: new Date(req.body.endDate)
+    };
+
+    // Only add fields that were provided (not undefined)
+    if (req.body.messagesSent !== undefined) chatterDataObj.messagesSent = req.body.messagesSent;
+    if (req.body.ppvsSent !== undefined) chatterDataObj.ppvsSent = req.body.ppvsSent;
+    if (req.body.ppvsUnlocked !== undefined) chatterDataObj.ppvsUnlocked = req.body.ppvsUnlocked;
+    if (req.body.fansChatted !== undefined) chatterDataObj.fansChattedWith = req.body.fansChatted;
+    if (req.body.avgResponseTime !== undefined) chatterDataObj.avgResponseTime = req.body.avgResponseTime;
+    if (req.body.netSales !== undefined) chatterDataObj.netSales = req.body.netSales;
+
+    const chatterData = new ChatterPerformance(chatterDataObj);
     
     console.log('About to save chatter data:', chatterData);
     await chatterData.save();
@@ -1081,8 +1088,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }, 0);
 
       const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
-      const avgResponseTime = dailyReports.length > 0 
-        ? dailyReports.reduce((sum, report) => sum + (report.avgResponseTime || 0), 0) / dailyReports.length 
+      // Calculate avg response time only from reports that have response time data
+      const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
+      const avgResponseTime = dailyReportsWithResponseTime.length > 0 
+        ? dailyReportsWithResponseTime.reduce((sum, report) => sum + report.avgResponseTime, 0) / dailyReportsWithResponseTime.length 
         : 0;
 
       const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
@@ -1161,8 +1170,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
-      const avgResponseTime = chatterData.length > 0 
-        ? chatterData.reduce((sum, data) => sum + (data.avgResponseTime || 0), 0) / chatterData.length 
+      // Calculate avg response time only from records that have response time data
+      const chatterDataWithResponseTime = chatterData.filter(data => data.avgResponseTime != null && data.avgResponseTime > 0);
+      const avgResponseTime = chatterDataWithResponseTime.length > 0 
+        ? chatterDataWithResponseTime.reduce((sum, data) => sum + data.avgResponseTime, 0) / chatterDataWithResponseTime.length 
         : 0;
 
       const messagesSent = chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0);

@@ -4684,18 +4684,28 @@ async function handleChatterDataSubmit(event) {
     const chatterSelect = document.getElementById('chatterDataChatter');
     const selectedChatterText = chatterSelect.options[chatterSelect.selectedIndex].text;
     
+    // Get form values and only include non-empty fields
+    const messagesSentValue = document.getElementById('chatterMessagesSent').value;
+    const ppvsSentValue = document.getElementById('chatterPPVsSent').value;
+    const ppvsUnlockedValue = document.getElementById('chatterPPVsUnlocked').value;
+    const fansChattedValue = document.getElementById('chatterFansChatted').value;
+    const avgResponseTimeValue = document.getElementById('chatterAvgResponseTime').value;
+    const netSalesValue = document.getElementById('chatterNetSales').value;
+
     const formData = {
         startDate: document.getElementById('chatterDataStartDate').value,
         endDate: document.getElementById('chatterDataEndDate').value,
         chatter: selectedChatterText, // Use the name, not the ID!
-        messagesSent: parseInt(document.getElementById('chatterMessagesSent').value) || 0,
-        ppvsSent: parseInt(document.getElementById('chatterPPVsSent').value) || 0,
-        ppvsUnlocked: parseInt(document.getElementById('chatterPPVsUnlocked').value) || 0,
-        fansChatted: parseInt(document.getElementById('chatterFansChatted').value) || 0,
-        avgResponseTime: parseFloat(document.getElementById('chatterAvgResponseTime').value) || 0,
-        netSales: parseFloat(document.getElementById('chatterNetSales').value) || 0,
         dataType: 'chatter'
     };
+
+    // Only include fields that have values (not empty)
+    if (messagesSentValue) formData.messagesSent = parseInt(messagesSentValue);
+    if (ppvsSentValue) formData.ppvsSent = parseInt(ppvsSentValue);
+    if (ppvsUnlockedValue) formData.ppvsUnlocked = parseInt(ppvsUnlockedValue);
+    if (fansChattedValue) formData.fansChatted = parseInt(fansChattedValue);
+    if (avgResponseTimeValue) formData.avgResponseTime = parseFloat(avgResponseTimeValue);
+    if (netSalesValue) formData.netSales = parseFloat(netSalesValue);
 
     if (!formData.startDate || !formData.endDate || !formData.chatter || formData.chatter === 'Select Chatter...') {
         showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
