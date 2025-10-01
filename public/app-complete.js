@@ -2983,21 +2983,52 @@ function updateDashboardMetrics(data) {
     if (unlockRateEl) {
         unlockRateEl.innerHTML = `${unlockRate}% unlock rate${renderChangeIndicator(changes.unlockRate)}`;
     }
+    
+    // Update ppvUnlockRate (separate element)
+    const ppvUnlockRateEl = document.getElementById('ppvUnlockRate');
+    if (ppvUnlockRateEl) {
+        ppvUnlockRateEl.innerHTML = `${unlockRate}%${renderChangeIndicator(changes.unlockRate)}`;
+    }
+    
+    // Update messagesPerPPV
+    const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : '0';
+    const messagesPerPPVEl = document.getElementById('messagesPerPPV');
+    if (messagesPerPPVEl) {
+        messagesPerPPVEl.innerHTML = `${messagesPerPPV}${renderChangeIndicator(changes.messagesPerPPV)}`;
+    }
+    
+    // Update conversion rate
+    const conversionRateEl = document.getElementById('conversionRate');
+    if (conversionRateEl) {
+        conversionRateEl.innerHTML = `${data.conversionRate}%${renderChangeIndicator(changes.conversionRate)}`;
+    }
+    
+    // Update net revenue
+    const netRevenueEl = document.getElementById('netRevenue');
+    if (netRevenueEl) {
+        netRevenueEl.innerHTML = `$${data.netRevenue.toLocaleString()}${renderChangeIndicator(changes.netRevenue)}`;
+    }
+    
+    // Update fans chatted
+    const fansChattedEl = document.getElementById('fansChatted');
+    if (fansChattedEl) {
+        fansChattedEl.innerHTML = `${data.fansChatted.toLocaleString()}${renderChangeIndicator(changes.fansChatted)}`;
+    }
 
     // Update change indicators in separate elements (backward compatibility)
     const revenueChangeEl = document.getElementById('revenueChange');
     if (revenueChangeEl) {
-        revenueChangeEl.innerHTML = renderChangeIndicator(changes.totalRevenue) || '0%';
+        revenueChangeEl.innerHTML = renderChangeIndicator(changes.totalRevenue) || '';
     }
     
     const subsChangeEl = document.getElementById('subsChange');
     if (subsChangeEl) {
-        subsChangeEl.innerHTML = renderChangeIndicator(changes.totalSubs) || '0%';
+        subsChangeEl.innerHTML = renderChangeIndicator(changes.totalSubs) || '';
     }
     
     const clicksChangeEl = document.getElementById('clicksChange');
     if (clicksChangeEl) {
-        clicksChangeEl.innerHTML = renderChangeIndicator(changes.profileClicks) || '0%';
+        clicksChangeEl.innerHTML = renderChangeIndicator(changes.profileClicks) || '';
     }
 }
 
@@ -4829,12 +4860,12 @@ function showError(message) {
 
 // Helper: Render change indicator (green/red %)
 function renderChangeIndicator(change, reverseColors = false) {
-    console.log('renderChangeIndicator called with:', change, 'reverseColors:', reverseColors);
-    
-    if (!change || change === '0' || change === '+0.0' || change === '-0.0' || change === '0.0') return '';
+    // Return empty if no change data or if change is 0
+    if (!change || change === null || change === undefined) return '';
+    if (change === '0' || change === '+0' || change === '-0' || change === '0.0' || change === '+0.0' || change === '-0.0') return '';
     
     const numChange = parseFloat(change);
-    if (isNaN(numChange) || numChange === 0) return '';
+    if (isNaN(numChange) || numChange === 0 || Math.abs(numChange) < 0.1) return '';
     
     const isPositive = reverseColors ? numChange < 0 : numChange > 0;
     const color = isPositive ? 'green' : 'red';
