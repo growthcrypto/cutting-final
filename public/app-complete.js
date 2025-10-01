@@ -16,6 +16,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load employees from database
 async function loadEmployees() {
     console.log('Loading employees...', authToken ? 'Token available' : 'No token');
+    
+    // Wait for elements to be available
+    const waitForElement = (id) => {
+        return new Promise((resolve) => {
+            const checkElement = () => {
+                const element = document.getElementById(id);
+                if (element) {
+                    resolve(element);
+                } else {
+                    setTimeout(checkElement, 100);
+                }
+            };
+            checkElement();
+        });
+    };
+    
     try {
         const response = await fetch('/api/chatters', {
             headers: {
@@ -29,6 +45,10 @@ async function loadEmployees() {
             const chatters = await response.json();
             console.log('Loaded chatters:', chatters);
             const activeChatters = chatters.filter(chatter => chatter.isActive);
+            
+            // Wait for elements to be available before updating
+            await waitForElement('chatterDataChatter');
+            await waitForElement('messagesChatter');
             
             // Update both dropdowns
             updateEmployeeDropdown('chatterDataChatter', activeChatters);
