@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAuthStatus();
     setupEventListeners();
     setDefaultDate();
-    loadEmployees();
+    // loadEmployees() will be called after authentication in checkAuthStatus()
 });
 
 // Load employees from database
@@ -60,8 +60,8 @@ function updateEmployeeDropdown(selectId, employees) {
     // Add employee options
     employees.forEach(employee => {
         const option = document.createElement('option');
-        option.value = employee._id || employee.name.toLowerCase().replace(' ', '_');
-        option.textContent = employee.name;
+        option.value = employee._id;
+        option.textContent = employee.chatterName || employee.username;
         select.appendChild(option);
     });
 }
@@ -74,6 +74,8 @@ function checkAuthStatus() {
         authToken = token;
         currentUser = JSON.parse(user);
         showMainApp();
+        // Load employees after authentication
+        loadEmployees();
     } else {
         showAuthScreen();
     }
