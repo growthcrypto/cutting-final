@@ -536,7 +536,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const sumField = (data, field) => data.reduce((sum, item) => sum + (item[field] || 0), 0);
     const avgField = (data, field) => data.length > 0 ? sumField(data, field) / data.length : 0;
     const calcChange = (current, previous) => {
-      if (!previous || previous === 0) return current > 0 ? '+100' : '0';
+      if (!previous || previous === 0) {
+        // If no previous data, don't show change
+        return null;
+      }
       const change = ((current - previous) / previous * 100).toFixed(1);
       return change > 0 ? `+${change}` : change;
     };
