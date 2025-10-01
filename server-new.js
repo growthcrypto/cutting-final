@@ -419,7 +419,29 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 
     // Get data from all sources with proper date filtering
     const dailyReports = await DailyChatterReport.find(dateQuery);
-    const ofAccountData = await AccountData.find(dateQuery);
+    
+    // AccountData uses weekStartDate/weekEndDate, not date
+    let accountDataQuery = {};
+    if (startDate && endDate) {
+      accountDataQuery = {
+        $or: [
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
+          { weekStartDate: { $gte: start, $lte: end } },
+          { weekEndDate: { $gte: start, $lte: end } }
+        ]
+      };
+    } else {
+      const wideStart = new Date();
+      wideStart.setDate(wideStart.getDate() - 30);
+      accountDataQuery = {
+        $or: [
+          { weekStartDate: { $lte: end }, weekEndDate: { $gte: wideStart } },
+          { weekStartDate: { $gte: wideStart, $lte: end } },
+          { weekEndDate: { $gte: wideStart, $lte: end } }
+        ]
+      };
+    }
+    const ofAccountData = await AccountData.find(accountDataQuery);
     
     // Get chatter performance data with proper date range matching
     let chatterPerformanceQuery = {};
