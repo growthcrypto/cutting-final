@@ -603,15 +603,36 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 // Submit OF Account data
 app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
+    console.log('OF Account data submission:', req.body);
+    
+    // Find the creator account
+    const creatorAccount = await CreatorAccount.findOne({ 
+      $or: [
+        { _id: req.body.creator },
+        { name: req.body.creator }
+      ]
+    });
+    
+    if (!creatorAccount) {
+      return res.status(400).json({ error: 'Creator account not found' });
+    }
+    
     const accountData = new AccountData({
-      ...req.body,
-      submittedBy: req.user.id,
-      submittedAt: new Date()
+      creatorAccount: creatorAccount._id,
+      weekStartDate: new Date(req.body.startDate),
+      weekEndDate: new Date(req.body.endDate),
+      netRevenue: req.body.netRevenue || 0,
+      totalSubs: req.body.totalSubs || 0,
+      newSubs: req.body.newSubs || 0,
+      profileClicks: req.body.profileClicks || 0,
+      recurringRevenue: req.body.recurringRevenue || 0
     });
     
     await accountData.save();
+    console.log('OF Account data saved successfully:', accountData._id);
     res.json({ message: 'OF Account data saved successfully', data: accountData });
   } catch (error) {
+    console.error('OF Account data submission error:', error);
     res.status(500).json({ error: error.message });
   }
 });
