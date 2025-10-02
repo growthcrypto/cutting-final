@@ -4204,8 +4204,8 @@ function createGuidelinesSection() {
                                   placeholder="Describe the guideline in detail..."></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">Priority (1-10)</label>
-                        <input type="number" id="guidelinePriority" min="1" max="10" value="5" required
+                        <label class="block text-sm font-medium mb-2">Priority (1-5)</label>
+                        <input type="number" id="guidelinePriority" min="1" max="5" value="3" required
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
                     <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
@@ -4561,7 +4561,7 @@ async function handleAddGuideline(event) {
         if (response.ok) {
             showNotification('Guideline added successfully!', 'success');
             document.getElementById('addGuidelineForm').reset();
-            document.getElementById('guidelinePriority').value = '5';
+            document.getElementById('guidelinePriority').value = '3';
             loadGuidelines();
         } else {
             showError(result.error || 'Failed to add guideline');
