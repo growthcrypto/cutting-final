@@ -40,9 +40,10 @@ if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
-  console.log('✅ OpenAI configured');
+  console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '...');
 } else {
   console.warn('⚠️  OPENAI_API_KEY not set - AI analysis will be limited');
+  console.log('Environment check - OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
   // Create a mock openai object to prevent errors
   openai = {
     chat: {
@@ -1034,9 +1035,13 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
 // Helper function to analyze messages using AI
 async function analyzeMessages(messages, chatterName) {
   try {
+    console.log('🔍 Starting message analysis for:', chatterName);
+    console.log('🔍 OpenAI configured:', !!openai);
+    console.log('🔍 OpenAI API key exists:', !!process.env.OPENAI_API_KEY);
+    
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
-      console.log('OpenAI not configured, returning mock analysis');
+      console.log('❌ OpenAI not configured, returning mock analysis');
       return {
         overallScore: null,
         grammarScore: null,
@@ -1046,6 +1051,8 @@ async function analyzeMessages(messages, chatterName) {
         suggestions: ["Upload CSV with message data to get real analysis"]
       };
     }
+    
+    console.log('✅ OpenAI is configured, proceeding with AI analysis...');
 
     // Sample messages if there are too many (to avoid token limits)
     const sampleSize = Math.min(messages.length, 50);
