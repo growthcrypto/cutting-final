@@ -61,7 +61,7 @@ async function connectToMongoDB() {
       // Removed bufferCommands settings to use defaults
     });
     console.log('✅ Connected to MongoDB successfully!');
-    await initializeData();
+    // await initializeData(); // Commented out to prevent hanging
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
     console.log('⚠️  App will continue with limited functionality');

@@ -88,7 +88,7 @@ function updateEmployeeDropdown(selectId, employees) {
     // Add employee options
     employees.forEach(employee => {
         const option = document.createElement('option');
-        option.value = employee._id;
+        option.value = employee.chatterName || employee.username; // Use chatter name instead of ID
         option.textContent = employee.chatterName || employee.username;
         select.appendChild(option);
     });
