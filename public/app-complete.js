@@ -4939,31 +4939,45 @@ async function loadMyMessageAnalysis() {
         const authToken = localStorage.getItem('authToken');
         if (!authToken) return;
 
-        // Get message analysis data
-        const response = await fetch('/api/message-analysis', {
+        // Get message analysis data for the current user
+        const userResponse = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const user = await userResponse.json();
+        const chatterName = user.chatterName || user.username;
+        
+        const response = await fetch(`/api/message-analysis/${chatterName}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         
         if (response.ok) {
-            const analysis = await response.json();
+            const analyses = await response.json();
+            // Get the most recent analysis (first in the array since they're sorted by date desc)
+            const analysis = analyses && analyses.length > 0 ? analyses[0] : null;
             
-            document.getElementById('myMessageScore').textContent = analysis.overallScore ? `${analysis.overallScore}/100` : 'No Data';
-            document.getElementById('myGrammarScore').textContent = analysis.grammarScore ? `${analysis.grammarScore}/100` : 'No Data';
-            document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore ? `${analysis.guidelinesScore}/100` : 'No Data';
+            if (analysis) {
+                document.getElementById('myMessageScore').textContent = analysis.overallScore ? `${analysis.overallScore}/100` : 'No Data';
+                document.getElementById('myGrammarScore').textContent = analysis.grammarScore ? `${analysis.grammarScore}/100` : 'No Data';
+                document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore ? `${analysis.guidelinesScore}/100` : 'No Data';
+            } else {
+                document.getElementById('myMessageScore').textContent = 'No Data';
+                document.getElementById('myGrammarScore').textContent = 'No Data';
+                document.getElementById('myGuidelinesScore').textContent = 'No Data';
+            }
 
             // Update strengths and weaknesses
             const strengthsDiv = document.getElementById('myMessageStrengths');
             const weaknessesDiv = document.getElementById('myMessageWeaknesses');
 
-            if (analysis.strengths && analysis.strengths.length > 0) {
+            if (analysis && analysis.strengths && analysis.strengths.length > 0) {
                 strengthsDiv.innerHTML = analysis.strengths.map(strength => 
                     `<div class="text-green-300 text-sm">• ${strength}</div>`
                 ).join('');
             } else {
                 strengthsDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
             }
-
-            if (analysis.weaknesses && analysis.weaknesses.length > 0) {
+            
+            if (analysis && analysis.weaknesses && analysis.weaknesses.length > 0) {
                 weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => 
                     `<div class="text-red-300 text-sm">• ${weakness}</div>`
                 ).join('');

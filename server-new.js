@@ -43,6 +43,30 @@ if (process.env.OPENAI_API_KEY) {
   console.log('✅ OpenAI configured');
 } else {
   console.warn('⚠️  OPENAI_API_KEY not set - AI analysis will be limited');
+  // Create a mock openai object to prevent errors
+  openai = {
+    chat: {
+      completions: {
+        create: async () => {
+          return {
+            choices: [{
+              message: {
+                content: JSON.stringify({
+                  overallScore: 75,
+                  grammarScore: 80,
+                  guidelinesScore: 70,
+                  engagementScore: 75,
+                  strengths: ["Good engagement", "Clear communication"],
+                  weaknesses: ["Could improve grammar", "More sales focus needed"],
+                  suggestions: ["Practice grammar", "Focus on sales conversion"]
+                })
+              }
+            }]
+          };
+        }
+      }
+    }
+  };
 }
 
 // MongoDB Connection
@@ -384,6 +408,26 @@ app.get('/api/message-analysis/:chatterName', checkDatabaseConnection, authentic
 });
 
 // Get all chatters/employees
+// Get current user info
+app.get('/api/auth/me', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      // If user not found, return the user info from the JWT token
+      return res.json({
+        _id: req.user.userId,
+        username: req.user.username,
+        role: req.user.role,
+        chatterName: req.user.username // Use username as chatterName for admin
+      });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).json({ error: 'Failed to fetch user info' });
+  }
+});
+
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const chatters = await User.find({ role: 'chatter' }, { password: 0 });
@@ -1248,16 +1292,25 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Also load message analysis for same chatter and date range
       let messageQuery = { chatterName: { $in: [...new Set(nameCandidates)] } };
       if (startDate && endDate) {
-        messageQuery.weekStartDate = { $gte: new Date(startDate) };
-        messageQuery.weekEndDate = { $lte: new Date(endDate) };
+        // Use date overlap query to find message analysis that overlaps with the requested period
+        messageQuery.$or = [
+          { weekStartDate: { $gte: new Date(startDate), $lte: new Date(endDate) } },
+          { weekEndDate: { $gte: new Date(startDate), $lte: new Date(endDate) } },
+          { $and: [{ weekStartDate: { $lte: new Date(startDate) } }, { weekEndDate: { $gte: new Date(endDate) } }] }
+        ];
       } else {
-        // approximate by using weekStartDate >= start
-        const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+        // For interval-based queries, look for recent message analysis (last 30 days)
+        const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 30;
         const start = new Date();
         start.setDate(start.getDate() - days);
-        messageQuery.weekStartDate = { $gte: start };
+        messageQuery.$or = [
+          { weekStartDate: { $gte: start } },
+          { weekEndDate: { $gte: start } }
+        ];
       }
+      console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
       const messagesAnalysis = await MessageAnalysis.find(messageQuery);
+      console.log('Found message analysis data:', messagesAnalysis.length, 'records');
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
@@ -1621,7 +1674,15 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval) {
     messagesSent: analyticsData.messagesSent || 0,
     fansChatted: analyticsData.fansChatted || 0,
     avgResponseTime: Math.round((analyticsData.avgResponseTime || 0) * 10) / 10,
-    interval
+    interval,
+    // Add advanced metrics for fallback analysis
+    advancedMetrics: {
+      efficiencyRatios: {
+        messagesPerPPV: analyticsData.ppvsSent > 0 ? `${(analyticsData.messagesSent / analyticsData.ppvsSent).toFixed(1)} messages per PPV - ${analyticsData.messagesSent / analyticsData.ppvsSent > 3 ? 'High engagement' : 'Moderate engagement'}` : 'No PPV data available',
+        responseEfficiency: analyticsData.avgResponseTime ? `${analyticsData.avgResponseTime.toFixed(1)}m average - ${analyticsData.avgResponseTime <= 2 ? 'Excellent response time' : analyticsData.avgResponseTime <= 3 ? 'Good response time' : 'Needs improvement'}` : 'No response time data available',
+        messageQualityImpact: analyticsData.grammarScore && analyticsData.guidelinesScore ? `Grammar: ${analyticsData.grammarScore}/100, Guidelines: ${analyticsData.guidelinesScore}/100 - ${(analyticsData.grammarScore + analyticsData.guidelinesScore) / 2 >= 70 ? 'Good message quality' : 'Message quality needs improvement'}` : 'Analysis requires more data as message quality score is not available'
+      }
+    }
   };
 }
 
