@@ -1192,6 +1192,8 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
     const accountData = await AccountData.find({});
     const chatterPerformance = await ChatterPerformance.find({});
     const creatorAccounts = await CreatorAccount.find({});
+    const messageAnalysis = await MessageAnalysis.find({});
+    const aiAnalysis = await AIAnalysis.find({});
     
     res.json({
       message: 'Database data summary',
@@ -1199,7 +1201,9 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
         dailyReports: dailyReports.length,
         accountData: accountData.length,
         chatterPerformance: chatterPerformance.length,
-        creatorAccounts: creatorAccounts.length
+        creatorAccounts: creatorAccounts.length,
+        messageAnalysis: messageAnalysis.length,
+        aiAnalysis: aiAnalysis.length
       },
       recentData: {
         dailyReports: dailyReports.slice(-3).map(r => ({
