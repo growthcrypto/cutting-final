@@ -772,6 +772,7 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
 // Message upload endpoint
 app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upload.single('messages'), async (req, res) => {
   try {
+    console.log('🔥 MESSAGE UPLOAD ENDPOINT HIT!');
     console.log('Message upload received:');
     console.log('- Body:', req.body);
     console.log('- File:', req.file ? 'File received' : 'No file');
@@ -848,8 +849,15 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     const analysisResult = await analyzeMessages(messages, chatterName);
     
     // Save to MessageAnalysis collection
+    console.log('Creating MessageAnalysis object with:', {
+      chatterName: chatter,
+      weekStartDate: startDate,
+      weekEndDate: endDate,
+      totalMessages: messages.length
+    });
+    
     const messageAnalysis = new MessageAnalysis({
-      chatterName,
+      chatterName: chatter,
       weekStartDate: new Date(startDate),
       weekEndDate: new Date(endDate),
       totalMessages: messages.length,
@@ -861,11 +869,19 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       recommendations: analysisResult.suggestions || []
     });
     
+    console.log('MessageAnalysis object created:', messageAnalysis._id);
+    
     try {
+      console.log('Attempting to save message analysis:', {
+        chatterName: messageAnalysis.chatterName,
+        weekStartDate: messageAnalysis.weekStartDate,
+        weekEndDate: messageAnalysis.weekEndDate,
+        totalMessages: messageAnalysis.totalMessages
+      });
       await messageAnalysis.save();
-      console.log('Message analysis saved successfully:', messageAnalysis._id);
+      console.log('✅ Message analysis saved successfully:', messageAnalysis._id);
     } catch (saveError) {
-      console.error('Error saving message analysis:', saveError);
+      console.error('❌ Error saving message analysis:', saveError);
       throw saveError;
     }
     
