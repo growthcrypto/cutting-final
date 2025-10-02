@@ -1696,7 +1696,11 @@ function cleanAnalysisResponse(analysis) {
         return !item.includes('not calculable') && 
                !item.includes('lack of data') && 
                !item.includes('insufficient data') &&
-               !item.includes('cannot be calculated');
+               !item.includes('cannot be calculated') &&
+               !item.includes('REPLACE WITH ACTUAL') &&
+               !item.includes('calculated ratio with analysis') &&
+               !item.includes('calculated metric with benchmark') &&
+               !item.includes('pattern analysis with implications');
       }
       return true;
     });
@@ -1715,7 +1719,11 @@ function cleanAnalysisResponse(analysis) {
         if (obj[key].includes('not calculable') || 
             obj[key].includes('lack of data') || 
             obj[key].includes('insufficient data') ||
-            obj[key].includes('cannot be calculated')) {
+            obj[key].includes('cannot be calculated') ||
+            obj[key].includes('REPLACE WITH ACTUAL') ||
+            obj[key].includes('calculated ratio with analysis') ||
+            obj[key].includes('calculated metric with benchmark') ||
+            obj[key].includes('pattern analysis with implications')) {
           delete obj[key];
         }
       }
@@ -1840,14 +1848,14 @@ Respond in STRICT JSON with this exact shape:
   },
   "advancedMetrics": {
     "efficiencyRatios": {
-      "messagesPerDollar": "calculated ratio with analysis (only if revenue and message data available)",
-      "timeToConversion": "calculated metric with benchmark comparison (only if response time and conversion data available)",
-      "engagementVelocity": "calculated metric with trend analysis (only if engagement data available)"
+      "messagesPerDollar": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA",
+      "timeToConversion": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA", 
+      "engagementVelocity": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA"
     },
     "behavioralPatterns": {
-      "responseTimeDistribution": "pattern analysis with implications (only if response time data available)",
-      "conversionTriggers": "identified triggers with success rates (only if conversion data available)",
-      "engagementCycles": "pattern analysis with optimization opportunities (only if engagement data available)"
+      "responseTimeDistribution": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA",
+      "conversionTriggers": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA",
+      "engagementCycles": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA"
     },
     "competitiveAnalysis": {
       "benchmarkGaps": "specific gaps with quantified impact",
