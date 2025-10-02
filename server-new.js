@@ -1054,8 +1054,8 @@ async function analyzeMessages(messages, chatterName) {
     
     console.log('✅ OpenAI is configured, proceeding with AI analysis...');
 
-    // Sample messages if there are too many (to avoid token limits)
-    const sampleSize = Math.min(messages.length, 50);
+    // Sample messages if there are too many (to avoid token limits and costs)
+    const sampleSize = Math.min(messages.length, 20);
     const sampledMessages = messages
       .sort(() => Math.random() - 0.5)
       .slice(0, sampleSize);
@@ -1115,7 +1115,7 @@ Focus on: engagement quality, sales effectiveness, professionalism, grammar, cus
     
     console.log('🚀 Making OpenAI API call...');
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
@@ -1127,7 +1127,7 @@ Focus on: engagement quality, sales effectiveness, professionalism, grammar, cus
         }
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 500
     });
     console.log('✅ OpenAI API call completed');
     
