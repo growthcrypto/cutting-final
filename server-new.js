@@ -865,8 +865,9 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         .on('data', (row) => {
           if (firstRow) {
             csvColumns = Object.keys(row);
-            console.log('CSV columns found:', csvColumns);
-            console.log('First row data:', row);
+            console.log('🔍 CSV columns found:', csvColumns);
+            console.log('🔍 First row data:', row);
+            console.log('🔍 All column values:', Object.entries(row).map(([key, value]) => `"${key}": "${value}"`).join(', '));
             firstRow = false;
           }
           
@@ -880,8 +881,10 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           const ppvRevenue = row['Price']; // Price of PPV (0 if not a PPV)
           const ppvPurchased = row['Purchased']; // "yes" or "no"
           
-          console.log('Row data:', row);
-          console.log('Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
+          if (firstRow) {
+            console.log('🔍 Row data:', row);
+            console.log('🔍 Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
+          }
           
           if (messageText && messageText.trim() !== '') {
             // Strip HTML tags from the message
