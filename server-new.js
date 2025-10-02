@@ -727,7 +727,7 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       ]
     });
     
-    autoSavePerformanceSnapshot(req.body.chatter, req.body.startDate, req.body.endDate, chatterData, messageData);
+    await autoSavePerformanceSnapshot(req.body.chatter, req.body.startDate, req.body.endDate, chatterData, messageData);
     
     res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
@@ -2417,6 +2417,7 @@ app.post('/api/creators/update-names', authenticateToken, requireManager, async 
 // Auto-save performance snapshot when chatter data is uploaded
 async function autoSavePerformanceSnapshot(chatterName, weekStartDate, weekEndDate, chatterData, messageData) {
   try {
+    console.log(`📊 Creating performance snapshot for ${chatterName} (${weekStartDate} to ${weekEndDate})`);
     const metrics = {
       ppvsSent: chatterData.ppvsSent || 0,
       ppvsUnlocked: chatterData.ppvsUnlocked || 0,
