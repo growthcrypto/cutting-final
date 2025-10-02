@@ -971,6 +971,7 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     
     // Analyze messages using AI
     const analysisResult = await analyzeMessages(messages, chatterName);
+    console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
     
     // Save to MessageAnalysis collection
     console.log('Creating MessageAnalysis object with:', {
@@ -993,10 +994,27 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
       recommendations: analysisResult.suggestions || [],
-      // DETAILED BREAKDOWNS
-      grammarBreakdown: analysisResult.grammarBreakdown || null,
-      guidelinesBreakdown: analysisResult.guidelinesBreakdown || null,
-      overallBreakdown: analysisResult.overallBreakdown || null
+      // DETAILED BREAKDOWNS (with fallbacks if AI doesn't provide them)
+      grammarBreakdown: analysisResult.grammarBreakdown || {
+        spellingErrors: "Analysis pending - upload more data for detailed breakdown",
+        grammarIssues: "Analysis pending - upload more data for detailed breakdown", 
+        punctuationProblems: "Analysis pending - upload more data for detailed breakdown",
+        informalLanguage: "Analysis pending - upload more data for detailed breakdown",
+        scoreExplanation: `Grammar score of ${analysisResult.grammarScore || 0}/100 - detailed breakdown requires more data`
+      },
+      guidelinesBreakdown: analysisResult.guidelinesBreakdown || {
+        salesEffectiveness: "Analysis pending - upload more data for detailed breakdown",
+        engagementQuality: "Analysis pending - upload more data for detailed breakdown",
+        captionQuality: "Analysis pending - upload more data for detailed breakdown", 
+        conversationFlow: "Analysis pending - upload more data for detailed breakdown",
+        scoreExplanation: `Guidelines score of ${analysisResult.guidelinesScore || 0}/100 - detailed breakdown requires more data`
+      },
+      overallBreakdown: analysisResult.overallBreakdown || {
+        messageClarity: "Analysis pending - upload more data for detailed breakdown",
+        emotionalImpact: "Analysis pending - upload more data for detailed breakdown",
+        conversionPotential: "Analysis pending - upload more data for detailed breakdown",
+        scoreExplanation: `Overall score of ${analysisResult.overallScore || 0}/100 - detailed breakdown requires more data`
+      }
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
