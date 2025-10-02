@@ -739,9 +739,12 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
 // Message upload endpoint
 app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upload.single('messages'), async (req, res) => {
   try {
-    console.log('📨 Message upload received:', req.body);
-    console.log('📁 File:', req.file);
-    console.log('🔐 Auth user:', req.user);
+    console.log('Message upload received:');
+    console.log('- Body:', req.body);
+    console.log('- File:', req.file ? 'File received' : 'No file');
+    console.log('- Chatter:', req.body.chatter);
+    console.log('- Start Date:', req.body.startDate);
+    console.log('- End Date:', req.body.endDate);
     
     if (!req.file) {
       console.log('❌ No file uploaded');
@@ -749,7 +752,6 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     }
     
     const { chatter, startDate, endDate } = req.body;
-    console.log('📋 Form data:', { chatter, startDate, endDate });
     
     if (!chatter) {
       console.log('❌ No chatter selected');

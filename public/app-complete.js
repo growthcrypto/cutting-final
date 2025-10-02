@@ -4744,6 +4744,12 @@ async function handleChatterDataSubmit(event) {
 }
 
 async function handleMessagesUpload(event) {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        showError('Please log in first');
+        return;
+    }
+    
     const file = document.getElementById('messagesFile').files[0];
     const chatter = document.getElementById('messagesChatter').value;
     const startDate = document.getElementById('messagesStartDate').value;
