@@ -1688,7 +1688,7 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
 function cleanAnalysisResponse(analysis) {
   const cleaned = JSON.parse(JSON.stringify(analysis)); // Deep clone
   
-  // Function to clean arrays
+  // Function to clean arrays - only remove bad items, keep empty arrays
   const cleanArray = (arr) => {
     if (!Array.isArray(arr)) return arr;
     return arr.filter(item => {
@@ -1706,7 +1706,7 @@ function cleanAnalysisResponse(analysis) {
     });
   };
   
-  // Function to clean objects recursively
+  // Function to clean objects recursively - preserve structure
   const cleanObject = (obj) => {
     if (!obj || typeof obj !== 'object') return obj;
     
@@ -1724,7 +1724,8 @@ function cleanAnalysisResponse(analysis) {
             obj[key].includes('calculated ratio with analysis') ||
             obj[key].includes('calculated metric with benchmark') ||
             obj[key].includes('pattern analysis with implications')) {
-          delete obj[key];
+          // Set to empty string instead of deleting
+          obj[key] = '';
         }
       }
     }
