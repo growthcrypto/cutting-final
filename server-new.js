@@ -365,7 +365,28 @@ app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const chatters = await User.find({ role: 'chatter' }, { password: 0 });
-    res.json(chatters);
+    
+    // If no chatters exist, create some test users
+    if (chatters.length === 0) {
+      console.log('No chatters found, creating test users...');
+      const testChatters = [
+        { username: 'Agile', email: 'agile@agency.com', role: 'chatter', chatterName: 'Agile', password: 'password123' },
+        { username: 'gypsy', email: 'gypsy@agency.com', role: 'chatter', chatterName: 'gypsy', password: 'password123' },
+        { username: 'John', email: 'john@agency.com', role: 'chatter', chatterName: 'John', password: 'password123' },
+        { username: 'ceejay', email: 'ceejay@agency.com', role: 'chatter', chatterName: 'ceejay', password: 'password123' }
+      ];
+      
+      for (const chatter of testChatters) {
+        const newUser = new User(chatter);
+        await newUser.save();
+      }
+      
+      console.log('Test chatters created successfully');
+      const updatedChatters = await User.find({ role: 'chatter' }, { password: 0 });
+      res.json(updatedChatters);
+    } else {
+      res.json(chatters);
+    }
   } catch (error) {
     console.error('Error fetching chatters:', error);
     res.status(500).json({ error: 'Failed to fetch chatters' });
@@ -783,7 +804,7 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           }
           
           // Try different possible column names for messages
-          const messageText = row.message_text || row.message || row.text || row.content || row.body;
+          const messageText = row.message_text || row.message || row.text || row.content || row.body || row['Creator Message'] || row['creator message'] || row['Message'];
           console.log('Row data:', row, 'Message text found:', messageText);
           if (messageText && messageText.trim() !== '') {
             // Strip HTML tags from the message
