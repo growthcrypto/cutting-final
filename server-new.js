@@ -1326,6 +1326,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('Found message analysis data:', messagesAnalysis.length, 'records');
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
+      const netSales = chatterData.reduce((sum, data) => sum + (data.netSales || 0), 0);
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
       // Calculate avg response time only from records that have response time data
@@ -1345,6 +1346,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
       analyticsData = {
         totalRevenue,
+        netSales,
         ppvsSent: totalPPVsSent,
         ppvsUnlocked: totalPPVsUnlocked,
         messagesSent,
