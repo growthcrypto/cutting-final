@@ -4744,6 +4744,8 @@ async function handleChatterDataSubmit(event) {
 }
 
 async function handleMessagesUpload(event) {
+    console.log('handleMessagesUpload called');
+    
     const authToken = localStorage.getItem('authToken');
     if (!authToken) {
         showError('Please log in first');
@@ -4754,6 +4756,8 @@ async function handleMessagesUpload(event) {
     const chatter = document.getElementById('messagesChatter').value;
     const startDate = document.getElementById('messagesStartDate').value;
     const endDate = document.getElementById('messagesEndDate').value;
+    
+    console.log('Form data:', { file: file?.name, chatter, startDate, endDate });
     
     if (!file) {
         showError('Please select a file first');
@@ -4784,6 +4788,7 @@ async function handleMessagesUpload(event) {
     showLoading(true);
 
     try {
+        console.log('Sending request to /api/upload/messages');
         const response = await fetch('/api/upload/messages', {
             method: 'POST',
             headers: {
@@ -4792,7 +4797,9 @@ async function handleMessagesUpload(event) {
             body: formData
         });
 
+        console.log('Response status:', response.status);
         const result = await response.json();
+        console.log('Response result:', result);
 
         if (response.ok) {
             showNotification('Message data uploaded successfully!', 'success');
