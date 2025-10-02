@@ -870,34 +870,71 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
             firstRow = false;
           }
           
-          // Extract all the fields you can provide
-          const messageText = row.message_text || row.message || row.text || row.content || row.body || row['Creator Message'] || row['creator message'] || row['Message'];
-          const fanUsername = row.fan_username || row.fanUsername || row.fan || row.username || row['Fan Username'];
-          const timestamp = row.timestamp || row.time || row.date_time || row['Timestamp'];
-          const date = row.date || row.message_date || row['Date'];
-          const replyTime = row.reply_time || row.replyTime || row.response_time || row['Reply Time'];
-          const creatorPage = row.creator_page || row.creatorPage || row.page || row.account || row['Creator Page'];
-          const isPPV = row.is_ppv || row.isPPV || row.ppv || row['Is PPV'];
-          const ppvRevenue = row.ppv_revenue || row.ppvRevenue || row.revenue || row['PPV Revenue'];
-          const ppvPurchased = row.ppv_purchased || row.ppvPurchased || row.purchased || row['PPV Purchased'];
+          // Extract all the fields with exact header names
+          const messageText = row['Creator Message'];
+          const fanUsername = row['Sent to'];
+          const timestamp = row['Sent time']; // Format: "13:52:43"
+          const date = row['Sent date']; // Format: "Sep 26, 2025"
+          const replyTime = row['Replay time']; // Format: "1m 2s"
+          const creatorPage = row['Creator']; // Format: "Iris FREE", "Lilla", "Arya PAID"
+          const ppvRevenue = row['Price']; // Price of PPV (0 if not a PPV)
+          const ppvPurchased = row['Purchased']; // "yes" or "no"
           
           console.log('Row data:', row);
-          console.log('Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, isPPV, ppvRevenue, ppvPurchased });
+          console.log('Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
           
           if (messageText && messageText.trim() !== '') {
             // Strip HTML tags from the message
             const cleanMessage = messageText.replace(/<[^>]*>/g, '').trim();
             if (cleanMessage) {
+              // Parse reply time from "1m 2s" format to minutes
+              const parseReplyTime = (timeStr) => {
+                if (!timeStr) return 0;
+                const match = timeStr.match(/(\d+)m\s*(\d+)s/);
+                if (match) {
+                  const minutes = parseInt(match[1]);
+                  const seconds = parseInt(match[2]);
+                  return minutes + (seconds / 60);
+                }
+                return 0;
+              };
+              
+              // Parse date from "Sep 26, 2025" format
+              const parseDate = (dateStr) => {
+                if (!dateStr) return new Date();
+                try {
+                  return new Date(dateStr);
+                } catch (e) {
+                  return new Date();
+                }
+              };
+              
+              // Parse timestamp from "13:52:43" format and combine with date
+              const parseTimestamp = (timeStr, dateStr) => {
+                if (!timeStr || !dateStr) return new Date();
+                try {
+                  const date = parseDate(dateStr);
+                  const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+                  date.setHours(hours, minutes, seconds, 0);
+                  return date;
+                } catch (e) {
+                  return new Date();
+                }
+              };
+              
+              // Determine if this is a PPV (has price > 0)
+              const isPPV = ppvRevenue && parseFloat(ppvRevenue) > 0;
+              
               messageRecords.push({
                 fanUsername: fanUsername || 'unknown',
                 messageText: cleanMessage,
-                timestamp: timestamp ? new Date(timestamp) : new Date(),
-                date: date ? new Date(date) : new Date(),
-                replyTime: replyTime ? parseFloat(replyTime) : 0,
+                timestamp: parseTimestamp(timestamp, date),
+                date: parseDate(date),
+                replyTime: parseReplyTime(replyTime),
                 creatorPage: creatorPage || 'unknown',
-                isPPV: isPPV === 'true' || isPPV === true || isPPV === '1',
+                isPPV: isPPV,
                 ppvRevenue: ppvRevenue ? parseFloat(ppvRevenue) : 0,
-                ppvPurchased: ppvPurchased === 'true' || ppvPurchased === true || ppvPurchased === '1'
+                ppvPurchased: ppvPurchased === 'yes' || ppvPurchased === 'Yes' || ppvPurchased === 'YES'
               });
             }
           }
