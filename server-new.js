@@ -361,6 +361,18 @@ app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager
   }
 });
 
+// Get message analysis for a specific chatter
+app.get('/api/message-analysis/:chatterName', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    const messageAnalyses = await MessageAnalysis.find({ chatterName }).sort({ weekEndDate: -1 });
+    res.json(messageAnalyses);
+  } catch (error) {
+    console.error('Error fetching message analysis:', error);
+    res.status(500).json({ error: 'Failed to fetch message analysis' });
+  }
+});
+
 // Get all chatters/employees
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
@@ -840,17 +852,22 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       chatterName,
       weekStartDate: new Date(startDate),
       weekEndDate: new Date(endDate),
-      messageCount: messages.length,
+      totalMessages: messages.length,
       overallScore: analysisResult.overallScore || 0,
       grammarScore: analysisResult.grammarScore || 0,
       guidelinesScore: analysisResult.guidelinesScore || 0,
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
-      suggestions: analysisResult.suggestions || []
+      recommendations: analysisResult.suggestions || []
     });
     
-    await messageAnalysis.save();
-    console.log('Message analysis saved successfully:', messageAnalysis._id);
+    try {
+      await messageAnalysis.save();
+      console.log('Message analysis saved successfully:', messageAnalysis._id);
+    } catch (saveError) {
+      console.error('Error saving message analysis:', saveError);
+      throw saveError;
+    }
     
     res.json({ 
       message: 'Messages analyzed and saved successfully',
