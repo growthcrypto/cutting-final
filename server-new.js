@@ -994,10 +994,10 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
       recommendations: analysisResult.suggestions || analysisResult.recommendations || [],
-      // DETAILED BREAKDOWNS - only save if AI provides them
-      grammarBreakdown: analysisResult.grammarBreakdown || null,
-      guidelinesBreakdown: analysisResult.guidelinesBreakdown || null,
-      overallBreakdown: analysisResult.overallBreakdown || null
+      // CHATTING STYLE ANALYSIS
+      chattingStyle: analysisResult.chattingStyle || null,
+      messagePatterns: analysisResult.messagePatterns || null,
+      engagementMetrics: analysisResult.engagementMetrics || null
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
@@ -1057,48 +1057,54 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Provide a comprehensive analysis in JSON format with:
-
-{
-  "overallScore": 85,
-  "grammarScore": 78,
-  "guidelinesScore": 82,
-  "strengths": ["Detailed analysis of what the chatter does well with specific examples from messages"],
-  "weaknesses": ["Detailed analysis of areas needing improvement with specific examples"],
-  "suggestions": ["Specific actionable recommendations based on the actual message analysis"],
-  "grammarBreakdown": {
-    "spellingErrors": "Detailed analysis of spelling issues found with specific examples",
-    "grammarIssues": "Detailed analysis of grammar problems with specific examples",
-    "punctuationProblems": "Detailed analysis of punctuation issues with specific examples",
-    "informalLanguage": "Detailed analysis of informal language usage with specific examples",
-    "scoreExplanation": "Comprehensive explanation of the grammar score with detailed reasoning"
-  },
-  "guidelinesBreakdown": {
-    "salesEffectiveness": "Detailed analysis of sales techniques with specific examples from messages",
-    "engagementQuality": "Detailed analysis of engagement strategies with specific examples",
-    "captionQuality": "Detailed analysis of PPV caption effectiveness with specific examples",
-    "conversationFlow": "Detailed analysis of conversation management with specific examples",
-    "scoreExplanation": "Comprehensive explanation of the guidelines score with detailed reasoning"
-  },
-  "overallBreakdown": {
-    "messageClarity": "Detailed analysis of message clarity with specific examples",
-    "emotionalImpact": "Detailed analysis of emotional connection with specific examples",
-    "conversionPotential": "Detailed analysis of conversion likelihood with specific examples",
-    "scoreExplanation": "Comprehensive explanation of the overall score with detailed reasoning"
-  }
-}
+Provide a detailed analysis in JSON format with:
+- overallScore (0-100): Overall message quality
+- grammarScore (0-100): Grammar and spelling correctness
+- guidelinesScore (0-100): Adherence to sales/engagement guidelines
+- strengths (array): Key strengths in messaging
+- weaknesses (array): Areas needing improvement
+- suggestions (array): Actionable improvement recommendations
 
 IMPORTANT CONTEXT:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
+- Fans cannot see the actual content until they buy it
+- Caption quality directly impacts PPV purchase rates
 - "Deleted user" messages are from different people who deleted their accounts
+- When analyzing guidelines about "captions", this refers to PPV message captions
+- Caption effectiveness is measured by PPV purchase rates
 
-ANALYSIS REQUIREMENTS:
-- Provide detailed, comprehensive analysis for each field
-- Include specific examples from the actual messages
-- Each breakdown should be 2-3 sentences with concrete examples
-- Focus on what the messages actually show, not generic statements
-- Be thorough and valuable in your analysis`;
+CHATTING STYLE ANALYSIS (CRITICAL):
+- chattingStyle: {
+  - directness: "very direct" | "moderately direct" | "subtle/indirect" | "very subtle"
+  - friendliness: "very friendly" | "moderately friendly" | "neutral" | "cold/distant"
+  - salesApproach: "aggressive" | "moderate" | "soft" | "very soft"
+  - personality: "dominant" | "submissive" | "playful" | "serious" | "flirty" | "conversational"
+  - emojiUsage: "heavy" | "moderate" | "light" | "minimal"
+  - messageLength: "very long" | "long" | "medium" | "short" | "very short"
+  - responsePattern: "immediate" | "thoughtful" | "delayed" | "inconsistent"
+}
+
+MESSAGE PATTERN ANALYSIS:
+- messagePatterns: {
+  - questionFrequency: "high" | "moderate" | "low" (questions per message)
+  - exclamationUsage: "high" | "moderate" | "low"
+  - capitalizationStyle: "proper" | "casual" | "all caps" | "no caps"
+  - punctuationStyle: "proper" | "casual" | "excessive" | "minimal"
+  - topicDiversity: "high" | "moderate" | "low" (variety of conversation topics)
+  - sexualContent: "explicit" | "moderate" | "subtle" | "minimal"
+  - personalSharing: "high" | "moderate" | "low" (sharing personal details)
+}
+
+ENGAGEMENT EFFECTIVENESS:
+- engagementMetrics: {
+  - conversationStarter: "excellent" | "good" | "average" | "poor"
+  - conversationMaintainer: "excellent" | "good" | "average" | "poor"
+  - salesConversation: "excellent" | "good" | "average" | "poor"
+  - fanRetention: "excellent" | "good" | "average" | "poor"
+}
+
+Focus on: engagement quality, sales effectiveness, professionalism, grammar, customer service, AND detailed style analysis.`;
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
