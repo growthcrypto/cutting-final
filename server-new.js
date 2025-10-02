@@ -1064,10 +1064,15 @@ IMPORTANT CONTEXT:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
 - Fans cannot see the actual content until they buy it
-- Caption quality directly impacts PPV purchase rates
 - "Deleted user" messages are from different people who deleted their accounts
 - When analyzing guidelines about "captions", this refers to PPV message captions
-- Caption effectiveness is measured by PPV purchase rates
+
+CRITICAL ANALYSIS RULES:
+- ONLY analyze metrics that have actual data available
+- DO NOT make assumptions about "generally known" relationships
+- DO NOT mention "higher quality messages can lead to higher conversion rates" unless you have specific data proving this
+- If you cannot determine a relationship from the actual data, state "Analysis requires more data" instead of making assumptions
+- Focus on what the data actually shows, not what might theoretically be true
 
 CHATTING STYLE ANALYSIS (CRITICAL):
 - chattingStyle: {
@@ -2169,7 +2174,7 @@ ANALYSIS GUIDELINES (use actual data, no fake benchmarks):
 
 CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
 1. MESSAGE VOLUME ANALYSIS: ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan. Is this optimal?
-2. MESSAGE QUALITY IMPACT: ${analyticsData.grammarScore}/100 grammar + ${analyticsData.guidelinesScore}/100 guidelines = ${analyticsData.overallScore}/100 overall. How does this quality correlate with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion?
+2. MESSAGE QUALITY IMPACT: ${analyticsData.grammarScore}/100 grammar + ${analyticsData.guidelinesScore}/100 guidelines = ${analyticsData.overallScore}/100 overall. ONLY analyze the correlation with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion if you have specific data showing this relationship. Do NOT make assumptions about "generally known" relationships.
 3. PPV EFFICIENCY ANALYSIS: ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} unlocked = ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate. What's driving this performance?
 4. REVENUE OPTIMIZATION: $${analyticsData.netSales} total revenue = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV, $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message. How can this be improved?
 5. MESSAGE-TO-CONVERSION ANALYSIS: ${analyticsData.messagesSent} messages generated ${analyticsData.ppvsUnlocked} PPV unlocks. What's the message effectiveness?
@@ -2199,7 +2204,7 @@ ADVANCED ANALYSIS FRAMEWORK:
 
 CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data with deep insights, predictions, and strategic recommendations.
 
-IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
+CRITICAL: Do NOT make assumptions about missing data or relationships. If a metric is null/undefined, do not mention it. Do NOT make statements like "higher quality messages can lead to higher conversion rates" unless you have specific data proving this relationship. Only analyze what the actual data shows. If you cannot determine a relationship from the data, state "Analysis requires more data" instead of making theoretical assumptions.
 
 CRITICAL: You MUST return ALL sections in the JSON response. Do not omit any sections.
 
