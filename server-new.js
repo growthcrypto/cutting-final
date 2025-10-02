@@ -99,7 +99,7 @@ connectToMongoDB();
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
-  console.log('🔐 Authentication check');
+  // Authentication check
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -113,7 +113,7 @@ const authenticateToken = (req, res, next) => {
       console.log('❌ Token verification failed:', err.message);
       return res.sendStatus(403);
     }
-    console.log('✅ Token verified for user:', user.username);
+    // Token verified
     req.user = user;
     next();
   });
@@ -145,14 +145,14 @@ const upload = multer({ storage: storage });
 
 // Database connection check middleware
 const checkDatabaseConnection = (req, res, next) => {
-  console.log('🔍 Database connection check - readyState:', mongoose.connection.readyState);
+  // Database connection check
   if (mongoose.connection.readyState !== 1) {
     console.log('❌ Database not ready');
     return res.status(503).json({ 
       error: 'Database connection not ready. Please try again in a moment.' 
     });
   }
-  console.log('✅ Database connection OK');
+  // Database connection OK
   next();
 };
 
@@ -826,13 +826,7 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
 // Message upload endpoint
 app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upload.single('messages'), async (req, res) => {
   try {
-    console.log('🔥 MESSAGE UPLOAD ENDPOINT HIT!');
-    console.log('Message upload received:');
-    console.log('- Body:', req.body);
-    console.log('- File:', req.file ? 'File received' : 'No file');
-    console.log('- Chatter:', req.body.chatter);
-    console.log('- Start Date:', req.body.startDate);
-    console.log('- End Date:', req.body.endDate);
+    console.log('🔥 MESSAGE UPLOAD:', req.body.chatter, req.body.startDate, 'to', req.body.endDate);
     
     if (!req.file) {
       console.log('❌ No file uploaded');
@@ -865,9 +859,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         .on('data', (row) => {
           if (firstRow) {
             csvColumns = Object.keys(row);
-            console.log('🔍 CSV columns found:', csvColumns);
-            console.log('🔍 First row data:', row);
-            console.log('🔍 All column values:', Object.entries(row).map(([key, value]) => `"${key}": "${value}"`).join(', '));
+    console.log('🔍 CSV columns found:', csvColumns);
+    console.log('🔍 First row sample:', { Creator: row.Creator, 'Creator Message': row['Creator Message']?.substring(0, 50) + '...', 'Sent time': row['Sent time'] });
             firstRow = false;
           }
           
@@ -882,8 +875,7 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           const ppvPurchased = row['Purchased']; // "yes" or "no"
           
           if (firstRow) {
-            console.log('🔍 Row data:', row);
-            console.log('🔍 Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
+            console.log('🔍 Extracted fields sample:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
           }
           
           if (messageText && messageText.trim() !== '') {
