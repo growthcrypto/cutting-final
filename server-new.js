@@ -768,13 +768,23 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     // Parse CSV file
     const messages = [];
     const filePath = req.file.path;
+    let firstRow = true;
+    let csvColumns = [];
     
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv())
         .on('data', (row) => {
-          if (row.message_text) {
-            messages.push(row.message_text);
+          if (firstRow) {
+            csvColumns = Object.keys(row);
+            console.log('CSV columns found:', csvColumns);
+            firstRow = false;
+          }
+          
+          // Try different possible column names for messages
+          const messageText = row.message_text || row.message || row.text || row.content || row.body;
+          if (messageText) {
+            messages.push(messageText);
           }
         })
         .on('end', () => {
@@ -783,6 +793,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         })
         .on('error', reject);
     });
+    
+    console.log(`Found ${messages.length} messages in CSV`);
     
     if (messages.length === 0) {
       return res.status(400).json({ error: 'No messages found in CSV file' });
