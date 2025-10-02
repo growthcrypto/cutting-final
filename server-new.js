@@ -1255,6 +1255,24 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
           id: c._id,
           name: c.name,
           isActive: c.isActive
+        })),
+        messageAnalysis: messageAnalysis.slice(-3).map(m => ({
+          id: m._id,
+          chatterName: m.chatterName,
+          weekStartDate: m.weekStartDate,
+          weekEndDate: m.weekEndDate,
+          totalMessages: m.totalMessages,
+          overallScore: m.overallScore,
+          grammarScore: m.grammarScore,
+          guidelinesScore: m.guidelinesScore,
+          strengths: m.strengths,
+          weaknesses: m.weaknesses
+        })),
+        aiAnalysis: aiAnalysis.slice(-3).map(a => ({
+          id: a._id,
+          chatterName: a.chatterName,
+          analysisType: a.analysisType,
+          createdAt: a.createdAt
         }))
       }
     });
