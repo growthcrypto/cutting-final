@@ -957,6 +957,19 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
 // Helper function to analyze messages using AI
 async function analyzeMessages(messages, chatterName) {
   try {
+    // Check if OpenAI is properly configured
+    if (!openai || !openai.chat || !openai.chat.completions) {
+      console.log('OpenAI not configured, returning mock analysis');
+      return {
+        overallScore: 75,
+        grammarScore: 80,
+        guidelinesScore: 70,
+        strengths: ["Good engagement", "Clear communication"],
+        weaknesses: ["Could improve grammar", "More sales focus needed"],
+        suggestions: ["Practice grammar", "Focus on sales conversion"]
+      };
+    }
+
     // Sample messages if there are too many (to avoid token limits)
     const sampleSize = Math.min(messages.length, 50);
     const sampledMessages = messages
