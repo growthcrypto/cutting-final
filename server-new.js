@@ -988,7 +988,37 @@ Provide a detailed analysis in JSON format with:
 - weaknesses (array): Areas needing improvement
 - suggestions (array): Actionable improvement recommendations
 
-Focus on: engagement quality, sales effectiveness, professionalism, grammar, and customer service.`;
+CHATTING STYLE ANALYSIS (CRITICAL):
+- chattingStyle: {
+  - directness: "very direct" | "moderately direct" | "subtle/indirect" | "very subtle"
+  - friendliness: "very friendly" | "moderately friendly" | "neutral" | "cold/distant"
+  - salesApproach: "aggressive" | "moderate" | "soft" | "very soft"
+  - personality: "dominant" | "submissive" | "playful" | "serious" | "flirty" | "conversational"
+  - emojiUsage: "heavy" | "moderate" | "light" | "minimal"
+  - messageLength: "very long" | "long" | "medium" | "short" | "very short"
+  - responsePattern: "immediate" | "thoughtful" | "delayed" | "inconsistent"
+}
+
+MESSAGE PATTERN ANALYSIS:
+- messagePatterns: {
+  - questionFrequency: "high" | "moderate" | "low" (questions per message)
+  - exclamationUsage: "high" | "moderate" | "low"
+  - capitalizationStyle: "proper" | "casual" | "all caps" | "no caps"
+  - punctuationStyle: "proper" | "casual" | "excessive" | "minimal"
+  - topicDiversity: "high" | "moderate" | "low" (variety of conversation topics)
+  - sexualContent: "explicit" | "moderate" | "subtle" | "minimal"
+  - personalSharing: "high" | "moderate" | "low" (sharing personal details)
+}
+
+ENGAGEMENT EFFECTIVENESS:
+- engagementMetrics: {
+  - conversationStarter: "excellent" | "good" | "average" | "poor"
+  - conversationMaintainer: "excellent" | "good" | "average" | "poor"
+  - salesConversation: "excellent" | "good" | "average" | "poor"
+  - fanRetention: "excellent" | "good" | "average" | "poor"
+}
+
+Focus on: engagement quality, sales effectiveness, professionalism, grammar, customer service, AND detailed style analysis.`;
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
@@ -1343,6 +1373,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : null;
       const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : null;
       const totalMessages = messagesAnalysis.length > 0 ? messagesAnalysis.reduce((s,m)=> s + (m.totalMessages || 0), 0) : 0;
+      
+      // Chatting style analysis (from most recent message analysis)
+      const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
+      const chattingStyle = latestMessageAnalysis?.chattingStyle || null;
+      const messagePatterns = latestMessageAnalysis?.messagePatterns || null;
+      const engagementMetrics = latestMessageAnalysis?.engagementMetrics || null;
 
       analyticsData = {
         totalRevenue,
@@ -1357,7 +1393,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         grammarScore,
         guidelinesScore,
         overallMessageScore,
-        totalMessages
+        totalMessages,
+        // New chatting style data
+        chattingStyle,
+        messagePatterns,
+        engagementMetrics
       };
     } else {
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
@@ -1971,6 +2011,9 @@ CHATTER DATA (REAL):
 - Messages Analyzed: ${analyticsData.totalMessages}
 - Net Sales: $${analyticsData.netSales || 0}
 - Net Revenue per Fan: $${analyticsData.netRevenuePerFan || 0}
+- Chatting Style: ${analyticsData.chattingStyle ? JSON.stringify(analyticsData.chattingStyle) : 'No style data available'}
+- Message Patterns: ${analyticsData.messagePatterns ? JSON.stringify(analyticsData.messagePatterns) : 'No pattern data available'}
+- Engagement Metrics: ${analyticsData.engagementMetrics ? JSON.stringify(analyticsData.engagementMetrics) : 'No engagement data available'}
 
 DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
@@ -1998,6 +2041,9 @@ CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
 4. REVENUE OPTIMIZATION: $${analyticsData.netSales} total revenue = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV, $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message. How can this be improved?
 5. MESSAGE-TO-CONVERSION ANALYSIS: ${analyticsData.messagesSent} messages generated ${analyticsData.ppvsUnlocked} PPV unlocks. What's the message effectiveness?
 6. FAN MONETIZATION: $${analyticsData.netSales} from ${analyticsData.fansChatted} fans = $${(analyticsData.netSales/analyticsData.fansChatted).toFixed(2)} per fan. How can this be optimized?
+7. CHATTING STYLE ANALYSIS: Analyze the chatter's communication style and personality traits. How do directness, friendliness, sales approach, and personality impact conversion rates?
+8. MESSAGE PATTERN OPTIMIZATION: Analyze question frequency, emoji usage, message length, and topic diversity. What patterns correlate with higher conversions?
+9. ENGAGEMENT EFFECTIVENESS: Evaluate conversation starting, maintaining, and sales conversation skills. How can these be improved?
 
 ADVANCED ANALYSIS REQUIREMENTS:
 1. PERFORM DEEP CROSS-REFERENCE ANALYSIS: Connect every metric to reveal hidden patterns and causal relationships

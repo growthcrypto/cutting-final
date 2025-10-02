@@ -88,6 +88,37 @@ const messageAnalysisSchema = new mongoose.Schema({
   strengths: [{ type: String }],
   weaknesses: [{ type: String }],
   recommendations: [{ type: String }],
+  suggestions: [{ type: String }], // Added for compatibility
+  
+  // NEW: Chatting Style Analysis
+  chattingStyle: {
+    directness: { type: String, enum: ["very direct", "moderately direct", "subtle/indirect", "very subtle"] },
+    friendliness: { type: String, enum: ["very friendly", "moderately friendly", "neutral", "cold/distant"] },
+    salesApproach: { type: String, enum: ["aggressive", "moderate", "soft", "very soft"] },
+    personality: { type: String, enum: ["dominant", "submissive", "playful", "serious", "flirty", "conversational"] },
+    emojiUsage: { type: String, enum: ["heavy", "moderate", "light", "minimal"] },
+    messageLength: { type: String, enum: ["very long", "long", "medium", "short", "very short"] },
+    responsePattern: { type: String, enum: ["immediate", "thoughtful", "delayed", "inconsistent"] }
+  },
+  
+  // NEW: Message Pattern Analysis
+  messagePatterns: {
+    questionFrequency: { type: String, enum: ["high", "moderate", "low"] },
+    exclamationUsage: { type: String, enum: ["high", "moderate", "low"] },
+    capitalizationStyle: { type: String, enum: ["proper", "casual", "all caps", "no caps"] },
+    punctuationStyle: { type: String, enum: ["proper", "casual", "excessive", "minimal"] },
+    topicDiversity: { type: String, enum: ["high", "moderate", "low"] },
+    sexualContent: { type: String, enum: ["explicit", "moderate", "subtle", "minimal"] },
+    personalSharing: { type: String, enum: ["high", "moderate", "low"] }
+  },
+  
+  // NEW: Engagement Effectiveness
+  engagementMetrics: {
+    conversationStarter: { type: String, enum: ["excellent", "good", "average", "poor"] },
+    conversationMaintainer: { type: String, enum: ["excellent", "good", "average", "poor"] },
+    salesConversation: { type: String, enum: ["excellent", "good", "average", "poor"] },
+    fanRetention: { type: String, enum: ["excellent", "good", "average", "poor"] }
+  },
   
   // Guidelines Breakdown
   guidelinesAnalysis: [{
