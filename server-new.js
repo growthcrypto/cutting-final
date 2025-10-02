@@ -1793,19 +1793,35 @@ CHATTER DATA (REAL):
 - Guidelines Score (0-100): ${analyticsData.guidelinesScore}
 - Message Quality Score (0-100): ${analyticsData.overallMessageScore}
 - Messages Analyzed: ${analyticsData.totalMessages}
+- Net Sales: $${analyticsData.netSales || 0}
+- Net Revenue per Fan: $${analyticsData.netRevenuePerFan || 0}
 
 DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
 - Messages per PPV: ${analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1) : 0}
 - Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
+- Revenue per PPV: $${analyticsData.ppvsSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.ppvsSent).toFixed(2) : 0}
+- Revenue per Message: $${analyticsData.messagesSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.messagesSent).toFixed(2) : 0}
+- Response Efficiency: ${analyticsData.avgResponseTime > 0 ? (analyticsData.avgResponseTime <= 3 ? 'Fast' : analyticsData.avgResponseTime <= 5 ? 'Moderate' : 'Slow') : 'Unknown'}
 
 BENCHMARKS (use these for justification and cite them explicitly):
-- Response Time: <5 minutes = Acceptable, ≥5 minutes = Needs Improvement
+- Response Time: <3 minutes = Excellent, 3-5 minutes = Good, >5 minutes = Needs Improvement
 - PPV Unlock Rate: 32% = Current average, 50%+ = Target objective, higher is better
+- Messages per Fan: 6-8 = Optimal range, <5 = Under-engaging, >10 = Over-messaging
+- Revenue per PPV: $25-50 = Good range, <$20 = Underpricing, >$60 = May be overpricing
+- Message Quality: 70+ = Good, 80+ = Excellent, <60 = Needs improvement
 - Grammar: Informal OnlyFans style is expected (u/you, whats up dude, etc.). Score should be as high as possible while accounting for informal chatting norms.
 - Guidelines: Avoid major violations. Score should be as high as possible.
 - Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
 - Overall Quality: Use as data point for pattern analysis.
+
+ANALYSIS AREAS (analyze ALL of these, not just PPVs):
+1. RESPONSE TIME ANALYSIS: How does response time affect performance and what can be improved?
+2. MESSAGE QUALITY ANALYSIS: How do grammar/guidelines scores impact results?
+3. MESSAGE FREQUENCY ANALYSIS: Is the chatter over-messaging or under-messaging fans?
+4. REVENUE EFFICIENCY ANALYSIS: How effective is the chatter at generating revenue per interaction?
+5. PPV PERFORMANCE ANALYSIS: How well are PPVs performing and what can be optimized?
+6. FAN ENGAGEMENT ANALYSIS: How well is the chatter engaging with fans?
 
 ADVANCED ANALYSIS REQUIREMENTS:
 1. PERFORM DEEP CROSS-REFERENCE ANALYSIS: Connect every metric to reveal hidden patterns and causal relationships
