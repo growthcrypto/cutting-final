@@ -49,6 +49,7 @@ if (process.env.OPENAI_API_KEY) {
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/onlyfans_analytics';
 console.log('🔌 Attempting to connect to MongoDB...');
 console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
+console.log('🔥 SERVER STARTED WITH UPDATED CODE - FIRE EMOJI TEST!');
 
 // Connect to MongoDB and wait for connection
 async function connectToMongoDB() {
@@ -74,15 +75,21 @@ connectToMongoDB();
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
+  console.log('🔐 Authentication check');
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.log('❌ No token provided');
     return res.sendStatus(401);
   }
 
   jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      console.log('❌ Token verification failed:', err.message);
+      return res.sendStatus(403);
+    }
+    console.log('✅ Token verified for user:', user.username);
     req.user = user;
     next();
   });
@@ -114,11 +121,14 @@ const upload = multer({ storage: storage });
 
 // Database connection check middleware
 const checkDatabaseConnection = (req, res, next) => {
+  console.log('🔍 Database connection check - readyState:', mongoose.connection.readyState);
   if (mongoose.connection.readyState !== 1) {
+    console.log('❌ Database not ready');
     return res.status(503).json({ 
       error: 'Database connection not ready. Please try again in a moment.' 
     });
   }
+  console.log('✅ Database connection OK');
   next();
 };
 
