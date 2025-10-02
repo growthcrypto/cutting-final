@@ -4608,7 +4608,7 @@ function updateGuidelinesList(guidelines) {
                             ${guideline.category}
                         </span>
                         <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-900/30 text-purple-400">
-                            Priority: ${guideline.priority}
+                            Priority: ${guideline.weight || guideline.priority || 'N/A'}
                         </span>
                     </div>
                     <h4 class="font-semibold text-white mb-1">${guideline.title}</h4>

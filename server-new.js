@@ -1617,12 +1617,12 @@ app.get('/api/guidelines', authenticateToken, async (req, res) => {
 
 app.post('/api/guidelines', authenticateToken, requireManager, async (req, res) => {
   try {
-    const { title, description, category, weight, examples, counterExamples } = req.body;
+    const { title, description, category, weight, priority, examples, counterExamples } = req.body;
     const guideline = new Guideline({
       title,
       description,
       category,
-      weight,
+      weight: weight || priority, // Accept both weight and priority
       examples: examples || [],
       counterExamples: counterExamples || []
     });
@@ -1635,14 +1635,14 @@ app.post('/api/guidelines', authenticateToken, requireManager, async (req, res) 
 
 app.put('/api/guidelines/:id', authenticateToken, requireManager, async (req, res) => {
   try {
-    const { title, description, category, weight, examples, counterExamples } = req.body;
+    const { title, description, category, weight, priority, examples, counterExamples } = req.body;
     const guideline = await Guideline.findByIdAndUpdate(
       req.params.id,
       {
         title,
         description,
         category,
-        weight,
+        weight: weight || priority, // Accept both weight and priority
         examples: examples || [],
         counterExamples: counterExamples || [],
         updatedAt: new Date()
