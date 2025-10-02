@@ -52,13 +52,13 @@ if (process.env.OPENAI_API_KEY) {
             choices: [{
               message: {
                 content: JSON.stringify({
-                  overallScore: 75,
-                  grammarScore: 80,
-                  guidelinesScore: 70,
-                  engagementScore: 75,
-                  strengths: ["Good engagement", "Clear communication"],
-                  weaknesses: ["Could improve grammar", "More sales focus needed"],
-                  suggestions: ["Practice grammar", "Focus on sales conversion"]
+                  overallScore: null,
+                  grammarScore: null,
+                  guidelinesScore: null,
+                  engagementScore: null,
+                  strengths: ["No message analysis data available"],
+                  weaknesses: ["Upload message data for analysis"],
+                  suggestions: ["Upload CSV with message data to get real analysis"]
                 })
               }
             }]
@@ -981,9 +981,9 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       weekEndDate: new Date(endDate),
       totalMessages: messageRecords.length,
       messageRecords: messageRecords, // Store the full message records
-      overallScore: analysisResult.overallScore || 0,
-      grammarScore: analysisResult.grammarScore || 0,
-      guidelinesScore: analysisResult.guidelinesScore || 0,
+      overallScore: analysisResult.overallScore || null,
+      grammarScore: analysisResult.grammarScore || null,
+      guidelinesScore: analysisResult.guidelinesScore || null,
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
       recommendations: analysisResult.suggestions || []
@@ -1027,12 +1027,12 @@ async function analyzeMessages(messages, chatterName) {
     if (!openai || !openai.chat || !openai.chat.completions) {
       console.log('OpenAI not configured, returning mock analysis');
       return {
-        overallScore: 75,
-        grammarScore: 80,
-        guidelinesScore: 70,
-        strengths: ["Good engagement", "Clear communication"],
-        weaknesses: ["Could improve grammar", "More sales focus needed"],
-        suggestions: ["Practice grammar", "Focus on sales conversion"]
+        overallScore: null,
+        grammarScore: null,
+        guidelinesScore: null,
+        strengths: ["No message analysis data available"],
+        weaknesses: ["Upload message data for analysis"],
+        suggestions: ["Upload CSV with message data to get real analysis"]
       };
     }
 
@@ -1114,12 +1114,12 @@ Focus on: engagement quality, sales effectiveness, professionalism, grammar, cus
     console.error('AI analysis error:', error);
     // Return default scores if AI analysis fails
     return {
-      overallScore: 50,
-      grammarScore: 50,
-      guidelinesScore: 50,
-      strengths: ['Analysis pending'],
-      weaknesses: ['Analysis pending'],
-      suggestions: ['Upload more data for detailed analysis']
+      overallScore: null,
+      grammarScore: null,
+      guidelinesScore: null,
+      strengths: ['No message analysis data available'],
+      weaknesses: ['Upload message data for analysis'],
+      suggestions: ['Upload CSV with message data to get real analysis']
     };
   }
 }
@@ -1524,7 +1524,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         
         // Ultimate fallback - simple analysis without database queries
         const simpleAnalysis = {
-          overallScore: analyticsData.totalRevenue > 0 ? 75 : 0,
+          overallScore: null, // No fake scores
           insights: [
             `Total revenue: $${analyticsData.totalRevenue.toLocaleString()} this ${interval} period`,
             `PPVs sent: ${analyticsData.ppvsSent}`,
@@ -1790,11 +1790,13 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval) {
   if (ppvUnlockRate < 50 && analyticsData.ppvsSent > 0) recommendations.push('Test 3 new PPV openers and 2 urgency closers over next 3 days');
   if (messagesPerFan < 6 && analyticsData.fansChatted > 0) recommendations.push('Add 2 extra value messages per fan before the pitch');
 
-  const overallScore = Math.max(0, Math.min(100,
-    (ppvUnlockRate >= 50 ? 35 : ppvUnlockRate >= 40 ? 25 : 15) +
-    ((analyticsData.avgResponseTime || 0) <= 2 ? 35 : (analyticsData.avgResponseTime || 0) <= 3 ? 25 : 10) +
-    (messagesPerFan >= 6 ? 30 : messagesPerFan >= 5 ? 20 : 10)
-  ));
+  // Only calculate overall score if we have real data
+  const overallScore = (analyticsData.grammarScore && analyticsData.guidelinesScore) ? 
+    Math.max(0, Math.min(100,
+      (ppvUnlockRate >= 50 ? 35 : ppvUnlockRate >= 40 ? 25 : 15) +
+      ((analyticsData.avgResponseTime || 0) <= 2 ? 35 : (analyticsData.avgResponseTime || 0) <= 3 ? 25 : 10) +
+      (messagesPerFan >= 6 ? 30 : messagesPerFan >= 5 ? 20 : 10)
+    )) : null;
 
   return {
     overallScore,
@@ -1898,12 +1900,15 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
     const avgMessageScore = employeePerformance.length > 0 ? 
       employeePerformance.reduce((sum, emp) => sum + emp.messageScore, 0) / employeePerformance.length : 0;
     
-    // Calculate overall agency score
-    let overallScore = 0;
-    if (analyticsData.totalRevenue > 0) overallScore += 30;
-    if (ppvUnlockRate > 50) overallScore += 25;
-    if (avgPPVPrice > 30) overallScore += 25;
-    if (avgMessageScore > 70) overallScore += 20;
+    // Only calculate overall agency score if we have real data
+    let overallScore = null;
+    if (analyticsData.totalRevenue > 0 && ppvUnlockRate > 0 && avgPPVPrice > 0) {
+      overallScore = 0;
+      if (analyticsData.totalRevenue > 0) overallScore += 30;
+      if (ppvUnlockRate > 50) overallScore += 25;
+      if (avgPPVPrice > 30) overallScore += 25;
+      if (avgMessageScore > 70) overallScore += 20;
+    }
     
     return {
       overallScore,
@@ -1914,9 +1919,9 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
         `Average message score: ${avgMessageScore.toFixed(1)}/100`
       ],
       weakPoints: [
-        ppvUnlockRate < 50 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) is below target (50%+)` : null,
-        avgPPVPrice < 30 ? `Average PPV price ($${avgPPVPrice.toFixed(2)}) is below target ($30+)` : null,
-        avgMessageScore < 70 ? `Average message score (${avgMessageScore.toFixed(1)}) needs improvement (70+ target)` : null
+        ppvUnlockRate < 30 ? `PPV unlock rate (${ppvUnlockRate.toFixed(1)}%) could be improved` : null,
+        avgPPVPrice < 20 ? `Average PPV price ($${avgPPVPrice.toFixed(2)}) could be optimized` : null,
+        avgMessageScore < 60 ? `Average message score (${avgMessageScore.toFixed(1)}) could be improved` : null
       ].filter(Boolean),
       opportunities: [
         `Improving PPV unlock rate could increase revenue`,
@@ -1937,23 +1942,27 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
     const ppvUnlockRate = analyticsData.ppvsSent > 0 ? (analyticsData.ppvsUnlocked / analyticsData.ppvsSent * 100) : 0;
     const revenuePerPPV = analyticsData.ppvsSent > 0 ? (analyticsData.totalRevenue / analyticsData.ppvsSent) : 0;
     
-    let overallScore = 0;
-    if (analyticsData.totalRevenue > 0) overallScore += 25;
-    if (ppvUnlockRate > 50) overallScore += 25;
-    if (analyticsData.avgResponseTime < 3) overallScore += 25;
-    if (revenuePerPPV > 30) overallScore += 25;
+    // Only calculate overall score if we have real data
+    let overallScore = null;
+    if (analyticsData.totalRevenue > 0 && ppvUnlockRate > 0 && revenuePerPPV > 0) {
+      overallScore = 0;
+      if (analyticsData.totalRevenue > 0) overallScore += 25;
+      if (ppvUnlockRate > 50) overallScore += 25;
+      if (analyticsData.avgResponseTime < 3) overallScore += 25;
+      if (revenuePerPPV > 30) overallScore += 25;
+    }
     
     return {
       overallScore,
       strengths: [
         `Generated $${analyticsData.totalRevenue.toLocaleString()} in revenue this ${interval} period`,
         `Active engagement with ${analyticsData.messagesSent} messages sent`,
-        ppvUnlockRate > 60 ? `Excellent PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%` : `Good PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%`
+        `PPV unlock rate of ${ppvUnlockRate.toFixed(1)}%`
       ],
       weaknesses: [
-        analyticsData.avgResponseTime > 4 ? `Slow response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes (target: <3 minutes)` : null,
-        ppvUnlockRate < 40 ? `Low PPV unlock rate of ${ppvUnlockRate.toFixed(1)}% (target: 50-60%)` : null,
-        revenuePerPPV < 25 ? `Low revenue per PPV of $${revenuePerPPV.toFixed(2)} (target: $30-50)` : null
+        analyticsData.avgResponseTime > 5 ? `Response time of ${analyticsData.avgResponseTime.toFixed(1)} minutes could be improved` : null,
+        ppvUnlockRate < 25 ? `PPV unlock rate of ${ppvUnlockRate.toFixed(1)}% could be improved` : null,
+        revenuePerPPV < 15 ? `Revenue per PPV of $${revenuePerPPV.toFixed(2)} could be optimized` : null
       ].filter(Boolean),
       opportunities: [
         `Improving PPV unlock rate could increase revenue`,
@@ -2107,13 +2116,13 @@ DERIVED METRICS (you must compute and mention):
 - Revenue per Message: $${analyticsData.messagesSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.messagesSent).toFixed(2) : 0}
 - Response Efficiency: ${analyticsData.avgResponseTime > 0 ? (analyticsData.avgResponseTime <= 3 ? 'Fast' : analyticsData.avgResponseTime <= 5 ? 'Moderate' : 'Slow') : 'No Response Time Data Available'}
 
-BENCHMARKS (use these for justification and cite them explicitly):
-- Response Time: <3 minutes = Excellent, 3-5 minutes = Good, >5 minutes = Needs Improvement
-- PPV Unlock Rate: 32% = Current average, 50%+ = Target objective, higher is better
-- Messages per Fan: 6-8 = Optimal range, <5 = Under-engaging, >10 = Over-messaging
-- Revenue per PPV: $25-50 = Good range, <$20 = Underpricing, >$60 = May be overpricing
-- Message Quality: 70+ = Good, 80+ = Excellent, <60 = Needs improvement
-- Grammar: Informal OnlyFans style is expected (u/you, whats up dude, etc.). Score should be as high as possible while accounting for informal chatting norms.
+ANALYSIS GUIDELINES (use actual data, no fake benchmarks):
+- Response Time: Analyze actual response times in context of performance data
+- PPV Unlock Rate: Compare against actual team averages and performance patterns
+- Messages per Fan: Analyze actual engagement patterns and conversion correlation
+- Revenue per PPV: Compare actual pricing against performance data
+- Message Quality: Only analyze if real message analysis data is available
+- Grammar: Only analyze if real grammar analysis data is available
 - Guidelines: Avoid major violations. Score should be as high as possible.
 - Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
 - Overall Quality: Use as data point for pattern analysis.
@@ -3104,7 +3113,7 @@ function calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatt
   lowMessageToSaleChatters.forEach(chatter => {
     const data = chatterMetrics[chatter];
     const currentMessageToSale = data.messageToSaleRate;
-    const targetMessageToSale = teamAvgMessageToSale * 0.8; // Conservative 80% of team average
+    const targetMessageToSale = teamAvgMessageToSale * 0.9; // Conservative 90% of team average
     
     if (currentMessageToSale > 0) {
       const messageToSaleIncrease = (targetMessageToSale - currentMessageToSale) / currentMessageToSale;

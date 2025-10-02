@@ -4918,10 +4918,10 @@ async function loadMyPerformanceData() {
         document.getElementById('myRevenuePerHour').textContent = `$${revenuePerHour.toFixed(2)}`;
         document.getElementById('myConversionRate').textContent = `${data.conversionRate || 0}%`;
 
-        // Update performance trends (mock data for now)
-        document.getElementById('myWeeklyGrowth').textContent = 'Growth detected';
-        document.getElementById('myBestDay').textContent = 'Tuesday';
-        document.getElementById('myPeakHour').textContent = '2-4 PM';
+        // Update performance trends (no fake data)
+        document.getElementById('myWeeklyGrowth').textContent = 'No trend data available';
+        document.getElementById('myBestDay').textContent = 'No data available';
+        document.getElementById('myPeakHour').textContent = 'No data available';
 
         // Load message analysis
         await loadMyMessageAnalysis();
