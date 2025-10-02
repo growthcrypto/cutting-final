@@ -1298,6 +1298,27 @@ app.delete('/api/debug/wipe-data', checkDatabaseConnection, async (req, res) => 
   }
 });
 
+// Debug endpoint to wipe only message data
+app.delete('/api/debug/wipe-messages', checkDatabaseConnection, async (req, res) => {
+  try {
+    const result = {
+      messageAnalysis: await MessageAnalysis.deleteMany({}),
+      aiAnalysis: await AIAnalysis.deleteMany({}) // AI analysis is based on message data
+    };
+    
+    res.json({
+      message: 'Message data wiped successfully',
+      deletedCounts: {
+        messageAnalysis: result.messageAnalysis.deletedCount,
+        aiAnalysis: result.aiAnalysis.deletedCount
+      }
+    });
+  } catch (error) {
+    console.error('Error wiping message data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // AI Analysis endpoint for comprehensive analysis
 app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
