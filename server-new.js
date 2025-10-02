@@ -1113,6 +1113,7 @@ ENGAGEMENT EFFECTIVENESS:
 
 Focus on: engagement quality, sales effectiveness, professionalism, grammar, customer service, AND detailed style analysis.`;
     
+    console.log('🚀 Making OpenAI API call...');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
@@ -1128,11 +1129,15 @@ Focus on: engagement quality, sales effectiveness, professionalism, grammar, cus
       temperature: 0.7,
       max_tokens: 1000
     });
+    console.log('✅ OpenAI API call completed');
     
     const analysisText = completion.choices[0].message.content;
+    console.log('📝 Raw AI Response:', analysisText.substring(0, 500) + '...');
+    
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
     if (!jsonMatch) {
+      console.log('❌ No JSON found in AI response');
       throw new Error('Failed to parse AI analysis response');
     }
     
