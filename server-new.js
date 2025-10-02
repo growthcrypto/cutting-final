@@ -1973,7 +1973,7 @@ DERIVED METRICS (you must compute and mention):
 - Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
 - Revenue per PPV: $${analyticsData.ppvsSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.ppvsSent).toFixed(2) : 0}
 - Revenue per Message: $${analyticsData.messagesSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.messagesSent).toFixed(2) : 0}
-- Response Efficiency: ${analyticsData.avgResponseTime > 0 ? (analyticsData.avgResponseTime <= 3 ? 'Fast' : analyticsData.avgResponseTime <= 5 ? 'Moderate' : 'Slow') : 'Unknown'}
+- Response Efficiency: ${analyticsData.avgResponseTime > 0 ? (analyticsData.avgResponseTime <= 3 ? 'Fast' : analyticsData.avgResponseTime <= 5 ? 'Moderate' : 'Slow') : 'No Response Time Data Available'}
 
 BENCHMARKS (use these for justification and cite them explicitly):
 - Response Time: <3 minutes = Excellent, 3-5 minutes = Good, >5 minutes = Needs Improvement
@@ -2089,6 +2089,7 @@ Rules:
 - Cross-reference metrics to find hidden patterns, but only use metrics that have actual data (e.g., if grammarScore is null, don't mention it).
 - Quote actual numbers in every point but explain their implications.
 - Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
+- CRITICAL: If Response Efficiency shows "No Response Time Data Available", DO NOT mention response time, response efficiency, or make any claims about response time performance. Do not say "response time is excellent at 0 minutes" or similar statements.
 - Keep it concise and actionable.
 - NO DUPLICATION ACROSS SECTIONS: Each list (insights, weakPoints, rootCauses, opportunities, roiCalculations, recommendations) must contain unique points. If a concept appears in insights, do not repeat the same statement in weakPoints; instead, evolve it (e.g., add cause, action, or impact).
 - ACTION-ORIENTED: For weakPoints/opportunities/recommendations, include a concrete action and expected impact tied to the benchmarks (e.g., "Reduce avg response from 9m to <5m to align with benchmark; expect unlocks to improve if message quality is maintained").`;
