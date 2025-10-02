@@ -78,6 +78,19 @@ const messageAnalysisSchema = new mongoose.Schema({
   totalMessages: { type: Number, default: 0 },
   messagesSample: [{ type: String }], // Sample messages for analysis
   
+  // NEW: Individual Message Records (for flow analysis)
+  messageRecords: [{
+    fanUsername: { type: String, required: true },
+    messageText: { type: String, required: true },
+    timestamp: { type: Date, required: true },
+    date: { type: Date, required: true },
+    replyTime: { type: Number, default: 0 }, // minutes between fan's last message and this message
+    creatorPage: { type: String, required: true },
+    isPPV: { type: Boolean, default: false },
+    ppvRevenue: { type: Number, default: 0 }, // revenue if this message is a PPV
+    ppvPurchased: { type: Boolean, default: false } // whether the PPV was actually purchased
+  }],
+  
   // AI Scores
   overallScore: { type: Number, min: 0, max: 100, default: 0 },
   guidelinesScore: { type: Number, min: 0, max: 100, default: 0 },

@@ -853,8 +853,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     
     const chatterName = chatter;
     
-    // Parse CSV file
-    const messages = [];
+    // Parse CSV file with full message data
+    const messageRecords = [];
     const filePath = req.file.path;
     let firstRow = true;
     let csvColumns = [];
@@ -870,14 +870,35 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
             firstRow = false;
           }
           
-          // Try different possible column names for messages
+          // Extract all the fields you can provide
           const messageText = row.message_text || row.message || row.text || row.content || row.body || row['Creator Message'] || row['creator message'] || row['Message'];
-          console.log('Row data:', row, 'Message text found:', messageText);
+          const fanUsername = row.fan_username || row.fanUsername || row.fan || row.username || row['Fan Username'];
+          const timestamp = row.timestamp || row.time || row.date_time || row['Timestamp'];
+          const date = row.date || row.message_date || row['Date'];
+          const replyTime = row.reply_time || row.replyTime || row.response_time || row['Reply Time'];
+          const creatorPage = row.creator_page || row.creatorPage || row.page || row.account || row['Creator Page'];
+          const isPPV = row.is_ppv || row.isPPV || row.ppv || row['Is PPV'];
+          const ppvRevenue = row.ppv_revenue || row.ppvRevenue || row.revenue || row['PPV Revenue'];
+          const ppvPurchased = row.ppv_purchased || row.ppvPurchased || row.purchased || row['PPV Purchased'];
+          
+          console.log('Row data:', row);
+          console.log('Extracted fields:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, isPPV, ppvRevenue, ppvPurchased });
+          
           if (messageText && messageText.trim() !== '') {
             // Strip HTML tags from the message
             const cleanMessage = messageText.replace(/<[^>]*>/g, '').trim();
             if (cleanMessage) {
-              messages.push(cleanMessage);
+              messageRecords.push({
+                fanUsername: fanUsername || 'unknown',
+                messageText: cleanMessage,
+                timestamp: timestamp ? new Date(timestamp) : new Date(),
+                date: date ? new Date(date) : new Date(),
+                replyTime: replyTime ? parseFloat(replyTime) : 0,
+                creatorPage: creatorPage || 'unknown',
+                isPPV: isPPV === 'true' || isPPV === true || isPPV === '1',
+                ppvRevenue: ppvRevenue ? parseFloat(ppvRevenue) : 0,
+                ppvPurchased: ppvPurchased === 'true' || ppvPurchased === true || ppvPurchased === '1'
+              });
             }
           }
         })
@@ -891,13 +912,16 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         });
     });
     
-    console.log(`Found ${messages.length} messages in CSV`);
+    console.log(`Found ${messageRecords.length} message records in CSV`);
     
-    if (messages.length === 0) {
+    if (messageRecords.length === 0) {
       return res.status(400).json({ error: 'No messages found in CSV file' });
     }
     
-    console.log(`Parsed ${messages.length} messages for analysis`);
+    console.log(`Parsed ${messageRecords.length} message records for analysis`);
+    
+    // Extract just the message text for AI analysis (for now)
+    const messages = messageRecords.map(record => record.messageText);
     
     // Analyze messages using AI
     const analysisResult = await analyzeMessages(messages, chatterName);
@@ -907,14 +931,16 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       chatterName: chatter,
       weekStartDate: startDate,
       weekEndDate: endDate,
-      totalMessages: messages.length
+      totalMessages: messageRecords.length,
+      messageRecords: messageRecords.length
     });
     
     const messageAnalysis = new MessageAnalysis({
       chatterName: chatter,
       weekStartDate: new Date(startDate),
       weekEndDate: new Date(endDate),
-      totalMessages: messages.length,
+      totalMessages: messageRecords.length,
+      messageRecords: messageRecords, // Store the full message records
       overallScore: analysisResult.overallScore || 0,
       grammarScore: analysisResult.grammarScore || 0,
       guidelinesScore: analysisResult.guidelinesScore || 0,
@@ -1379,6 +1405,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const chattingStyle = latestMessageAnalysis?.chattingStyle || null;
       const messagePatterns = latestMessageAnalysis?.messagePatterns || null;
       const engagementMetrics = latestMessageAnalysis?.engagementMetrics || null;
+      
+      // NEW: Message flow and timing analysis
+      const messageRecords = latestMessageAnalysis?.messageRecords || [];
+      const ppvMessages = messageRecords.filter(record => record.isPPV);
+      const purchasedPPVs = ppvMessages.filter(record => record.ppvPurchased);
+      const avgReplyTime = messageRecords.length > 0 ? 
+        messageRecords.reduce((sum, record) => sum + (record.replyTime || 0), 0) / messageRecords.length : 0;
+      const ppvConversionRate = ppvMessages.length > 0 ? (purchasedPPVs.length / ppvMessages.length) * 100 : 0;
 
       analyticsData = {
         totalRevenue,
@@ -1397,7 +1431,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         // New chatting style data
         chattingStyle,
         messagePatterns,
-        engagementMetrics
+        engagementMetrics,
+        // NEW: Message flow and timing data
+        messageRecords,
+        ppvMessages: ppvMessages.length,
+        purchasedPPVs: purchasedPPVs.length,
+        avgReplyTime,
+        ppvConversionRate
       };
     } else {
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
@@ -2014,6 +2054,10 @@ CHATTER DATA (REAL):
 - Chatting Style: ${analyticsData.chattingStyle ? JSON.stringify(analyticsData.chattingStyle) : 'No style data available'}
 - Message Patterns: ${analyticsData.messagePatterns ? JSON.stringify(analyticsData.messagePatterns) : 'No pattern data available'}
 - Engagement Metrics: ${analyticsData.engagementMetrics ? JSON.stringify(analyticsData.engagementMetrics) : 'No engagement data available'}
+- PPV Messages: ${analyticsData.ppvMessages} total PPV messages sent
+- PPV Purchases: ${analyticsData.purchasedPPVs} PPVs actually purchased
+- PPV Conversion Rate: ${analyticsData.ppvConversionRate.toFixed(1)}% (${analyticsData.purchasedPPVs}/${analyticsData.ppvMessages})
+- Average Reply Time: ${analyticsData.avgReplyTime.toFixed(1)} minutes
 
 DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
@@ -2044,6 +2088,9 @@ CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
 7. CHATTING STYLE ANALYSIS: Analyze the chatter's communication style and personality traits. How do directness, friendliness, sales approach, and personality impact conversion rates?
 8. MESSAGE PATTERN OPTIMIZATION: Analyze question frequency, emoji usage, message length, and topic diversity. What patterns correlate with higher conversions?
 9. ENGAGEMENT EFFECTIVENESS: Evaluate conversation starting, maintaining, and sales conversation skills. How can these be improved?
+10. PPV CONVERSION ANALYSIS: ${analyticsData.ppvMessages} PPV messages resulted in ${analyticsData.purchasedPPVs} purchases = ${analyticsData.ppvConversionRate.toFixed(1)}% conversion rate. What's driving this performance?
+11. REPLY TIME IMPACT: Average reply time of ${analyticsData.avgReplyTime.toFixed(1)} minutes. How does response speed correlate with PPV conversion rates?
+12. MESSAGE FLOW OPTIMIZATION: Analyze the sequence and timing of messages. What patterns lead to higher PPV purchases?
 
 ADVANCED ANALYSIS REQUIREMENTS:
 1. PERFORM DEEP CROSS-REFERENCE ANALYSIS: Connect every metric to reveal hidden patterns and causal relationships
@@ -2099,8 +2146,8 @@ Respond in STRICT JSON with this exact shape:
       "revenuePatterns": "DETAILED analysis of $${analyticsData.netSales} total revenue from ${analyticsData.fansChatted} fans = $${(analyticsData.netSales/analyticsData.fansChatted).toFixed(2)} per fan with monetization optimization"
     },
     "competitiveAnalysis": {
-      "benchmarkGaps": "specific gaps with quantified impact",
-      "strengthAreas": "areas exceeding benchmarks with business value",
+      "benchmarkGaps": "specific performance gaps with quantified impact",
+      "strengthAreas": "areas of strong performance with business value",
       "improvementPotential": "specific improvement opportunities with projections"
     }
   },
