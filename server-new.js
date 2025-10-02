@@ -1991,13 +1991,13 @@ BENCHMARKS (use these for justification and cite them explicitly):
 - Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
 - Overall Quality: Use as data point for pattern analysis.
 
-ANALYSIS AREAS (analyze ALL of these, not just PPVs):
-1. RESPONSE TIME ANALYSIS: How does response time affect performance and what can be improved?
-2. MESSAGE QUALITY ANALYSIS: How do grammar/guidelines scores impact results?
-3. MESSAGE FREQUENCY ANALYSIS: Is the chatter over-messaging or under-messaging fans?
-4. REVENUE EFFICIENCY ANALYSIS: How effective is the chatter at generating revenue per interaction?
-5. PPV PERFORMANCE ANALYSIS: How well are PPVs performing and what can be optimized?
-6. FAN ENGAGEMENT ANALYSIS: How well is the chatter engaging with fans?
+CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
+1. MESSAGE VOLUME ANALYSIS: ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan. Is this optimal?
+2. MESSAGE QUALITY IMPACT: ${analyticsData.grammarScore}/100 grammar + ${analyticsData.guidelinesScore}/100 guidelines = ${analyticsData.overallScore}/100 overall. How does this quality correlate with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion?
+3. PPV EFFICIENCY ANALYSIS: ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} unlocked = ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate. What's driving this performance?
+4. REVENUE OPTIMIZATION: $${analyticsData.netSales} total revenue = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV, $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message. How can this be improved?
+5. MESSAGE-TO-CONVERSION ANALYSIS: ${analyticsData.messagesSent} messages generated ${analyticsData.ppvsUnlocked} PPV unlocks. What's the message effectiveness?
+6. FAN MONETIZATION: $${analyticsData.netSales} from ${analyticsData.fansChatted} fans = $${(analyticsData.netSales/analyticsData.fansChatted).toFixed(2)} per fan. How can this be optimized?
 
 ADVANCED ANALYSIS REQUIREMENTS:
 1. PERFORM DEEP CROSS-REFERENCE ANALYSIS: Connect every metric to reveal hidden patterns and causal relationships
@@ -2043,14 +2043,14 @@ Respond in STRICT JSON with this exact shape:
   },
   "advancedMetrics": {
     "efficiencyRatios": {
-      "messagesPerPPV": "Calculate messages sent divided by PPVs sent with analysis",
-      "responseEfficiency": "Calculate response time vs unlock rate correlation with analysis", 
-      "messageQualityImpact": "Calculate message quality score vs performance correlation with analysis"
+      "messagesPerPPV": "DETAILED analysis of the ${analyticsData.messagesSent}/${analyticsData.ppvsSent} = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} ratio with specific benchmarks and actionable insights",
+      "revenueEfficiency": "DETAILED analysis of $${analyticsData.netSales}/${analyticsData.ppvsSent} = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV and $${analyticsData.netSales}/${analyticsData.messagesSent} = $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message with pricing recommendations", 
+      "messageQualityImpact": "DETAILED analysis of how the ${analyticsData.grammarScore}/100 grammar and ${analyticsData.guidelinesScore}/100 guidelines scores correlate with the ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate"
     },
     "behavioralPatterns": {
-      "responseTimePatterns": "Analyze response time data and its impact on performance",
-      "messageFrequencyPatterns": "Analyze message sending patterns and effectiveness", 
-      "ppvTimingPatterns": "Analyze PPV sending patterns and unlock rates"
+      "messageVolumeAnalysis": "DETAILED analysis of ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan with engagement optimization",
+      "conversionPatterns": "DETAILED analysis of ${analyticsData.ppvsUnlocked}/${analyticsData.ppvsSent} = ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion rate with specific improvement strategies", 
+      "revenuePatterns": "DETAILED analysis of $${analyticsData.netSales} total revenue from ${analyticsData.fansChatted} fans = $${(analyticsData.netSales/analyticsData.fansChatted).toFixed(2)} per fan with monetization optimization"
     },
     "competitiveAnalysis": {
       "benchmarkGaps": "specific gaps with quantified impact",
@@ -2060,45 +2060,45 @@ Respond in STRICT JSON with this exact shape:
   },
   "strategicInsights": {
     "revenueOptimization": {
-      "leakagePoints": ["specific revenue loss with quantification", "specific revenue loss with quantification"],
-      "growthOpportunities": ["opportunity 1 with projected impact", "opportunity 2 with projected impact"],
-      "efficiencyGains": ["efficiency gain 1 with calculation", "efficiency gain 2 with calculation"]
+      "leakagePoints": ["Specific revenue leak with exact numbers and impact", "Another specific leak with quantified loss", "Third leak with improvement potential"],
+      "growthOpportunities": ["Specific opportunity with exact revenue potential", "Another opportunity with projected impact", "Third opportunity with implementation strategy"],
+      "efficiencyGains": ["Specific efficiency gain with exact calculation", "Another efficiency gain with projected results"]
+    },
+    "messageOptimization": {
+      "qualityImprovements": ["Specific message quality improvement with expected impact", "Another quality improvement with implementation"],
+      "engagementStrategies": ["Specific engagement strategy with projected results", "Another engagement strategy with metrics"],
+      "conversionOptimization": ["Specific conversion improvement with exact numbers", "Another conversion strategy with expected outcomes"]
     },
     "performanceDrivers": {
-      "primaryDrivers": ["driver 1 with impact analysis", "driver 2 with impact analysis"],
-      "limitingFactors": ["factor 1 with solution", "factor 2 with solution"],
-      "leveragePoints": ["leverage point 1 with expected outcome", "leverage point 2 with expected outcome"]
-    },
-    "riskAssessment": {
-      "performanceRisks": ["risk 1 with mitigation strategy", "risk 2 with mitigation strategy"],
-      "trendAnalysis": "trend analysis with future projections",
-      "interventionNeeds": ["intervention 1 with urgency", "intervention 2 with urgency"]
+      "primaryDrivers": ["Driver 1 with exact impact analysis and numbers", "Driver 2 with specific impact analysis"],
+      "limitingFactors": ["Factor 1 with specific solution and expected results", "Factor 2 with detailed solution"],
+      "leveragePoints": ["Leverage point 1 with exact expected outcome", "Leverage point 2 with specific results"]
     }
   },
   "actionPlan": {
-    "immediateActions": ["action 1 with expected outcome and timeline", "action 2 with expected outcome and timeline"],
-    "strategicInitiatives": ["initiative 1 with projected impact", "initiative 2 with projected impact"],
-    "successMetrics": ["metric 1 with target and timeline", "metric 2 with target and timeline"],
+    "immediateActions": ["Specific action with exact expected outcome and timeline", "Another specific action with projected results and timeline"],
+    "messageOptimization": ["Specific message improvement with exact expected impact", "Another message strategy with projected results"],
+    "revenueOptimization": ["Specific revenue improvement with exact numbers", "Another revenue strategy with projected impact"],
+    "successMetrics": ["Specific metric with exact target and timeline", "Another metric with specific target and timeline"],
     "roiProjections": {
-      "currentState": "current performance with revenue impact",
-      "optimizedState": "projected performance with revenue impact",
-      "improvementValue": "quantified improvement with timeline"
+      "currentState": "Current performance with exact revenue impact and numbers",
+      "optimizedState": "Projected performance with exact revenue impact and numbers",
+      "improvementValue": "Quantified improvement with exact numbers and timeline"
     }
   }
 }
 
-Rules:
-- Use only the provided metrics and the derived metrics above.
-- NEVER simply state "PPV unlock rate is X%" - instead explain what this means and why it matters.
-- Focus on WHY performance is at current levels, not just WHAT the numbers are.
-- Cross-reference metrics to find hidden patterns, but only use metrics that have actual data (e.g., if grammarScore is null, don't mention it).
-- Quote actual numbers in every point but explain their implications.
-- Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
-- CRITICAL: If Response Efficiency shows "No Response Time Data Available", DO NOT mention response time, response efficiency, or make any claims about response time performance. Do not say "response time is excellent at 0 minutes" or similar statements.
-- CRITICAL: If Net Sales shows $0, check if this is because no revenue data was uploaded or if the chatter actually generated $0. If revenue data was uploaded and shows $0, mention the actual amount. Do not say "no revenue being generated" if you can see specific revenue numbers in the data.
-- Keep it concise and actionable.
-- NO DUPLICATION ACROSS SECTIONS: Each list (insights, weakPoints, rootCauses, opportunities, roiCalculations, recommendations) must contain unique points. If a concept appears in insights, do not repeat the same statement in weakPoints; instead, evolve it (e.g., add cause, action, or impact).
-- ACTION-ORIENTED: For weakPoints/opportunities/recommendations, include a concrete action and expected impact tied to the benchmarks (e.g., "Reduce avg response from 9m to <5m to align with benchmark; expect unlocks to improve if message quality is maintained").`;
+CRITICAL ANALYSIS REQUIREMENTS:
+- EVERY analysis must include the EXACT numbers from the data. No generic statements.
+- MESSAGE ANALYSIS IS CRITICAL: With ${analyticsData.totalMessages} messages analyzed, provide detailed insights about message patterns, quality, and effectiveness.
+- REVENUE ANALYSIS MUST BE SPECIFIC: Use the exact $${analyticsData.netSales} revenue, $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV, and $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message.
+- CONVERSION ANALYSIS MUST BE DETAILED: The ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate from ${analyticsData.ppvsUnlocked}/${analyticsData.ppvsSent} PPVs needs specific analysis.
+- MESSAGE QUALITY CORRELATION: Analyze how the ${analyticsData.grammarScore}/100 grammar and ${analyticsData.guidelinesScore}/100 guidelines scores impact the ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion rate.
+- ENGAGEMENT ANALYSIS: The ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan needs detailed analysis.
+- PRICING ANALYSIS: The $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV and $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message need specific pricing recommendations.
+- NO GENERIC STATEMENTS: Every insight must reference specific numbers and provide actionable recommendations.
+- MESSAGE PATTERNS: Analyze the actual message content patterns and their effectiveness.
+- REVENUE OPTIMIZATION: Provide specific strategies to improve the $${analyticsData.netSales} total revenue.`;
     }
 
     const completion = await openai.chat.completions.create({
@@ -2106,7 +2106,7 @@ Rules:
       messages: [
         {
           role: "system",
-          content: "You are an expert OnlyFans agency analyst. Provide detailed, data-driven analysis in JSON format. Be specific with numbers and actionable insights."
+          content: "You are an expert OnlyFans agency analyst specializing in data-driven performance optimization. You have access to detailed message analysis, revenue data, and conversion metrics. Your job is to provide SPECIFIC, ACTIONABLE insights using EXACT numbers from the data. Focus heavily on message quality analysis, revenue optimization, and conversion improvement. Every recommendation must be backed by specific data points and include quantifiable improvement strategies."
         },
         {
           role: "user",
