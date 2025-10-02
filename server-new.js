@@ -1917,6 +1917,9 @@ async function generateAIAnalysis(analyticsData, analysisType, interval) {
       };
     }
 
+    // Debug: Log the analytics data being sent to AI
+    console.log('Analytics data being sent to AI:', JSON.stringify(analyticsData, null, 2));
+    
     let prompt;
     if (analysisType === 'agency') {
             prompt = `You are an expert OnlyFans agency analyst. Analyze the following agency performance data for the ${interval} period and provide comprehensive insights:
@@ -2090,6 +2093,7 @@ Rules:
 - Quote actual numbers in every point but explain their implications.
 - Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
 - CRITICAL: If Response Efficiency shows "No Response Time Data Available", DO NOT mention response time, response efficiency, or make any claims about response time performance. Do not say "response time is excellent at 0 minutes" or similar statements.
+- CRITICAL: If Net Sales shows $0, check if this is because no revenue data was uploaded or if the chatter actually generated $0. If revenue data was uploaded and shows $0, mention the actual amount. Do not say "no revenue being generated" if you can see specific revenue numbers in the data.
 - Keep it concise and actionable.
 - NO DUPLICATION ACROSS SECTIONS: Each list (insights, weakPoints, rootCauses, opportunities, roiCalculations, recommendations) must contain unique points. If a concept appears in insights, do not repeat the same statement in weakPoints; instead, evolve it (e.g., add cause, action, or impact).
 - ACTION-ORIENTED: For weakPoints/opportunities/recommendations, include a concrete action and expected impact tied to the benchmarks (e.g., "Reduce avg response from 9m to <5m to align with benchmark; expect unlocks to improve if message quality is maintained").`;
