@@ -5227,19 +5227,25 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             
             <!-- AI-Calculated Insights (Complex Math) -->
-            ${data.advancedMetrics ? `
+            ${data.advancedMetrics && data.advancedMetrics.efficiencyRatios && Object.keys(data.advancedMetrics.efficiencyRatios).length > 0 ? `
             <div class="glass-card rounded-xl p-6 border border-cyan-500/30 slide-up-1 hover-lift">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-calculator text-cyan-400 mr-3"></i>
                     AI-Calculated Metrics
                 </h5>
                 <div class="grid grid-cols-3 gap-4">
-                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
+                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).filter(([key, value]) => value && !value.includes('not calculable')).map(([key, value]) => `
                         <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
                             <div class="text-sm font-bold text-cyan-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
                             <div class="text-sm text-gray-300">${value}</div>
                         </div>
                     `).join('') : ''}
+                    ${!data.advancedMetrics.efficiencyRatios || Object.keys(data.advancedMetrics.efficiencyRatios).length === 0 ? `
+                        <div class="col-span-3 text-center py-8">
+                            <i class="fas fa-calculator text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-gray-400">No calculable metrics available with current data</p>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
             ` : ''}

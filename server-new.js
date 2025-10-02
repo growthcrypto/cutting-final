@@ -1776,6 +1776,8 @@ CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows thes
 
 IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
 
+For advancedMetrics: Only include efficiency ratios and behavioral patterns that can actually be calculated with the available data. If you cannot calculate a specific metric due to missing data, omit it entirely from the response rather than saying "not calculable due to lack of data".
+
 Respond in STRICT JSON with this exact shape:
 {
   "executiveSummary": {
@@ -1785,14 +1787,14 @@ Respond in STRICT JSON with this exact shape:
   },
   "advancedMetrics": {
     "efficiencyRatios": {
-      "messagesPerDollar": "calculated ratio with analysis",
-      "timeToConversion": "calculated metric with benchmark comparison",
-      "engagementVelocity": "calculated metric with trend analysis"
+      "messagesPerDollar": "calculated ratio with analysis (only if revenue and message data available)",
+      "timeToConversion": "calculated metric with benchmark comparison (only if response time and conversion data available)",
+      "engagementVelocity": "calculated metric with trend analysis (only if engagement data available)"
     },
     "behavioralPatterns": {
-      "responseTimeDistribution": "pattern analysis with implications",
-      "conversionTriggers": "identified triggers with success rates",
-      "engagementCycles": "pattern analysis with optimization opportunities"
+      "responseTimeDistribution": "pattern analysis with implications (only if response time data available)",
+      "conversionTriggers": "identified triggers with success rates (only if conversion data available)",
+      "engagementCycles": "pattern analysis with optimization opportunities (only if engagement data available)"
     },
     "competitiveAnalysis": {
       "benchmarkGaps": "specific gaps with quantified impact",
