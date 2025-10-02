@@ -1179,10 +1179,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const messagesSent = chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
       const fansChatted = chatterData.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
 
-      // Aggregate message analysis scores
-      const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : 0;
-      const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : 0;
-      const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : 0;
+      // Aggregate message analysis scores (only if message data exists)
+      const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : null;
+      const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : null;
+      const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : null;
       const totalMessages = messagesAnalysis.length > 0 ? messagesAnalysis.reduce((s,m)=> s + (m.totalMessages || 0), 0) : 0;
 
       analyticsData = {
@@ -1269,8 +1269,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           messagesSent: analyticsData.messagesSent,
           fansChatted: analyticsData.fansChatted,
           avgResponseTime: analyticsData.avgResponseTime,
-          grammarScore: analyticsData.grammarScore || 0,
-          guidelinesScore: analyticsData.guidelinesScore || 0
+          grammarScore: analyticsData.grammarScore,
+          guidelinesScore: analyticsData.guidelinesScore
         };
         res.json(simpleAnalysis);
       }
@@ -1765,14 +1765,16 @@ ADVANCED ANALYSIS REQUIREMENTS:
 6. PROVIDE STRATEGIC CONTEXT: How does this performance affect overall business goals?
 
 ADVANCED ANALYSIS FRAMEWORK:
-- Efficiency Ratios: Calculate message-to-revenue, time-to-conversion, engagement velocity ratios
-- Behavioral Patterns: Identify response time patterns, engagement cycles, conversion triggers
+- Efficiency Ratios: Calculate message-to-revenue, time-to-conversion, engagement velocity ratios (only if data is available)
+- Behavioral Patterns: Identify response time patterns, engagement cycles, conversion triggers (only if data is available)
 - Competitive Positioning: Compare against benchmarks with specific gap analysis and quantified impact
 - Revenue Optimization: Identify specific revenue leakage points and opportunities with projections
 - Risk Assessment: Highlight performance risks and their business impact
 - Growth Projections: Calculate potential performance improvements with specific actions and timelines
 
 CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows these. Instead, provide sophisticated analysis that goes beyond the raw data with deep insights, predictions, and strategic recommendations.
+
+IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
 
 Respond in STRICT JSON with this exact shape:
 {
@@ -1831,7 +1833,7 @@ Rules:
 - Use only the provided metrics and the derived metrics above.
 - NEVER simply state "PPV unlock rate is X%" - instead explain what this means and why it matters.
 - Focus on WHY performance is at current levels, not just WHAT the numbers are.
-- Cross-reference metrics to find hidden patterns (e.g., "Response time of ${analyticsData.avgResponseTime} minutes combined with ${analyticsData.grammarScore}/100 grammar score suggests rushed, low-quality interactions").
+- Cross-reference metrics to find hidden patterns, but only use metrics that have actual data (e.g., if grammarScore is null, don't mention it).
 - Quote actual numbers in every point but explain their implications.
 - Do not mention metrics that were not provided (e.g., revenue, subscribers, clicks).
 - Keep it concise and actionable.
@@ -2338,9 +2340,9 @@ async function autoSavePerformanceSnapshot(chatterName, weekStartDate, weekEndDa
       avgResponseTime: chatterData.avgResponseTime || 0,
       messagesPerPPV: chatterData.ppvsSent > 0 ? chatterData.messagesSent / chatterData.ppvsSent : 0,
       messagesPerFan: chatterData.fansChattedWith > 0 ? chatterData.messagesSent / chatterData.fansChattedWith : 0,
-      grammarScore: messageData?.grammarScore || 0,
-      guidelinesScore: messageData?.guidelinesScore || 0,
-      overallScore: messageData?.overallScore || 0
+      grammarScore: messageData?.grammarScore,
+      guidelinesScore: messageData?.guidelinesScore,
+      overallScore: messageData?.overallScore
     };
     
     // Calculate week-over-week changes

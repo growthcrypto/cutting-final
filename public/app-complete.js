@@ -4934,9 +4934,9 @@ async function loadMyMessageAnalysis() {
         if (response.ok) {
             const analysis = await response.json();
             
-            document.getElementById('myMessageScore').textContent = `${analysis.overallScore || 0}/100`;
-            document.getElementById('myGrammarScore').textContent = `${analysis.grammarScore || 0}/100`;
-            document.getElementById('myGuidelinesScore').textContent = `${analysis.guidelinesScore || 0}/100`;
+            document.getElementById('myMessageScore').textContent = analysis.overallScore ? `${analysis.overallScore}/100` : 'No Data';
+            document.getElementById('myGrammarScore').textContent = analysis.grammarScore ? `${analysis.grammarScore}/100` : 'No Data';
+            document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore ? `${analysis.guidelinesScore}/100` : 'No Data';
 
             // Update strengths and weaknesses
             const strengthsDiv = document.getElementById('myMessageStrengths');
@@ -5192,7 +5192,7 @@ function renderSophisticatedChatterAnalysis(data) {
     // Calculate derived metrics
     const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
     const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : 0;
-    const responseColor = data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime <= 5 ? 'yellow' : 'red';
+    const responseColor = data.avgResponseTime && data.avgResponseTime <= 2 ? 'green' : data.avgResponseTime && data.avgResponseTime <= 3 ? 'blue' : data.avgResponseTime && data.avgResponseTime <= 5 ? 'yellow' : 'red';
     
     container.innerHTML = `
         <style>
@@ -5217,7 +5217,7 @@ function renderSophisticatedChatterAnalysis(data) {
                     <div class="text-xs text-gray-400 uppercase">Unlock Rate</div>
                 </div>
                 <div class="glass-card rounded-xl p-4 border border-${responseColor}-500/30 hover-lift">
-                    <div class="text-3xl font-black text-${responseColor}-400">${data.avgResponseTime || 0}m</div>
+                    <div class="text-3xl font-black text-${responseColor}-400">${data.avgResponseTime ? data.avgResponseTime + 'm' : 'N/A'}</div>
                     <div class="text-xs text-gray-400 uppercase">Response Time</div>
                 </div>
                 <div class="glass-card rounded-xl p-4 border border-purple-500/30 hover-lift">
