@@ -994,27 +994,10 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
       recommendations: analysisResult.suggestions || analysisResult.recommendations || [],
-      // DETAILED BREAKDOWNS (with fallbacks if AI doesn't provide them)
-      grammarBreakdown: analysisResult.grammarBreakdown || {
-        spellingErrors: `Grammar analysis: ${analysisResult.grammarScore || 0}/100 score indicates ${analysisResult.grammarScore >= 80 ? 'excellent' : analysisResult.grammarScore >= 70 ? 'good' : analysisResult.grammarScore >= 60 ? 'fair' : 'needs improvement'} grammar and spelling`,
-        grammarIssues: `Grammar issues analysis: Based on ${analysisResult.grammarScore || 0}/100 score, ${analysisResult.grammarScore >= 80 ? 'minimal grammar issues detected' : analysisResult.grammarScore >= 70 ? 'some grammar issues present' : 'multiple grammar issues need attention'}`,
-        punctuationProblems: `Punctuation analysis: ${analysisResult.grammarScore >= 80 ? 'Proper punctuation usage throughout' : analysisResult.grammarScore >= 70 ? 'Generally good punctuation with minor issues' : 'Punctuation needs improvement'}`,
-        informalLanguage: `Language style analysis: ${analysisResult.grammarScore >= 80 ? 'Appropriate balance of formal and informal language' : analysisResult.grammarScore >= 70 ? 'Good use of informal language for engagement' : 'Informal language usage could be optimized'}`,
-        scoreExplanation: `Grammar score of ${analysisResult.grammarScore || 0}/100 based on spelling accuracy, grammar correctness, punctuation usage, and language appropriateness for OnlyFans engagement`
-      },
-      guidelinesBreakdown: analysisResult.guidelinesBreakdown || {
-        salesEffectiveness: `Sales approach analysis: ${analysisResult.guidelinesScore >= 90 ? 'Excellent sales techniques with strong conversion potential' : analysisResult.guidelinesScore >= 80 ? 'Good sales approach with room for optimization' : analysisResult.guidelinesScore >= 70 ? 'Adequate sales techniques, significant improvement needed' : 'Sales approach needs major improvement'}`,
-        engagementQuality: `Engagement analysis: ${analysisResult.guidelinesScore >= 90 ? 'Outstanding fan engagement and relationship building' : analysisResult.guidelinesScore >= 80 ? 'Strong engagement with good fan connection' : analysisResult.guidelinesScore >= 70 ? 'Moderate engagement, could be more effective' : 'Engagement quality needs significant improvement'}`,
-        captionQuality: `PPV caption analysis: ${analysisResult.guidelinesScore >= 90 ? 'Highly effective captions that drive purchases' : analysisResult.guidelinesScore >= 80 ? 'Good caption quality with strong appeal' : analysisResult.guidelinesScore >= 70 ? 'Adequate captions, optimization needed' : 'Caption quality needs major improvement'}`,
-        conversationFlow: `Conversation management: ${analysisResult.guidelinesScore >= 90 ? 'Excellent conversation flow and topic management' : analysisResult.guidelinesScore >= 80 ? 'Good conversation flow with minor improvements needed' : analysisResult.guidelinesScore >= 70 ? 'Adequate conversation management' : 'Conversation flow needs significant improvement'}`,
-        scoreExplanation: `Guidelines score of ${analysisResult.guidelinesScore || 0}/100 based on sales effectiveness, engagement quality, caption appeal, and conversation management`
-      },
-      overallBreakdown: analysisResult.overallBreakdown || {
-        messageClarity: `Message clarity analysis: ${analysisResult.overallScore >= 90 ? 'Crystal clear messaging with excellent communication' : analysisResult.overallScore >= 80 ? 'Clear messaging with good communication' : analysisResult.overallScore >= 70 ? 'Generally clear with some confusion points' : 'Message clarity needs improvement'}`,
-        emotionalImpact: `Emotional connection analysis: ${analysisResult.overallScore >= 90 ? 'Strong emotional connection and fan engagement' : analysisResult.overallScore >= 80 ? 'Good emotional impact with room for growth' : analysisResult.overallScore >= 70 ? 'Moderate emotional connection' : 'Emotional impact needs significant improvement'}`,
-        conversionPotential: `Conversion analysis: ${analysisResult.overallScore >= 90 ? 'High conversion potential with excellent messaging' : analysisResult.overallScore >= 80 ? 'Good conversion potential with optimization opportunities' : analysisResult.overallScore >= 70 ? 'Moderate conversion potential' : 'Conversion potential needs major improvement'}`,
-        scoreExplanation: `Overall score of ${analysisResult.overallScore || 0}/100 based on message clarity, emotional impact, and conversion potential`
-      }
+      // DETAILED BREAKDOWNS - only save if AI provides them
+      grammarBreakdown: analysisResult.grammarBreakdown || null,
+      guidelinesBreakdown: analysisResult.guidelinesBreakdown || null,
+      overallBreakdown: analysisResult.overallBreakdown || null
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
@@ -1083,26 +1066,30 @@ Provide a detailed analysis in JSON format with:
 - suggestions (array): Actionable improvement recommendations
 
 DETAILED SCORE BREAKDOWN (REQUIRED - provide comprehensive analysis):
-- grammarBreakdown: {
-    - spellingErrors: "Detailed analysis of spelling errors with specific examples",
-    - grammarIssues: "Detailed analysis of grammar issues with specific examples", 
-    - punctuationProblems: "Detailed analysis of punctuation problems with specific examples",
-    - informalLanguage: "Detailed analysis of informal language usage with specific examples",
-    - scoreExplanation: "Comprehensive explanation of grammar score with detailed reasoning"
-  }
-- guidelinesBreakdown: {
-    - salesEffectiveness: "Comprehensive analysis of sales approach with detailed examples and specific ratings",
-    - engagementQuality: "Comprehensive analysis of engagement techniques with detailed examples and specific ratings",
-    - captionQuality: "Comprehensive analysis of PPV caption effectiveness with detailed examples and specific ratings",
-    - conversationFlow: "Comprehensive analysis of conversation management with detailed examples and specific ratings",
-    - scoreExplanation: "Comprehensive explanation of guidelines score with detailed reasoning"
-  }
-- overallBreakdown: {
-    - messageClarity: "Comprehensive analysis of message clarity with detailed examples",
-    - emotionalImpact: "Comprehensive analysis of emotional connection with detailed examples",
-    - conversionPotential: "Comprehensive analysis of conversion likelihood with detailed examples",
-    - scoreExplanation: "Comprehensive explanation of overall score with detailed reasoning"
-  }
+You MUST provide detailed breakdowns for each category. Each breakdown should be 2-3 sentences with specific examples from the actual messages.
+
+grammarBreakdown: {
+  spellingErrors: "Detailed analysis of spelling errors found in the messages with specific examples of misspelled words",
+  grammarIssues: "Detailed analysis of grammar problems with specific examples of incorrect grammar usage", 
+  punctuationProblems: "Detailed analysis of punctuation issues with specific examples of missing or incorrect punctuation",
+  informalLanguage: "Detailed analysis of informal language usage with specific examples of slang, abbreviations, or casual expressions",
+  scoreExplanation: "Comprehensive explanation of why the grammar score is what it is, referencing specific examples from the messages"
+}
+
+guidelinesBreakdown: {
+  salesEffectiveness: "Detailed analysis of sales techniques used with specific examples of sales messages and their effectiveness",
+  engagementQuality: "Detailed analysis of engagement strategies with specific examples of how the chatter connects with fans",
+  captionQuality: "Detailed analysis of PPV caption effectiveness with specific examples of captions and their appeal",
+  conversationFlow: "Detailed analysis of conversation management with specific examples of how topics are introduced and maintained",
+  scoreExplanation: "Comprehensive explanation of why the guidelines score is what it is, referencing specific examples from the messages"
+}
+
+overallBreakdown: {
+  messageClarity: "Detailed analysis of message clarity with specific examples of clear vs unclear messages",
+  emotionalImpact: "Detailed analysis of emotional connection with specific examples of messages that create emotional responses",
+  conversionPotential: "Detailed analysis of conversion likelihood with specific examples of messages that drive sales",
+  scoreExplanation: "Comprehensive explanation of why the overall score is what it is, referencing specific examples from the messages"
+}
 
 IMPORTANT CONTEXT:
 - Messages with prices are PPVs (Pay-Per-View content)
@@ -1120,6 +1107,9 @@ CRITICAL ANALYSIS RULES:
 - PROVIDE COMPREHENSIVE ANALYSIS: Each breakdown should be detailed and thorough, not brief
 - GIVE SPECIFIC EXAMPLES: Include actual message examples in your analysis
 - BE THOROUGH: Provide in-depth analysis for each category, not just short sentences
+- CRITICAL: You MUST include the grammarBreakdown, guidelinesBreakdown, and overallBreakdown objects in your response
+- CRITICAL: Each breakdown field must contain 2-3 sentences with specific examples from the actual messages
+- CRITICAL: Do not return generic statements - analyze the actual message content provided
 
 CHATTING STYLE ANALYSIS (CRITICAL):
 - chattingStyle: {
