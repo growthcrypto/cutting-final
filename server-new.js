@@ -1684,6 +1684,48 @@ async function generateFallbackAnalysis(analyticsData, analysisType, interval) {
   }
 }
 
+// Clean analysis response to remove "not calculable" messages
+function cleanAnalysisResponse(analysis) {
+  const cleaned = JSON.parse(JSON.stringify(analysis)); // Deep clone
+  
+  // Function to clean arrays
+  const cleanArray = (arr) => {
+    if (!Array.isArray(arr)) return arr;
+    return arr.filter(item => {
+      if (typeof item === 'string') {
+        return !item.includes('not calculable') && 
+               !item.includes('lack of data') && 
+               !item.includes('insufficient data') &&
+               !item.includes('cannot be calculated');
+      }
+      return true;
+    });
+  };
+  
+  // Function to clean objects recursively
+  const cleanObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    for (const key in obj) {
+      if (Array.isArray(obj[key])) {
+        obj[key] = cleanArray(obj[key]);
+      } else if (typeof obj[key] === 'object') {
+        obj[key] = cleanObject(obj[key]);
+      } else if (typeof obj[key] === 'string') {
+        if (obj[key].includes('not calculable') || 
+            obj[key].includes('lack of data') || 
+            obj[key].includes('insufficient data') ||
+            obj[key].includes('cannot be calculated')) {
+          delete obj[key];
+        }
+      }
+    }
+    return obj;
+  };
+  
+  return cleanObject(cleaned);
+}
+
 // AI Analysis function using OpenAI
 async function generateAIAnalysis(analyticsData, analysisType, interval) {
   try {
@@ -1776,9 +1818,18 @@ CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows thes
 
 IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
 
-CRITICAL: Only include sections and metrics that can actually be calculated with the available data. If you cannot calculate a specific metric or section due to missing data, omit it entirely from the response rather than saying "not calculable due to lack of data" or similar messages.
+CRITICAL: Only include sections and metrics that can actually be calculated with the available data. If you cannot calculate a specific metric or section due to missing data, omit it entirely from the response.
 
-For ALL sections (advancedMetrics, strategicInsights, actionPlan): Only include what can be meaningfully analyzed with the provided data. If a section cannot be analyzed, omit it completely rather than filling it with "not calculable" or "insufficient data" messages.
+NEVER use these phrases or similar:
+- "not calculable due to lack of data"
+- "not calculable due to lack of revenue data"
+- "not calculable due to lack of conversion data"
+- "not calculable due to lack of engagement data"
+- "insufficient data"
+- "cannot be calculated"
+- "not available"
+
+For ALL sections (advancedMetrics, strategicInsights, actionPlan): Only include what can be meaningfully analyzed with the provided data. If a section cannot be analyzed, omit it completely from the JSON response.
 
 Respond in STRICT JSON with this exact shape:
 {
@@ -1862,10 +1913,17 @@ Rules:
     });
 
     const aiResponse = completion.choices[0].message.content;
+    console.log('AI Response:', aiResponse);
     
     try {
       const analysis = JSON.parse(aiResponse);
-      return analysis;
+      console.log('Parsed AI Analysis:', JSON.stringify(analysis, null, 2));
+      
+      // Post-process to remove any "not calculable" messages
+      const cleanedAnalysis = cleanAnalysisResponse(analysis);
+      console.log('Cleaned AI Analysis:', JSON.stringify(cleanedAnalysis, null, 2));
+      
+      return cleanedAnalysis;
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiResponse);
       throw new Error('AI response format error');
