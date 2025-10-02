@@ -778,20 +778,29 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           if (firstRow) {
             csvColumns = Object.keys(row);
             console.log('CSV columns found:', csvColumns);
+            console.log('First row data:', row);
             firstRow = false;
           }
           
           // Try different possible column names for messages
           const messageText = row.message_text || row.message || row.text || row.content || row.body;
-          if (messageText) {
-            messages.push(messageText);
+          console.log('Row data:', row, 'Message text found:', messageText);
+          if (messageText && messageText.trim() !== '') {
+            // Strip HTML tags from the message
+            const cleanMessage = messageText.replace(/<[^>]*>/g, '').trim();
+            if (cleanMessage) {
+              messages.push(cleanMessage);
+            }
           }
         })
         .on('end', () => {
           fs.unlinkSync(filePath); // Delete uploaded file after parsing
           resolve();
         })
-        .on('error', reject);
+        .on('error', (err) => {
+          console.error('CSV parsing error:', err);
+          reject(err);
+        });
     });
     
     console.log(`Found ${messages.length} messages in CSV`);
