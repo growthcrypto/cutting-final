@@ -1057,91 +1057,48 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Provide a detailed analysis in JSON format with:
-- overallScore (0-100): Overall message quality
-- grammarScore (0-100): Grammar and spelling correctness
-- guidelinesScore (0-100): Adherence to sales/engagement guidelines
-- strengths (array): Key strengths in messaging
-- weaknesses (array): Areas needing improvement
-- suggestions (array): Actionable improvement recommendations
+Provide a comprehensive analysis in JSON format with:
 
-DETAILED SCORE BREAKDOWN (REQUIRED - provide comprehensive analysis):
-You MUST provide detailed breakdowns for each category. Each breakdown should be 2-3 sentences with specific examples from the actual messages.
-
-grammarBreakdown: {
-  spellingErrors: "Detailed analysis of spelling errors found in the messages with specific examples of misspelled words",
-  grammarIssues: "Detailed analysis of grammar problems with specific examples of incorrect grammar usage", 
-  punctuationProblems: "Detailed analysis of punctuation issues with specific examples of missing or incorrect punctuation",
-  informalLanguage: "Detailed analysis of informal language usage with specific examples of slang, abbreviations, or casual expressions",
-  scoreExplanation: "Comprehensive explanation of why the grammar score is what it is, referencing specific examples from the messages"
-}
-
-guidelinesBreakdown: {
-  salesEffectiveness: "Detailed analysis of sales techniques used with specific examples of sales messages and their effectiveness",
-  engagementQuality: "Detailed analysis of engagement strategies with specific examples of how the chatter connects with fans",
-  captionQuality: "Detailed analysis of PPV caption effectiveness with specific examples of captions and their appeal",
-  conversationFlow: "Detailed analysis of conversation management with specific examples of how topics are introduced and maintained",
-  scoreExplanation: "Comprehensive explanation of why the guidelines score is what it is, referencing specific examples from the messages"
-}
-
-overallBreakdown: {
-  messageClarity: "Detailed analysis of message clarity with specific examples of clear vs unclear messages",
-  emotionalImpact: "Detailed analysis of emotional connection with specific examples of messages that create emotional responses",
-  conversionPotential: "Detailed analysis of conversion likelihood with specific examples of messages that drive sales",
-  scoreExplanation: "Comprehensive explanation of why the overall score is what it is, referencing specific examples from the messages"
+{
+  "overallScore": 85,
+  "grammarScore": 78,
+  "guidelinesScore": 82,
+  "strengths": ["Detailed analysis of what the chatter does well with specific examples from messages"],
+  "weaknesses": ["Detailed analysis of areas needing improvement with specific examples"],
+  "suggestions": ["Specific actionable recommendations based on the actual message analysis"],
+  "grammarBreakdown": {
+    "spellingErrors": "Detailed analysis of spelling issues found with specific examples",
+    "grammarIssues": "Detailed analysis of grammar problems with specific examples",
+    "punctuationProblems": "Detailed analysis of punctuation issues with specific examples",
+    "informalLanguage": "Detailed analysis of informal language usage with specific examples",
+    "scoreExplanation": "Comprehensive explanation of the grammar score with detailed reasoning"
+  },
+  "guidelinesBreakdown": {
+    "salesEffectiveness": "Detailed analysis of sales techniques with specific examples from messages",
+    "engagementQuality": "Detailed analysis of engagement strategies with specific examples",
+    "captionQuality": "Detailed analysis of PPV caption effectiveness with specific examples",
+    "conversationFlow": "Detailed analysis of conversation management with specific examples",
+    "scoreExplanation": "Comprehensive explanation of the guidelines score with detailed reasoning"
+  },
+  "overallBreakdown": {
+    "messageClarity": "Detailed analysis of message clarity with specific examples",
+    "emotionalImpact": "Detailed analysis of emotional connection with specific examples",
+    "conversionPotential": "Detailed analysis of conversion likelihood with specific examples",
+    "scoreExplanation": "Comprehensive explanation of the overall score with detailed reasoning"
+  }
 }
 
 IMPORTANT CONTEXT:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
-- Fans cannot see the actual content until they buy it
 - "Deleted user" messages are from different people who deleted their accounts
-- When analyzing guidelines about "captions", this refers to PPV message captions
 
-CRITICAL ANALYSIS RULES:
-- ONLY analyze metrics that have actual data available
-- DO NOT make assumptions about "generally known" relationships
-- DO NOT mention "higher quality messages can lead to higher conversion rates" unless you have specific data proving this
-- If you cannot determine a relationship from the actual data, state "Analysis requires more data" instead of making assumptions
-- Focus on what the data actually shows, not what might theoretically be true
-- PROVIDE COMPREHENSIVE ANALYSIS: Each breakdown should be detailed and thorough, not brief
-- GIVE SPECIFIC EXAMPLES: Include actual message examples in your analysis
-- BE THOROUGH: Provide in-depth analysis for each category, not just short sentences
-- CRITICAL: You MUST include the grammarBreakdown, guidelinesBreakdown, and overallBreakdown objects in your response
-- CRITICAL: Each breakdown field must contain 2-3 sentences with specific examples from the actual messages
-- CRITICAL: Do not return generic statements - analyze the actual message content provided
-
-CHATTING STYLE ANALYSIS (CRITICAL):
-- chattingStyle: {
-  - directness: "very direct" | "moderately direct" | "subtle/indirect" | "very subtle"
-  - friendliness: "very friendly" | "moderately friendly" | "neutral" | "cold/distant"
-  - salesApproach: "aggressive" | "moderate" | "soft" | "very soft"
-  - personality: "dominant" | "submissive" | "playful" | "serious" | "flirty" | "conversational"
-  - emojiUsage: "heavy" | "moderate" | "light" | "minimal"
-  - messageLength: "very long" | "long" | "medium" | "short" | "very short"
-  - responsePattern: "immediate" | "thoughtful" | "delayed" | "inconsistent"
-}
-
-MESSAGE PATTERN ANALYSIS:
-- messagePatterns: {
-  - questionFrequency: "high" | "moderate" | "low" (questions per message)
-  - exclamationUsage: "high" | "moderate" | "low"
-  - capitalizationStyle: "proper" | "casual" | "all caps" | "no caps"
-  - punctuationStyle: "proper" | "casual" | "excessive" | "minimal"
-  - topicDiversity: "high" | "moderate" | "low" (variety of conversation topics)
-  - sexualContent: "explicit" | "moderate" | "subtle" | "minimal"
-  - personalSharing: "high" | "moderate" | "low" (sharing personal details)
-}
-
-ENGAGEMENT EFFECTIVENESS:
-- engagementMetrics: {
-  - conversationStarter: "excellent" | "good" | "average" | "poor"
-  - conversationMaintainer: "excellent" | "good" | "average" | "poor"
-  - salesConversation: "excellent" | "good" | "average" | "poor"
-  - fanRetention: "excellent" | "good" | "average" | "poor"
-}
-
-Focus on: engagement quality, sales effectiveness, professionalism, grammar, customer service, AND detailed style analysis.`;
+ANALYSIS REQUIREMENTS:
+- Provide detailed, comprehensive analysis for each field
+- Include specific examples from the actual messages
+- Each breakdown should be 2-3 sentences with concrete examples
+- Focus on what the messages actually show, not generic statements
+- Be thorough and valuable in your analysis`;
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
