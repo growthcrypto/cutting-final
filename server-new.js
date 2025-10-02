@@ -1851,14 +1851,14 @@ Respond in STRICT JSON with this exact shape:
   },
   "advancedMetrics": {
     "efficiencyRatios": {
-      "messagesPerDollar": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA",
-      "timeToConversion": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA", 
-      "engagementVelocity": "REPLACE WITH ACTUAL CALCULATION OR OMIT IF NO DATA"
+      "messagesPerPPV": "Calculate messages sent divided by PPVs sent with analysis",
+      "responseEfficiency": "Calculate response time vs unlock rate correlation with analysis", 
+      "messageQualityImpact": "Calculate message quality score vs performance correlation with analysis"
     },
     "behavioralPatterns": {
-      "responseTimeDistribution": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA",
-      "conversionTriggers": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA",
-      "engagementCycles": "REPLACE WITH ACTUAL ANALYSIS OR OMIT IF NO DATA"
+      "responseTimePatterns": "Analyze response time data and its impact on performance",
+      "messageFrequencyPatterns": "Analyze message sending patterns and effectiveness", 
+      "ppvTimingPatterns": "Analyze PPV sending patterns and unlock rates"
     },
     "competitiveAnalysis": {
       "benchmarkGaps": "specific gaps with quantified impact",
