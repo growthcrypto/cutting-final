@@ -97,6 +97,28 @@ const messageAnalysisSchema = new mongoose.Schema({
   overallScore: { type: Number, min: 0, max: 100, default: 0 },
   guidelinesScore: { type: Number, min: 0, max: 100, default: 0 },
   grammarScore: { type: Number, min: 0, max: 100, default: 0 },
+  
+  // DETAILED SCORE BREAKDOWNS
+  grammarBreakdown: {
+    spellingErrors: { type: String },
+    grammarIssues: { type: String },
+    punctuationProblems: { type: String },
+    informalLanguage: { type: String },
+    scoreExplanation: { type: String }
+  },
+  guidelinesBreakdown: {
+    salesEffectiveness: { type: String },
+    engagementQuality: { type: String },
+    captionQuality: { type: String },
+    conversationFlow: { type: String },
+    scoreExplanation: { type: String }
+  },
+  overallBreakdown: {
+    messageClarity: { type: String },
+    emotionalImpact: { type: String },
+    conversionPotential: { type: String },
+    scoreExplanation: { type: String }
+  },
   engagementScore: { type: Number, min: 0, max: 100, default: 0 },
   
   // Detailed Analysis

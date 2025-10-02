@@ -992,7 +992,11 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       guidelinesScore: analysisResult.guidelinesScore || null,
       strengths: analysisResult.strengths || [],
       weaknesses: analysisResult.weaknesses || [],
-      recommendations: analysisResult.suggestions || []
+      recommendations: analysisResult.suggestions || [],
+      // DETAILED BREAKDOWNS
+      grammarBreakdown: analysisResult.grammarBreakdown || null,
+      guidelinesBreakdown: analysisResult.guidelinesBreakdown || null,
+      overallBreakdown: analysisResult.overallBreakdown || null
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
@@ -1059,6 +1063,28 @@ Provide a detailed analysis in JSON format with:
 - strengths (array): Key strengths in messaging
 - weaknesses (array): Areas needing improvement
 - suggestions (array): Actionable improvement recommendations
+
+DETAILED SCORE BREAKDOWN (REQUIRED):
+- grammarBreakdown: {
+    - spellingErrors: "X spelling errors found: [list specific errors]",
+    - grammarIssues: "X grammar issues found: [list specific issues]",
+    - punctuationProblems: "X punctuation problems: [list specific problems]",
+    - informalLanguage: "X instances of informal language: [list examples]",
+    - scoreExplanation: "Grammar score of X/100 because [detailed explanation]"
+  }
+- guidelinesBreakdown: {
+    - salesEffectiveness: "Sales approach analysis: [specific examples and rating]",
+    - engagementQuality: "Engagement analysis: [specific examples and rating]",
+    - captionQuality: "PPV caption analysis: [specific examples and rating]",
+    - conversationFlow: "Conversation flow analysis: [specific examples and rating]",
+    - scoreExplanation: "Guidelines score of X/100 because [detailed explanation]"
+  }
+- overallBreakdown: {
+    - messageClarity: "Message clarity analysis: [specific examples]",
+    - emotionalImpact: "Emotional impact analysis: [specific examples]",
+    - conversionPotential: "Conversion potential analysis: [specific examples]",
+    - scoreExplanation: "Overall score of X/100 because [detailed explanation]"
+  }
 
 IMPORTANT CONTEXT:
 - Messages with prices are PPVs (Pay-Per-View content)
@@ -1223,6 +1249,9 @@ app.get('/api/debug/message-analysis', checkDatabaseConnection, async (req, res)
         guidelinesScore: m.guidelinesScore,
         strengths: m.strengths,
         weaknesses: m.weaknesses,
+        grammarBreakdown: m.grammarBreakdown,
+        guidelinesBreakdown: m.guidelinesBreakdown,
+        overallBreakdown: m.overallBreakdown,
         createdAt: m.createdAt
       }))
     });
@@ -1292,7 +1321,10 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
           grammarScore: m.grammarScore,
           guidelinesScore: m.guidelinesScore,
           strengths: m.strengths,
-          weaknesses: m.weaknesses
+          weaknesses: m.weaknesses,
+          grammarBreakdown: m.grammarBreakdown,
+          guidelinesBreakdown: m.guidelinesBreakdown,
+          overallBreakdown: m.overallBreakdown
         })),
         aiAnalysis: aiAnalysis.slice(-3).map(a => ({
           id: a._id,
