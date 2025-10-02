@@ -1205,6 +1205,32 @@ app.post('/api/debug/test-password', checkDatabaseConnection, async (req, res) =
   }
 });
 
+// Debug endpoint to check message analysis data
+app.get('/api/debug/message-analysis', checkDatabaseConnection, async (req, res) => {
+  try {
+    const messageAnalysis = await MessageAnalysis.find({}).sort({ weekEndDate: -1 }).limit(5);
+    res.json({
+      message: 'Message analysis data',
+      count: messageAnalysis.length,
+      data: messageAnalysis.map(m => ({
+        id: m._id,
+        chatterName: m.chatterName,
+        weekStartDate: m.weekStartDate,
+        weekEndDate: m.weekEndDate,
+        totalMessages: m.totalMessages,
+        overallScore: m.overallScore,
+        grammarScore: m.grammarScore,
+        guidelinesScore: m.guidelinesScore,
+        strengths: m.strengths,
+        weaknesses: m.weaknesses,
+        createdAt: m.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to check all data in database
 app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
   try {
