@@ -81,6 +81,7 @@ const messageAnalysisSchema = new mongoose.Schema({
   // NEW: Individual Message Records (for flow analysis)
   messageRecords: [{
     fanUsername: { type: String, required: true },
+    originalFanUsername: { type: String, required: true }, // Keep original for reference
     messageText: { type: String, required: true },
     timestamp: { type: Date, required: true },
     date: { type: Date, required: true },
@@ -88,7 +89,8 @@ const messageAnalysisSchema = new mongoose.Schema({
     creatorPage: { type: String, required: true },
     isPPV: { type: Boolean, default: false },
     ppvRevenue: { type: Number, default: 0 }, // revenue if this message is a PPV
-    ppvPurchased: { type: Boolean, default: false } // whether the PPV was actually purchased
+    ppvPurchased: { type: Boolean, default: false }, // whether the PPV was actually purchased
+    isDeletedUser: { type: Boolean, default: false } // flag for deleted user accounts
   }],
   
   // AI Scores

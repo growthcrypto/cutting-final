@@ -927,8 +927,13 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
               // Determine if this is a PPV (has price > 0)
               const isPPV = ppvRevenue && parseFloat(ppvRevenue) > 0;
               
+              // Handle "Deleted user" as independent users (not conversation flow)
+              const isDeletedUser = fanUsername && fanUsername.toLowerCase().includes('deleted user');
+              const processedFanUsername = isDeletedUser ? `deleted_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : fanUsername;
+              
               messageRecords.push({
-                fanUsername: fanUsername || 'unknown',
+                fanUsername: processedFanUsername || 'unknown',
+                originalFanUsername: fanUsername || 'unknown', // Keep original for reference
                 messageText: cleanMessage,
                 timestamp: parseTimestamp(timestamp, date),
                 date: parseDate(date),
@@ -936,7 +941,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
                 creatorPage: creatorPage || 'unknown',
                 isPPV: isPPV,
                 ppvRevenue: ppvRevenue ? parseFloat(ppvRevenue) : 0,
-                ppvPurchased: ppvPurchased === 'yes' || ppvPurchased === 'Yes' || ppvPurchased === 'YES'
+                ppvPurchased: ppvPurchased === 'yes' || ppvPurchased === 'Yes' || ppvPurchased === 'YES',
+                isDeletedUser: isDeletedUser // Flag for analysis
               });
             }
           }
@@ -1053,6 +1059,15 @@ Provide a detailed analysis in JSON format with:
 - strengths (array): Key strengths in messaging
 - weaknesses (array): Areas needing improvement
 - suggestions (array): Actionable improvement recommendations
+
+IMPORTANT CONTEXT:
+- Messages with prices are PPVs (Pay-Per-View content)
+- PPV messages are CAPTIONS that convince fans to purchase the content
+- Fans cannot see the actual content until they buy it
+- Caption quality directly impacts PPV purchase rates
+- "Deleted user" messages are from different people who deleted their accounts
+- When analyzing guidelines about "captions", this refers to PPV message captions
+- Caption effectiveness is measured by PPV purchase rates
 
 CHATTING STYLE ANALYSIS (CRITICAL):
 - chattingStyle: {
