@@ -1904,13 +1904,18 @@ function cleanAnalysisResponse(analysis) {
 // AI Analysis function using OpenAI
 async function generateAIAnalysis(analyticsData, analysisType, interval) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured');
+    // Check if OpenAI is properly configured
+    if (!openai || !openai.chat || !openai.chat.completions) {
+      console.log('OpenAI not configured in generateAIAnalysis, returning fallback analysis');
+      return {
+        insights: ["Analysis requires OpenAI API key configuration"],
+        weakPoints: ["Unable to perform AI analysis"],
+        rootCauses: ["Missing API configuration"],
+        opportunities: ["Configure OpenAI API key for detailed analysis"],
+        roiCalculations: ["Analysis not available"],
+        recommendations: ["Set up OpenAI API key to enable AI-powered insights"]
+      };
     }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
     let prompt;
     if (analysisType === 'agency') {
