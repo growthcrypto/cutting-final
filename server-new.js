@@ -852,11 +852,13 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     const filePath = req.file.path;
     let firstRow = true;
     let csvColumns = [];
+    let messageCount = 0;
     
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv())
         .on('data', (row) => {
+          messageCount++;
           if (firstRow) {
             csvColumns = Object.keys(row);
     console.log('🔍 CSV columns found:', csvColumns);
@@ -876,6 +878,11 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           
           if (firstRow) {
             console.log('🔍 Extracted fields sample:', { messageText, fanUsername, timestamp, date, replyTime, creatorPage, ppvRevenue, ppvPurchased });
+          }
+          
+          // Log progress every 500 messages to avoid rate limiting
+          if (messageCount % 500 === 0) {
+            console.log(`📊 Processed ${messageCount} messages...`);
           }
           
           if (messageText && messageText.trim() !== '') {
@@ -935,6 +942,7 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
           }
         })
         .on('end', () => {
+          console.log(`✅ CSV parsing complete: ${messageCount} total messages processed`);
           fs.unlinkSync(filePath); // Delete uploaded file after parsing
           resolve();
         })
