@@ -1082,26 +1082,26 @@ Provide a detailed analysis in JSON format with:
 - weaknesses (array): Areas needing improvement
 - suggestions (array): Actionable improvement recommendations
 
-DETAILED SCORE BREAKDOWN (REQUIRED):
+DETAILED SCORE BREAKDOWN (REQUIRED - provide comprehensive analysis):
 - grammarBreakdown: {
-    - spellingErrors: "X spelling errors found: [list specific errors]",
-    - grammarIssues: "X grammar issues found: [list specific issues]",
-    - punctuationProblems: "X punctuation problems: [list specific problems]",
-    - informalLanguage: "X instances of informal language: [list examples]",
-    - scoreExplanation: "Grammar score of X/100 because [detailed explanation]"
+    - spellingErrors: "Detailed analysis of spelling errors with specific examples",
+    - grammarIssues: "Detailed analysis of grammar issues with specific examples", 
+    - punctuationProblems: "Detailed analysis of punctuation problems with specific examples",
+    - informalLanguage: "Detailed analysis of informal language usage with specific examples",
+    - scoreExplanation: "Comprehensive explanation of grammar score with detailed reasoning"
   }
 - guidelinesBreakdown: {
-    - salesEffectiveness: "Sales approach analysis: [specific examples and rating]",
-    - engagementQuality: "Engagement analysis: [specific examples and rating]",
-    - captionQuality: "PPV caption analysis: [specific examples and rating]",
-    - conversationFlow: "Conversation flow analysis: [specific examples and rating]",
-    - scoreExplanation: "Guidelines score of X/100 because [detailed explanation]"
+    - salesEffectiveness: "Comprehensive analysis of sales approach with detailed examples and specific ratings",
+    - engagementQuality: "Comprehensive analysis of engagement techniques with detailed examples and specific ratings",
+    - captionQuality: "Comprehensive analysis of PPV caption effectiveness with detailed examples and specific ratings",
+    - conversationFlow: "Comprehensive analysis of conversation management with detailed examples and specific ratings",
+    - scoreExplanation: "Comprehensive explanation of guidelines score with detailed reasoning"
   }
 - overallBreakdown: {
-    - messageClarity: "Message clarity analysis: [specific examples]",
-    - emotionalImpact: "Emotional impact analysis: [specific examples]",
-    - conversionPotential: "Conversion potential analysis: [specific examples]",
-    - scoreExplanation: "Overall score of X/100 because [detailed explanation]"
+    - messageClarity: "Comprehensive analysis of message clarity with detailed examples",
+    - emotionalImpact: "Comprehensive analysis of emotional connection with detailed examples",
+    - conversionPotential: "Comprehensive analysis of conversion likelihood with detailed examples",
+    - scoreExplanation: "Comprehensive explanation of overall score with detailed reasoning"
   }
 
 IMPORTANT CONTEXT:
@@ -1117,6 +1117,9 @@ CRITICAL ANALYSIS RULES:
 - DO NOT mention "higher quality messages can lead to higher conversion rates" unless you have specific data proving this
 - If you cannot determine a relationship from the actual data, state "Analysis requires more data" instead of making assumptions
 - Focus on what the data actually shows, not what might theoretically be true
+- PROVIDE COMPREHENSIVE ANALYSIS: Each breakdown should be detailed and thorough, not brief
+- GIVE SPECIFIC EXAMPLES: Include actual message examples in your analysis
+- BE THOROUGH: Provide in-depth analysis for each category, not just short sentences
 
 CHATTING STYLE ANALYSIS (CRITICAL):
 - chattingStyle: {
