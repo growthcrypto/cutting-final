@@ -1776,7 +1776,9 @@ CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows thes
 
 IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
 
-For advancedMetrics: Only include efficiency ratios and behavioral patterns that can actually be calculated with the available data. If you cannot calculate a specific metric due to missing data, omit it entirely from the response rather than saying "not calculable due to lack of data".
+CRITICAL: Only include sections and metrics that can actually be calculated with the available data. If you cannot calculate a specific metric or section due to missing data, omit it entirely from the response rather than saying "not calculable due to lack of data" or similar messages.
+
+For ALL sections (advancedMetrics, strategicInsights, actionPlan): Only include what can be meaningfully analyzed with the provided data. If a section cannot be analyzed, omit it completely rather than filling it with "not calculable" or "insufficient data" messages.
 
 Respond in STRICT JSON with this exact shape:
 {

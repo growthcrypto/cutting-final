@@ -5262,7 +5262,10 @@ function renderSophisticatedChatterAnalysis(data) {
             ` : ''}
             
             <!-- Strategic Insights Grid (Only Growth & Leaks) -->
-            ${data.strategicInsights?.revenueOptimization ? `
+            ${data.strategicInsights?.revenueOptimization && (
+                (data.strategicInsights.revenueOptimization.leakagePoints && data.strategicInsights.revenueOptimization.leakagePoints.filter(point => point && !point.includes('not calculable')).length > 0) ||
+                (data.strategicInsights.revenueOptimization.growthOpportunities && data.strategicInsights.revenueOptimization.growthOpportunities.filter(opp => opp && !opp.includes('not calculable')).length > 0)
+            ) ? `
             <div class="grid grid-cols-2 gap-4 slide-up-2">
                 ${data.strategicInsights.revenueOptimization.leakagePoints?.length > 0 ? `
                 <div class="glass-card rounded-xl p-5 border border-red-500/30 hover-lift">
@@ -5271,7 +5274,7 @@ function renderSophisticatedChatterAnalysis(data) {
                         Revenue Leaks (Fix These)
                     </h5>
                     <ul class="space-y-3">
-                        ${data.strategicInsights.revenueOptimization.leakagePoints.slice(0, 3).map((point, idx) => `
+                        ${data.strategicInsights.revenueOptimization.leakagePoints.filter(point => point && !point.includes('not calculable')).slice(0, 3).map((point, idx) => `
                             <li class="text-sm text-gray-300 flex items-start">
                                 <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-red-500/20 text-red-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
                                 <span>${point}</span>
@@ -5288,7 +5291,7 @@ function renderSophisticatedChatterAnalysis(data) {
                         Growth Opportunities
                     </h5>
                     <ul class="space-y-3">
-                        ${data.strategicInsights.revenueOptimization.growthOpportunities.slice(0, 3).map((opp, idx) => `
+                        ${data.strategicInsights.revenueOptimization.growthOpportunities.filter(opp => opp && !opp.includes('not calculable')).slice(0, 3).map((opp, idx) => `
                             <li class="text-sm text-gray-300 flex items-start">
                                 <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-green-500/20 text-green-400 text-xs flex items-center justify-center mr-3 font-bold">${idx + 1}</span>
                                 <span>${opp}</span>
@@ -5330,14 +5333,14 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             
             <!-- Top 3 Actions (Immediate) -->
-            ${data.actionPlan?.immediateActions?.length > 0 ? `
+            ${data.actionPlan?.immediateActions && data.actionPlan.immediateActions.filter(action => action && !action.includes('not calculable')).length > 0 ? `
             <div class="glass-card rounded-xl p-6 border border-orange-500/30 slide-up-2 hover-lift">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-bolt text-orange-400 mr-3"></i>
                     Top Priority Actions
                 </h5>
                 <div class="space-y-3">
-                    ${data.actionPlan.immediateActions.slice(0, 3).map((action, idx) => `
+                    ${data.actionPlan.immediateActions.filter(action => action && !action.includes('not calculable')).slice(0, 3).map((action, idx) => `
                         <div class="flex items-start p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
                             <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-orange-500/30 text-orange-400 flex items-center justify-center mr-4 font-black text-lg">${idx + 1}</span>
                             <span class="text-sm text-gray-300 leading-relaxed">${action}</span>
@@ -5355,7 +5358,7 @@ function renderSophisticatedChatterAnalysis(data) {
                     Key Insights
                 </h5>
                 <div class="space-y-3">
-                    ${data.insights.slice(0, 4).map((insight, idx) => `
+                    ${data.insights.filter(insight => insight && !insight.includes('not calculable')).slice(0, 4).map((insight, idx) => `
                         <div class="flex items-start p-4 bg-blue-900/20 rounded-lg border border-blue-500/20">
                             <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500/30 text-blue-400 flex items-center justify-center mr-4 font-black text-lg">${idx + 1}</span>
                             <span class="text-sm text-gray-300 leading-relaxed">${insight}</span>
@@ -5372,7 +5375,7 @@ function renderSophisticatedChatterAnalysis(data) {
                     Opportunities
                 </h5>
                 <div class="space-y-3">
-                    ${data.opportunities.slice(0, 4).map((opp, idx) => `
+                    ${data.opportunities.filter(opp => opp && !opp.includes('not calculable')).slice(0, 4).map((opp, idx) => `
                         <div class="flex items-start p-4 bg-green-900/20 rounded-lg border border-green-500/20">
                             <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500/30 text-green-400 flex items-center justify-center mr-4 font-black text-lg">${idx + 1}</span>
                             <span class="text-sm text-gray-300 leading-relaxed">${opp}</span>
@@ -5389,7 +5392,7 @@ function renderSophisticatedChatterAnalysis(data) {
                     Recommendations
                 </h5>
                 <div class="space-y-3">
-                    ${data.recommendations.slice(0, 4).map((rec, idx) => `
+                    ${data.recommendations.filter(rec => rec && !rec.includes('not calculable')).slice(0, 4).map((rec, idx) => `
                         <div class="flex items-start p-4 bg-purple-900/20 rounded-lg border border-purple-500/20">
                             <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-purple-500/30 text-purple-400 flex items-center justify-center mr-4 font-black text-lg">${idx + 1}</span>
                             <span class="text-sm text-gray-300 leading-relaxed">${rec}</span>
