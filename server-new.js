@@ -1827,18 +1827,20 @@ CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows thes
 
 IMPORTANT: Do NOT make assumptions about missing data. If a metric is null/undefined (like response time or message quality scores), do not assume it's 0 or bad - simply don't mention it in your analysis. Only analyze metrics that have actual data.
 
-CRITICAL: Only include sections and metrics that can actually be calculated with the available data. If you cannot calculate a specific metric or section due to missing data, omit it entirely from the response.
+CRITICAL: You MUST return ALL sections in the JSON response. Do not omit any sections.
 
-NEVER use these phrases or similar:
+For each metric, either provide a real calculation/analysis OR provide a meaningful message about the data.
+
+NEVER use these phrases:
 - "not calculable due to lack of data"
-- "not calculable due to lack of revenue data"
+- "not calculable due to lack of revenue data" 
 - "not calculable due to lack of conversion data"
 - "not calculable due to lack of engagement data"
 - "insufficient data"
 - "cannot be calculated"
 - "not available"
 
-For ALL sections (advancedMetrics, strategicInsights, actionPlan): Only include what can be meaningfully analyzed with the provided data. If a section cannot be analyzed, omit it completely from the JSON response.
+Instead, provide actual analysis or say "Analysis requires more data" or "Metric not available with current data".
 
 Respond in STRICT JSON with this exact shape:
 {
@@ -1928,11 +1930,8 @@ Rules:
       const analysis = JSON.parse(aiResponse);
       console.log('Parsed AI Analysis:', JSON.stringify(analysis, null, 2));
       
-      // Post-process to remove any "not calculable" messages
-      const cleanedAnalysis = cleanAnalysisResponse(analysis);
-      console.log('Cleaned AI Analysis:', JSON.stringify(cleanedAnalysis, null, 2));
-      
-      return cleanedAnalysis;
+      console.log('Raw AI Analysis:', JSON.stringify(analysis, null, 2));
+      return analysis;
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiResponse);
       throw new Error('AI response format error');

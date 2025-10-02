@@ -5227,14 +5227,14 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             
             <!-- AI-Calculated Insights (Complex Math) -->
-            ${data.advancedMetrics && data.advancedMetrics.efficiencyRatios && Object.entries(data.advancedMetrics.efficiencyRatios).filter(([key, value]) => value && value.trim() !== '' && !value.includes('not calculable') && !value.includes('lack of data') && !value.includes('insufficient data')).length > 0 ? `
+            ${data.advancedMetrics && data.advancedMetrics.efficiencyRatios ? `
             <div class="glass-card rounded-xl p-6 border border-cyan-500/30 slide-up-1 hover-lift">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-calculator text-cyan-400 mr-3"></i>
                     AI-Calculated Metrics
                 </h5>
                 <div class="grid grid-cols-3 gap-4">
-                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).filter(([key, value]) => value && value.trim() !== '' && !value.includes('not calculable') && !value.includes('lack of data') && !value.includes('insufficient data')).map(([key, value]) => `
+                    ${data.advancedMetrics.efficiencyRatios ? Object.entries(data.advancedMetrics.efficiencyRatios).map(([key, value]) => `
                         <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
                             <div class="text-sm font-bold text-cyan-400 mb-2">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
                             <div class="text-sm text-gray-300">${value}</div>
