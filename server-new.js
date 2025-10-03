@@ -1277,6 +1277,13 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: AI Response starts with:', analysisText.substring(0, 100));
     console.log('🚨 DEBUGGING: AI Response ends with:', analysisText.substring(analysisText.length - 100));
     
+    // Check if AI is returning the template structure with placeholder values
+    console.log('🔍 Checking for template placeholders:');
+    console.log('🔍 Contains "List specific":', analysisText.includes('List specific'));
+    console.log('🔍 Contains "Explain the":', analysisText.includes('Explain the'));
+    console.log('🔍 Contains "undefined":', analysisText.includes('undefined'));
+    console.log('🔍 Contains "null":', analysisText.includes('null'));
+    
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
     if (!jsonMatch) {
@@ -1290,6 +1297,19 @@ ANALYSIS REQUIREMENTS:
       console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
       console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
       console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+      
+      // Check what the AI actually returned for breakdown sections
+      console.log('🔍 AI grammarBreakdown content:', analysisResult.grammarBreakdown);
+      console.log('🔍 AI guidelinesBreakdown content:', analysisResult.guidelinesBreakdown);
+      console.log('🔍 AI overallBreakdown content:', analysisResult.overallBreakdown);
+      
+      // Check if AI returned template placeholders
+      if (analysisResult.grammarBreakdown) {
+        const grammarValues = Object.values(analysisResult.grammarBreakdown);
+        console.log('🔍 Grammar breakdown values:', grammarValues);
+        console.log('🔍 Contains template text:', grammarValues.some(v => v && v.includes('List specific')));
+      }
+      
       return analysisResult;
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError.message);
