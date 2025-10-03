@@ -5281,23 +5281,6 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- TEST SECTION - ALWAYS SHOW -->
-            <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift">
-                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-bug text-red-400 mr-3"></i>
-                    TEST SECTION - ALWAYS SHOW
-                </h5>
-                <div class="text-sm text-gray-300">
-                    <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
-                    <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
-                    <div>Has chattingStyle: ${data.chattingStyle ? 'YES' : 'NO'}</div>
-                    <div>Has messagePatterns: ${data.messagePatterns ? 'YES' : 'NO'}</div>
-                    <div>Has engagementMetrics: ${data.engagementMetrics ? 'YES' : 'NO'}</div>
-                    <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
-                    <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
-                    <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
-                </div>
-            </div>
             
             <!-- Message Quality Analysis -->
             ${(() => {
@@ -5333,17 +5316,6 @@ function renderSophisticatedChatterAnalysis(data) {
                     </div>
                 </div>
                 
-                <!-- TEST SECTION - ALWAYS SHOW -->
-                <div class="mb-6 p-4 bg-red-800/30 rounded-lg border border-red-700/50">
-                    <h6 class="text-md font-bold text-white mb-3">TEST SECTION - THIS SHOULD ALWAYS SHOW</h6>
-                    <div class="text-sm text-gray-300">
-                        <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
-                        <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
-                        <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
-                        <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
-                        <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
-                    </div>
-                </div>
                 
                 <!-- Detailed Score Breakdowns -->
                 ${data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown ? `
