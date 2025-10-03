@@ -2794,16 +2794,24 @@ CRITICAL ANALYSIS REQUIREMENTS:
 
     const aiResponse = completion.choices[0].message.content;
     console.log('AI Response:', aiResponse);
+    console.log('AI Response Length:', aiResponse.length);
+    
+    // Try to extract JSON from the response
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      console.error('❌ No JSON found in AI response');
+      throw new Error('AI response format error - no JSON found');
+    }
     
     try {
-      const analysis = JSON.parse(aiResponse);
+      const analysis = JSON.parse(jsonMatch[0]);
       console.log('Parsed AI Analysis:', JSON.stringify(analysis, null, 2));
-      
-      console.log('Raw AI Analysis:', JSON.stringify(analysis, null, 2));
       return analysis;
     } catch (parseError) {
-      console.error('Failed to parse AI response:', aiResponse);
-      throw new Error('AI response format error');
+      console.error('❌ JSON Parse Error:', parseError.message);
+      console.error('❌ Malformed JSON:', jsonMatch[0]);
+      throw new Error('AI response format error - malformed JSON');
     }
   } catch (error) {
     console.error('OpenAI API Error:', error);
