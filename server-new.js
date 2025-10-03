@@ -1181,7 +1181,29 @@ IMPORTANT: You MUST fill in the actual values for each field based on the messag
 - guidelinesBreakdown: salesEffectiveness, engagementQuality, captionQuality, conversationFlow, scoreExplanation
 - overallBreakdown: messageClarity, emotionalImpact, conversionPotential, scoreExplanation
 
-CRITICAL: For breakdown sections, provide specific examples from the actual messages analyzed. Include real issues found, specific strengths, and concrete recommendations based on the message content.
+CRITICAL BREAKDOWN REQUIREMENTS - BE DIRECT AND ACTIONABLE:
+
+For grammarBreakdown:
+- spellingErrors: List specific misspelled words found in messages (e.g., "Found 'recieve' instead of 'receive' in message 3")
+- grammarIssues: Point out actual grammar mistakes (e.g., "Missing apostrophes in contractions like 'dont' instead of 'don't'")
+- punctuationProblems: Identify real punctuation issues (e.g., "Missing periods at end of sentences in messages 1, 5, 8")
+- informalLanguage: Note specific informal patterns (e.g., "Excessive use of 'lol' and 'haha' in 12 out of 20 messages")
+- scoreExplanation: Explain the score with specific examples
+
+For guidelinesBreakdown:
+- salesEffectiveness: Point out actual sales mistakes (e.g., "PPV sent without building rapport first in message 15")
+- engagementQuality: Identify real engagement issues (e.g., "Not asking follow-up questions in 8 out of 10 conversations")
+- captionQuality: Critique actual PPV captions (e.g., "Caption 'check this out' is too vague, should be more descriptive")
+- conversationFlow: Note real conversation problems (e.g., "Jumping to sexual topics too quickly without context")
+- scoreExplanation: Explain with specific guideline violations
+
+For overallBreakdown:
+- messageClarity: Point out unclear messages (e.g., "Message 7 is confusing due to run-on sentences")
+- emotionalImpact: Note emotional connection issues (e.g., "Messages lack personal touch, too transactional")
+- conversionPotential: Identify conversion blockers (e.g., "Not building urgency or scarcity in PPV offers")
+- scoreExplanation: Explain with specific examples
+
+NO GENERIC STATEMENTS. Only include issues that actually exist in the messages. If no issues exist, say "No significant issues found" for that category.
 
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
@@ -1908,11 +1930,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       if (!hasGrammarContent) {
         console.log('🔍 No AI grammarBreakdown content, using fallback');
         aiAnalysis.grammarBreakdown = {
-          "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
-          "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
-          "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
-          "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
-          "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
+          "spellingErrors": `Grammar score ${analyticsData.grammarScore || 0}/100 - AI analysis unavailable. Upload messages for specific spelling error identification.`,
+          "grammarIssues": `Grammar score ${analyticsData.grammarScore || 0}/100 - AI analysis unavailable. Upload messages for specific grammar mistake identification.`,
+          "punctuationProblems": `Grammar score ${analyticsData.grammarScore || 0}/100 - AI analysis unavailable. Upload messages for specific punctuation issue identification.`,
+          "informalLanguage": `Grammar score ${analyticsData.grammarScore || 0}/100 - AI analysis unavailable. Upload messages for specific informal language pattern identification.`,
+          "scoreExplanation": `Grammar score ${analyticsData.grammarScore || 0}/100 based on message analysis. Upload messages for detailed AI analysis with specific examples.`
         };
       } else {
         console.log('🔍 Using AI grammarBreakdown with content');
@@ -1925,11 +1947,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       if (!hasGuidelinesContent) {
         console.log('🔍 No AI guidelinesBreakdown content, using fallback');
         aiAnalysis.guidelinesBreakdown = {
-          "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
-          "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
-          "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
-          "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
-          "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
+          "salesEffectiveness": `Guidelines score ${analyticsData.guidelinesScore || 0}/100 - AI analysis unavailable. Upload messages for specific sales technique evaluation.`,
+          "engagementQuality": `Guidelines score ${analyticsData.guidelinesScore || 0}/100 - AI analysis unavailable. Upload messages for specific engagement pattern analysis.`,
+          "captionQuality": `Guidelines score ${analyticsData.guidelinesScore || 0}/100 - AI analysis unavailable. Upload messages for specific PPV caption evaluation.`,
+          "conversationFlow": `Guidelines score ${analyticsData.guidelinesScore || 0}/100 - AI analysis unavailable. Upload messages for specific conversation flow analysis.`,
+          "scoreExplanation": `Guidelines score ${analyticsData.guidelinesScore || 0}/100 based on performance metrics. Upload messages for detailed AI analysis with specific examples.`
         };
       } else {
         console.log('🔍 Using AI guidelinesBreakdown with content');
@@ -1942,10 +1964,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       if (!hasOverallContent) {
         console.log('🔍 No AI overallBreakdown content, using fallback');
         aiAnalysis.overallBreakdown = {
-          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
-          "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
-          "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
-          "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
+          "messageClarity": `Overall score ${analyticsData.overallMessageScore || 0}/100 - AI analysis unavailable. Upload messages for specific clarity issue identification.`,
+          "emotionalImpact": `Overall score ${analyticsData.overallMessageScore || 0}/100 - AI analysis unavailable. Upload messages for specific emotional connection analysis.`,
+          "conversionPotential": `Overall score ${analyticsData.overallMessageScore || 0}/100 - AI analysis unavailable. Upload messages for specific conversion blocker identification.`,
+          "scoreExplanation": `Overall score ${analyticsData.overallMessageScore || 0}/100 based on comprehensive analysis. Upload messages for detailed AI analysis with specific examples.`
         };
       } else {
         console.log('🔍 Using AI overallBreakdown with content');
