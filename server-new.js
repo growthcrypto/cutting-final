@@ -1777,6 +1777,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           deterministic.grammarScore = analyticsData.grammarScore;
           deterministic.guidelinesScore = analyticsData.guidelinesScore;
           deterministic.overallScore = analyticsData.overallMessageScore;
+          // Add message analysis data to fallback
+          deterministic.chattingStyle = analyticsData.chattingStyle;
+          deterministic.messagePatterns = analyticsData.messagePatterns;
+          deterministic.engagementMetrics = analyticsData.engagementMetrics;
+          deterministic.strengths = analyticsData.strengths;
+          deterministic.weaknesses = analyticsData.weaknesses;
+          deterministic.suggestions = analyticsData.recommendations;
           res.json(deterministic);
         } else {
           const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
