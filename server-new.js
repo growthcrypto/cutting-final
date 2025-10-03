@@ -1130,6 +1130,26 @@ You MUST return ONLY valid JSON with this EXACT structure. Copy this template an
     "conversationMaintainer": "good",
     "salesConversation": "good",
     "fanRetention": "excellent"
+  },
+  "grammarBreakdown": {
+    "spellingErrors": "Specific spelling issues found in messages",
+    "grammarIssues": "Grammar problems identified in message analysis",
+    "punctuationProblems": "Punctuation usage issues detected",
+    "informalLanguage": "Informal language patterns observed",
+    "scoreExplanation": "Explanation of grammar score based on message analysis"
+  },
+  "guidelinesBreakdown": {
+    "salesEffectiveness": "Analysis of sales techniques and effectiveness",
+    "engagementQuality": "Quality of fan engagement and relationship building",
+    "captionQuality": "Effectiveness of PPV captions and descriptions",
+    "conversationFlow": "How well conversations are managed and maintained",
+    "scoreExplanation": "Explanation of guidelines score based on performance"
+  },
+  "overallBreakdown": {
+    "messageClarity": "How clear and understandable the messages are",
+    "emotionalImpact": "Emotional connection created with fans",
+    "conversionPotential": "Potential for converting fans to buyers",
+    "scoreExplanation": "Explanation of overall score based on comprehensive analysis"
   }
 }
 
@@ -1146,6 +1166,11 @@ IMPORTANT: You MUST fill in the actual values for each field based on the messag
 - chattingStyle: directness, friendliness, salesApproach, personality, emojiUsage, messageLength, responsePattern
 - messagePatterns: questionFrequency, exclamationUsage, capitalizationStyle, punctuationStyle, topicDiversity, sexualContent, personalSharing  
 - engagementMetrics: conversationStarter, conversationMaintainer, salesConversation, fanRetention
+- grammarBreakdown: spellingErrors, grammarIssues, punctuationProblems, informalLanguage, scoreExplanation
+- guidelinesBreakdown: salesEffectiveness, engagementQuality, captionQuality, conversationFlow, scoreExplanation
+- overallBreakdown: messageClarity, emotionalImpact, conversionPotential, scoreExplanation
+
+CRITICAL: For breakdown sections, provide specific examples from the actual messages analyzed. Include real issues found, specific strengths, and concrete recommendations based on the message content.
 
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
@@ -1855,29 +1880,44 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
-      // ALWAYS FORCE SET BREAKDOWN DATA - NO CONDITIONS
-      console.log('🔍 FORCING breakdown data to be set...');
-      aiAnalysis.grammarBreakdown = {
-        "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
-        "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
-        "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
-        "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
-        "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
-      };
-      aiAnalysis.guidelinesBreakdown = {
-        "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
-        "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
-        "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
-        "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
-        "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
-      };
-      aiAnalysis.overallBreakdown = {
-        "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
-        "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
-        "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
-        "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
-      };
-      console.log('🔍 FORCED breakdown data set successfully');
+      // Use AI breakdown data if available, otherwise use fallback
+      if (!aiAnalysis.grammarBreakdown || Object.keys(aiAnalysis.grammarBreakdown).length === 0) {
+        console.log('🔍 No AI grammarBreakdown, using fallback');
+        aiAnalysis.grammarBreakdown = {
+          "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
+          "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
+          "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
+          "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
+          "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
+        };
+      } else {
+        console.log('🔍 Using AI grammarBreakdown');
+      }
+      
+      if (!aiAnalysis.guidelinesBreakdown || Object.keys(aiAnalysis.guidelinesBreakdown).length === 0) {
+        console.log('🔍 No AI guidelinesBreakdown, using fallback');
+        aiAnalysis.guidelinesBreakdown = {
+          "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
+          "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
+          "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
+          "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
+          "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
+        };
+      } else {
+        console.log('🔍 Using AI guidelinesBreakdown');
+      }
+      
+      if (!aiAnalysis.overallBreakdown || Object.keys(aiAnalysis.overallBreakdown).length === 0) {
+        console.log('🔍 No AI overallBreakdown, using fallback');
+        aiAnalysis.overallBreakdown = {
+          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
+          "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
+          "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
+          "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
+        };
+      } else {
+        console.log('🔍 Using AI overallBreakdown');
+      }
       
       // Final check before sending
       console.log('🔍 FINAL CHECK - grammarBreakdown keys:', aiAnalysis.grammarBreakdown ? Object.keys(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
