@@ -1082,7 +1082,7 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return ONLY valid JSON with this exact structure. Do not include any text before or after the JSON:
+You MUST return ONLY valid JSON with this EXACT structure. Copy this template and fill in the values:
 
 {
   "overallScore": 85,
@@ -1116,6 +1116,13 @@ You MUST return ONLY valid JSON with this exact structure. Do not include any te
     "fanRetention": "excellent"
   }
 }
+
+CRITICAL JSON RULES:
+- Every object must have proper opening { and closing }
+- Every property must be followed by a comma except the last one
+- Every string value must be in quotes
+- Arrays must use [ and ] with commas between items
+- NO missing commas, NO unclosed brackets, NO syntax errors
 
 CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
 
@@ -1185,12 +1192,18 @@ ANALYSIS REQUIREMENTS:
       throw new Error('Failed to parse AI analysis response');
     }
     
-    const analysisResult = JSON.parse(jsonMatch[0]);
-    console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
-    console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
-    console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
-    console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
-    return analysisResult;
+    try {
+      const analysisResult = JSON.parse(jsonMatch[0]);
+      console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
+      console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
+      console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
+      console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+      return analysisResult;
+    } catch (parseError) {
+      console.error('❌ JSON Parse Error:', parseError.message);
+      console.error('❌ Malformed JSON:', jsonMatch[0]);
+      throw new Error('AI returned malformed JSON');
+    }
   } catch (error) {
     console.error('AI analysis error:', error);
     // Return default scores if AI analysis fails
