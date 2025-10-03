@@ -1913,9 +1913,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Build messageContent strictly from the selected window's analysis record
       const analysisMessageTexts = (() => {
         const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
-        if (fromRecords.length > 0) return fromRecords.slice(0, 50);
+        if (fromRecords.length > 0) return fromRecords.slice(0, 100);
         const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-        return fromSample.slice(0, 50);
+        return fromSample.slice(0, 100);
       })();
 
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
@@ -2028,10 +2028,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const getWindowMessages = () => {
         try {
           if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
-            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 50);
+            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 100);
           }
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-          return fromSample.slice(0, 50);
+          return fromSample.slice(0, 100);
         } catch (_) {
           return [];
         }
