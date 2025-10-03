@@ -1288,7 +1288,7 @@ ANALYSIS REQUIREMENTS:
       messages: [
         {
           role: 'system',
-          content: 'You are an expert OnlyFans chat quality analyst. Provide constructive, actionable feedback in valid JSON format.'
+          content: 'You are an expert OnlyFans chat quality analyst. Provide constructive, actionable feedback in valid JSON format. You MUST fill in every field with actual content from the messages. Do NOT return undefined or empty values.'
         },
         {
           role: 'user',
@@ -1296,7 +1296,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.7,
-      max_tokens: 800
+      max_tokens: 1500
     });
     console.log('✅ OpenAI API call completed');
     console.log('🚨 DEBUGGING: About to get AI response content');
