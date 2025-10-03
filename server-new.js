@@ -1075,13 +1075,13 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return a JSON object with EXACTLY these fields. Do not add or remove any fields:
+You MUST return ONLY valid JSON with this exact structure. Do not include any text before or after the JSON:
 
 {
   "overallScore": 85,
   "grammarScore": 78,
   "guidelinesScore": 82,
-  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "strengths": ["strength 1", "strength 2"],
   "weaknesses": ["weakness 1", "weakness 2"],
   "suggestions": ["recommendation 1", "recommendation 2"],
   "chattingStyle": {
@@ -1110,7 +1110,7 @@ You MUST return a JSON object with EXACTLY these fields. Do not add or remove an
   }
 }
 
-CRITICAL: You must include ALL three objects: chattingStyle, messagePatterns, and engagementMetrics. Do not return null or omit any fields.
+CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
 
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
