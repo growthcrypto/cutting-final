@@ -1257,6 +1257,7 @@ ANALYSIS REQUIREMENTS:
       max_tokens: 800
     });
     console.log('✅ OpenAI API call completed');
+    console.log('🚨 DEBUGGING: About to get AI response content');
     
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
@@ -1265,6 +1266,9 @@ ANALYSIS REQUIREMENTS:
     console.log('📝 Contains guidelinesBreakdown:', analysisText.includes('guidelinesBreakdown'));
     console.log('📝 Contains overallBreakdown:', analysisText.includes('overallBreakdown'));
     console.log('📝 Full AI Response for debugging:', analysisText);
+    console.log('🚨 DEBUGGING: AI Response length is', analysisText.length);
+    console.log('🚨 DEBUGGING: AI Response starts with:', analysisText.substring(0, 100));
+    console.log('🚨 DEBUGGING: AI Response ends with:', analysisText.substring(analysisText.length - 100));
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
