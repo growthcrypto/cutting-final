@@ -5311,6 +5311,18 @@ function renderSophisticatedChatterAnalysis(data) {
                     </div>
                 </div>
                 
+                <!-- TEST SECTION - ALWAYS SHOW -->
+                <div class="mb-6 p-4 bg-red-800/30 rounded-lg border border-red-700/50">
+                    <h6 class="text-md font-bold text-white mb-3">TEST SECTION - THIS SHOULD ALWAYS SHOW</h6>
+                    <div class="text-sm text-gray-300">
+                        <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
+                        <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
+                        <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
+                        <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
+                        <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
+                    </div>
+                </div>
+                
                 <!-- Detailed Score Breakdowns -->
                 ${data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown ? `
                 <div class="mb-6">
