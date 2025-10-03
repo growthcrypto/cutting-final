@@ -1277,6 +1277,9 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: About to get AI response content');
     console.log('🚨 DEBUGGING: Sent to AI - sampleSize:', sampledMessages.length);
     console.log('🚨 DEBUGGING: First few messages sent to AI:', sampledMessages.slice(0, 3));
+    console.log('🚨 DEBUGGING: All messages sent to AI:', sampledMessages);
+    console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
+    console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
@@ -1320,7 +1323,13 @@ ANALYSIS REQUIREMENTS:
         const grammarValues = Object.values(analysisResult.grammarBreakdown);
         console.log('🔍 Grammar breakdown values:', grammarValues);
         console.log('🔍 Contains template text:', grammarValues.some(v => v && v.includes('List specific')));
+        console.log('🔍 All values are undefined:', grammarValues.every(v => v === undefined));
+        console.log('🔍 All values are null:', grammarValues.every(v => v === null));
+        console.log('🔍 All values are empty strings:', grammarValues.every(v => v === ''));
       }
+      
+      // Check the raw JSON to see what the AI actually returned
+      console.log('🔍 Raw JSON for grammarBreakdown:', JSON.stringify(analysisResult.grammarBreakdown, null, 2));
       
       return analysisResult;
     } catch (parseError) {
