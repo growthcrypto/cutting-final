@@ -1120,6 +1120,15 @@ IMPORTANT: You MUST fill in the actual values for each field based on the messag
 - messagePatterns: questionFrequency, exclamationUsage, capitalizationStyle, punctuationStyle, topicDiversity, sexualContent, personalSharing  
 - engagementMetrics: conversationStarter, conversationMaintainer, salesConversation, fanRetention
 
+VALID ENUM VALUES (use these exact values):
+- sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
+- questionFrequency: "high", "moderate", "low"
+- exclamationUsage: "high", "moderate", "low"
+- capitalizationStyle: "proper", "casual", "all caps", "no caps"
+- punctuationStyle: "proper", "casual", "excessive", "minimal"
+- topicDiversity: "high", "moderate", "low"
+- personalSharing: "high", "moderate", "low"
+
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
