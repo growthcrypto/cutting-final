@@ -1022,12 +1022,16 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         chatterName: messageAnalysis.chatterName,
         weekStartDate: messageAnalysis.weekStartDate,
         weekEndDate: messageAnalysis.weekEndDate,
-        totalMessages: messageAnalysis.totalMessages
+        totalMessages: messageAnalysis.totalMessages,
+        hasChattingStyle: !!messageAnalysis.chattingStyle,
+        hasMessagePatterns: !!messageAnalysis.messagePatterns,
+        hasEngagementMetrics: !!messageAnalysis.engagementMetrics
       });
       await messageAnalysis.save();
       console.log('✅ Message analysis saved successfully:', messageAnalysis._id);
     } catch (saveError) {
       console.error('❌ Error saving message analysis:', saveError);
+      console.error('❌ Full error details:', JSON.stringify(saveError, null, 2));
       throw saveError;
     }
     
