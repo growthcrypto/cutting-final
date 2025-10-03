@@ -1543,6 +1543,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         interval
       };
     } else if (analysisType === 'individual' && chatterId) {
+      console.log('🔍 Starting individual analysis for chatterId:', chatterId);
       // Resolve chatter identifier to match how data was stored
       let nameCandidates = [String(chatterId)];
       try {
@@ -1551,7 +1552,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           if (userDoc.chatterName) nameCandidates.push(userDoc.chatterName);
           if (userDoc.username) nameCandidates.push(userDoc.username);
         }
+        console.log('🔍 User document found:', userDoc);
       } catch (_) {}
+      console.log('🔍 Name candidates:', nameCandidates);
 
       // Build date-overlap query (same logic as dashboard)
       let chatterPerformanceQuery = {};
@@ -1587,6 +1590,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('Found chatter performance data:', chatterData.length, 'records');
 
       // Also load message analysis for same chatter and date range
+      console.log('🔍 About to query message analysis...');
       let messageQuery = { chatterName: { $in: [...new Set(nameCandidates)] } };
       if (startDate && endDate) {
         // Use date overlap query to find message analysis that overlaps with the requested period
@@ -1605,6 +1609,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           { weekEndDate: { $gte: start } }
         ];
       }
+      console.log('🔍 Message analysis query built, about to execute...');
       console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
       console.log('🔍 Searching for chatter names:', nameCandidates);
       
