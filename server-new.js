@@ -1067,13 +1067,13 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Return ONLY a JSON object with this exact structure:
+You MUST return a JSON object with EXACTLY these fields. Do not add or remove any fields:
 
 {
   "overallScore": 85,
   "grammarScore": 78,
   "guidelinesScore": 82,
-  "strengths": ["strength 1", "strength 2"],
+  "strengths": ["strength 1", "strength 2", "strength 3"],
   "weaknesses": ["weakness 1", "weakness 2"],
   "suggestions": ["recommendation 1", "recommendation 2"],
   "chattingStyle": {
@@ -1102,7 +1102,30 @@ Return ONLY a JSON object with this exact structure:
   }
 }
 
-CRITICAL: Include ALL three objects: chattingStyle, messagePatterns, engagementMetrics. Do not return null.`;
+CRITICAL: You must include ALL three objects: chattingStyle, messagePatterns, and engagementMetrics. Do not return null or omit any fields.
+
+IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
+- Messages with prices are PPVs (Pay-Per-View content)
+- PPV messages are CAPTIONS that convince fans to purchase the content
+- Fans cannot see the actual content until they buy it
+- Caption quality directly impacts PPV purchase rates
+- "Deleted user" messages are from different people who deleted their accounts
+- When analyzing guidelines about "captions", this refers to PPV message captions
+- Caption effectiveness is measured by PPV purchase rates
+
+CRITICAL ONLYFANS STRATEGY UNDERSTANDING:
+- HIGH MESSAGE VOLUME IS GOOD: Chatters are instructed to build relationships first
+- RELATIONSHIP BUILDING: 2-3 days before first PPV is normal and effective strategy
+- MESSAGES PER PPV: High ratios (50-100+) often indicate good engagement and relationship building
+- CONVERSION FOCUS: The goal is building trust and connection, not immediate sales
+- SALES EFFICIENCY: High message volume with high conversion rates is EXCELLENT performance
+- DO NOT assume high message volume is negative - analyze conversion rates instead
+
+ANALYSIS REQUIREMENTS:
+- Analyze the actual message content to determine chatting style, patterns, and engagement
+- Provide specific examples from the messages in your analysis
+- Use the exact JSON structure provided above
+- Focus on engagement quality, sales effectiveness, and message patterns`;
     
     console.log('🚀 Making OpenAI API call...');
     const completion = await openai.chat.completions.create({
