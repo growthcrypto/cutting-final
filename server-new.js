@@ -1835,7 +1835,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         hasEngagementMetrics: !!aiAnalysis.engagementMetrics,
         hasStrengths: !!aiAnalysis.strengths,
         hasWeaknesses: !!aiAnalysis.weaknesses,
-        hasRecommendations: !!aiAnalysis.recommendations
+        hasRecommendations: !!aiAnalysis.recommendations,
+        hasGrammarBreakdown: !!aiAnalysis.grammarBreakdown,
+        hasGuidelinesBreakdown: !!aiAnalysis.guidelinesBreakdown,
+        hasOverallBreakdown: !!aiAnalysis.overallBreakdown,
+        grammarBreakdownKeys: aiAnalysis.grammarBreakdown ? Object.keys(aiAnalysis.grammarBreakdown) : [],
+        guidelinesBreakdownKeys: aiAnalysis.guidelinesBreakdown ? Object.keys(aiAnalysis.guidelinesBreakdown) : [],
+        overallBreakdownKeys: aiAnalysis.overallBreakdown ? Object.keys(aiAnalysis.overallBreakdown) : []
       });
       console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
