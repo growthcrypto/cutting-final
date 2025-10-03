@@ -1304,6 +1304,10 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: First few messages sent to AI:', sampledMessages.slice(0, 3));
     console.log('🚨 DEBUGGING: All messages sent to AI:', sampledMessages);
     console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
+    
+    const aiResponse = completion.choices[0].message.content;
+    console.log('🚨 RAW AI RESPONSE:', aiResponse);
+    console.log('🚨 AI RESPONSE LENGTH:', aiResponse.length);
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
@@ -1349,6 +1353,12 @@ ANALYSIS REQUIREMENTS:
       console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
       console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
       console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+      
+      if (analysisResult.grammarBreakdown) {
+        console.log('🚨 GRAMMAR BREAKDOWN CONTENT:', analysisResult.grammarBreakdown);
+        console.log('🚨 GRAMMAR BREAKDOWN KEYS:', Object.keys(analysisResult.grammarBreakdown));
+        console.log('🚨 GRAMMAR BREAKDOWN VALUES:', Object.values(analysisResult.grammarBreakdown));
+      }
       
       // Check what the AI actually returned for breakdown sections
       console.log('🔍 AI grammarBreakdown content:', analysisResult.grammarBreakdown);
