@@ -1227,7 +1227,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.7,
-      max_tokens: 300
+      max_tokens: 800
     });
     console.log('✅ OpenAI API call completed');
     
@@ -2789,7 +2789,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.3,
-      max_tokens: 800
+      max_tokens: 1500
     });
 
     const aiResponse = completion.choices[0].message.content;
