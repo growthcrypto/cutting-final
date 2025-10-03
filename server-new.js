@@ -1185,7 +1185,12 @@ ANALYSIS REQUIREMENTS:
       throw new Error('Failed to parse AI analysis response');
     }
     
-    return JSON.parse(jsonMatch[0]);
+    const analysisResult = JSON.parse(jsonMatch[0]);
+    console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
+    console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
+    console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
+    console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+    return analysisResult;
   } catch (error) {
     console.error('AI analysis error:', error);
     // Return default scores if AI analysis fails
