@@ -1288,7 +1288,7 @@ app.post('/api/debug/test-password', checkDatabaseConnection, async (req, res) =
 // Debug endpoint to check message analysis data
 app.get('/api/debug/message-analysis', checkDatabaseConnection, async (req, res) => {
   try {
-    const messageAnalysis = await MessageAnalysis.find({}).sort({ weekEndDate: -1 }).limit(5);
+    const messageAnalysis = await MessageAnalysis.find({}).sort({ createdAt: -1 }).limit(5);
     res.json({
       message: 'Message analysis data',
       count: messageAnalysis.length,
@@ -1303,6 +1303,9 @@ app.get('/api/debug/message-analysis', checkDatabaseConnection, async (req, res)
         guidelinesScore: m.guidelinesScore,
         strengths: m.strengths,
         weaknesses: m.weaknesses,
+        chattingStyle: m.chattingStyle,
+        messagePatterns: m.messagePatterns,
+        engagementMetrics: m.engagementMetrics,
         grammarBreakdown: m.grammarBreakdown,
         guidelinesBreakdown: m.guidelinesBreakdown,
         overallBreakdown: m.overallBreakdown,
