@@ -5311,54 +5311,102 @@ function renderSophisticatedChatterAnalysis(data) {
                     </div>
                 </div>
                 
-                <!-- Detailed Score Breakdowns -->
-                ${data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown ? `
+                <!-- Detailed Score Breakdowns - Only show if there are actual issues -->
+                ${(() => {
+                  const hasGrammarIssues = data.grammarBreakdown && (
+                    data.grammarBreakdown.spellingErrors || 
+                    data.grammarBreakdown.grammarIssues || 
+                    data.grammarBreakdown.punctuationProblems || 
+                    data.grammarBreakdown.informalLanguage ||
+                    data.grammarBreakdown.scoreExplanation
+                  );
+                  const hasGuidelineIssues = data.guidelinesBreakdown && (
+                    data.guidelinesBreakdown.salesEffectiveness || 
+                    data.guidelinesBreakdown.engagementQuality || 
+                    data.guidelinesBreakdown.captionQuality || 
+                    data.guidelinesBreakdown.conversationFlow ||
+                    data.guidelinesBreakdown.scoreExplanation
+                  );
+                  const hasOverallIssues = data.overallBreakdown && (
+                    data.overallBreakdown.messageClarity || 
+                    data.overallBreakdown.emotionalImpact || 
+                    data.overallBreakdown.conversionPotential ||
+                    data.overallBreakdown.scoreExplanation
+                  );
+                  return hasGrammarIssues || hasGuidelineIssues || hasOverallIssues;
+                })() ? `
                 <div class="mb-6">
                     <h6 class="text-md font-bold text-white mb-3 flex items-center">
                         <i class="fas fa-search text-purple-400 mr-2"></i>
                         Detailed Score Breakdown
                     </h6>
                     
-                    <!-- Grammar Breakdown -->
-                    ${data.grammarBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Grammar Analysis</h7>
-                        <div class="space-y-2 text-sm">
-                            ${data.grammarBreakdown.spellingErrors ? `<div class="text-gray-300"><span class="text-red-400">Spelling:</span> ${data.grammarBreakdown.spellingErrors}</div>` : ''}
-                            ${data.grammarBreakdown.grammarIssues ? `<div class="text-gray-300"><span class="text-red-400">Grammar:</span> ${data.grammarBreakdown.grammarIssues}</div>` : ''}
-                            ${data.grammarBreakdown.punctuationProblems ? `<div class="text-gray-300"><span class="text-red-400">Punctuation:</span> ${data.grammarBreakdown.punctuationProblems}</div>` : ''}
-                            ${data.grammarBreakdown.informalLanguage ? `<div class="text-gray-300"><span class="text-yellow-400">Informal:</span> ${data.grammarBreakdown.informalLanguage}</div>` : ''}
-                            ${data.grammarBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.grammarBreakdown.scoreExplanation}</div>` : ''}
-                        </div>
-                    </div>
-                    ` : ''}
+                    <!-- Grammar Breakdown - Only show if there are actual issues -->
+                    ${(() => {
+                      const hasIssues = data.grammarBreakdown && (
+                        data.grammarBreakdown.spellingErrors || 
+                        data.grammarBreakdown.grammarIssues || 
+                        data.grammarBreakdown.punctuationProblems || 
+                        data.grammarBreakdown.informalLanguage ||
+                        data.grammarBreakdown.scoreExplanation
+                      );
+                      return hasIssues ? `
+                      <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                          <h7 class="text-sm font-bold text-purple-400 mb-2">Grammar Analysis</h7>
+                          <div class="space-y-2 text-sm">
+                              ${data.grammarBreakdown.spellingErrors ? `<div class="text-gray-300"><span class="text-red-400">Spelling:</span> ${data.grammarBreakdown.spellingErrors}</div>` : ''}
+                              ${data.grammarBreakdown.grammarIssues ? `<div class="text-gray-300"><span class="text-red-400">Grammar:</span> ${data.grammarBreakdown.grammarIssues}</div>` : ''}
+                              ${data.grammarBreakdown.punctuationProblems ? `<div class="text-gray-300"><span class="text-red-400">Punctuation:</span> ${data.grammarBreakdown.punctuationProblems}</div>` : ''}
+                              ${data.grammarBreakdown.informalLanguage ? `<div class="text-gray-300"><span class="text-yellow-400">Informal:</span> ${data.grammarBreakdown.informalLanguage}</div>` : ''}
+                              ${data.grammarBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.grammarBreakdown.scoreExplanation}</div>` : ''}
+                          </div>
+                      </div>
+                      ` : '';
+                    })()}
                     
-                    <!-- Guidelines Breakdown -->
-                    ${data.guidelinesBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Guidelines Analysis</h7>
-                        <div class="space-y-2 text-sm">
-                            ${data.guidelinesBreakdown.salesEffectiveness ? `<div class="text-gray-300"><span class="text-green-400">Sales:</span> ${data.guidelinesBreakdown.salesEffectiveness}</div>` : ''}
-                            ${data.guidelinesBreakdown.engagementQuality ? `<div class="text-gray-300"><span class="text-green-400">Engagement:</span> ${data.guidelinesBreakdown.engagementQuality}</div>` : ''}
-                            ${data.guidelinesBreakdown.captionQuality ? `<div class="text-gray-300"><span class="text-green-400">Captions:</span> ${data.guidelinesBreakdown.captionQuality}</div>` : ''}
-                            ${data.guidelinesBreakdown.conversationFlow ? `<div class="text-gray-300"><span class="text-green-400">Flow:</span> ${data.guidelinesBreakdown.conversationFlow}</div>` : ''}
-                            ${data.guidelinesBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.guidelinesBreakdown.scoreExplanation}</div>` : ''}
-                        </div>
-                    </div>
-                    ` : ''}
+                    <!-- Guidelines Breakdown - Only show if there are actual issues -->
+                    ${(() => {
+                      const hasIssues = data.guidelinesBreakdown && (
+                        data.guidelinesBreakdown.salesEffectiveness || 
+                        data.guidelinesBreakdown.engagementQuality || 
+                        data.guidelinesBreakdown.captionQuality || 
+                        data.guidelinesBreakdown.conversationFlow ||
+                        data.guidelinesBreakdown.scoreExplanation
+                      );
+                      return hasIssues ? `
+                      <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                          <h7 class="text-sm font-bold text-purple-400 mb-2">Guidelines Analysis</h7>
+                          <div class="space-y-2 text-sm">
+                              ${data.guidelinesBreakdown.salesEffectiveness ? `<div class="text-gray-300"><span class="text-green-400">Sales:</span> ${data.guidelinesBreakdown.salesEffectiveness}</div>` : ''}
+                              ${data.guidelinesBreakdown.engagementQuality ? `<div class="text-gray-300"><span class="text-green-400">Engagement:</span> ${data.guidelinesBreakdown.engagementQuality}</div>` : ''}
+                              ${data.guidelinesBreakdown.captionQuality ? `<div class="text-gray-300"><span class="text-green-400">Captions:</span> ${data.guidelinesBreakdown.captionQuality}</div>` : ''}
+                              ${data.guidelinesBreakdown.conversationFlow ? `<div class="text-gray-300"><span class="text-green-400">Flow:</span> ${data.guidelinesBreakdown.conversationFlow}</div>` : ''}
+                              ${data.guidelinesBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.guidelinesBreakdown.scoreExplanation}</div>` : ''}
+                          </div>
+                      </div>
+                      ` : '';
+                    })()}
                     
-                    <!-- Overall Breakdown -->
-                    ${data.overallBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Overall Analysis</h7>
-                        <div class="space-y-2 text-sm">
-                            ${data.overallBreakdown.messageClarity ? `<div class="text-gray-300"><span class="text-blue-400">Clarity:</span> ${data.overallBreakdown.messageClarity}</div>` : ''}
-                            ${data.overallBreakdown.emotionalImpact ? `<div class="text-gray-300"><span class="text-blue-400">Emotional:</span> ${data.overallBreakdown.emotionalImpact}</div>` : ''}
-                            ${data.overallBreakdown.conversionPotential ? `<div class="text-gray-300"><span class="text-blue-400">Conversion:</span> ${data.overallBreakdown.conversionPotential}</div>` : ''}
-                            ${data.overallBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.overallBreakdown.scoreExplanation}</div>` : ''}
-                        </div>
-                    </div>
-                    ` : ''}
+                    <!-- Overall Breakdown - Only show if there are actual issues -->
+                    ${(() => {
+                      const hasIssues = data.overallBreakdown && (
+                        data.overallBreakdown.messageClarity || 
+                        data.overallBreakdown.emotionalImpact || 
+                        data.overallBreakdown.conversionPotential ||
+                        data.overallBreakdown.scoreExplanation
+                      );
+                      return hasIssues ? `
+                      <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                          <h7 class="text-sm font-bold text-purple-400 mb-2">Overall Analysis</h7>
+                          <div class="space-y-2 text-sm">
+                              ${data.overallBreakdown.messageClarity ? `<div class="text-gray-300"><span class="text-blue-400">Clarity:</span> ${data.overallBreakdown.messageClarity}</div>` : ''}
+                              ${data.overallBreakdown.emotionalImpact ? `<div class="text-gray-300"><span class="text-blue-400">Emotional:</span> ${data.overallBreakdown.emotionalImpact}</div>` : ''}
+                              ${data.overallBreakdown.conversionPotential ? `<div class="text-gray-300"><span class="text-blue-400">Conversion:</span> ${data.overallBreakdown.conversionPotential}</div>` : ''}
+                              ${data.overallBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> ${data.overallBreakdown.scoreExplanation}</div>` : ''}
+                          </div>
+                      </div>
+                      ` : '';
+                    })()}
                 </div>
                 ` : ''}
                 
