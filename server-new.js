@@ -2080,20 +2080,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             grammarIssues: joinOrNone(found.grammar),
             punctuationProblems: joinOrNone(found.punctuation),
             informalLanguage: joinOrNone(found.informal),
-            scoreExplanation: `Derived from ${snippets.length} recent messages using deterministic checks.`
+            scoreExplanation: `Grammar analysis of ${snippets.length} messages found ${found.spelling.length} spelling errors, ${found.grammar.length} grammar issues, ${found.punctuation.length} punctuation problems, and ${found.informal.length} informal language patterns.`
           },
           guidelinesBreakdown: {
             salesEffectiveness: joinOrNone(found.sales),
             engagementQuality: joinOrNone(found.engagement),
             captionQuality: joinOrNone(found.caption),
             conversationFlow: joinOrNone(found.flow),
-            scoreExplanation: `Deterministic guideline checks applied to ${snippets.length} messages.`
+            scoreExplanation: `Guidelines analysis of ${snippets.length} messages found ${found.sales.length} sales examples, ${found.engagement.length} engagement patterns, ${found.caption.length} caption examples, and ${found.flow.length} conversation flow examples.`
           },
           overallBreakdown: {
             messageClarity: joinOrNone(found.clarity),
             emotionalImpact: joinOrNone(found.emotion),
             conversionPotential: joinOrNone(found.conversion),
-            scoreExplanation: `Overall derived from observable message patterns.`
+            scoreExplanation: `Overall analysis of ${snippets.length} messages found ${found.clarity.length} clarity examples, ${found.emotion.length} emotional impact examples, and ${found.conversion.length} conversion potential examples.`
           }
         };
       };
