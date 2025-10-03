@@ -1154,7 +1154,8 @@ ANALYSIS REQUIREMENTS:
     console.log('✅ OpenAI API call completed');
     
     const analysisText = completion.choices[0].message.content;
-    console.log('📝 Raw AI Response:', analysisText.substring(0, 500) + '...');
+    console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
+    console.log('📝 Full AI Response Length:', analysisText.length);
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
