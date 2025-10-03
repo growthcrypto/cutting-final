@@ -973,6 +973,9 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     // Analyze messages using AI
     const analysisResult = await analyzeMessages(messages, chatterName);
     console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
+    console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
+    console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
+    console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
     
     // Save to MessageAnalysis collection
     console.log('Creating MessageAnalysis object with:', {
@@ -1064,18 +1067,18 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Provide a detailed analysis in JSON format with EXACTLY this structure:
+You MUST return a JSON object with EXACTLY these fields. Do not add or remove any fields:
 
 {
   "overallScore": 85,
   "grammarScore": 78,
   "guidelinesScore": 82,
-  "strengths": ["Detailed strength 1", "Detailed strength 2", "Detailed strength 3"],
-  "weaknesses": ["Detailed weakness 1", "Detailed weakness 2"],
-  "suggestions": ["Specific recommendation 1", "Specific recommendation 2"],
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "suggestions": ["recommendation 1", "recommendation 2"],
   "chattingStyle": {
     "directness": "moderately direct",
-    "friendliness": "very friendly",
+    "friendliness": "very friendly", 
     "salesApproach": "moderate",
     "personality": "flirty",
     "emojiUsage": "moderate",
@@ -1086,7 +1089,7 @@ Provide a detailed analysis in JSON format with EXACTLY this structure:
     "questionFrequency": "high",
     "exclamationUsage": "moderate",
     "capitalizationStyle": "casual",
-    "punctuationStyle": "casual",
+    "punctuationStyle": "casual", 
     "topicDiversity": "high",
     "sexualContent": "moderate",
     "personalSharing": "high"
@@ -1098,6 +1101,8 @@ Provide a detailed analysis in JSON format with EXACTLY this structure:
     "fanRetention": "excellent"
   }
 }
+
+CRITICAL: You must include ALL three objects: chattingStyle, messagePatterns, and engagementMetrics. Do not return null or omit any fields.`;
 
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
