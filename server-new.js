@@ -1983,9 +1983,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       };
 
       // Use AI breakdown data if available, otherwise use fallback
+      console.log('🔍 DEBUGGING: aiAnalysis.grammarBreakdown:', aiAnalysis.grammarBreakdown);
+      console.log('🔍 DEBUGGING: grammarBreakdown keys:', aiAnalysis.grammarBreakdown ? Object.keys(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
+      console.log('🔍 DEBUGGING: grammarBreakdown values:', aiAnalysis.grammarBreakdown ? Object.values(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
+      
       const hasGrammarContent = aiAnalysis.grammarBreakdown && 
         Object.keys(aiAnalysis.grammarBreakdown).length > 0 && 
         Object.values(aiAnalysis.grammarBreakdown).some(value => value && value.trim().length > 0);
+      
+      console.log('🔍 DEBUGGING: hasGrammarContent result:', hasGrammarContent);
       
       if (!hasGrammarContent) {
         console.log('🔍 No AI grammarBreakdown content, using deterministic examples');
