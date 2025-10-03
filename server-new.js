@@ -1121,11 +1121,11 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans messages and return JSON with specific examples:
+    const prompt = `Analyze these OnlyFans chat messages from chatter "${chatterName}":
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Return ONLY this JSON structure with real examples from the messages above:
+You MUST return ONLY valid JSON with this EXACT structure. Copy this template and fill in the values:
 
 {
   "overallScore": 85,
@@ -1179,6 +1179,12 @@ Return ONLY this JSON structure with real examples from the messages above:
     "scoreExplanation": "Overall analysis based on message review"
   }
 }
+
+CRITICAL: You MUST analyze the actual messages above and provide specific examples. Do NOT return undefined values. Every field must have actual content based on the message analysis.
+
+For breakdown sections, provide specific examples from the actual messages analyzed. Include real issues found, specific strengths, and concrete recommendations based on the message content.
+
+CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
 
 Return ONLY the JSON above. Fill in the breakdown sections with real examples from the messages.
 
