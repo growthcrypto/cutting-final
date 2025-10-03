@@ -1882,12 +1882,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         overallBreakdownKeys: analyticsData.overallBreakdown ? Object.keys(analyticsData.overallBreakdown) : []
       });
       
-      // Grammar breakdown - always set with fallback
-      if (analyticsData.grammarBreakdown && Object.keys(analyticsData.grammarBreakdown).length > 0) {
+      // Grammar breakdown - use AI data if available, otherwise use analyticsData, otherwise fallback
+      if (aiAnalysis.grammarBreakdown && Object.keys(aiAnalysis.grammarBreakdown).length > 0 && 
+          Object.values(aiAnalysis.grammarBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0)) {
+        console.log('✅ Using AI grammarBreakdown data');
+        // Keep the AI data - don't overwrite it
+      } else if (analyticsData.grammarBreakdown && Object.keys(analyticsData.grammarBreakdown).length > 0) {
         aiAnalysis.grammarBreakdown = analyticsData.grammarBreakdown;
         console.log('✅ Set grammarBreakdown from analyticsData');
       } else {
-        console.log('❌ No grammarBreakdown in analyticsData, using fallback');
+        console.log('❌ No grammarBreakdown in AI or analyticsData, using fallback');
         aiAnalysis.grammarBreakdown = {
           "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
           "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
@@ -1897,12 +1901,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
-      // Guidelines breakdown - always set with fallback
-      if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
+      // Guidelines breakdown - use AI data if available, otherwise use analyticsData, otherwise fallback
+      if (aiAnalysis.guidelinesBreakdown && Object.keys(aiAnalysis.guidelinesBreakdown).length > 0 && 
+          Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0)) {
+        console.log('✅ Using AI guidelinesBreakdown data');
+        // Keep the AI data - don't overwrite it
+      } else if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
         aiAnalysis.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
         console.log('✅ Set guidelinesBreakdown from analyticsData');
       } else {
-        console.log('❌ No guidelinesBreakdown in analyticsData, using fallback');
+        console.log('❌ No guidelinesBreakdown in AI or analyticsData, using fallback');
         aiAnalysis.guidelinesBreakdown = {
           "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
           "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
@@ -1912,12 +1920,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
-      // Overall breakdown - always set with fallback
-      if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
+      // Overall breakdown - use AI data if available, otherwise use analyticsData, otherwise fallback
+      if (aiAnalysis.overallBreakdown && Object.keys(aiAnalysis.overallBreakdown).length > 0 && 
+          Object.values(aiAnalysis.overallBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0)) {
+        console.log('✅ Using AI overallBreakdown data');
+        // Keep the AI data - don't overwrite it
+      } else if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
         aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
         console.log('✅ Set overallBreakdown from analyticsData');
       } else {
-        console.log('❌ No overallBreakdown in analyticsData, using fallback');
+        console.log('❌ No overallBreakdown in AI or analyticsData, using fallback');
         aiAnalysis.overallBreakdown = {
           "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
           "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
@@ -2036,11 +2048,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       // If AI returned structure but no content, it means AI didn't fill in the breakdown properly
       if (hasGrammarStructure && !hasGrammarContent) {
-        console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - AI prompt issue');
-      }
-      
-      if (!hasGrammarContent) {
-        console.log('🔍 No AI grammarBreakdown content, using deterministic examples');
+        console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - using deterministic examples');
+        const msgs = getWindowMessages();
+        const det = buildDeterministicBreakdowns(msgs);
+        aiAnalysis.grammarBreakdown = det.grammarBreakdown;
+      } else if (!hasGrammarStructure) {
+        console.log('🔍 No AI grammarBreakdown structure, using deterministic examples');
         const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
