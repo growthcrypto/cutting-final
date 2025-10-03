@@ -5174,54 +5174,232 @@ function renderSophisticatedChatterAnalysis(data) {
                 </div>
                 
                 
-                <!-- Detailed Score Breakdowns -->
+                <!-- PREMIUM Detailed Score Breakdown -->
                 ${data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown ? `
-                <div class="mb-6">
-                    <h6 class="text-md font-bold text-white mb-3 flex items-center">
-                        <i class="fas fa-search text-purple-400 mr-2"></i>
-                        Detailed Score Breakdown
-                    </h6>
-                    
-                    <!-- Grammar Breakdown -->
-                    ${data.grammarBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Grammar Analysis</h7>
-                        <div class="space-y-3 text-sm">
-                            ${data.grammarBreakdown.spellingErrors ? `<div class="text-gray-300"><span class="text-red-400 font-semibold">Spelling:</span><br/>${formatBreakdownContent(data.grammarBreakdown.spellingErrors)}</div>` : ''}
-                            ${data.grammarBreakdown.grammarIssues ? `<div class="text-gray-300"><span class="text-red-400 font-semibold">Grammar:</span><br/>${formatBreakdownContent(data.grammarBreakdown.grammarIssues)}</div>` : ''}
-                            ${data.grammarBreakdown.punctuationProblems ? `<div class="text-gray-300"><span class="text-red-400 font-semibold">Punctuation:</span><br/>${formatBreakdownContent(data.grammarBreakdown.punctuationProblems)}</div>` : ''}
-                            ${data.grammarBreakdown.informalLanguage ? `<div class="text-gray-300"><span class="text-yellow-400 font-semibold">Informal:</span><br/>${formatBreakdownContent(data.grammarBreakdown.informalLanguage)}</div>` : ''}
-                            ${data.grammarBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-3 p-2 bg-gray-700/30 rounded"><span class="text-blue-400 font-semibold">Explanation:</span><br/>${data.grammarBreakdown.scoreExplanation}</div>` : ''}
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h6 class="text-xl font-bold text-white flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-microscope text-white text-sm"></i>
+                            </div>
+                            Detailed Score Breakdown
+                        </h6>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-xs text-gray-400">AI-Powered Analysis</span>
                         </div>
                     </div>
-                    ` : ''}
                     
-                    <!-- Guidelines Breakdown -->
-                    ${data.guidelinesBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Guidelines Analysis</h7>
-                        <div class="space-y-3 text-sm">
-                            ${data.guidelinesBreakdown.salesEffectiveness ? `<div class="text-gray-300"><span class="text-green-400 font-semibold">Sales:</span><br/>${formatBreakdownContent(data.guidelinesBreakdown.salesEffectiveness)}</div>` : ''}
-                            ${data.guidelinesBreakdown.engagementQuality ? `<div class="text-gray-300"><span class="text-green-400 font-semibold">Engagement:</span><br/>${formatBreakdownContent(data.guidelinesBreakdown.engagementQuality)}</div>` : ''}
-                            ${data.guidelinesBreakdown.captionQuality ? `<div class="text-gray-300"><span class="text-green-400 font-semibold">Captions:</span><br/>${formatBreakdownContent(data.guidelinesBreakdown.captionQuality)}</div>` : ''}
-                            ${data.guidelinesBreakdown.conversationFlow ? `<div class="text-gray-300"><span class="text-green-400 font-semibold">Flow:</span><br/>${formatBreakdownContent(data.guidelinesBreakdown.conversationFlow)}</div>` : ''}
-                            ${data.guidelinesBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-3 p-2 bg-gray-700/30 rounded"><span class="text-blue-400 font-semibold">Explanation:</span><br/>${data.guidelinesBreakdown.scoreExplanation}</div>` : ''}
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Grammar Analysis Card -->
+                        ${data.grammarBreakdown ? `
+                        <div class="group relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-2xl"></div>
+                            <div class="relative p-6 border border-red-500/20 rounded-2xl hover:border-red-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center mr-3">
+                                            <i class="fas fa-spell-check text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h7 class="text-lg font-bold text-white">Grammar Analysis</h7>
+                                            <div class="text-xs text-gray-400">Language Quality</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-black text-red-400">${data.grammarScore || 'N/A'}</div>
+                                        <div class="text-xs text-gray-400">/100</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    ${data.grammarBreakdown.spellingErrors ? `
+                                    <div class="p-3 bg-red-500/5 rounded-lg border border-red-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-red-400">Spelling Issues</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.grammarBreakdown.spellingErrors)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.grammarBreakdown.grammarIssues ? `
+                                    <div class="p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-grammar text-orange-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-orange-400">Grammar Issues</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.grammarBreakdown.grammarIssues)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.grammarBreakdown.punctuationProblems ? `
+                                    <div class="p-3 bg-yellow-500/5 rounded-lg border border-yellow-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-question text-yellow-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-yellow-400">Punctuation</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.grammarBreakdown.punctuationProblems)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.grammarBreakdown.informalLanguage ? `
+                                    <div class="p-3 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-comment-dots text-blue-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-blue-400">Informal Language</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.grammarBreakdown.informalLanguage)}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                
+                                ${data.grammarBreakdown.scoreExplanation ? `
+                                <div class="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                    <div class="text-xs text-gray-400 mb-1">Analysis Summary</div>
+                                    <div class="text-sm text-gray-300">${data.grammarBreakdown.scoreExplanation}</div>
+                                </div>
+                                ` : ''}
+                            </div>
                         </div>
-                    </div>
-                    ` : ''}
-                    
-                    <!-- Overall Breakdown -->
-                    ${data.overallBreakdown ? `
-                    <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                        <h7 class="text-sm font-bold text-purple-400 mb-2">Overall Analysis</h7>
-                        <div class="space-y-3 text-sm">
-                            ${data.overallBreakdown.messageClarity ? `<div class="text-gray-300"><span class="text-blue-400 font-semibold">Clarity:</span><br/>${formatBreakdownContent(data.overallBreakdown.messageClarity)}</div>` : ''}
-                            ${data.overallBreakdown.emotionalImpact ? `<div class="text-gray-300"><span class="text-blue-400 font-semibold">Emotional:</span><br/>${formatBreakdownContent(data.overallBreakdown.emotionalImpact)}</div>` : ''}
-                            ${data.overallBreakdown.conversionPotential ? `<div class="text-gray-300"><span class="text-blue-400 font-semibold">Conversion:</span><br/>${formatBreakdownContent(data.overallBreakdown.conversionPotential)}</div>` : ''}
-                            ${data.overallBreakdown.scoreExplanation ? `<div class="text-gray-300 mt-3 p-2 bg-gray-700/30 rounded"><span class="text-blue-400 font-semibold">Explanation:</span><br/>${data.overallBreakdown.scoreExplanation}</div>` : ''}
+                        ` : ''}
+                        
+                        <!-- Guidelines Analysis Card -->
+                        ${data.guidelinesBreakdown ? `
+                        <div class="group relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl"></div>
+                            <div class="relative p-6 border border-green-500/20 rounded-2xl hover:border-green-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mr-3">
+                                            <i class="fas fa-chart-line text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h7 class="text-lg font-bold text-white">Guidelines Analysis</h7>
+                                            <div class="text-xs text-gray-400">Sales Performance</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-black text-green-400">${data.guidelinesScore || 'N/A'}</div>
+                                        <div class="text-xs text-gray-400">/100</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    ${data.guidelinesBreakdown.salesEffectiveness ? `
+                                    <div class="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-dollar-sign text-green-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-green-400">Sales Effectiveness</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.salesEffectiveness)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.guidelinesBreakdown.engagementQuality ? `
+                                    <div class="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-heart text-emerald-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-emerald-400">Engagement Quality</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.engagementQuality)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.guidelinesBreakdown.captionQuality ? `
+                                    <div class="p-3 bg-teal-500/5 rounded-lg border border-teal-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-camera text-teal-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-teal-400">Caption Quality</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.captionQuality)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.guidelinesBreakdown.conversationFlow ? `
+                                    <div class="p-3 bg-cyan-500/5 rounded-lg border border-cyan-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-comments text-cyan-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-cyan-400">Conversation Flow</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.conversationFlow)}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                
+                                ${data.guidelinesBreakdown.scoreExplanation ? `
+                                <div class="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                    <div class="text-xs text-gray-400 mb-1">Analysis Summary</div>
+                                    <div class="text-sm text-gray-300">${data.guidelinesBreakdown.scoreExplanation}</div>
+                                </div>
+                                ` : ''}
+                            </div>
                         </div>
+                        ` : ''}
+                        
+                        <!-- Overall Analysis Card -->
+                        ${data.overallBreakdown ? `
+                        <div class="group relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl"></div>
+                            <div class="relative p-6 border border-blue-500/20 rounded-2xl hover:border-blue-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-3">
+                                            <i class="fas fa-star text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h7 class="text-lg font-bold text-white">Overall Analysis</h7>
+                                            <div class="text-xs text-gray-400">Message Impact</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-black text-blue-400">${data.overallScore || 'N/A'}</div>
+                                        <div class="text-xs text-gray-400">/100</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    ${data.overallBreakdown.messageClarity ? `
+                                    <div class="p-3 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-eye text-blue-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-blue-400">Message Clarity</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.overallBreakdown.messageClarity)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.overallBreakdown.emotionalImpact ? `
+                                    <div class="p-3 bg-purple-500/5 rounded-lg border border-purple-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-heart text-purple-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-purple-400">Emotional Impact</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.overallBreakdown.emotionalImpact)}</div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.overallBreakdown.conversionPotential ? `
+                                    <div class="p-3 bg-indigo-500/5 rounded-lg border border-indigo-500/20">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-target text-indigo-400 mr-2"></i>
+                                            <span class="text-sm font-semibold text-indigo-400">Conversion Potential</span>
+                                        </div>
+                                        <div class="text-sm text-gray-300">${formatBreakdownContent(data.overallBreakdown.conversionPotential)}</div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                
+                                ${data.overallBreakdown.scoreExplanation ? `
+                                <div class="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                    <div class="text-xs text-gray-400 mb-1">Analysis Summary</div>
+                                    <div class="text-sm text-gray-300">${data.overallBreakdown.scoreExplanation}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
-                    ` : ''}
                 </div>
                 ` : ''}
                 
