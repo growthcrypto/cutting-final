@@ -1687,16 +1687,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
       console.log('🔍 Searching for chatter names:', nameCandidates);
       
-      // First try the date-filtered query
+      // Only use date-filtered query - no cross-date mixing
       let messagesAnalysis = await MessageAnalysis.find(messageQuery).sort({ createdAt: -1 });
       console.log('🔍 Date-filtered query found:', messagesAnalysis.length, 'records');
-      
-      // If no records found with date filter, try without date filter for this chatter
-      if (messagesAnalysis.length === 0) {
-        console.log('🔍 No records with date filter, trying without date filter...');
-        messagesAnalysis = await MessageAnalysis.find({ chatterName: { $in: [...new Set(nameCandidates)] } }).sort({ createdAt: -1 });
-        console.log('🔍 Without date filter found:', messagesAnalysis.length, 'records');
-      }
       
       
       console.log('Found message analysis data:', messagesAnalysis.length, 'records');
