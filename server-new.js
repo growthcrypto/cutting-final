@@ -1855,6 +1855,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
+      // FORCE SET BREAKDOWN DATA - TEST
+      aiAnalysis.grammarBreakdown = {
+        "spellingErrors": "TEST: Based on 75/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.",
+        "grammarIssues": "TEST: Grammar score of 75/100 indicates room for improvement in sentence structure and verb tenses.",
+        "punctuationProblems": "TEST: Punctuation usage could be enhanced for better readability and professional appearance.",
+        "informalLanguage": "TEST: Specific issues found in message analysis include inconsistent capitalization and missing punctuation.",
+        "scoreExplanation": "TEST: Grammar analysis based on message content review and scoring algorithms."
+      };
+      aiAnalysis.guidelinesBreakdown = {
+        "salesEffectiveness": "TEST: Guidelines score of 80/100 suggests some sales techniques could be improved.",
+        "engagementQuality": "TEST: Engagement patterns show good relationship building but could benefit from more strategic PPV timing.",
+        "captionQuality": "TEST: PPV captions are present but could be more compelling to increase conversion rates.",
+        "conversationFlow": "TEST: Focus on building stronger connections before sending PPVs and improve caption writing.",
+        "scoreExplanation": "TEST: Guidelines analysis based on sales effectiveness and engagement patterns."
+      };
+      aiAnalysis.overallBreakdown = {
+        "messageClarity": "TEST: Overall message quality score of 78/100 indicates good foundation with room for improvement.",
+        "emotionalImpact": "TEST: Message patterns show good engagement but could benefit from more strategic conversation management.",
+        "conversionPotential": "TEST: PPV conversion rates could be improved with better timing and more compelling content descriptions.",
+        "scoreExplanation": "TEST: Relationship building is strong, focus on maintaining engagement between PPVs."
+      };
+      
+      // Final check before sending
+      console.log('🔍 FINAL CHECK - grammarBreakdown keys:', aiAnalysis.grammarBreakdown ? Object.keys(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
+      console.log('🔍 FINAL CHECK - guidelinesBreakdown keys:', aiAnalysis.guidelinesBreakdown ? Object.keys(aiAnalysis.guidelinesBreakdown) : 'NO OBJECT');
+      console.log('🔍 FINAL CHECK - overallBreakdown keys:', aiAnalysis.overallBreakdown ? Object.keys(aiAnalysis.overallBreakdown) : 'NO OBJECT');
+      
       console.log('🔍 FINAL RESPONSE - grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
       console.log('🔍 FINAL RESPONSE - guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 FINAL RESPONSE - overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
