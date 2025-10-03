@@ -1093,6 +1093,8 @@ async function analyzeMessages(messages, chatterName) {
     }
     
     console.log('✅ OpenAI is configured, proceeding with AI analysis...');
+    console.log('🔍 OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
+    console.log('🔍 OpenAI API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
 
     // Sample messages if there are too many (to avoid token limits and costs)
     const sampleSize = Math.min(messages.length, 10);
@@ -1211,7 +1213,8 @@ ANALYSIS REQUIREMENTS:
 - Focus on engagement quality, sales effectiveness, and message patterns`;
     
     console.log('🚀 Making OpenAI API call...');
-    const completion = await openai.chat.completions.create({
+    try {
+      const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
@@ -1253,6 +1256,11 @@ ANALYSIS REQUIREMENTS:
       console.error('❌ JSON Parse Error:', parseError.message);
       console.error('❌ Malformed JSON:', jsonMatch[0]);
       throw new Error('AI returned malformed JSON');
+    }
+    } catch (apiError) {
+      console.error('❌ OpenAI API Error:', apiError.message);
+      console.error('❌ API Error Details:', apiError);
+      throw new Error('OpenAI API call failed: ' + apiError.message);
     }
   } catch (error) {
     console.error('AI analysis error:', error);
