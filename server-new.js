@@ -1102,7 +1102,7 @@ You MUST return a JSON object with EXACTLY these fields. Do not add or remove an
   }
 }
 
-CRITICAL: You must include ALL three objects: chattingStyle, messagePatterns, and engagementMetrics. Do not return null or omit any fields.`;
+CRITICAL: You must include ALL three objects: chattingStyle, messagePatterns, and engagementMetrics. Do not return null or omit any fields.
 
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
