@@ -2652,7 +2652,7 @@ function cleanAnalysisResponse(analysis) {
 }
 
 // AI Analysis function using OpenAI
-async function generateAIAnalysis(analyticsData, analysisType, interval) {
+async function generateAIAnalysis(analyticsData, analysisType, interval, messageContent = []) {
   try {
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
