@@ -1550,6 +1550,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
       const messagesAnalysis = await MessageAnalysis.find(messageQuery).sort({ createdAt: -1 });
       console.log('Found message analysis data:', messagesAnalysis.length, 'records');
+      if (messagesAnalysis.length > 0) {
+        console.log('Latest message analysis:', {
+          id: messagesAnalysis[0]._id,
+          chatterName: messagesAnalysis[0].chatterName,
+          createdAt: messagesAnalysis[0].createdAt,
+          hasChattingStyle: !!messagesAnalysis[0].chattingStyle,
+          hasMessagePatterns: !!messagesAnalysis[0].messagePatterns,
+          hasEngagementMetrics: !!messagesAnalysis[0].engagementMetrics
+        });
+      }
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
       const netSales = chatterData.reduce((sum, data) => sum + (data.netSales || 0), 0);
@@ -1634,6 +1644,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.strengths = analyticsData.strengths;
       aiAnalysis.weaknesses = analyticsData.weaknesses;
       aiAnalysis.recommendations = analyticsData.recommendations;
+      
+      console.log('🔍 Sending to frontend:', {
+        hasChattingStyle: !!aiAnalysis.chattingStyle,
+        hasMessagePatterns: !!aiAnalysis.messagePatterns,
+        hasEngagementMetrics: !!aiAnalysis.engagementMetrics,
+        hasStrengths: !!aiAnalysis.strengths,
+        hasWeaknesses: !!aiAnalysis.weaknesses,
+        hasRecommendations: !!aiAnalysis.recommendations
+      });
       
       res.json(aiAnalysis);
     } catch (aiError) {
