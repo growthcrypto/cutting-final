@@ -1770,6 +1770,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
       console.log('🔍 Frontend engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+      console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
+      console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
+      console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
       res.json(aiAnalysis);
     } catch (aiError) {
@@ -1799,6 +1802,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           deterministic.grammarBreakdown = analyticsData.grammarBreakdown;
           deterministic.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
           deterministic.overallBreakdown = analyticsData.overallBreakdown;
+          console.log('🔍 Fallback grammarBreakdown:', JSON.stringify(deterministic.grammarBreakdown));
+          console.log('🔍 Fallback guidelinesBreakdown:', JSON.stringify(deterministic.guidelinesBreakdown));
+          console.log('🔍 Fallback overallBreakdown:', JSON.stringify(deterministic.overallBreakdown));
           res.json(deterministic);
         } else {
           const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
