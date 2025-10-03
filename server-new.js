@@ -1109,7 +1109,7 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return ONLY valid JSON with this EXACT structure. Copy this template and fill in the values:
+You MUST return ONLY valid JSON with this EXACT structure. Analyze the actual messages above and fill in REAL values based on what you find:
 
 {
   "overallScore": 85,
@@ -1206,6 +1206,13 @@ For overallBreakdown:
 NO GENERIC STATEMENTS. Only include issues that actually exist in the messages. If no issues exist, say "No significant issues found" for that category.
 
 CRITICAL: You MUST fill in ALL breakdown sections with actual content. Do not leave any breakdown objects empty. If you find issues, list them specifically. If you find no issues, say "No significant issues found" but still provide the breakdown structure.
+
+EXAMPLE OF WHAT TO DO:
+- Look at message 1: "but what u like to do when u're in NYC?" 
+- Identify: "u" instead of "you", missing apostrophe in "u're"
+- Write: "Message 1: Informal token in 'but what u like to do when u're in NYC?'"
+
+DO NOT return undefined values. Every field must have actual content based on the message analysis.
 
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
@@ -1987,11 +1994,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 DEBUGGING: grammarBreakdown keys:', aiAnalysis.grammarBreakdown ? Object.keys(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
       console.log('🔍 DEBUGGING: grammarBreakdown values:', aiAnalysis.grammarBreakdown ? Object.values(aiAnalysis.grammarBreakdown) : 'NO OBJECT');
       
-      const hasGrammarContent = aiAnalysis.grammarBreakdown && 
-        Object.keys(aiAnalysis.grammarBreakdown).length > 0 && 
-        Object.values(aiAnalysis.grammarBreakdown).some(value => value && value.trim().length > 0);
+      // Check if AI returned breakdown structure but with undefined/null values
+      const hasGrammarStructure = aiAnalysis.grammarBreakdown && Object.keys(aiAnalysis.grammarBreakdown).length > 0;
+      const hasGrammarContent = hasGrammarStructure && 
+        Object.values(aiAnalysis.grammarBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0);
       
-      console.log('🔍 DEBUGGING: hasGrammarContent result:', hasGrammarContent);
+      console.log('🔍 DEBUGGING: hasGrammarStructure:', hasGrammarStructure);
+      console.log('🔍 DEBUGGING: hasGrammarContent:', hasGrammarContent);
+      
+      // If AI returned structure but no content, it means AI didn't fill in the breakdown properly
+      if (hasGrammarStructure && !hasGrammarContent) {
+        console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - AI prompt issue');
+      }
       
       if (!hasGrammarContent) {
         console.log('🔍 No AI grammarBreakdown content, using deterministic examples');
