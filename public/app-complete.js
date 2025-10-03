@@ -5284,7 +5284,10 @@ function renderSophisticatedChatterAnalysis(data) {
                 hasMessagePatterns: !!data.messagePatterns,
                 hasEngagementMetrics: !!data.engagementMetrics,
                 chattingStyleKeys: data.chattingStyle ? Object.keys(data.chattingStyle) : 'null',
-                messagePatternsKeys: data.messagePatterns ? Object.keys(data.messagePatterns) : 'null'
+                messagePatternsKeys: data.messagePatterns ? Object.keys(data.messagePatterns) : 'null',
+                chattingStyleContent: data.chattingStyle,
+                messagePatternsContent: data.messagePatterns,
+                engagementMetricsContent: data.engagementMetrics
               });
               return data.chattingStyle || data.messagePatterns || data.engagementMetrics;
             })() ? `
