@@ -1808,7 +1808,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
     try {
       // Build messageContent strictly from the selected window's analysis record
       const analysisMessageTexts = (() => {
-        const fromRecords = Array.isArray(messageRecords) ? messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
+        const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
         if (fromRecords.length > 0) return fromRecords.slice(0, 50);
         const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
         return fromSample.slice(0, 50);
@@ -1911,8 +1911,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Helper to extract message texts for deterministic breakdowns (strictly within selected window)
       const getWindowMessages = () => {
         try {
-          if (Array.isArray(messageRecords) && messageRecords.length > 0) {
-            return messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 50);
+          if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
+            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 50);
           }
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
           return fromSample.slice(0, 50);
