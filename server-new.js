@@ -2092,10 +2092,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       console.log('🔍 DEBUGGING: hasAnyGrammarContent (excluding scoreExplanation):', hasAnyGrammarContent);
       
-      // If AI returned structure with ANY content, use it (even if scoreExplanation is missing)
+      // If AI returned structure with ANY content, use it and fill in missing scoreExplanation
       if (hasAnyGrammarContent) {
         console.log('🔍 Using AI grammarBreakdown with content (some fields may be empty)');
-        // Keep the AI data - don't overwrite it
+        // If AI didn't provide scoreExplanation, use AI-generated one
+        if (!aiAnalysis.grammarBreakdown.scoreExplanation || aiAnalysis.grammarBreakdown.scoreExplanation.trim() === '') {
+          aiAnalysis.grammarBreakdown.scoreExplanation = `AI analysis of ${sampledMessages.length} messages with specific examples provided above.`;
+        }
       } else if (hasGrammarStructure && !hasGrammarContent) {
         console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - using deterministic examples');
         const msgs = getWindowMessages();
@@ -2121,6 +2124,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         aiAnalysis.guidelinesBreakdown = det.guidelinesBreakdown;
       } else {
         console.log('🔍 Using AI guidelinesBreakdown with content');
+        // If AI didn't provide scoreExplanation, use AI-generated one
+        if (!aiAnalysis.guidelinesBreakdown.scoreExplanation || aiAnalysis.guidelinesBreakdown.scoreExplanation.trim() === '') {
+          aiAnalysis.guidelinesBreakdown.scoreExplanation = `AI analysis of ${sampledMessages.length} messages with specific examples provided above.`;
+        }
       }
       
       const hasOverallContent = aiAnalysis.overallBreakdown && 
@@ -2134,6 +2141,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         aiAnalysis.overallBreakdown = det.overallBreakdown;
       } else {
         console.log('🔍 Using AI overallBreakdown with content');
+        // If AI didn't provide scoreExplanation, use AI-generated one
+        if (!aiAnalysis.overallBreakdown.scoreExplanation || aiAnalysis.overallBreakdown.scoreExplanation.trim() === '') {
+          aiAnalysis.overallBreakdown.scoreExplanation = `AI analysis of ${sampledMessages.length} messages with specific examples provided above.`;
+        }
       }
       
       // Final check before sending
