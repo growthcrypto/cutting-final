@@ -1688,6 +1688,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const chattingStyle = latestMessageAnalysis?.chattingStyle || null;
       const messagePatterns = latestMessageAnalysis?.messagePatterns || null;
       const engagementMetrics = latestMessageAnalysis?.engagementMetrics || null;
+      const grammarBreakdown = latestMessageAnalysis?.grammarBreakdown || null;
+      const guidelinesBreakdown = latestMessageAnalysis?.guidelinesBreakdown || null;
+      const overallBreakdown = latestMessageAnalysis?.overallBreakdown || null;
       
       // NEW: Message flow and timing analysis
       const messageRecords = latestMessageAnalysis?.messageRecords || [];
@@ -1715,6 +1718,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         chattingStyle,
         messagePatterns,
         engagementMetrics,
+        // Detailed breakdowns
+        grammarBreakdown,
+        guidelinesBreakdown,
+        overallBreakdown,
         // NEW: Message flow and timing data
         messageRecords,
         ppvMessages: ppvMessages.length,
@@ -1747,6 +1754,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.strengths = analyticsData.strengths;
       aiAnalysis.weaknesses = analyticsData.weaknesses;
       aiAnalysis.recommendations = analyticsData.recommendations;
+      // Add detailed breakdowns
+      aiAnalysis.grammarBreakdown = analyticsData.grammarBreakdown;
+      aiAnalysis.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
+      aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
       
       console.log('🔍 Sending to frontend:', {
         hasChattingStyle: !!aiAnalysis.chattingStyle,
@@ -1784,6 +1795,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           deterministic.strengths = analyticsData.strengths;
           deterministic.weaknesses = analyticsData.weaknesses;
           deterministic.suggestions = analyticsData.recommendations;
+          // Add detailed breakdowns
+          deterministic.grammarBreakdown = analyticsData.grammarBreakdown;
+          deterministic.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
+          deterministic.overallBreakdown = analyticsData.overallBreakdown;
           res.json(deterministic);
         } else {
           const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
