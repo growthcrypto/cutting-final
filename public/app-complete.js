@@ -5094,15 +5094,30 @@ function formatBreakdownContent(content) {
         return content;
     }
     
-    // Format each item as a bullet point
+    // Format each item with enhanced styling
     return items.map(item => {
-        // Clean up the item and add proper formatting
         const cleanItem = item.trim();
         if (cleanItem.startsWith('Message ')) {
+            // Extract message number and description
+            const match = cleanItem.match(/Message (\d+): (.+)/);
+            if (match) {
+                const messageNum = match[1];
+                const description = match[2];
+                return `
+                    <div class="flex items-start space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 mb-2 hover:bg-gray-800/50 transition-colors">
+                        <div class="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                            <span class="text-xs font-bold text-blue-400">${messageNum}</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-300 leading-relaxed">${description}</div>
+                        </div>
+                    </div>
+                `;
+            }
             return `• ${cleanItem}`;
         }
         return `• ${cleanItem}`;
-    }).join('<br/>');
+    }).join('');
 }
 
 // LEAN DYNAMIC Million-Dollar Analysis UI - Only High-Value Insights
