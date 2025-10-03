@@ -1105,11 +1105,19 @@ async function analyzeMessages(messages, chatterName) {
       .sort(() => Math.random() - 0.5)
       .slice(0, sampleSize);
     
-    const prompt = `Analyze these ${sampledMessages.length} OnlyFans chat messages from chatter "${chatterName}":
+    const prompt = `You are analyzing OnlyFans chat messages. You MUST analyze each message and provide specific examples.
 
+MESSAGES TO ANALYZE (${sampledMessages.length} messages from chatter "${chatterName}"):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return ONLY valid JSON with this EXACT structure. Analyze the actual messages above and fill in REAL values based on what you find:
+CRITICAL INSTRUCTIONS:
+1. Read each message above carefully
+2. Identify specific grammar issues, spelling errors, punctuation problems
+3. Look for informal language patterns
+4. Analyze sales effectiveness and engagement quality
+5. Provide REAL examples from the actual messages above
+
+You MUST return ONLY valid JSON with this EXACT structure. Fill in REAL values based on the message analysis above:
 
 {
   "overallScore": 85,
@@ -1212,7 +1220,9 @@ EXAMPLE OF WHAT TO DO:
 - Identify: "u" instead of "you", missing apostrophe in "u're"
 - Write: "Message 1: Informal token in 'but what u like to do when u're in NYC?'"
 
-DO NOT return undefined values. Every field must have actual content based on the message analysis.
+CRITICAL: You MUST analyze the messages above and provide specific examples. Do NOT return undefined, null, or empty values. Every field must have actual content based on the message analysis.
+
+If you find issues, list them specifically with message numbers. If you find no issues, write "No significant issues found" but still provide the breakdown structure.
 
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
@@ -1265,6 +1275,8 @@ ANALYSIS REQUIREMENTS:
     });
     console.log('✅ OpenAI API call completed');
     console.log('🚨 DEBUGGING: About to get AI response content');
+    console.log('🚨 DEBUGGING: Sent to AI - sampleSize:', sampledMessages.length);
+    console.log('🚨 DEBUGGING: First few messages sent to AI:', sampledMessages.slice(0, 3));
     
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
