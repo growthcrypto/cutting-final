@@ -1121,19 +1121,11 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `You are analyzing OnlyFans chat messages. You MUST analyze each message and provide specific examples.
+    const prompt = `Analyze these OnlyFans messages and return JSON with specific examples:
 
-MESSAGES TO ANALYZE (${sampledMessages.length} messages from chatter "${chatterName}"):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-CRITICAL INSTRUCTIONS:
-1. Read each message above carefully
-2. Identify specific grammar issues, spelling errors, punctuation problems
-3. Look for informal language patterns
-4. Analyze sales effectiveness and engagement quality
-5. Provide REAL examples from the actual messages above
-
-You MUST return ONLY valid JSON with this EXACT structure. Fill in REAL values based on the message analysis above:
+Return ONLY this JSON structure with real examples from the messages above:
 
 {
   "overallScore": 85,
@@ -1167,35 +1159,28 @@ You MUST return ONLY valid JSON with this EXACT structure. Fill in REAL values b
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "List specific misspelled words found",
-    "grammarIssues": "List specific grammar mistakes found",
-    "punctuationProblems": "List specific punctuation issues found",
-    "informalLanguage": "List specific informal language patterns found",
-    "scoreExplanation": "Explain the grammar score with examples"
+    "spellingErrors": "Message 1: 'recieve' should be 'receive'",
+    "grammarIssues": "Message 2: Missing apostrophe in 'dont'",
+    "punctuationProblems": "Message 3: Missing period at end",
+    "informalLanguage": "Message 4: Using 'u' instead of 'you'",
+    "scoreExplanation": "Grammar analysis based on message review"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "List specific sales technique issues found",
-    "engagementQuality": "List specific engagement problems found",
-    "captionQuality": "List specific PPV caption issues found",
-    "conversationFlow": "List specific conversation flow problems found",
-    "scoreExplanation": "Explain the guidelines score with examples"
+    "salesEffectiveness": "Message 5: Good sales approach with clear pricing",
+    "engagementQuality": "Message 6: Strong engagement with questions",
+    "captionQuality": "Message 7: Compelling PPV caption",
+    "conversationFlow": "Message 8: Natural conversation flow",
+    "scoreExplanation": "Guidelines analysis based on message review"
   },
   "overallBreakdown": {
-    "messageClarity": "List specific clarity issues found",
-    "emotionalImpact": "List specific emotional connection problems found",
-    "conversionPotential": "List specific conversion blockers found",
-    "scoreExplanation": "Explain the overall score with examples"
+    "messageClarity": "Message 9: Clear and easy to understand",
+    "emotionalImpact": "Message 10: Strong emotional connection",
+    "conversionPotential": "Message 11: Good conversion potential",
+    "scoreExplanation": "Overall analysis based on message review"
   }
 }
 
-CRITICAL JSON RULES:
-- Every object must have proper opening { and closing }
-- Every property must be followed by a comma except the last one
-- Every string value must be in quotes
-- Arrays must use [ and ] with commas between items
-- NO missing commas, NO unclosed brackets, NO syntax errors
-
-CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
+Return ONLY the JSON above. Fill in the breakdown sections with real examples from the messages.
 
 IMPORTANT: You MUST fill in the actual values for each field based on the message analysis. Do not return empty objects or placeholder values. Analyze the actual messages and provide real values for:
 - chattingStyle: directness, friendliness, salesApproach, personality, emojiUsage, messageLength, responsePattern
