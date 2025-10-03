@@ -1800,6 +1800,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
+      console.log('🔍 FINAL RESPONSE - grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
+      console.log('🔍 FINAL RESPONSE - guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
+      console.log('🔍 FINAL RESPONSE - overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       res.json(aiAnalysis);
     } catch (aiError) {
       console.error('AI Analysis failed, falling back to basic analysis:', aiError);
@@ -1831,9 +1834,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔍 Fallback grammarBreakdown:', JSON.stringify(deterministic.grammarBreakdown));
           console.log('🔍 Fallback guidelinesBreakdown:', JSON.stringify(deterministic.guidelinesBreakdown));
           console.log('🔍 Fallback overallBreakdown:', JSON.stringify(deterministic.overallBreakdown));
+          console.log('🔍 FALLBACK RESPONSE - grammarBreakdown:', JSON.stringify(deterministic.grammarBreakdown));
+          console.log('🔍 FALLBACK RESPONSE - guidelinesBreakdown:', JSON.stringify(deterministic.guidelinesBreakdown));
+          console.log('🔍 FALLBACK RESPONSE - overallBreakdown:', JSON.stringify(deterministic.overallBreakdown));
           res.json(deterministic);
         } else {
           const fallbackAnalysis = await generateFallbackAnalysis(analyticsData, analysisType, interval);
+          console.log('🔍 FINAL FALLBACK RESPONSE - grammarBreakdown:', JSON.stringify(fallbackAnalysis.grammarBreakdown));
+          console.log('🔍 FINAL FALLBACK RESPONSE - guidelinesBreakdown:', JSON.stringify(fallbackAnalysis.guidelinesBreakdown));
+          console.log('🔍 FINAL FALLBACK RESPONSE - overallBreakdown:', JSON.stringify(fallbackAnalysis.overallBreakdown));
           res.json(fallbackAnalysis);
         }
       } catch (fallbackError) {
