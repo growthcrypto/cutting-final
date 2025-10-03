@@ -1163,26 +1163,28 @@ You MUST return ONLY valid JSON with this EXACT structure. Copy this template an
     "grammarIssues": "Message 2: Missing apostrophe in 'dont'",
     "punctuationProblems": "Message 3: Missing period at end",
     "informalLanguage": "Message 4: Using 'u' instead of 'you'",
-    "scoreExplanation": "Grammar analysis based on message review"
+    "scoreExplanation": "Grammar analysis of 10 messages found 4 spelling errors, 3 grammar issues, 2 punctuation problems, and 5 informal language patterns"
   },
   "guidelinesBreakdown": {
     "salesEffectiveness": "Message 5: Good sales approach with clear pricing",
     "engagementQuality": "Message 6: Strong engagement with questions",
     "captionQuality": "Message 7: Compelling PPV caption",
     "conversationFlow": "Message 8: Natural conversation flow",
-    "scoreExplanation": "Guidelines analysis based on message review"
+    "scoreExplanation": "Guidelines analysis of 10 messages found strong sales techniques, good engagement patterns, compelling captions, and natural conversation flow"
   },
   "overallBreakdown": {
     "messageClarity": "Message 9: Clear and easy to understand",
     "emotionalImpact": "Message 10: Strong emotional connection",
     "conversionPotential": "Message 11: Good conversion potential",
-    "scoreExplanation": "Overall analysis based on message review"
+    "scoreExplanation": "Overall analysis of 10 messages found clear communication, strong emotional impact, and good conversion potential"
   }
 }
 
 CRITICAL: You MUST analyze the actual messages above and provide specific examples. Do NOT return undefined values. Every field must have actual content based on the message analysis.
 
 For breakdown sections, provide specific examples from the actual messages analyzed. Include real issues found, specific strengths, and concrete recommendations based on the message content.
+
+IMPORTANT: The scoreExplanation field must contain a summary of your analysis. For example: "Grammar analysis of 10 messages found 4 spelling errors, 3 grammar issues, 2 punctuation problems, and 5 informal language patterns"
 
 CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
 
