@@ -1016,6 +1016,12 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       engagementMetrics: messageAnalysis.engagementMetrics,
       recommendations: messageAnalysis.recommendations
     });
+    console.log('🔍 Raw analysisResult before saving:', JSON.stringify(analysisResult, null, 2));
+    console.log('🔍 MessageAnalysis object before saving:', JSON.stringify({
+      chattingStyle: messageAnalysis.chattingStyle,
+      messagePatterns: messageAnalysis.messagePatterns,
+      engagementMetrics: messageAnalysis.engagementMetrics
+    }, null, 2));
     
     try {
       console.log('Attempting to save message analysis:', {
