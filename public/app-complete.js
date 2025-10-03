@@ -2463,6 +2463,28 @@ function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
     
+    // TEST SECTION - ALWAYS SHOW
+    container.innerHTML = `
+        <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
+            <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-bug text-red-400 mr-3"></i>
+                TEST SECTION - ALWAYS SHOW
+            </h5>
+            <div class="text-sm text-gray-300">
+                <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
+                <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
+                <div>Has chattingStyle: ${data.chattingStyle ? 'YES' : 'NO'}</div>
+                <div>Has messagePatterns: ${data.messagePatterns ? 'YES' : 'NO'}</div>
+                <div>Has engagementMetrics: ${data.engagementMetrics ? 'YES' : 'NO'}</div>
+                <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
+                <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
+                <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
+            </div>
+        </div>
+    `;
+    
+    return; // Stop here for now to test
+    
     container.innerHTML = `
         <!-- Chatter Score Overview -->
         <div class="glass-card rounded-xl p-10 mb-10">
