@@ -1035,6 +1035,16 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       });
       await messageAnalysis.save();
       console.log('✅ Message analysis saved successfully:', messageAnalysis._id);
+      
+      // Verify the data was actually saved
+      const savedRecord = await MessageAnalysis.findById(messageAnalysis._id);
+      console.log('🔍 Verification - saved record has data:', {
+        hasChattingStyle: !!savedRecord.chattingStyle,
+        hasMessagePatterns: !!savedRecord.messagePatterns,
+        hasEngagementMetrics: !!savedRecord.engagementMetrics,
+        chattingStyleKeys: savedRecord.chattingStyle ? Object.keys(savedRecord.chattingStyle) : 'null',
+        messagePatternsKeys: savedRecord.messagePatterns ? Object.keys(savedRecord.messagePatterns) : 'null'
+      });
     } catch (saveError) {
       console.error('❌ Error saving message analysis:', saveError);
       console.error('❌ Full error details:', JSON.stringify(saveError, null, 2));
