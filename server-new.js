@@ -1632,6 +1632,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           hasMessagePatterns: !!messagesAnalysis[0].messagePatterns,
           hasEngagementMetrics: !!messagesAnalysis[0].engagementMetrics
         });
+        console.log('🔍 Raw chattingStyle data:', JSON.stringify(messagesAnalysis[0].chattingStyle));
+        console.log('🔍 Raw messagePatterns data:', JSON.stringify(messagesAnalysis[0].messagePatterns));
+        console.log('🔍 Raw engagementMetrics data:', JSON.stringify(messagesAnalysis[0].engagementMetrics));
+      } else {
+        console.log('❌ NO MESSAGE ANALYSIS RECORDS FOUND!');
       }
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
@@ -1726,6 +1731,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         hasWeaknesses: !!aiAnalysis.weaknesses,
         hasRecommendations: !!aiAnalysis.recommendations
       });
+      console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
+      console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
+      console.log('🔍 Frontend engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
       
       res.json(aiAnalysis);
     } catch (aiError) {
