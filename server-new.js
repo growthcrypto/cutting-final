@@ -1780,7 +1780,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.strengths = analyticsData.strengths;
       aiAnalysis.weaknesses = analyticsData.weaknesses;
       aiAnalysis.recommendations = analyticsData.recommendations;
-      // Add detailed breakdowns only if they have content
+      // ALWAYS set breakdown data - use AI data if available, otherwise use fallback
       console.log('🔍 Checking breakdown data from analyticsData:', {
         hasGrammarBreakdown: !!analyticsData.grammarBreakdown,
         grammarBreakdownKeys: analyticsData.grammarBreakdown ? Object.keys(analyticsData.grammarBreakdown) : [],
@@ -1790,39 +1790,44 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         overallBreakdownKeys: analyticsData.overallBreakdown ? Object.keys(analyticsData.overallBreakdown) : []
       });
       
+      // Grammar breakdown - always set with fallback
       if (analyticsData.grammarBreakdown && Object.keys(analyticsData.grammarBreakdown).length > 0) {
         aiAnalysis.grammarBreakdown = analyticsData.grammarBreakdown;
         console.log('✅ Set grammarBreakdown from analyticsData');
       } else {
         console.log('❌ No grammarBreakdown in analyticsData, using fallback');
         aiAnalysis.grammarBreakdown = {
-          "spellingErrors": `Based on ${analyticsData.grammarScore}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
-          "grammarIssues": `Grammar score of ${analyticsData.grammarScore}/100 indicates room for improvement in sentence structure and verb tenses.`,
+          "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
+          "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
           "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
           "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
           "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
         };
       }
+      
+      // Guidelines breakdown - always set with fallback
       if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
         aiAnalysis.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
         console.log('✅ Set guidelinesBreakdown from analyticsData');
       } else {
         console.log('❌ No guidelinesBreakdown in analyticsData, using fallback');
         aiAnalysis.guidelinesBreakdown = {
-          "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore}/100 suggests some sales techniques could be improved.`,
+          "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
           "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
           "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
           "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
           "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
         };
       }
+      
+      // Overall breakdown - always set with fallback
       if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
         aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
         console.log('✅ Set overallBreakdown from analyticsData');
       } else {
         console.log('❌ No overallBreakdown in analyticsData, using fallback');
         aiAnalysis.overallBreakdown = {
-          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore}/100 indicates good foundation with room for improvement.`,
+          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
           "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
           "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
           "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
