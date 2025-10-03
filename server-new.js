@@ -972,17 +972,20 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     
     // Analyze messages using AI
     const analysisResult = await analyzeMessages(messages, chatterName);
-    console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
-    console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
-    console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
-    console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
-    console.log('🔍 Has recommendations:', !!analysisResult.recommendations);
-    console.log('🔍 Has grammarBreakdown:', !!analysisResult.grammarBreakdown);
-    console.log('🔍 Has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
-    console.log('🔍 Has overallBreakdown:', !!analysisResult.overallBreakdown);
-    console.log('🔍 grammarBreakdown keys:', analysisResult.grammarBreakdown ? Object.keys(analysisResult.grammarBreakdown) : 'NO OBJECT');
-    console.log('🔍 guidelinesBreakdown keys:', analysisResult.guidelinesBreakdown ? Object.keys(analysisResult.guidelinesBreakdown) : 'NO OBJECT');
-    console.log('🔍 overallBreakdown keys:', analysisResult.overallBreakdown ? Object.keys(analysisResult.overallBreakdown) : 'NO OBJECT');
+      console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
+      console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
+      console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
+      console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+      console.log('🔍 Has recommendations:', !!analysisResult.recommendations);
+      console.log('🔍 Has grammarBreakdown:', !!analysisResult.grammarBreakdown);
+      console.log('🔍 Has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
+      console.log('🔍 Has overallBreakdown:', !!analysisResult.overallBreakdown);
+      console.log('🔍 grammarBreakdown keys:', analysisResult.grammarBreakdown ? Object.keys(analysisResult.grammarBreakdown) : 'NO OBJECT');
+      console.log('🔍 guidelinesBreakdown keys:', analysisResult.guidelinesBreakdown ? Object.keys(analysisResult.guidelinesBreakdown) : 'NO OBJECT');
+      console.log('🔍 overallBreakdown keys:', analysisResult.overallBreakdown ? Object.keys(analysisResult.overallBreakdown) : 'NO OBJECT');
+      console.log('🔍 grammarBreakdown content:', JSON.stringify(analysisResult.grammarBreakdown));
+      console.log('🔍 guidelinesBreakdown content:', JSON.stringify(analysisResult.guidelinesBreakdown));
+      console.log('🔍 overallBreakdown content:', JSON.stringify(analysisResult.overallBreakdown));
     console.log('🔍 Raw AI Response Length:', analysisResult ? 'Response received' : 'No response');
     console.log('🔍 ChattingStyle content:', JSON.stringify(analysisResult.chattingStyle));
     console.log('🔍 MessagePatterns content:', JSON.stringify(analysisResult.messagePatterns));
@@ -1898,8 +1901,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
       // Use AI breakdown data if available, otherwise use fallback
-      if (!aiAnalysis.grammarBreakdown || Object.keys(aiAnalysis.grammarBreakdown).length === 0) {
-        console.log('🔍 No AI grammarBreakdown, using fallback');
+      const hasGrammarContent = aiAnalysis.grammarBreakdown && 
+        Object.keys(aiAnalysis.grammarBreakdown).length > 0 && 
+        Object.values(aiAnalysis.grammarBreakdown).some(value => value && value.trim().length > 0);
+      
+      if (!hasGrammarContent) {
+        console.log('🔍 No AI grammarBreakdown content, using fallback');
         aiAnalysis.grammarBreakdown = {
           "spellingErrors": `Based on ${analyticsData.grammarScore || 0}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
           "grammarIssues": `Grammar score of ${analyticsData.grammarScore || 0}/100 indicates room for improvement in sentence structure and verb tenses.`,
@@ -1908,11 +1915,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
         };
       } else {
-        console.log('🔍 Using AI grammarBreakdown');
+        console.log('🔍 Using AI grammarBreakdown with content');
       }
       
-      if (!aiAnalysis.guidelinesBreakdown || Object.keys(aiAnalysis.guidelinesBreakdown).length === 0) {
-        console.log('🔍 No AI guidelinesBreakdown, using fallback');
+      const hasGuidelinesContent = aiAnalysis.guidelinesBreakdown && 
+        Object.keys(aiAnalysis.guidelinesBreakdown).length > 0 && 
+        Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && value.trim().length > 0);
+      
+      if (!hasGuidelinesContent) {
+        console.log('🔍 No AI guidelinesBreakdown content, using fallback');
         aiAnalysis.guidelinesBreakdown = {
           "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore || 0}/100 suggests some sales techniques could be improved.`,
           "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
@@ -1921,11 +1932,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
         };
       } else {
-        console.log('🔍 Using AI guidelinesBreakdown');
+        console.log('🔍 Using AI guidelinesBreakdown with content');
       }
       
-      if (!aiAnalysis.overallBreakdown || Object.keys(aiAnalysis.overallBreakdown).length === 0) {
-        console.log('🔍 No AI overallBreakdown, using fallback');
+      const hasOverallContent = aiAnalysis.overallBreakdown && 
+        Object.keys(aiAnalysis.overallBreakdown).length > 0 && 
+        Object.values(aiAnalysis.overallBreakdown).some(value => value && value.trim().length > 0);
+      
+      if (!hasOverallContent) {
+        console.log('🔍 No AI overallBreakdown content, using fallback');
         aiAnalysis.overallBreakdown = {
           "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
           "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
@@ -1933,7 +1948,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
         };
       } else {
-        console.log('🔍 Using AI overallBreakdown');
+        console.log('🔍 Using AI overallBreakdown with content');
       }
       
       // Final check before sending
