@@ -1224,6 +1224,8 @@ CRITICAL: You MUST analyze the messages above and provide specific examples. Do 
 
 If you find issues, list them specifically with message numbers. If you find no issues, write "No significant issues found" but still provide the breakdown structure.
 
+IMPORTANT: For the breakdown sections, you MUST fill in every field with actual content. Do not leave any field empty or undefined. If you cannot find specific issues, write "No significant issues found" but do not leave fields empty.
+
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
 - questionFrequency: "high", "moderate", "low"
@@ -1280,6 +1282,8 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: All messages sent to AI:', sampledMessages);
     console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
+    console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
+    console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
     
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
