@@ -1078,7 +1078,7 @@ You MUST return a JSON object with EXACTLY these fields. Do not add or remove an
   "suggestions": ["recommendation 1", "recommendation 2"],
   "chattingStyle": {
     "directness": "moderately direct",
-    "friendliness": "very friendly", 
+    "friendliness": "very friendly",
     "salesApproach": "moderate",
     "personality": "flirty",
     "emojiUsage": "moderate",
@@ -1089,7 +1089,7 @@ You MUST return a JSON object with EXACTLY these fields. Do not add or remove an
     "questionFrequency": "high",
     "exclamationUsage": "moderate",
     "capitalizationStyle": "casual",
-    "punctuationStyle": "casual", 
+    "punctuationStyle": "casual",
     "topicDiversity": "high",
     "sexualContent": "moderate",
     "personalSharing": "high"
