@@ -1112,6 +1112,11 @@ You MUST return ONLY valid JSON with this exact structure. Do not include any te
 
 CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
 
+IMPORTANT: You MUST fill in the actual values for each field based on the message analysis. Do not return empty objects or placeholder values. Analyze the actual messages and provide real values for:
+- chattingStyle: directness, friendliness, salesApproach, personality, emojiUsage, messageLength, responsePattern
+- messagePatterns: questionFrequency, exclamationUsage, capitalizationStyle, punctuationStyle, topicDiversity, sexualContent, personalSharing  
+- engagementMetrics: conversationStarter, conversationMaintainer, salesConversation, fanRetention
+
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
