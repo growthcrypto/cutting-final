@@ -1854,8 +1854,26 @@ async function loadPerformanceTrends(chatterName) {
 
 // Enhanced Chatter Analysis
 async function runChatterAnalysis() {
+    console.log('🔍 runChatterAnalysis called!');
+    
     const select = document.getElementById('chatterAnalysisSelect');
     const resultsContainer = document.getElementById('chatterAnalysisResults');
+    
+    // TEST SECTION - ALWAYS SHOW
+    if (resultsContainer) {
+        resultsContainer.innerHTML = `
+            <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
+                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-bug text-red-400 mr-3"></i>
+                    TEST SECTION - runChatterAnalysis CALLED!
+                </h5>
+                <div class="text-sm text-gray-300">
+                    <div>Select value: ${select?.value || 'NO VALUE'}</div>
+                    <div>Results container: ${resultsContainer ? 'FOUND' : 'NOT FOUND'}</div>
+                </div>
+            </div>
+        `;
+    }
     
     if (!select?.value || !resultsContainer) {
         if (resultsContainer) {
