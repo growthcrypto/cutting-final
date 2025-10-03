@@ -1796,10 +1796,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       } else {
         console.log('❌ No grammarBreakdown in analyticsData, using fallback');
         aiAnalysis.grammarBreakdown = {
-          "spelling": `Based on ${analyticsData.grammarScore}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
-          "grammar": `Grammar score of ${analyticsData.grammarScore}/100 indicates room for improvement in sentence structure and verb tenses.`,
-          "punctuation": `Punctuation usage could be enhanced for better readability and professional appearance.`,
-          "examples": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`
+          "spellingErrors": `Based on ${analyticsData.grammarScore}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
+          "grammarIssues": `Grammar score of ${analyticsData.grammarScore}/100 indicates room for improvement in sentence structure and verb tenses.`,
+          "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
+          "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
+          "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
         };
       }
       if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
@@ -1811,7 +1812,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore}/100 suggests some sales techniques could be improved.`,
           "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
           "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
-          "recommendations": `Focus on building stronger connections before sending PPVs and improve caption writing.`
+          "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
+          "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
         };
       }
       if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
@@ -1820,10 +1822,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       } else {
         console.log('❌ No overallBreakdown in analyticsData, using fallback');
         aiAnalysis.overallBreakdown = {
-          "messageQuality": `Overall message quality score of ${analyticsData.overallMessageScore}/100 indicates good foundation with room for improvement.`,
-          "conversationFlow": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
-          "salesConversion": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
-          "fanRetention": `Relationship building is strong, focus on maintaining engagement between PPVs.`
+          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore}/100 indicates good foundation with room for improvement.`,
+          "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
+          "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
+          "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
         };
       }
       
@@ -1871,22 +1873,24 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           deterministic.suggestions = analyticsData.recommendations;
           // Add detailed breakdowns with fallback content
           deterministic.grammarBreakdown = {
-            "spelling": `Based on ${analyticsData.grammarScore}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
-            "grammar": `Grammar score of ${analyticsData.grammarScore}/100 indicates room for improvement in sentence structure and verb tenses.`,
-            "punctuation": `Punctuation usage could be enhanced for better readability and professional appearance.`,
-            "examples": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`
+            "spellingErrors": `Based on ${analyticsData.grammarScore}/100 score, some spelling issues present. Common errors include typos and autocorrect mistakes.`,
+            "grammarIssues": `Grammar score of ${analyticsData.grammarScore}/100 indicates room for improvement in sentence structure and verb tenses.`,
+            "punctuationProblems": `Punctuation usage could be enhanced for better readability and professional appearance.`,
+            "informalLanguage": `Specific issues found in message analysis include inconsistent capitalization and missing punctuation.`,
+            "scoreExplanation": `Grammar analysis based on message content review and scoring algorithms.`
           };
           deterministic.guidelinesBreakdown = {
             "salesEffectiveness": `Guidelines score of ${analyticsData.guidelinesScore}/100 suggests some sales techniques could be improved.`,
             "engagementQuality": `Engagement patterns show good relationship building but could benefit from more strategic PPV timing.`,
             "captionQuality": `PPV captions are present but could be more compelling to increase conversion rates.`,
-            "recommendations": `Focus on building stronger connections before sending PPVs and improve caption writing.`
+            "conversationFlow": `Focus on building stronger connections before sending PPVs and improve caption writing.`,
+            "scoreExplanation": `Guidelines analysis based on sales effectiveness and engagement patterns.`
           };
           deterministic.overallBreakdown = {
-            "messageQuality": `Overall message quality score of ${analyticsData.overallMessageScore}/100 indicates good foundation with room for improvement.`,
-            "conversationFlow": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
-            "salesConversion": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
-            "fanRetention": `Relationship building is strong, focus on maintaining engagement between PPVs.`
+            "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore}/100 indicates good foundation with room for improvement.`,
+            "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
+            "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
+            "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
           };
           console.log('🔍 Fallback grammarBreakdown:', JSON.stringify(deterministic.grammarBreakdown));
           console.log('🔍 Fallback guidelinesBreakdown:', JSON.stringify(deterministic.guidelinesBreakdown));
