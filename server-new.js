@@ -1780,10 +1780,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.strengths = analyticsData.strengths;
       aiAnalysis.weaknesses = analyticsData.weaknesses;
       aiAnalysis.recommendations = analyticsData.recommendations;
-      // Add detailed breakdowns
-      aiAnalysis.grammarBreakdown = analyticsData.grammarBreakdown;
-      aiAnalysis.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
-      aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
+      // Add detailed breakdowns only if they have content
+      if (analyticsData.grammarBreakdown && Object.keys(analyticsData.grammarBreakdown).length > 0) {
+        aiAnalysis.grammarBreakdown = analyticsData.grammarBreakdown;
+      }
+      if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
+        aiAnalysis.guidelinesBreakdown = analyticsData.guidelinesBreakdown;
+      }
+      if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
+        aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
+      }
       
       console.log('🔍 Sending to frontend:', {
         hasChattingStyle: !!aiAnalysis.chattingStyle,
