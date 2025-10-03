@@ -1109,6 +1109,18 @@ async function analyzeMessages(messages, chatterName) {
     console.log('🚨 DEBUGGING: Sample size:', sampleSize);
     console.log('🚨 DEBUGGING: Sampled messages:', sampledMessages);
     
+    // Check if messages are empty
+    if (sampledMessages.length === 0) {
+      console.log('❌ ERROR: No messages to analyze!');
+      throw new Error('No messages available for analysis');
+    }
+    
+    // Check if messages are strings
+    const nonStringMessages = sampledMessages.filter(msg => typeof msg !== 'string');
+    if (nonStringMessages.length > 0) {
+      console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
+    }
+    
     const prompt = `You are analyzing OnlyFans chat messages. You MUST analyze each message and provide specific examples.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages from chatter "${chatterName}"):
@@ -1290,6 +1302,14 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
     console.log('🚨 DEBUGGING: First 500 chars of prompt:', prompt.substring(0, 500));
     console.log('🚨 DEBUGGING: Last 500 chars of prompt:', prompt.substring(prompt.length - 500));
+    
+    // Check if the prompt contains the messages
+    const promptContainsMessages = prompt.includes('MESSAGES TO ANALYZE');
+    console.log('🚨 DEBUGGING: Prompt contains MESSAGES TO ANALYZE:', promptContainsMessages);
+    
+    // Check if the prompt contains the breakdown template
+    const promptContainsBreakdown = prompt.includes('grammarBreakdown');
+    console.log('🚨 DEBUGGING: Prompt contains grammarBreakdown:', promptContainsBreakdown);
     
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
