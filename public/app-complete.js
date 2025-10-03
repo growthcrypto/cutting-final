@@ -5053,6 +5053,17 @@ function renderSophisticatedChatterAnalysis(data) {
     if (!container) return;
     
     console.log('Rendering LEAN DYNAMIC analysis:', data);
+    console.log('🔍 Frontend received breakdown data:', {
+        hasGrammarBreakdown: !!data.grammarBreakdown,
+        grammarBreakdownKeys: data.grammarBreakdown ? Object.keys(data.grammarBreakdown) : [],
+        hasGuidelinesBreakdown: !!data.guidelinesBreakdown,
+        guidelinesBreakdownKeys: data.guidelinesBreakdown ? Object.keys(data.guidelinesBreakdown) : [],
+        hasOverallBreakdown: !!data.overallBreakdown,
+        overallBreakdownKeys: data.overallBreakdown ? Object.keys(data.overallBreakdown) : []
+    });
+    console.log('🔍 Grammar breakdown content:', JSON.stringify(data.grammarBreakdown));
+    console.log('🔍 Guidelines breakdown content:', JSON.stringify(data.guidelinesBreakdown));
+    console.log('🔍 Overall breakdown content:', JSON.stringify(data.overallBreakdown));
     
     
     // Calculate derived metrics
