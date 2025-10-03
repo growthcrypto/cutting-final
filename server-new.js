@@ -2793,11 +2793,18 @@ CRITICAL ANALYSIS REQUIREMENTS:
     });
 
     const aiResponse = completion.choices[0].message.content;
-    console.log('AI Response:', aiResponse);
-    console.log('AI Response Length:', aiResponse.length);
+    console.log('🔍 AI Response:', aiResponse);
+    console.log('🔍 AI Response Length:', aiResponse.length);
+    console.log('🔍 AI Response Preview:', aiResponse.substring(0, 500) + '...');
+    console.log('🔍 AI Response Ends with:', aiResponse.substring(aiResponse.length - 100));
     
     // Try to extract JSON from the response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    console.log('🔍 JSON Match Found:', !!jsonMatch);
+    if (jsonMatch) {
+      console.log('🔍 Extracted JSON Length:', jsonMatch[0].length);
+      console.log('🔍 Extracted JSON Preview:', jsonMatch[0].substring(0, 200) + '...');
+    }
     
     if (!jsonMatch) {
       console.error('❌ No JSON found in AI response');
