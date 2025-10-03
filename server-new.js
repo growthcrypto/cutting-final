@@ -1072,7 +1072,7 @@ Provide a detailed analysis in JSON format with:
 - weaknesses (array): Areas needing improvement
 - suggestions (array): Actionable improvement recommendations
 
-IMPORTANT CONTEXT:
+IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
 - PPV messages are CAPTIONS that convince fans to purchase the content
 - Fans cannot see the actual content until they buy it
@@ -1080,6 +1080,14 @@ IMPORTANT CONTEXT:
 - "Deleted user" messages are from different people who deleted their accounts
 - When analyzing guidelines about "captions", this refers to PPV message captions
 - Caption effectiveness is measured by PPV purchase rates
+
+CRITICAL ONLYFANS STRATEGY UNDERSTANDING:
+- HIGH MESSAGE VOLUME IS GOOD: Chatters are instructed to build relationships first
+- RELATIONSHIP BUILDING: 2-3 days before first PPV is normal and effective strategy
+- MESSAGES PER PPV: High ratios (50-100+) often indicate good engagement and relationship building
+- CONVERSION FOCUS: The goal is building trust and connection, not immediate sales
+- SALES EFFICIENCY: High message volume with high conversion rates is EXCELLENT performance
+- DO NOT assume high message volume is negative - analyze conversion rates instead
 
 CHATTING STYLE ANALYSIS (CRITICAL):
 - chattingStyle: {
@@ -1922,7 +1930,7 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval) {
     // Add advanced metrics for fallback analysis
     advancedMetrics: {
       efficiencyRatios: {
-        messagesPerPPV: analyticsData.ppvsSent > 0 ? `${(analyticsData.messagesSent / analyticsData.ppvsSent).toFixed(1)} messages per PPV - ${analyticsData.messagesSent / analyticsData.ppvsSent > 3 ? 'High engagement' : 'Moderate engagement'}` : 'No PPV data available',
+        messagesPerPPV: analyticsData.ppvsSent > 0 ? `${(analyticsData.messagesSent / analyticsData.ppvsSent).toFixed(1)} messages per PPV - ${analyticsData.messagesSent / analyticsData.ppvsSent > 50 ? 'Excellent relationship building' : analyticsData.messagesSent / analyticsData.ppvsSent > 20 ? 'Good engagement strategy' : 'Direct sales approach'}` : 'No PPV data available',
         responseEfficiency: analyticsData.avgResponseTime ? `${analyticsData.avgResponseTime.toFixed(1)}m average - ${analyticsData.avgResponseTime <= 2 ? 'Excellent response time' : analyticsData.avgResponseTime <= 3 ? 'Good response time' : 'Needs improvement'}` : 'No response time data available',
         messageQualityImpact: analyticsData.grammarScore && analyticsData.guidelinesScore ? `Grammar: ${analyticsData.grammarScore}/100, Guidelines: ${analyticsData.guidelinesScore}/100 - ${(analyticsData.grammarScore + analyticsData.guidelinesScore) / 2 >= 70 ? 'Good message quality' : 'Message quality needs improvement'}` : 'Analysis requires more data as message quality score is not available'
       }
@@ -2231,7 +2239,7 @@ ANALYSIS GUIDELINES (use actual data, no fake benchmarks):
 - Message Quality: Only analyze if real message analysis data is available
 - Grammar: Only analyze if real grammar analysis data is available
 - Guidelines: Avoid major violations. Score should be as high as possible.
-- Messages per PPV & Messages per Fan: Use as data points in combination with other metrics to identify patterns (e.g., higher message-to-PPV ratio + higher sales = more time in selling phase is effective).
+- Messages per PPV & Messages per Fan: HIGH ratios are GOOD in OnlyFans - they indicate relationship building. Analyze if high message volume correlates with higher conversion rates (which is the goal).
 - Overall Quality: Use as data point for pattern analysis.
 
 CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
