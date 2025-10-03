@@ -1064,13 +1064,40 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Provide a detailed analysis in JSON format with:
-- overallScore (0-100): Overall message quality
-- grammarScore (0-100): Grammar and spelling correctness
-- guidelinesScore (0-100): Adherence to sales/engagement guidelines
-- strengths (array): Key strengths in messaging
-- weaknesses (array): Areas needing improvement
-- suggestions (array): Actionable improvement recommendations
+Provide a detailed analysis in JSON format with EXACTLY this structure:
+
+{
+  "overallScore": 85,
+  "grammarScore": 78,
+  "guidelinesScore": 82,
+  "strengths": ["Detailed strength 1", "Detailed strength 2", "Detailed strength 3"],
+  "weaknesses": ["Detailed weakness 1", "Detailed weakness 2"],
+  "suggestions": ["Specific recommendation 1", "Specific recommendation 2"],
+  "chattingStyle": {
+    "directness": "moderately direct",
+    "friendliness": "very friendly",
+    "salesApproach": "moderate",
+    "personality": "flirty",
+    "emojiUsage": "moderate",
+    "messageLength": "medium",
+    "responsePattern": "thoughtful"
+  },
+  "messagePatterns": {
+    "questionFrequency": "high",
+    "exclamationUsage": "moderate",
+    "capitalizationStyle": "casual",
+    "punctuationStyle": "casual",
+    "topicDiversity": "high",
+    "sexualContent": "moderate",
+    "personalSharing": "high"
+  },
+  "engagementMetrics": {
+    "conversationStarter": "excellent",
+    "conversationMaintainer": "good",
+    "salesConversation": "good",
+    "fanRetention": "excellent"
+  }
+}
 
 IMPORTANT CONTEXT - ONLYFANS BUSINESS MODEL:
 - Messages with prices are PPVs (Pay-Per-View content)
@@ -1089,37 +1116,11 @@ CRITICAL ONLYFANS STRATEGY UNDERSTANDING:
 - SALES EFFICIENCY: High message volume with high conversion rates is EXCELLENT performance
 - DO NOT assume high message volume is negative - analyze conversion rates instead
 
-CHATTING STYLE ANALYSIS (CRITICAL):
-- chattingStyle: {
-  - directness: "very direct" | "moderately direct" | "subtle/indirect" | "very subtle"
-  - friendliness: "very friendly" | "moderately friendly" | "neutral" | "cold/distant"
-  - salesApproach: "aggressive" | "moderate" | "soft" | "very soft"
-  - personality: "dominant" | "submissive" | "playful" | "serious" | "flirty" | "conversational"
-  - emojiUsage: "heavy" | "moderate" | "light" | "minimal"
-  - messageLength: "very long" | "long" | "medium" | "short" | "very short"
-  - responsePattern: "immediate" | "thoughtful" | "delayed" | "inconsistent"
-}
-
-MESSAGE PATTERN ANALYSIS:
-- messagePatterns: {
-  - questionFrequency: "high" | "moderate" | "low" (questions per message)
-  - exclamationUsage: "high" | "moderate" | "low"
-  - capitalizationStyle: "proper" | "casual" | "all caps" | "no caps"
-  - punctuationStyle: "proper" | "casual" | "excessive" | "minimal"
-  - topicDiversity: "high" | "moderate" | "low" (variety of conversation topics)
-  - sexualContent: "explicit" | "moderate" | "subtle" | "minimal"
-  - personalSharing: "high" | "moderate" | "low" (sharing personal details)
-}
-
-ENGAGEMENT EFFECTIVENESS:
-- engagementMetrics: {
-  - conversationStarter: "excellent" | "good" | "average" | "poor"
-  - conversationMaintainer: "excellent" | "good" | "average" | "poor"
-  - salesConversation: "excellent" | "good" | "average" | "poor"
-  - fanRetention: "excellent" | "good" | "average" | "poor"
-}
-
-Focus on: engagement quality, sales effectiveness, professionalism, grammar, customer service, AND detailed style analysis.`;
+ANALYSIS REQUIREMENTS:
+- Analyze the actual message content to determine chatting style, patterns, and engagement
+- Provide specific examples from the messages in your analysis
+- Use the exact JSON structure provided above
+- Focus on engagement quality, sales effectiveness, and message patterns`;
     
     console.log('🚀 Making OpenAI API call...');
     const completion = await openai.chat.completions.create({
