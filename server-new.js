@@ -1007,6 +1007,12 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
+    console.log('MessageAnalysis data:', {
+      chattingStyle: messageAnalysis.chattingStyle,
+      messagePatterns: messageAnalysis.messagePatterns,
+      engagementMetrics: messageAnalysis.engagementMetrics,
+      recommendations: messageAnalysis.recommendations
+    });
     
     try {
       console.log('Attempting to save message analysis:', {
