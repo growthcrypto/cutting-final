@@ -1606,6 +1606,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         ];
       }
       console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
+      console.log('🔍 Searching for chatter names:', nameCandidates);
       
       // First try to find records with actual data - be more specific
       let messagesAnalysis = await MessageAnalysis.find({
@@ -1618,6 +1619,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }).sort({ createdAt: -1 });
       
       console.log('🔍 Records with data found:', messagesAnalysis.length);
+      
+      // If still no records, try a simpler query
+      if (messagesAnalysis.length === 0) {
+        console.log('🔍 Trying simpler query for any records with data...');
+        messagesAnalysis = await MessageAnalysis.find({
+          chatterName: { $in: [...new Set(nameCandidates)] },
+          $or: [
+            { chattingStyle: { $exists: true, $ne: null, $ne: {} } },
+            { messagePatterns: { $exists: true, $ne: null, $ne: {} } },
+            { engagementMetrics: { $exists: true, $ne: null, $ne: {} } }
+          ]
+        }).sort({ createdAt: -1 });
+        console.log('🔍 Simple query found:', messagesAnalysis.length, 'records');
+      }
       
       // If no records with data found, fall back to all records for this chatter
       if (messagesAnalysis.length === 0) {
