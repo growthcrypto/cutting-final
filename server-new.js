@@ -2034,7 +2034,14 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval) {
         responseEfficiency: analyticsData.avgResponseTime ? `${analyticsData.avgResponseTime.toFixed(1)}m average - ${analyticsData.avgResponseTime <= 2 ? 'Excellent response time' : analyticsData.avgResponseTime <= 3 ? 'Good response time' : 'Needs improvement'}` : 'No response time data available',
         messageQualityImpact: analyticsData.grammarScore && analyticsData.guidelinesScore ? `Grammar: ${analyticsData.grammarScore}/100, Guidelines: ${analyticsData.guidelinesScore}/100 - ${(analyticsData.grammarScore + analyticsData.guidelinesScore) / 2 >= 70 ? 'Good message quality' : 'Message quality needs improvement'}` : 'Analysis requires more data as message quality score is not available'
       }
-    }
+    },
+    // Include message analysis data as fallback
+    chattingStyle: analyticsData.chattingStyle,
+    messagePatterns: analyticsData.messagePatterns,
+    engagementMetrics: analyticsData.engagementMetrics,
+    strengths: analyticsData.strengths || [],
+    weaknesses: analyticsData.weaknesses || [],
+    suggestions: analyticsData.recommendations || []
   };
 }
 
