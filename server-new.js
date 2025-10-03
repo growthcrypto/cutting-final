@@ -977,6 +977,12 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
     console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
     console.log('🔍 Has recommendations:', !!analysisResult.recommendations);
+    console.log('🔍 Has grammarBreakdown:', !!analysisResult.grammarBreakdown);
+    console.log('🔍 Has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
+    console.log('🔍 Has overallBreakdown:', !!analysisResult.overallBreakdown);
+    console.log('🔍 grammarBreakdown keys:', analysisResult.grammarBreakdown ? Object.keys(analysisResult.grammarBreakdown) : 'NO OBJECT');
+    console.log('🔍 guidelinesBreakdown keys:', analysisResult.guidelinesBreakdown ? Object.keys(analysisResult.guidelinesBreakdown) : 'NO OBJECT');
+    console.log('🔍 overallBreakdown keys:', analysisResult.overallBreakdown ? Object.keys(analysisResult.overallBreakdown) : 'NO OBJECT');
     console.log('🔍 Raw AI Response Length:', analysisResult ? 'Response received' : 'No response');
     console.log('🔍 ChattingStyle content:', JSON.stringify(analysisResult.chattingStyle));
     console.log('🔍 MessagePatterns content:', JSON.stringify(analysisResult.messagePatterns));
@@ -1225,6 +1231,9 @@ ANALYSIS REQUIREMENTS:
     const analysisText = completion.choices[0].message.content;
     console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
     console.log('📝 Full AI Response Length:', analysisText.length);
+    console.log('📝 Contains grammarBreakdown:', analysisText.includes('grammarBreakdown'));
+    console.log('📝 Contains guidelinesBreakdown:', analysisText.includes('guidelinesBreakdown'));
+    console.log('📝 Contains overallBreakdown:', analysisText.includes('overallBreakdown'));
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
