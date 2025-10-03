@@ -1835,7 +1835,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
     // Generate AI analysis using OpenAI (agency and individual)
     try {
-      const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval);
+      // Build messageContent strictly from the selected window's analysis record
+      const analysisMessageTexts = (() => {
+        const fromRecords = Array.isArray(messageRecords) ? messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
+        if (fromRecords.length > 0) return fromRecords.slice(0, 50);
+        const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
+        return fromSample.slice(0, 50);
+      })();
+
+      const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
       
       // Add raw metrics to response for UI display
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
@@ -1929,25 +1937,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
-      // Helper to extract recent message texts for deterministic breakdowns
-      const getRecentMessages = async () => {
+      // Helper to extract message texts for deterministic breakdowns (strictly within selected window)
+      const getWindowMessages = () => {
         try {
-          const records = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords : [];
-          const fromRecords = records.map(r => r && r.messageText).filter(Boolean);
-          const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-          let combined = [...fromRecords, ...fromSample];
-          if (combined.length === 0) {
-            // Fallback: fetch the most recent MessageAnalysis for this chatter regardless of date
-            const latest = await MessageAnalysis.findOne({ chatterName: { $in: [...new Set(nameCandidates)] } })
-              .sort({ createdAt: -1 })
-              .select('messagesSample messageRecords');
-            if (latest) {
-              const recMsgs = Array.isArray(latest.messageRecords) ? latest.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
-              const samMsgs = Array.isArray(latest.messagesSample) ? latest.messagesSample.filter(Boolean) : [];
-              combined = [...recMsgs, ...samMsgs];
-            }
+          if (Array.isArray(messageRecords) && messageRecords.length > 0) {
+            return messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 50);
           }
-          return combined.slice(0, 50);
+          const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
+          return fromSample.slice(0, 50);
         } catch (_) {
           return [];
         }
@@ -2021,7 +2018,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasGrammarContent) {
         console.log('🔍 No AI grammarBreakdown content, using deterministic examples');
-        const msgs = await getRecentMessages();
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
       } else {
@@ -2034,7 +2031,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasGuidelinesContent) {
         console.log('🔍 No AI guidelinesBreakdown content, using deterministic examples');
-        const msgs = await getRecentMessages();
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.guidelinesBreakdown = det.guidelinesBreakdown;
       } else {
@@ -2047,7 +2044,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasOverallContent) {
         console.log('🔍 No AI overallBreakdown content, using deterministic examples');
-        const msgs = await getRecentMessages();
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.overallBreakdown = det.overallBreakdown;
       } else {
