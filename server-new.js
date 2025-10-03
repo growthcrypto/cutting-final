@@ -1264,6 +1264,7 @@ ANALYSIS REQUIREMENTS:
     console.log('📝 Contains grammarBreakdown:', analysisText.includes('grammarBreakdown'));
     console.log('📝 Contains guidelinesBreakdown:', analysisText.includes('guidelinesBreakdown'));
     console.log('📝 Contains overallBreakdown:', analysisText.includes('overallBreakdown'));
+    console.log('📝 Full AI Response for debugging:', analysisText);
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
