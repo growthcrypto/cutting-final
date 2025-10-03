@@ -976,6 +976,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
     console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
     console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
+    console.log('🔍 Has recommendations:', !!analysisResult.recommendations);
+    console.log('🔍 Raw AI Response Length:', analysisResult ? 'Response received' : 'No response');
     
     // Save to MessageAnalysis collection
     console.log('Creating MessageAnalysis object with:', {
