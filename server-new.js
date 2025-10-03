@@ -1143,24 +1143,24 @@ You MUST return ONLY valid JSON with this EXACT structure. Copy this template an
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Specific spelling issues found in messages",
-    "grammarIssues": "Grammar problems identified in message analysis",
-    "punctuationProblems": "Punctuation usage issues detected",
-    "informalLanguage": "Informal language patterns observed",
-    "scoreExplanation": "Explanation of grammar score based on message analysis"
+    "spellingErrors": "List specific misspelled words found",
+    "grammarIssues": "List specific grammar mistakes found",
+    "punctuationProblems": "List specific punctuation issues found",
+    "informalLanguage": "List specific informal language patterns found",
+    "scoreExplanation": "Explain the grammar score with examples"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Analysis of sales techniques and effectiveness",
-    "engagementQuality": "Quality of fan engagement and relationship building",
-    "captionQuality": "Effectiveness of PPV captions and descriptions",
-    "conversationFlow": "How well conversations are managed and maintained",
-    "scoreExplanation": "Explanation of guidelines score based on performance"
+    "salesEffectiveness": "List specific sales technique issues found",
+    "engagementQuality": "List specific engagement problems found",
+    "captionQuality": "List specific PPV caption issues found",
+    "conversationFlow": "List specific conversation flow problems found",
+    "scoreExplanation": "Explain the guidelines score with examples"
   },
   "overallBreakdown": {
-    "messageClarity": "How clear and understandable the messages are",
-    "emotionalImpact": "Emotional connection created with fans",
-    "conversionPotential": "Potential for converting fans to buyers",
-    "scoreExplanation": "Explanation of overall score based on comprehensive analysis"
+    "messageClarity": "List specific clarity issues found",
+    "emotionalImpact": "List specific emotional connection problems found",
+    "conversionPotential": "List specific conversion blockers found",
+    "scoreExplanation": "Explain the overall score with examples"
   }
 }
 
@@ -1204,6 +1204,8 @@ For overallBreakdown:
 - scoreExplanation: Explain with specific examples
 
 NO GENERIC STATEMENTS. Only include issues that actually exist in the messages. If no issues exist, say "No significant issues found" for that category.
+
+CRITICAL: You MUST fill in ALL breakdown sections with actual content. Do not leave any breakdown objects empty. If you find issues, list them specifically. If you find no issues, say "No significant issues found" but still provide the breakdown structure.
 
 VALID ENUM VALUES (use these exact values):
 - sexualContent: "explicit", "moderate", "subtle", "minimal" (NOT "low")
