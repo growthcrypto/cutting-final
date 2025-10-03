@@ -1099,11 +1099,9 @@ async function analyzeMessages(messages, chatterName) {
     console.log('🔍 OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
     console.log('🔍 OpenAI API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
 
-    // Sample messages if there are too many (to avoid token limits and costs)
-    const sampleSize = Math.min(messages.length, 10);
-    const sampledMessages = messages
-      .sort(() => Math.random() - 0.5)
-      .slice(0, sampleSize);
+    // Use all messages for comprehensive analysis
+    const sampleSize = messages.length;
+    const sampledMessages = messages;
     
     console.log('🚨 DEBUGGING: Total messages available:', messages.length);
     console.log('🚨 DEBUGGING: Sample size:', sampleSize);
@@ -1298,7 +1296,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 800
     });
     console.log('✅ OpenAI API call completed');
     console.log('🚨 DEBUGGING: About to get AI response content');
@@ -1913,9 +1911,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Build messageContent strictly from the selected window's analysis record
       const analysisMessageTexts = (() => {
         const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
-        if (fromRecords.length > 0) return fromRecords.slice(0, 100);
+        if (fromRecords.length > 0) return fromRecords;
         const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-        return fromSample.slice(0, 100);
+        return fromSample;
       })();
 
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
@@ -2028,10 +2026,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const getWindowMessages = () => {
         try {
           if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
-            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean).slice(0, 100);
+            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean);
           }
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-          return fromSample.slice(0, 100);
+          return fromSample;
         } catch (_) {
           return [];
         }
