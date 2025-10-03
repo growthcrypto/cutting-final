@@ -7,6 +7,25 @@ let customDateRange = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    // TEST SECTION - ALWAYS SHOW
+    setTimeout(() => {
+        const container = document.getElementById('chatterAnalysisResults');
+        if (container) {
+            container.innerHTML = `
+                <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
+                    <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-bug text-red-400 mr-3"></i>
+                        TEST SECTION - PAGE LOADED!
+                    </h5>
+                    <div class="text-sm text-gray-300">
+                        <div>Page loaded successfully</div>
+                        <div>Container found: ${container ? 'YES' : 'NO'}</div>
+                    </div>
+                </div>
+            `;
+        }
+    }, 1000);
+    
     checkAuthStatus();
     setupEventListeners();
     setDefaultDate();
