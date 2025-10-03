@@ -1095,7 +1095,7 @@ async function analyzeMessages(messages, chatterName) {
     console.log('✅ OpenAI is configured, proceeding with AI analysis...');
 
     // Sample messages if there are too many (to avoid token limits and costs)
-    const sampleSize = Math.min(messages.length, 20);
+    const sampleSize = Math.min(messages.length, 10);
     const sampledMessages = messages
       .sort(() => Math.random() - 0.5)
       .slice(0, sampleSize);
@@ -1224,7 +1224,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.7,
-      max_tokens: 500
+      max_tokens: 300
     });
     console.log('✅ OpenAI API call completed');
     
@@ -2769,7 +2769,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -2781,7 +2781,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.3,
-      max_tokens: 2000
+      max_tokens: 800
     });
 
     const aiResponse = completion.choices[0].message.content;
