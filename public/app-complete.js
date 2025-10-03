@@ -7,89 +7,6 @@ let customDateRange = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    // TEST SECTION - ALWAYS SHOW
-    setTimeout(() => {
-        const container = document.getElementById('chatterAnalysisResults');
-        if (container) {
-            container.innerHTML = `
-                <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
-                    <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                        <i class="fas fa-bug text-red-400 mr-3"></i>
-                        TEST SECTION - PAGE LOADED!
-                    </h5>
-                    <div class="text-sm text-gray-300">
-                        <div>Page loaded successfully</div>
-                        <div>Container found: ${container ? 'YES' : 'NO'}</div>
-                    </div>
-                </div>
-                
-                <!-- Detailed Score Breakdowns -->
-                <div class="glass-card rounded-xl p-6 border border-purple-500/30 slide-up-1 hover-lift mb-6">
-                    <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                        <i class="fas fa-comments text-purple-400 mr-3"></i>
-                        Message Quality Analysis
-                    </h5>
-                    
-                    <!-- Grammar & Guidelines Scores -->
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                            <div class="text-sm font-bold text-purple-400 mb-2">Grammar Score</div>
-                            <div class="text-2xl font-bold text-white mb-2">75/100</div>
-                            <div class="text-xs text-gray-400">Spelling, grammar, punctuation accuracy</div>
-                        </div>
-                        <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                            <div class="text-sm font-bold text-purple-400 mb-2">Guidelines Score</div>
-                            <div class="text-2xl font-bold text-white mb-2">80/100</div>
-                            <div class="text-xs text-gray-400">Sales effectiveness, engagement quality</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Detailed Score Breakdowns -->
-                    <div class="mb-6">
-                        <h6 class="text-md font-bold text-white mb-3 flex items-center">
-                            <i class="fas fa-search text-purple-400 mr-2"></i>
-                            Detailed Score Breakdown
-                        </h6>
-                        
-                        <!-- Grammar Breakdown -->
-                        <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                            <h7 class="text-sm font-bold text-purple-400 mb-2">Grammar Analysis</h7>
-                            <div class="space-y-2 text-sm">
-                                <div class="text-gray-300"><span class="text-red-400">Spelling:</span> No spelling errors detected in recent messages</div>
-                                <div class="text-gray-300"><span class="text-red-400">Grammar:</span> Grammar appears to be correct in analyzed messages</div>
-                                <div class="text-gray-300"><span class="text-red-400">Punctuation:</span> Punctuation usage is appropriate</div>
-                                <div class="text-gray-300"><span class="text-yellow-400">Informal:</span> Language style is consistent with OnlyFans platform</div>
-                                <div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> Grammar score of 75/100 based on message analysis</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Guidelines Breakdown -->
-                        <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                            <h7 class="text-sm font-bold text-purple-400 mb-2">Guidelines Analysis</h7>
-                            <div class="space-y-2 text-sm">
-                                <div class="text-gray-300"><span class="text-green-400">Sales:</span> Sales approach appears effective based on conversion data</div>
-                                <div class="text-gray-300"><span class="text-green-400">Engagement:</span> Engagement techniques are working well with fans</div>
-                                <div class="text-gray-300"><span class="text-green-400">Captions:</span> PPV captions are compelling and driving purchases</div>
-                                <div class="text-gray-300"><span class="text-green-400">Flow:</span> Conversation management is smooth and natural</div>
-                                <div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> Guidelines score of 80/100 based on performance metrics</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Overall Breakdown -->
-                        <div class="mb-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                            <h7 class="text-sm font-bold text-purple-400 mb-2">Overall Analysis</h7>
-                            <div class="space-y-2 text-sm">
-                                <div class="text-gray-300"><span class="text-blue-400">Clarity:</span> Messages are clear and easy to understand</div>
-                                <div class="text-gray-300"><span class="text-blue-400">Emotional:</span> Messages create good emotional connection with fans</div>
-                                <div class="text-gray-300"><span class="text-blue-400">Conversion:</span> Messages effectively drive fan engagement and purchases</div>
-                                <div class="text-gray-300 mt-2"><span class="text-blue-400">Explanation:</span> Overall score of 78/100 based on comprehensive analysis</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    }, 1000);
     
     checkAuthStatus();
     setupEventListeners();
@@ -1943,21 +1860,6 @@ async function runChatterAnalysis() {
     const select = document.getElementById('chatterAnalysisSelect');
     const resultsContainer = document.getElementById('chatterAnalysisResults');
     
-    // TEST SECTION - ALWAYS SHOW
-    if (resultsContainer) {
-        resultsContainer.innerHTML = `
-            <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
-                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                    <i class="fas fa-bug text-red-400 mr-3"></i>
-                    TEST SECTION - runChatterAnalysis CALLED!
-                </h5>
-                <div class="text-sm text-gray-300">
-                    <div>Select value: ${select?.value || 'NO VALUE'}</div>
-                    <div>Results container: ${resultsContainer ? 'FOUND' : 'NOT FOUND'}</div>
-                </div>
-            </div>
-        `;
-    }
     
     if (!select?.value || !resultsContainer) {
         if (resultsContainer) {
@@ -2565,32 +2467,9 @@ function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
     
-    // TEST SECTION - ALWAYS SHOW
-    container.innerHTML = `
-        <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
-            <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                <i class="fas fa-bug text-red-400 mr-3"></i>
-                TEST SECTION - ALWAYS SHOW
-            </h5>
-            <div class="text-sm text-gray-300">
-                <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
-                <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
-                <div>Has chattingStyle: ${data.chattingStyle ? 'YES' : 'NO'}</div>
-                <div>Has messagePatterns: ${data.messagePatterns ? 'YES' : 'NO'}</div>
-                <div>Has engagementMetrics: ${data.engagementMetrics ? 'YES' : 'NO'}</div>
-                <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
-                <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
-                <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
-            </div>
-        </div>
-    `;
-    
-    return; // Stop here for now to test
-    
-    container.innerHTML = `
-        <!-- Chatter Score Overview -->
-        <div class="glass-card rounded-xl p-10 mb-10">
-            <div class="flex items-center justify-between mb-8">
+    // Call the sophisticated analysis function instead
+    renderSophisticatedChatterAnalysis(data);
+}
                 <div>
                     <h4 class="text-3xl font-semibold text-white">${data.chatterName} Performance Analysis</h4>
                     <p class="text-gray-400 text-lg mt-3">Individual deep-dive for ${currentAIAnalysisInterval} period</p>
@@ -5340,27 +5219,6 @@ function renderSophisticatedChatterAnalysis(data) {
     
     console.log('Rendering LEAN DYNAMIC analysis:', data);
     
-    // TEST SECTION - ALWAYS SHOW
-    container.innerHTML = `
-        <div class="glass-card rounded-xl p-6 border border-red-500/30 slide-up-1 hover-lift mb-6">
-            <h5 class="text-lg font-bold text-white mb-4 flex items-center">
-                <i class="fas fa-bug text-red-400 mr-3"></i>
-                TEST SECTION - ALWAYS SHOW
-            </h5>
-            <div class="text-sm text-gray-300">
-                <div>Grammar Score: ${data.grammarScore || 'N/A'}</div>
-                <div>Guidelines Score: ${data.guidelinesScore || 'N/A'}</div>
-                <div>Has chattingStyle: ${data.chattingStyle ? 'YES' : 'NO'}</div>
-                <div>Has messagePatterns: ${data.messagePatterns ? 'YES' : 'NO'}</div>
-                <div>Has engagementMetrics: ${data.engagementMetrics ? 'YES' : 'NO'}</div>
-                <div>Has grammarBreakdown: ${data.grammarBreakdown ? 'YES' : 'NO'}</div>
-                <div>Has guidelinesBreakdown: ${data.guidelinesBreakdown ? 'YES' : 'NO'}</div>
-                <div>Has overallBreakdown: ${data.overallBreakdown ? 'YES' : 'NO'}</div>
-            </div>
-        </div>
-    `;
-    
-    return; // Stop here for now to test
     
     // Calculate derived metrics
     const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
