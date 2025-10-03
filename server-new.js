@@ -1612,6 +1612,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
       aiAnalysis.overallScore = analyticsData.overallMessageScore;
       
+      // Add message analysis data for detailed breakdown
+      aiAnalysis.chattingStyle = analyticsData.chattingStyle;
+      aiAnalysis.messagePatterns = analyticsData.messagePatterns;
+      aiAnalysis.engagementMetrics = analyticsData.engagementMetrics;
+      aiAnalysis.strengths = analyticsData.strengths;
+      aiAnalysis.weaknesses = analyticsData.weaknesses;
+      aiAnalysis.recommendations = analyticsData.recommendations;
+      
       res.json(aiAnalysis);
     } catch (aiError) {
       console.error('AI Analysis failed, falling back to basic analysis:', aiError);

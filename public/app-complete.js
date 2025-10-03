@@ -5277,6 +5277,158 @@ function renderSophisticatedChatterAnalysis(data) {
             </div>
             ` : ''}
             
+            <!-- Message Quality Analysis -->
+            ${data.chattingStyle || data.messagePatterns || data.engagementMetrics ? `
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 slide-up-1 hover-lift">
+                <h5 class="text-lg font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-comments text-purple-400 mr-3"></i>
+                    Message Quality Analysis
+                </h5>
+                
+                <!-- Grammar & Guidelines Scores -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                        <div class="text-sm font-bold text-purple-400 mb-2">Grammar Score</div>
+                        <div class="text-2xl font-bold text-white mb-2">${data.grammarScore || 'N/A'}/100</div>
+                        <div class="text-xs text-gray-400">Spelling, grammar, punctuation accuracy</div>
+                    </div>
+                    <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                        <div class="text-sm font-bold text-purple-400 mb-2">Guidelines Score</div>
+                        <div class="text-2xl font-bold text-white mb-2">${data.guidelinesScore || 'N/A'}/100</div>
+                        <div class="text-xs text-gray-400">Sales effectiveness, engagement quality</div>
+                    </div>
+                </div>
+                
+                <!-- Chatting Style Analysis -->
+                ${data.chattingStyle ? `
+                <div class="mb-6">
+                    <h6 class="text-md font-bold text-white mb-3 flex items-center">
+                        <i class="fas fa-user-tie text-purple-400 mr-2"></i>
+                        Chatting Style
+                    </h6>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Directness</div>
+                            <div class="text-sm text-white">${data.chattingStyle.directness || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Friendliness</div>
+                            <div class="text-sm text-white">${data.chattingStyle.friendliness || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Sales Approach</div>
+                            <div class="text-sm text-white">${data.chattingStyle.salesApproach || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Personality</div>
+                            <div class="text-sm text-white">${data.chattingStyle.personality || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Emoji Usage</div>
+                            <div class="text-sm text-white">${data.chattingStyle.emojiUsage || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Message Length</div>
+                            <div class="text-sm text-white">${data.chattingStyle.messageLength || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Message Patterns -->
+                ${data.messagePatterns ? `
+                <div class="mb-6">
+                    <h6 class="text-md font-bold text-white mb-3 flex items-center">
+                        <i class="fas fa-chart-line text-purple-400 mr-2"></i>
+                        Message Patterns
+                    </h6>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Question Frequency</div>
+                            <div class="text-sm text-white">${data.messagePatterns.questionFrequency || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Exclamation Usage</div>
+                            <div class="text-sm text-white">${data.messagePatterns.exclamationUsage || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Capitalization Style</div>
+                            <div class="text-sm text-white">${data.messagePatterns.capitalizationStyle || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Punctuation Style</div>
+                            <div class="text-sm text-white">${data.messagePatterns.punctuationStyle || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Topic Diversity</div>
+                            <div class="text-sm text-white">${data.messagePatterns.topicDiversity || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Sexual Content</div>
+                            <div class="text-sm text-white">${data.messagePatterns.sexualContent || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Engagement Effectiveness -->
+                ${data.engagementMetrics ? `
+                <div class="mb-4">
+                    <h6 class="text-md font-bold text-white mb-3 flex items-center">
+                        <i class="fas fa-heart text-purple-400 mr-2"></i>
+                        Engagement Effectiveness
+                    </h6>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Conversation Starter</div>
+                            <div class="text-sm text-white">${data.engagementMetrics.conversationStarter || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Conversation Maintainer</div>
+                            <div class="text-sm text-white">${data.engagementMetrics.conversationMaintainer || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Sales Conversation</div>
+                            <div class="text-sm text-white">${data.engagementMetrics.salesConversation || 'N/A'}</div>
+                        </div>
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs text-purple-400 mb-1">Fan Retention</div>
+                            <div class="text-sm text-white">${data.engagementMetrics.fanRetention || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Detailed Analysis -->
+                ${data.strengths && data.strengths.length > 0 ? `
+                <div class="mb-4">
+                    <h6 class="text-md font-bold text-green-400 mb-2">Strengths</h6>
+                    <ul class="text-sm text-gray-300 space-y-1">
+                        ${data.strengths.map(strength => `<li class="flex items-start"><i class="fas fa-check-circle text-green-400 mr-2 mt-0.5 text-xs"></i>${strength}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                ${data.weaknesses && data.weaknesses.length > 0 ? `
+                <div class="mb-4">
+                    <h6 class="text-md font-bold text-red-400 mb-2">Areas for Improvement</h6>
+                    <ul class="text-sm text-gray-300 space-y-1">
+                        ${data.weaknesses.map(weakness => `<li class="flex items-start"><i class="fas fa-exclamation-triangle text-red-400 mr-2 mt-0.5 text-xs"></i>${weakness}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                ${data.recommendations && data.recommendations.length > 0 ? `
+                <div>
+                    <h6 class="text-md font-bold text-blue-400 mb-2">Recommendations</h6>
+                    <ul class="text-sm text-gray-300 space-y-1">
+                        ${data.recommendations.map(rec => `<li class="flex items-start"><i class="fas fa-lightbulb text-blue-400 mr-2 mt-0.5 text-xs"></i>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+            
             <!-- Revenue Impact (Most Important) -->
             ${data.executiveSummary?.revenueImpact ? `
             <div class="glass-card rounded-xl p-6 border border-green-500/30 slide-up-1 hover-lift">
