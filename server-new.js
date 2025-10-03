@@ -1331,6 +1331,13 @@ ANALYSIS REQUIREMENTS:
       // Check the raw JSON to see what the AI actually returned
       console.log('🔍 Raw JSON for grammarBreakdown:', JSON.stringify(analysisResult.grammarBreakdown, null, 2));
       
+      // Check specifically for scoreExplanation
+      if (analysisResult.grammarBreakdown && analysisResult.grammarBreakdown.scoreExplanation) {
+        console.log('🔍 AI returned scoreExplanation:', analysisResult.grammarBreakdown.scoreExplanation);
+      } else {
+        console.log('🔍 AI did NOT return scoreExplanation');
+      }
+      
       return analysisResult;
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError.message);
@@ -2055,8 +2062,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 DEBUGGING: hasGrammarStructure:', hasGrammarStructure);
       console.log('🔍 DEBUGGING: hasGrammarContent:', hasGrammarContent);
       
-      // If AI returned structure but no content, it means AI didn't fill in the breakdown properly
-      if (hasGrammarStructure && !hasGrammarContent) {
+      // Check if AI returned ANY meaningful content (even if some fields are empty)
+      const hasAnyGrammarContent = hasGrammarStructure && 
+        Object.entries(aiAnalysis.grammarBreakdown).some(([key, value]) => {
+          if (key === 'scoreExplanation') return false; // Skip scoreExplanation for this check
+          return value && typeof value === 'string' && value.trim().length > 0;
+        });
+      
+      console.log('🔍 DEBUGGING: hasAnyGrammarContent (excluding scoreExplanation):', hasAnyGrammarContent);
+      
+      // If AI returned structure with ANY content, use it (even if scoreExplanation is missing)
+      if (hasAnyGrammarContent) {
+        console.log('🔍 Using AI grammarBreakdown with content (some fields may be empty)');
+        // Keep the AI data - don't overwrite it
+      } else if (hasGrammarStructure && !hasGrammarContent) {
         console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - using deterministic examples');
         const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
