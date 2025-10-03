@@ -5278,7 +5278,16 @@ function renderSophisticatedChatterAnalysis(data) {
             ` : ''}
             
             <!-- Message Quality Analysis -->
-            ${data.chattingStyle || data.messagePatterns || data.engagementMetrics ? `
+            ${(() => {
+              console.log('🔍 Frontend data check:', {
+                hasChattingStyle: !!data.chattingStyle,
+                hasMessagePatterns: !!data.messagePatterns,
+                hasEngagementMetrics: !!data.engagementMetrics,
+                chattingStyleKeys: data.chattingStyle ? Object.keys(data.chattingStyle) : 'null',
+                messagePatternsKeys: data.messagePatterns ? Object.keys(data.messagePatterns) : 'null'
+              });
+              return data.chattingStyle || data.messagePatterns || data.engagementMetrics;
+            })() ? `
             <div class="glass-card rounded-xl p-6 border border-purple-500/30 slide-up-1 hover-lift">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-comments text-purple-400 mr-3"></i>
