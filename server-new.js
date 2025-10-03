@@ -1128,6 +1128,8 @@ ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
 You MUST return ONLY valid JSON with this EXACT structure. Analyze the messages above and fill in REAL values:
 
+CRITICAL: You MUST analyze each message and provide specific examples. Do NOT return undefined values. Every field must have actual content.
+
 {
   "overallScore": 85,
   "grammarScore": 78,
@@ -1160,24 +1162,24 @@ You MUST return ONLY valid JSON with this EXACT structure. Analyze the messages 
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Message 1: 'recieve' should be 'receive' | Message 2: 'thier' should be 'their'",
-    "grammarIssues": "Message 3: Missing apostrophe in 'dont' | Message 4: 'your' instead of 'you're'",
-    "punctuationProblems": "Message 5: Missing period at end | Message 6: Missing comma",
-    "informalLanguage": "Message 7: Using 'u' instead of 'you' | Message 8: Using 'ur' instead of 'your'",
-    "scoreExplanation": "Grammar analysis of 10 messages found 4 spelling errors, 3 grammar issues, 2 punctuation problems, and 5 informal language patterns"
+    "spellingErrors": "ANALYZE THE MESSAGES ABOVE AND FIND SPELLING ERRORS. List specific examples with message numbers.",
+    "grammarIssues": "ANALYZE THE MESSAGES ABOVE AND FIND GRAMMAR ISSUES. List specific examples with message numbers.",
+    "punctuationProblems": "ANALYZE THE MESSAGES ABOVE AND FIND PUNCTUATION PROBLEMS. List specific examples with message numbers.",
+    "informalLanguage": "ANALYZE THE MESSAGES ABOVE AND FIND INFORMAL LANGUAGE. List specific examples with message numbers.",
+    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF GRAMMAR ISSUES FOUND."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Message 9: Good sales approach with clear pricing | Message 10: Effective PPV promotion",
-    "engagementQuality": "Message 11: Strong engagement with questions | Message 12: Good follow-up",
-    "captionQuality": "Message 13: Compelling PPV caption | Message 14: Clear value proposition",
-    "conversationFlow": "Message 15: Natural conversation flow | Message 16: Good timing",
-    "scoreExplanation": "Guidelines analysis of 10 messages found strong sales techniques, good engagement patterns, compelling captions, and natural conversation flow"
+    "salesEffectiveness": "ANALYZE THE MESSAGES ABOVE AND FIND SALES EFFECTIVENESS. List specific examples with message numbers.",
+    "engagementQuality": "ANALYZE THE MESSAGES ABOVE AND FIND ENGAGEMENT QUALITY. List specific examples with message numbers.",
+    "captionQuality": "ANALYZE THE MESSAGES ABOVE AND FIND CAPTION QUALITY. List specific examples with message numbers.",
+    "conversationFlow": "ANALYZE THE MESSAGES ABOVE AND FIND CONVERSATION FLOW. List specific examples with message numbers.",
+    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF GUIDELINES ANALYSIS."
   },
   "overallBreakdown": {
-    "messageClarity": "Message 17: Clear and easy to understand | Message 18: Well-structured",
-    "emotionalImpact": "Message 19: Strong emotional connection | Message 20: Personal touch",
-    "conversionPotential": "Message 21: Good conversion potential | Message 22: Clear call-to-action",
-    "scoreExplanation": "Overall analysis of 10 messages found clear communication, strong emotional impact, and good conversion potential"
+    "messageClarity": "ANALYZE THE MESSAGES ABOVE AND FIND MESSAGE CLARITY. List specific examples with message numbers.",
+    "emotionalImpact": "ANALYZE THE MESSAGES ABOVE AND FIND EMOTIONAL IMPACT. List specific examples with message numbers.",
+    "conversionPotential": "ANALYZE THE MESSAGES ABOVE AND FIND CONVERSION POTENTIAL. List specific examples with message numbers.",
+    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF OVERALL ANALYSIS."
   }
 }
 
