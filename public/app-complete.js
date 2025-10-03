@@ -5183,6 +5183,7 @@ function renderSophisticatedChatterAnalysis(data) {
                                 <i class="fas fa-microscope text-white text-sm"></i>
                             </div>
                             Detailed Score Breakdown
+                            <span class="ml-3 px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">NEW UI</span>
                         </h6>
                         <div class="flex items-center space-x-2">
                             <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
