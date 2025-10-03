@@ -1125,7 +1125,7 @@ async function analyzeMessages(messages, chatterName) {
 
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return ONLY valid JSON with this EXACT structure. Copy this template and fill in the values:
+You MUST return ONLY valid JSON with this EXACT structure. Analyze the messages above and fill in REAL values:
 
 {
   "overallScore": 85,
@@ -1159,23 +1159,23 @@ You MUST return ONLY valid JSON with this EXACT structure. Copy this template an
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Message 1: 'recieve' should be 'receive'",
-    "grammarIssues": "Message 2: Missing apostrophe in 'dont'",
-    "punctuationProblems": "Message 3: Missing period at end",
-    "informalLanguage": "Message 4: Using 'u' instead of 'you'",
+    "spellingErrors": "Message 1: 'recieve' should be 'receive' | Message 2: 'thier' should be 'their'",
+    "grammarIssues": "Message 3: Missing apostrophe in 'dont' | Message 4: 'your' instead of 'you're'",
+    "punctuationProblems": "Message 5: Missing period at end | Message 6: Missing comma",
+    "informalLanguage": "Message 7: Using 'u' instead of 'you' | Message 8: Using 'ur' instead of 'your'",
     "scoreExplanation": "Grammar analysis of 10 messages found 4 spelling errors, 3 grammar issues, 2 punctuation problems, and 5 informal language patterns"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Message 5: Good sales approach with clear pricing",
-    "engagementQuality": "Message 6: Strong engagement with questions",
-    "captionQuality": "Message 7: Compelling PPV caption",
-    "conversationFlow": "Message 8: Natural conversation flow",
+    "salesEffectiveness": "Message 9: Good sales approach with clear pricing | Message 10: Effective PPV promotion",
+    "engagementQuality": "Message 11: Strong engagement with questions | Message 12: Good follow-up",
+    "captionQuality": "Message 13: Compelling PPV caption | Message 14: Clear value proposition",
+    "conversationFlow": "Message 15: Natural conversation flow | Message 16: Good timing",
     "scoreExplanation": "Guidelines analysis of 10 messages found strong sales techniques, good engagement patterns, compelling captions, and natural conversation flow"
   },
   "overallBreakdown": {
-    "messageClarity": "Message 9: Clear and easy to understand",
-    "emotionalImpact": "Message 10: Strong emotional connection",
-    "conversionPotential": "Message 11: Good conversion potential",
+    "messageClarity": "Message 17: Clear and easy to understand | Message 18: Well-structured",
+    "emotionalImpact": "Message 19: Strong emotional connection | Message 20: Personal touch",
+    "conversionPotential": "Message 21: Good conversion potential | Message 22: Clear call-to-action",
     "scoreExplanation": "Overall analysis of 10 messages found clear communication, strong emotional impact, and good conversion potential"
   }
 }
