@@ -1548,7 +1548,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         ];
       }
       console.log('Message analysis query:', JSON.stringify(messageQuery, null, 2));
-      const messagesAnalysis = await MessageAnalysis.find(messageQuery);
+      const messagesAnalysis = await MessageAnalysis.find(messageQuery).sort({ createdAt: -1 });
       console.log('Found message analysis data:', messagesAnalysis.length, 'records');
       
       const totalRevenue = 0; // Revenue not captured in ChatterPerformance
