@@ -1119,12 +1119,22 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans chat messages and return ONLY valid JSON.
+    const prompt = `Analyze these OnlyFans chat messages and find DIVERSE, REAL issues. Return ONLY valid JSON.
 
 MESSAGES:
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Return this EXACT JSON with REAL examples from the messages:
+CRITICAL: Find DIFFERENT types of issues. Do NOT repeat the same error type. Look for:
+- Spelling errors (different words)
+- Grammar mistakes (different patterns) 
+- Punctuation issues (different types)
+- Informal language (different examples)
+- Sales effectiveness (different techniques)
+- Engagement quality (different strategies)
+- Message clarity (different issues)
+- Emotional impact (different connections)
+
+Return this EXACT JSON with DIVERSE examples from the messages:
 
 {
   "overallScore": 85,
@@ -1158,28 +1168,34 @@ Return this EXACT JSON with REAL examples from the messages:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Message 1: 'u' instead of 'you' | Message 5: 'u're' instead of 'you're'",
-    "grammarIssues": "Message 3: Missing apostrophe in 'dont' | Message 7: Missing apostrophe in 'cant'",
-    "punctuationProblems": "Message 2: Missing period | Message 4: Missing question mark",
-    "informalLanguage": "Message 1: 'u' instead of 'you' | Message 6: 'haha' instead of 'laugh'",
-    "scoreExplanation": "Found 15 spelling errors, 8 grammar issues, 12 punctuation problems, 20 informal language patterns in 50 messages."
+    "spellingErrors": "Find DIVERSE spelling errors from different messages. List 3-5 different examples.",
+    "grammarIssues": "Find DIVERSE grammar mistakes from different messages. List 3-5 different examples.",
+    "punctuationProblems": "Find DIVERSE punctuation issues from different messages. List 3-5 different examples.",
+    "informalLanguage": "Find DIVERSE informal language from different messages. List 3-5 different examples.",
+    "scoreExplanation": "Summarize the grammar analysis with specific counts of different error types found."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Message 10: Good sales approach | Message 15: Effective engagement",
-    "engagementQuality": "Message 3: Good conversation starter | Message 8: Maintains interest",
-    "captionQuality": "Message 12: Good PPV caption | Message 18: Effective sales pitch",
-    "conversationFlow": "Message 5: Smooth transition | Message 9: Good follow-up",
-    "scoreExplanation": "Found 8 effective sales techniques, 12 good engagement strategies, 5 quality captions, 15 smooth conversation flows."
+    "salesEffectiveness": "Find DIVERSE sales techniques from different messages. List 3-5 different examples.",
+    "engagementQuality": "Find DIVERSE engagement strategies from different messages. List 3-5 different examples.",
+    "captionQuality": "Find DIVERSE PPV captions from different messages. List 3-5 different examples.",
+    "conversationFlow": "Find DIVERSE conversation patterns from different messages. List 3-5 different examples.",
+    "scoreExplanation": "Summarize the guidelines analysis with specific counts of different techniques found."
   },
   "overallBreakdown": {
-    "messageClarity": "Message 2: Clear communication | Message 7: Easy to understand",
-    "emotionalImpact": "Message 4: Creates connection | Message 11: Builds rapport",
-    "conversionPotential": "Message 6: High conversion potential | Message 13: Good sales opportunity",
-    "scoreExplanation": "Found 18 clear messages, 22 emotional connections, 12 high conversion opportunities in 50 messages."
+    "messageClarity": "Find DIVERSE clarity issues from different messages. List 3-5 different examples.",
+    "emotionalImpact": "Find DIVERSE emotional connections from different messages. List 3-5 different examples.",
+    "conversionPotential": "Find DIVERSE conversion opportunities from different messages. List 3-5 different examples.",
+    "scoreExplanation": "Summarize the overall analysis with specific counts of different areas found."
   }
 }
 
-IMPORTANT: Replace the example values above with REAL analysis of the actual messages. Do NOT return undefined values.
+CRITICAL INSTRUCTIONS:
+1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
+2. Use DIFFERENT messages for each example - do NOT use the same message multiple times
+3. Look for DIVERSE problems - spelling, grammar, punctuation, informal language, sales, engagement, clarity, emotional impact
+4. Provide 3-5 DIFFERENT examples for each category
+5. Focus on the MAIN AREAS that need improvement
+6. Do NOT repeat the same issue type multiple times
 
 Return ONLY the JSON object above. No additional text.
 
