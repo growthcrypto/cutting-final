@@ -2822,8 +2822,28 @@ function formatGrammarText(text, category) {
     .replace(/while others lack appropriate punctuation/g, '') // Remove informal language errors
     .replace(/lacks proper punctuation/g, '') // Remove informal language errors
     .replace(/Found incons/g, '') // Remove cutoff text
+    .replace(/Inconsistent punctuation style observed throughout messages/g, '') // Remove informal language errors
+    .replace(/impacting readability with formal periods and commas/g, '') // Remove informal language errors
+    .replace(/and exclamation points in multiple/g, '') // Remove cutoff text
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
+  
+  // Check if this is informal OnlyFans language being flagged as errors
+  const informalPatterns = [
+    /'u are'\s+instead\s+of\s+'you are'/g,
+    /'u'\s+instead\s+of\s+'you'/g,
+    /'ur'\s+instead\s+of\s+'your'/g,
+    /'im'\s+instead\s+of\s+'I'm'/g,
+    /'i'\s+instead\s+of\s+'I'/g,
+    /'dont'\s+instead\s+of\s+'don't'/g,
+    /'ilove'\s+instead\s+of\s+'I love'/g
+  ];
+  
+  // If the text contains informal language being flagged as errors, return "No errors found"
+  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
+  if (hasInformalErrors) {
+    return `No ${category.toLowerCase()} errors found.`;
+  }
   
   // Extract unique errors with counts
   const errors = new Map();
@@ -2846,7 +2866,7 @@ function formatGrammarText(text, category) {
     });
   }
   
-  // Extract specific error examples
+  // Extract specific error examples (but NOT informal OnlyFans language)
   const examplePatterns = [
     /'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
     /like\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
@@ -2859,7 +2879,13 @@ function formatGrammarText(text, category) {
       matches.forEach(match => {
         const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
         if (exampleMatch) {
-          examples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+          const wrong = exampleMatch[1];
+          const correct = exampleMatch[2];
+          
+          // Only include if it's NOT informal OnlyFans language
+          if (!informalPatterns.some(p => p.test(match))) {
+            examples.add(`'${wrong}' instead of '${correct}'`);
+          }
         }
       });
     }
