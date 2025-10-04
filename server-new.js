@@ -1340,7 +1340,7 @@ ANALYSIS REQUIREMENTS:
     try {
       console.log('🚨 DEBUGGING: Calling OpenAI API now...');
       const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-nano',
       messages: [
         {
           role: 'system',
@@ -3514,7 +3514,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-nano",
       messages: [
         {
           role: "system",
