@@ -1980,13 +1980,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
       aiAnalysis.messagesSent = analyticsData.messagesSent;
       
-      // FORCE RE-ANALYSIS WITH NEW PROMPT - ALWAYS OVERRIDE OLD DATA
-      console.log('🔄 FORCING RE-ANALYSIS WITH NEW PROMPT');
-      if (analysisMessageTexts && analysisMessageTexts.length > 0) {
-        console.log('🔄 Re-analyzing messages with new prompt...');
-        console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
-        try {
-          const reAnalysis = await analyzeMessages(analysisMessageTexts, 'Re-analysis');
+        // FORCE RE-ANALYSIS WITH NEW PROMPT - ALWAYS OVERRIDE OLD DATA
+        console.log('🔄 FORCING RE-ANALYSIS WITH NEW PROMPT');
+        if (analysisMessageTexts && analysisMessageTexts.length > 0) {
+          console.log('🔄 Re-analyzing messages with new prompt...');
+          console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
+          
+          // LIMIT MESSAGES TO AVOID TOKEN LIMIT (max ~100 messages for safety)
+          const limitedMessages = analysisMessageTexts.slice(0, 100);
+          console.log('🔄 Limited messages from', analysisMessageTexts.length, 'to', limitedMessages.length);
+          
+          try {
+            const reAnalysis = await analyzeMessages(limitedMessages, 'Re-analysis');
           console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
           console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
           console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
