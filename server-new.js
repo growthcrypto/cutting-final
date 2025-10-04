@@ -2044,6 +2044,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
+            // Get AI analysis for guidelines using the first batch (most comprehensive)
+            console.log('🔄 Getting AI analysis for guidelines...');
+            const guidelinesAnalysis = await analyzeMessages(batches[0], 'Guidelines Analysis');
+            console.log('🔄 Guidelines analysis completed:', !!guidelinesAnalysis.guidelinesBreakdown);
+            
             // Get custom guidelines from database
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
             console.log('🔄 Found', customGuidelines.length, 'custom guidelines');
@@ -2056,12 +2061,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 punctuationProblems: `Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. ONLYFANS RULE: Only use ! and ? (including multiple iterations). Found ${combinedPunctuationErrors} inappropriate punctuation uses total across all ${analysisMessageTexts.length} messages.`,
                 scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
               },
-              guidelinesBreakdown: {
-                salesEffectiveness: `AI ANALYSIS REQUIRED: Analyze all ${analysisMessageTexts.length} messages against your custom sales guidelines. Count violations and successes. Provide specific examples of guideline compliance issues found in the messages.`,
-                engagementQuality: `AI ANALYSIS REQUIRED: Analyze all ${analysisMessageTexts.length} messages against your custom engagement guidelines. Count violations and successes. Provide specific examples of guideline compliance issues found in the messages.`,
-                captionQuality: `AI ANALYSIS REQUIRED: Analyze all ${analysisMessageTexts.length} messages against your custom messaging guidelines. Count violations and successes. Provide specific examples of guideline compliance issues found in the messages.`,
-                conversationFlow: `AI ANALYSIS REQUIRED: Analyze all ${analysisMessageTexts.length} messages against your custom professionalism guidelines. Count violations and successes. Provide specific examples of guideline compliance issues found in the messages.`,
-                scoreExplanation: `AI ANALYSIS REQUIRED: Based on analysis of all ${analysisMessageTexts.length} messages against your custom guidelines, provide specific compliance analysis with counts and examples.`
+              guidelinesBreakdown: guidelinesAnalysis.guidelinesBreakdown || {
+                salesEffectiveness: `Sales guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom sales guidelines. Count violations and provide specific examples from the messages.`,
+                engagementQuality: `Engagement guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom engagement guidelines. Count violations and provide specific examples from the messages.`,
+                captionQuality: `Messaging guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom messaging guidelines. Count violations and provide specific examples from the messages.`,
+                conversationFlow: `Professionalism guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom professionalism guidelines. Count violations and provide specific examples from the messages.`,
+                scoreExplanation: `Comprehensive guidelines analysis of all ${analysisMessageTexts.length} messages: Evaluate compliance with your custom guidelines and provide specific analysis with counts and examples.`
               },
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
