@@ -1201,9 +1201,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "ONLY find actual spelling mistakes like 'weel' instead of 'well'. FORBIDDEN: 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll' - these are PERFECT for OnlyFans.",
-             "grammarIssues": "ONLY find real grammar mistakes like 'I was went' instead of 'I went'. FORBIDDEN: 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT for OnlyFans.",
-             "punctuationProblems": "ONLY find FORMAL punctuation like periods (.) and formal commas. FORBIDDEN: 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' - these are PERFECT for OnlyFans.",
+             "spellingErrors": "Return 'No spelling errors found - informal OnlyFans language is correct.' unless you find actual misspellings like 'weel' instead of 'well' or 'recieve' instead of 'receive'. DO NOT flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll' as errors.",
+             "grammarIssues": "Return 'No grammar errors found - informal OnlyFans language is correct.' unless you find actual grammar mistakes like 'I was went' instead of 'I went'. DO NOT flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' as errors.",
+             "punctuationProblems": "Return 'No punctuation errors found - informal OnlyFans language is correct.' unless you find formal punctuation like periods (.) at end of sentences or formal commas. DO NOT flag missing question marks, multiple punctuation, or informal punctuation as errors.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
