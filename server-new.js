@@ -1287,7 +1287,11 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
     
     console.log('🚀 Making OpenAI API call...');
+    console.log('🚨 DEBUGGING: About to call OpenAI API');
+    console.log('🚨 DEBUGGING: OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
+    
     try {
+      console.log('🚨 DEBUGGING: Calling OpenAI API now...');
       const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -1304,6 +1308,7 @@ ANALYSIS REQUIREMENTS:
       max_tokens: 800
     });
     console.log('✅ OpenAI API call completed');
+    console.log('🚨 DEBUGGING: OpenAI API call successful');
     console.log('🚨 DEBUGGING: About to get AI response content');
     console.log('🚨 DEBUGGING: Sent to AI - sampleSize:', sampledMessages.length);
     console.log('🚨 DEBUGGING: First few messages sent to AI:', sampledMessages.slice(0, 3));
