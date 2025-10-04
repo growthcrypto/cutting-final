@@ -1218,15 +1218,20 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
   }
 }
 
-CRITICAL INSTRUCTIONS:
-1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
-2. Do NOT mention specific message numbers or message references
-3. Look for DIVERSE problems - spelling, grammar, punctuation, informal language, sales, engagement, clarity, emotional impact
-4. Provide detailed statements with specific examples and total counts for each category
-5. Focus on the MAIN AREAS that need improvement
-6. Do NOT repeat the same issue type multiple times
-7. CRITICAL: NO message numbers - chatters cannot access message files
-8. MANDATORY: Always include total counts (e.g., "Found X errors total across all messages")
+         CRITICAL INSTRUCTIONS:
+         1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
+         2. Do NOT mention specific message numbers or message references
+         3. Look for DIVERSE problems - spelling, grammar, punctuation, sales, engagement, clarity, emotional impact
+         4. Provide detailed statements with specific examples and total counts for each category
+         5. Focus on the MAIN AREAS that need improvement
+         6. Do NOT repeat the same issue type multiple times
+         7. CRITICAL: NO message numbers - chatters cannot access message files
+         8. MANDATORY: Always include total counts (e.g., "Found X errors total across all messages")
+         9. CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS ERRORS - 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're', 'he dont' are PERFECT
+         10. CRITICAL: DO NOT FLAG INFORMAL PUNCTUATION AS ERRORS - 'how are u???', 'omg!!!', 'really???' are PERFECT
+         11. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive'
+         12. ONLY flag actual grammar mistakes like 'I was went' instead of 'I went'
+         13. ONLY flag formal punctuation like periods (.) and formal commas
 
 Return ONLY the JSON object above. No additional text.
 
@@ -2872,10 +2877,11 @@ function formatGrammarText(text, category) {
     /'how are u\?'\s+instead\s+of\s+'how are u\?'/g
   ];
   
-  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
-  if (hasInformalErrors) {
-    return "No errors found - informal OnlyFans language is correct.";
-  }
+  // Don't block analysis - let the AI do its job with better instructions
+  // const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
+  // if (hasInformalErrors) {
+  //   return "No errors found - informal OnlyFans language is correct.";
+  // }
 
   // Extract specific examples
   const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
