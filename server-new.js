@@ -1198,8 +1198,8 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i', 'dont', 'ilove', 'u are', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. If you find NO real spelling errors, say 'No spelling errors found'.",
-             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy', 'dont know', 'ilove you', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. If you find NO real grammar errors, say 'No grammar errors found'.",
+             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i', 'dont', 'cant', 'ilove', 'u are', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing 'cant' to 'can't' or 'dont' to 'don't'. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. If you find NO real spelling errors, say 'No spelling errors found'.",
+             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy', 'dont know', 'cant understand', 'ilove you', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing 'dont' to 'don't' or 'cant' to 'can't'. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. If you find NO real grammar errors, say 'No grammar errors found'.",
              "punctuationProblems": "CRITICAL: DO NOT FLAG MULTIPLE PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. DO NOT flag multiple question marks or exclamation points. DO NOT flag informal punctuation. ONLY flag FORMAL punctuation like 'How are you.' (formal periods), 'Hello, how are you,' (formal commas), missing excitement punctuation. If you find NO formal punctuation errors, say 'No punctuation problems found'.",
              "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
            },
@@ -2825,6 +2825,10 @@ function formatGrammarText(text, category) {
     .replace(/Inconsistent punctuation style observed throughout messages/g, '') // Remove informal language errors
     .replace(/impacting readability with formal periods and commas/g, '') // Remove informal language errors
     .replace(/and exclamation points in multiple/g, '') // Remove cutoff text
+    .replace(/istent use of contractions like 'dont' and 'don't'/g, '') // Remove informal language errors
+    .replace(/istent punctuation usage with excessive question marks/g, '') // Remove informal language errors
+    .replace(/Inconsistent use of multiple question marks and exclamation points/g, '') // Remove informal language errors
+    .replace(/Missing question marks in 'u cant understand/g, '') // Remove cutoff text
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2836,6 +2840,7 @@ function formatGrammarText(text, category) {
     /'im'\s+instead\s+of\s+'I'm'/g,
     /'i'\s+instead\s+of\s+'I'/g,
     /'dont'\s+instead\s+of\s+'don't'/g,
+    /'cant'\s+instead\s+of\s+'can'/g,
     /'ilove'\s+instead\s+of\s+'I love'/g
   ];
   
