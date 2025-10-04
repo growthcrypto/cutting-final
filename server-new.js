@@ -2801,8 +2801,28 @@ function formatGrammarText(text, category) {
     .replace(/No significant issues found/g, '') // Remove repetitive "no issues"
     .replace(/Multiple instances of/g, '') // Remove generic phrases
     .replace(/CRITICAL:/g, '') // Remove critical prefixes
+    .replace(/Noted casual punctuation style/g, '') // Remove generic phrases
+    .replace(/No punctuation problems found/g, '') // Remove repetitive phrases
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
+  
+  // Check if this is informal OnlyFans language being flagged as errors
+  const informalPatterns = [
+    /'re'\s+instead\s+of\s+'you'/g,
+    /'i dont'\s+instead\s+of\s+'I don'/g,
+    /'u'\s+instead\s+of\s+'you'/g,
+    /'ur'\s+instead\s+of\s+'your'/g,
+    /'im'\s+instead\s+of\s+'I'm'/g,
+    /'i'\s+instead\s+of\s+'I'/g,
+    /'dont'\s+instead\s+of\s+'don't'/g,
+    /'ilove'\s+instead\s+of\s+'I love'/g
+  ];
+  
+  // If the text contains informal language being flagged as errors, return "No errors found"
+  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
+  if (hasInformalErrors) {
+    return `No ${category.toLowerCase()} errors found.`;
+  }
   
   // Extract unique spelling/grammar errors with counts
   const errors = new Map();
@@ -2824,7 +2844,7 @@ function formatGrammarText(text, category) {
     });
   }
   
-  // Extract specific error examples (unique only)
+  // Extract specific error examples (unique only) - but NOT informal OnlyFans language
   const errorExamples = new Set();
   const examplePatterns = [
     /'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
@@ -2838,7 +2858,13 @@ function formatGrammarText(text, category) {
       matches.forEach(match => {
         const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
         if (exampleMatch) {
-          errorExamples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+          const wrong = exampleMatch[1];
+          const correct = exampleMatch[2];
+          
+          // Only include if it's NOT informal OnlyFans language
+          if (!informalPatterns.some(p => p.test(match))) {
+            errorExamples.add(`'${wrong}' instead of '${correct}'`);
+          }
         }
       });
     }
@@ -2861,9 +2887,9 @@ function formatGrammarText(text, category) {
     analysis += `Examples include: ${examplesList.join(', ')}.`;
   }
   
-  // If no structured content, return cleaned text
+  // If no structured content, return "No errors found"
   if (!analysis.trim()) {
-    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+    return `No ${category.toLowerCase()} errors found.`;
   }
   
   return analysis;
