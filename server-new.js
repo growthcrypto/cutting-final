@@ -2198,12 +2198,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               };
             }
             
-        // Use the main AI analysis results for grammar breakdown
+        // Use the main AI analysis results directly (not the combined batch results)
+        const mainGrammarBreakdown = latestMessageAnalysis.grammarBreakdown || {};
+        
         const formattedGrammarAnalysis = {
-          spellingErrors: combinedGrammarAnalysis.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
-          grammarIssues: combinedGrammarAnalysis.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
-          punctuationProblems: combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
-          scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+          spellingErrors: mainGrammarBreakdown.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
+          grammarIssues: mainGrammarBreakdown.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
+          punctuationProblems: mainGrammarBreakdown.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
+          scoreExplanation: formatGrammarText(mainGrammarBreakdown.scoreExplanation || combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
         };
             
             console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
