@@ -2808,14 +2808,14 @@ function formatGrammarText(text, category) {
   
   // Check if this is informal OnlyFans language being flagged as errors
   const informalPatterns = [
-    /'re'\s+instead\s+of\s+'you'/g,
-    /'i dont'\s+instead\s+of\s+'I don'/g,
     /'u'\s+instead\s+of\s+'you'/g,
     /'ur'\s+instead\s+of\s+'your'/g,
     /'im'\s+instead\s+of\s+'I'm'/g,
     /'i'\s+instead\s+of\s+'I'/g,
     /'dont'\s+instead\s+of\s+'don't'/g,
-    /'ilove'\s+instead\s+of\s+'I love'/g
+    /'ilove'\s+instead\s+of\s+'I love'/g,
+    /'i dont'\s+instead\s+of\s+'I don'/g,
+    /'re'\s+instead\s+of\s+'you'/g
   ];
   
   // If the text contains informal language being flagged as errors, return "No errors found"
