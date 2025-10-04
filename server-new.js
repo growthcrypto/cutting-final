@@ -2860,22 +2860,24 @@ function formatGrammarText(text, category) {
   return analysis || `Analysis of ${category.toLowerCase()}: ${cleanText}`;
 }
 
-// Helper function to format guidelines text for detailed analysis
+// Helper function to format guidelines text for clean analysis
 function formatGuidelinesText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up the text
+  // Clean up repetitive text
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/No significant issues found/g, '') // Remove repetitive "no issues"
+    .replace(/Found missed opportunities/g, '') // Remove generic phrases
+    .replace(/Found ,/g, '') // Remove incomplete phrases
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  // Extract counts and create structured analysis
-  const counts = [];
-  const violations = [];
+  // Extract unique guideline violations with counts
+  const violations = new Map();
   
   // Extract specific guideline violations with counts
   const guidelineMatches = cleanText.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/g);
@@ -2883,52 +2885,65 @@ function formatGuidelinesText(text, category) {
     guidelineMatches.forEach(match => {
       const countMatch = match.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/);
       if (countMatch) {
-        counts.push(`${countMatch[1]} violations of '${countMatch[2]}' guideline`);
+        const count = parseInt(countMatch[1]);
+        const guideline = countMatch[2];
+        if (violations.has(guideline)) {
+          violations.set(guideline, violations.get(guideline) + count);
+        } else {
+          violations.set(guideline, count);
+        }
       }
     });
   }
   
-  // Extract key violation types
+  // Extract key violation types (unique only)
+  const violationTypes = new Set();
   const violationPatterns = [
-    /lack of urgency in PPV captions/gi,
-    /delayed sales initiation/gi,
     /lack of personalization/gi,
     /immediate sales requests/gi,
-    /lack of urgency/gi
+    /lack of urgency/gi,
+    /delayed sales initiation/gi
   ];
   
   violationPatterns.forEach(pattern => {
     const matches = cleanText.match(pattern);
     if (matches) {
       const violation = matches[0].toLowerCase();
-      if (violation.includes('urgency')) {
-        violations.push('Lack of urgency in PPV captions');
-      } else if (violation.includes('personalization')) {
-        violations.push('Lack of personalization in sales approach');
-      } else if (violation.includes('delayed')) {
-        violations.push('Delayed sales initiation issues');
+      if (violation.includes('personalization')) {
+        violationTypes.add('Lack of personalization in sales approach');
       } else if (violation.includes('immediate')) {
-        violations.push('Immediate sales requests without relationship building');
+        violationTypes.add('Immediate sales requests without relationship building');
+      } else if (violation.includes('urgency')) {
+        violationTypes.add('Lack of urgency in PPV captions');
+      } else if (violation.includes('delayed')) {
+        violationTypes.add('Delayed sales initiation issues');
       }
     }
   });
   
-  // Create structured analysis
+  // Create clean, structured analysis
   let analysis = '';
-  if (counts.length > 0) {
-    analysis += `Found ${counts.join(', ')}. `;
-  }
-  if (violations.length > 0) {
-    analysis += `Key issues include: ${violations.join(', ')}. `;
+  
+  // Add guideline violations (unique counts only)
+  if (violations.size > 0) {
+    const violationList = Array.from(violations.entries())
+      .map(([guideline, count]) => `${count} violations of '${guideline}' guideline`)
+      .slice(0, 3); // Limit to top 3
+    analysis += `Found ${violationList.join(', ')}. `;
   }
   
-  // Add remaining context if available
-  const remainingText = cleanText.replace(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/g, '').trim();
-  if (remainingText.length > 20) {
-    analysis += remainingText;
+  // Add key issues (unique only)
+  if (violationTypes.size > 0) {
+    const issuesList = Array.from(violationTypes).slice(0, 3); // Limit to top 3
+    analysis += `Key issues include: ${issuesList.join(', ')}.`;
   }
   
-  return analysis || `Analysis of ${category.toLowerCase()}: ${cleanText}`;
+  // If no structured content, return cleaned text
+  if (!analysis.trim()) {
+    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+  }
+  
+  return analysis;
 }
 
 // Deterministic analysis for individual chatter (no AI, data-only)
