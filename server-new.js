@@ -2797,7 +2797,7 @@ function formatGrammarText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up the text but keep the detailed analysis
+  // Clean up repetitive text
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
@@ -2806,16 +2806,74 @@ function formatGrammarText(text, category) {
     .replace(/CRITICAL:/g, '') // Remove critical prefixes
     .replace(/Noted casual punctuation style/g, '') // Remove generic phrases
     .replace(/No punctuation problems found/g, '') // Remove repetitive phrases
+    .replace(/No spelling errors found/g, '') // Remove repetitive "no spelling errors"
+    .replace(/No grammar errors found/g, '') // Remove repetitive "no grammar errors"
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  // If the text is already detailed and meaningful, return it as-is
-  if (cleanText.length > 50) {
-    return cleanText;
+  // Extract unique errors with counts
+  const errors = new Map();
+  const examples = new Set();
+  
+  // Extract specific error counts
+  const errorMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
+  if (errorMatches) {
+    errorMatches.forEach(match => {
+      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
+      if (countMatch) {
+        const count = parseInt(countMatch[1]);
+        const type = countMatch[2];
+        if (errors.has(type)) {
+          errors.set(type, errors.get(type) + count);
+        } else {
+          errors.set(type, count);
+        }
+      }
+    });
   }
   
-  // Fallback for short text
-  return `Analysis of ${category.toLowerCase()}: ${cleanText}`;
+  // Extract specific error examples
+  const examplePatterns = [
+    /'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
+    /like\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
+    /such\s+as\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g
+  ];
+  
+  examplePatterns.forEach(pattern => {
+    const matches = cleanText.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
+        if (exampleMatch) {
+          examples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+        }
+      });
+    }
+  });
+  
+  // Create clean, structured analysis
+  let analysis = '';
+  
+  // Add error counts
+  if (errors.size > 0) {
+    const errorList = Array.from(errors.entries())
+      .map(([type, count]) => `${count} ${type} errors`)
+      .slice(0, 2);
+    analysis += `Found ${errorList.join(', ')}. `;
+  }
+  
+  // Add specific examples
+  if (examples.size > 0) {
+    const examplesList = Array.from(examples).slice(0, 3);
+    analysis += `Examples include: ${examplesList.join(', ')}.`;
+  }
+  
+  // If no structured content, return cleaned text
+  if (!analysis.trim()) {
+    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+  }
+  
+  return analysis;
 }
 
 // Helper function to format guidelines text for clean analysis
