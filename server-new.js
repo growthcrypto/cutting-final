@@ -1138,10 +1138,14 @@ CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for c
          - PUNCTUATION: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES.
          - LANGUAGE: Both formal and informal language are acceptable. Focus on grammar and spelling issues only.
          - GRAMMAR: Basic grammar rules still apply (spelling, verb tenses, etc.)
-         - BOTH FORMAL AND INFORMAL ARE CORRECT: 'u' and 'you', 'ur' and 'your', 'im' and 'I'm' are ALL PERFECT for OnlyFans chatting
-         - DO NOT FLAG INFORMAL LANGUAGE AS ERRORS: 'u', 'ur', 'im' are NOT mistakes
-         - DO NOT FLAG FORMAL LANGUAGE AS ERRORS: 'you', 'your', 'I'm' are NOT mistakes
-         - MULTIPLE PUNCTUATION IS GOOD: 'how are u???' is PERFECT, 'how are u.' is a MISTAKE
+         - CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS ERRORS
+         - 'u' and 'you' are BOTH CORRECT - do not flag either as errors
+         - 'ur' and 'your' are BOTH CORRECT - do not flag either as errors  
+         - 'im' and 'I'm' are BOTH CORRECT - do not flag either as errors
+         - 'i' and 'I' are BOTH CORRECT - do not flag either as errors
+         - Multiple punctuation 'how are u???' is PERFECT - do not flag as excessive
+         - ONLY flag actual spelling errors like 'weel' instead of 'well', 'recieve' instead of 'receive'
+         - ONLY flag actual grammar errors like 'I was went' instead of 'I went'
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
@@ -1185,9 +1189,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "COMPREHENSIVE spelling analysis: Count ONLY actual spelling errors (NOT informal OnlyFans language). BOTH 'u' AND 'you', 'ur' AND 'your', 'im' AND 'I'm' are PERFECT for OnlyFans. ONLY flag real spelling errors like 'recieve' instead of 'receive', 'teh' instead of 'the', 'definately' instead of 'definitely'. Provide detailed statement about REAL spelling errors with specific examples and total count.",
-             "grammarIssues": "COMPREHENSIVE grammar analysis: Count ONLY actual grammar mistakes (NOT informal OnlyFans language). BOTH 'i go' AND 'I go', 'u are' AND 'you are', 'im happy' AND 'I'm happy' are PERFECT for OnlyFans. ONLY flag real grammar errors like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. Provide detailed statement about REAL grammar errors with specific examples and total count.",
-             "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ONLY inappropriate punctuation for OnlyFans chatting. GOOD: 'how are u???', 'omg!!!', 'really???' are PERFECT. BAD: 'How are you.' (formal periods), 'Hello, how are you,' (formal commas), missing excitement punctuation. Provide detailed statement about inappropriate punctuation with specific examples and total count.",
+             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i' are PERFECT for OnlyFans. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. Provide detailed statement about REAL spelling errors with specific examples and total count.",
+             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy' are PERFECT for OnlyFans. DO NOT flag 'i' vs 'I', 'u' vs 'you', 'ur' vs 'your' as errors. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. Provide detailed statement about REAL grammar errors with specific examples and total count.",
+             "punctuationProblems": "CRITICAL: DO NOT FLAG MULTIPLE PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. ONLY flag inappropriate punctuation like 'How are you.' (formal periods), 'Hello, how are you,' (formal commas). Provide detailed statement about inappropriate punctuation with specific examples and total count.",
              "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
            },
   "guidelinesBreakdown": {
