@@ -2794,7 +2794,7 @@ function formatGrammarText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up repetitive text
+  // Clean up the text but keep the detailed analysis
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
@@ -2806,94 +2806,13 @@ function formatGrammarText(text, category) {
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  // Check if this is informal OnlyFans language being flagged as errors
-  const informalPatterns = [
-    /'u'\s+instead\s+of\s+'you'/g,
-    /'ur'\s+instead\s+of\s+'your'/g,
-    /'im'\s+instead\s+of\s+'I'm'/g,
-    /'i'\s+instead\s+of\s+'I'/g,
-    /'dont'\s+instead\s+of\s+'don't'/g,
-    /'ilove'\s+instead\s+of\s+'I love'/g,
-    /'i dont'\s+instead\s+of\s+'I don'/g,
-    /'do u'\s+instead\s+of\s+'do you'/g,
-    /'re'\s+instead\s+of\s+'you'/g
-  ];
-  
-  // If the text contains informal language being flagged as errors, return "No errors found"
-  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
-  if (hasInformalErrors) {
-    return `No ${category.toLowerCase()} errors found.`;
+  // If the text is already detailed and meaningful, return it as-is
+  if (cleanText.length > 50) {
+    return cleanText;
   }
   
-  // Extract unique spelling/grammar errors with counts
-  const errors = new Map();
-  
-  // Extract specific error counts
-  const errorMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
-  if (errorMatches) {
-    errorMatches.forEach(match => {
-      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
-      if (countMatch) {
-        const count = parseInt(countMatch[1]);
-        const type = countMatch[2];
-        if (errors.has(type)) {
-          errors.set(type, errors.get(type) + count);
-        } else {
-          errors.set(type, count);
-        }
-      }
-    });
-  }
-  
-  // Extract specific error examples (unique only) - but NOT informal OnlyFans language
-  const errorExamples = new Set();
-  const examplePatterns = [
-    /'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
-    /like\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
-    /such\s+as\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g
-  ];
-  
-  examplePatterns.forEach(pattern => {
-    const matches = cleanText.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
-        if (exampleMatch) {
-          const wrong = exampleMatch[1];
-          const correct = exampleMatch[2];
-          
-          // Only include if it's NOT informal OnlyFans language
-          if (!informalPatterns.some(p => p.test(match))) {
-            errorExamples.add(`'${wrong}' instead of '${correct}'`);
-          }
-        }
-      });
-    }
-  });
-  
-  // Create clean, structured analysis
-  let analysis = '';
-  
-  // Add error counts (unique counts only)
-  if (errors.size > 0) {
-    const errorList = Array.from(errors.entries())
-      .map(([type, count]) => `${count} ${type} errors`)
-      .slice(0, 2); // Limit to top 2
-    analysis += `Found ${errorList.join(', ')}. `;
-  }
-  
-  // Add specific examples (unique only)
-  if (errorExamples.size > 0) {
-    const examplesList = Array.from(errorExamples).slice(0, 3); // Limit to top 3
-    analysis += `Examples include: ${examplesList.join(', ')}.`;
-  }
-  
-  // If no structured content, return "No errors found"
-  if (!analysis.trim()) {
-    return `No ${category.toLowerCase()} errors found.`;
-  }
-  
-  return analysis;
+  // Fallback for short text
+  return `Analysis of ${category.toLowerCase()}: ${cleanText}`;
 }
 
 // Helper function to format guidelines text for clean analysis
