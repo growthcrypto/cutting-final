@@ -5088,13 +5088,36 @@ function formatBreakdownContent(content) {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
     }
     
-    // Split by " | " to separate different examples
-    const items = content.split(' | ');
-    if (items.length === 1) {
-        return content;
+    // Check if content already has bullet points (new format with proper spacing)
+    if (content.includes('•')) {
+        // Split by double line breaks to get separate bullet points
+        const items = content.split('\n\n').filter(item => item.trim().length > 0);
+        
+        if (items.length > 1) {
+            return items.map(item => {
+                const trimmed = item.trim();
+                if (trimmed.startsWith('•')) {
+                    // Remove the bullet point and format properly
+                    const text = trimmed.substring(1).trim();
+                    return `
+                        <div class="mb-4 flex items-start">
+                            <span class="text-blue-400 mr-3 mt-1 text-lg font-bold">•</span>
+                            <span class="text-gray-300 leading-relaxed text-sm">${text}</span>
+                        </div>
+                    `;
+                }
+                return `<div class="mb-4 text-gray-300 leading-relaxed text-sm">${trimmed}</div>`;
+            }).join('');
+        }
     }
     
-    // Format each item with enhanced styling
+    // Fallback: Split by " | " to separate different examples (old format)
+    const items = content.split(' | ');
+    if (items.length === 1) {
+        return `<div class="text-gray-300 leading-relaxed text-sm">${content}</div>`;
+    }
+    
+    // Format as bullet points with proper spacing
     return items.map(item => {
         const cleanItem = item.trim();
         if (cleanItem.startsWith('Message ')) {
@@ -5104,7 +5127,7 @@ function formatBreakdownContent(content) {
                 const messageNum = match[1];
                 const description = match[2];
                 return `
-                    <div class="flex items-start space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 mb-2 hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-start space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 mb-3 hover:bg-gray-800/50 transition-colors">
                         <div class="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
                             <span class="text-xs font-bold text-blue-400">${messageNum}</span>
                         </div>
@@ -5114,9 +5137,9 @@ function formatBreakdownContent(content) {
                     </div>
                 `;
             }
-            return `• ${cleanItem}`;
+            return `<div class="mb-3 flex items-start"><span class="text-blue-400 mr-3 mt-1 text-lg font-bold">•</span><span class="text-gray-300 text-sm">${cleanItem}</span></div>`;
         }
-        return `• ${cleanItem}`;
+        return `<div class="mb-3 flex items-start"><span class="text-blue-400 mr-3 mt-1 text-lg font-bold">•</span><span class="text-gray-300 text-sm">${cleanItem}</span></div>`;
     }).join('');
 }
 
