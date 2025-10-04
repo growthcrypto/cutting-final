@@ -2044,22 +2044,58 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
-            // Get AI analysis for guidelines using a representative sample (to avoid token limits)
-            console.log('🔄 Getting AI analysis for guidelines using representative sample...');
-            const sampleSize = Math.min(200, analysisMessageTexts.length); // Use 200 messages max to avoid token limits
-            const guidelinesSample = analysisMessageTexts.slice(0, sampleSize);
-            console.log('🔄 Using sample of', sampleSize, 'messages for guidelines analysis');
+            // Get AI analysis for guidelines using ALL messages in batches
+            console.log('🔄 Getting AI analysis for guidelines using ALL messages in batches...');
+            console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
-            let guidelinesAnalysis = {};
+            const batchSize = 200;
+            const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
+            console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
+            
+            let combinedGuidelinesAnalysis = {
+              salesEffectiveness: '',
+              engagementQuality: '',
+              captionQuality: '',
+              conversationFlow: '',
+              scoreExplanation: ''
+            };
+            
             try {
-              guidelinesAnalysis = await analyzeMessages(guidelinesSample, 'Guidelines Analysis');
-              console.log('🔄 Guidelines analysis completed:', !!guidelinesAnalysis.guidelinesBreakdown);
-              console.log('🔄 Guidelines analysis keys:', guidelinesAnalysis.guidelinesBreakdown ? Object.keys(guidelinesAnalysis.guidelinesBreakdown) : 'NO GUIDELINES BREAKDOWN');
-              console.log('🔄 Guidelines analysis content:', JSON.stringify(guidelinesAnalysis.guidelinesBreakdown, null, 2));
+              // Analyze each batch
+              for (let i = 0; i < totalBatches; i++) {
+                const start = i * batchSize;
+                const end = Math.min(start + batchSize, analysisMessageTexts.length);
+                const batch = analysisMessageTexts.slice(start, end);
+                
+                console.log(`🔄 Analyzing batch ${i + 1}/${totalBatches} (messages ${start + 1}-${end})`);
+                
+                const batchAnalysis = await analyzeMessages(batch, `Guidelines Analysis - Batch ${i + 1}/${totalBatches}`);
+                
+                if (batchAnalysis.guidelinesBreakdown) {
+                  // Combine results from each batch
+                  Object.keys(combinedGuidelinesAnalysis).forEach(key => {
+                    if (batchAnalysis.guidelinesBreakdown[key]) {
+                      combinedGuidelinesAnalysis[key] += (combinedGuidelinesAnalysis[key] ? ' ' : '') + batchAnalysis.guidelinesBreakdown[key];
+                    }
+                  });
+                }
+              }
+              
+              console.log('🔄 All batches analyzed successfully');
+              console.log('🔄 Combined guidelines analysis keys:', Object.keys(combinedGuidelinesAnalysis));
+              
             } catch (error) {
-              console.log('❌ Guidelines analysis failed:', error.message);
-              guidelinesAnalysis = { guidelinesBreakdown: null };
+              console.log('❌ Guidelines batch analysis failed:', error.message);
+              combinedGuidelinesAnalysis = {
+                salesEffectiveness: 'AI ANALYSIS FAILED: Unable to analyze sales guidelines. Please check AI configuration.',
+                engagementQuality: 'AI ANALYSIS FAILED: Unable to analyze engagement guidelines. Please check AI configuration.',
+                captionQuality: 'AI ANALYSIS FAILED: Unable to analyze messaging guidelines. Please check AI configuration.',
+                conversationFlow: 'AI ANALYSIS FAILED: Unable to analyze professionalism guidelines. Please check AI configuration.',
+                scoreExplanation: 'AI ANALYSIS FAILED: Guidelines analysis not available. Please check AI configuration.'
+              };
             }
+            
+            const guidelinesAnalysis = { guidelinesBreakdown: combinedGuidelinesAnalysis };
             
             // Get custom guidelines from database
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
@@ -2073,13 +2109,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 punctuationProblems: `Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. ONLYFANS RULE: Only use ! and ? (including multiple iterations). Found ${combinedPunctuationErrors} inappropriate punctuation uses total across all ${analysisMessageTexts.length} messages.`,
                 scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
               },
-              guidelinesBreakdown: guidelinesAnalysis.guidelinesBreakdown || {
-                salesEffectiveness: `AI ANALYSIS FAILED: Unable to analyze sales guidelines. Please check AI configuration.`,
-                engagementQuality: `AI ANALYSIS FAILED: Unable to analyze engagement guidelines. Please check AI configuration.`,
-                captionQuality: `AI ANALYSIS FAILED: Unable to analyze messaging guidelines. Please check AI configuration.`,
-                conversationFlow: `AI ANALYSIS FAILED: Unable to analyze professionalism guidelines. Please check AI configuration.`,
-                scoreExplanation: `AI ANALYSIS FAILED: Guidelines analysis not available. Please check AI configuration.`
-              },
+              guidelinesBreakdown: combinedGuidelinesAnalysis,
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
                 emotionalImpact: `Main emotional analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving emotional connections, building rapport, and creating meaningful interactions.`,
