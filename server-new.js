@@ -1201,9 +1201,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "No spelling errors found - informal OnlyFans language is correct.",
-             "grammarIssues": "No grammar errors found - informal OnlyFans language is correct.",
-             "punctuationProblems": "No punctuation errors found - informal OnlyFans language is correct.",
+             "spellingErrors": "Analyze messages for ACTUAL spelling mistakes like 'weel' instead of 'well' or 'recieve' instead of 'receive'. DO NOT flag informal OnlyFans language like 'u', 'ur', 'im', 'dont', 'cant', 'ilove' as errors - these are PERFECT for OnlyFans. Return 'No spelling errors found - informal OnlyFans language is correct.' if no actual misspellings found.",
+             "grammarIssues": "Analyze messages for ACTUAL grammar mistakes like 'I was went' instead of 'I went' or 'he dont' instead of 'he doesn't'. DO NOT flag informal OnlyFans language like 'u are', 'dont know', 'cant understand', 'im happy' as errors - these are PERFECT for OnlyFans. Return 'No grammar errors found - informal OnlyFans language is correct.' if no actual grammar mistakes found.",
+             "punctuationProblems": "Analyze messages for FORMAL punctuation mistakes like periods (.) at end of sentences or formal commas. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. Return 'No punctuation errors found - informal OnlyFans language is correct.' if no formal punctuation found.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1340,7 +1340,7 @@ ANALYSIS REQUIREMENTS:
     try {
       console.log('🚨 DEBUGGING: Calling OpenAI API now...');
       const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -2828,16 +2828,18 @@ function formatGrammarText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // AGGRESSIVE blocking: if AI mentions ANY informal OnlyFans words as errors, block it
-  const badPhrases = [
-    'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
-    'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
-    'inconsistent use of contractions', 'u are instead of you are', 'u and you',
-    'contractions like', 'missing apostrophes', 'informal language',
-    'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love',
-    'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll',
-    'ilove', 'u\'ll', 'u instead of', 'ur instead of', 'im instead of', 'dont instead of', 'cant instead of'
-  ];
+         // AGGRESSIVE blocking: if AI mentions ANY informal OnlyFans words as errors, block it
+         const badPhrases = [
+           'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
+           'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
+           'inconsistent use of contractions', 'u are instead of you are', 'u and you',
+           'contractions like', 'missing apostrophes', 'informal language',
+           'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love',
+           'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll',
+           'ilove', 'u\'ll', 'u instead of', 'ur instead of', 'im instead of', 'dont instead of', 'cant instead of',
+           'do u instead of do you', 'u cant understand', 'missing question marks', 'excessive use of informal',
+           'inconsistent apostrophe usage', 'informal contractions', 'u\'re instead of you\'re'
+         ];
   
   const hasBadPhrases = badPhrases.some(phrase => text.toLowerCase().includes(phrase));
   
@@ -3512,7 +3514,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
