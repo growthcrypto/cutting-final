@@ -2863,14 +2863,19 @@ Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR 
 
     let aiResponse = response.choices[0].message.content.trim();
     
+    console.log(`🔍 AI Response for ${category}:`, aiResponse);
+    
     // AGGRESSIVE filtering - if AI mentions ANY informal OnlyFans words, block it
     const hasInformalFlagging = onlyfansInformal.some(word => 
       aiResponse.toLowerCase().includes(word + ' instead of') ||
       aiResponse.toLowerCase().includes('missing ' + word) ||
-      aiResponse.toLowerCase().includes('incorrect ' + word)
+      aiResponse.toLowerCase().includes('incorrect ' + word) ||
+      aiResponse.toLowerCase().includes(word + ' should be') ||
+      aiResponse.toLowerCase().includes('use ' + word)
     );
     
     if (hasInformalFlagging) {
+      console.log('🚨 BLOCKED AI response for informal flagging:', aiResponse.substring(0, 100));
       return `No ${category} found - informal OnlyFans language is correct.`;
     }
     
