@@ -2045,13 +2045,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
-            // Get AI analysis for guidelines using ALL messages in batches
-            console.log('🔄 Getting AI analysis for guidelines using ALL messages in batches...');
+            // Get AI analysis for BOTH grammar and guidelines using ALL messages in batches
+            console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
             console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
             const batchSize = 400; // Increased batch size for faster processing
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
+            
+            let combinedGrammarAnalysis = {
+              spellingErrors: '',
+              grammarIssues: '',
+              punctuationProblems: '',
+              scoreExplanation: ''
+            };
             
             let combinedGuidelinesAnalysis = {
               salesEffectiveness: '',
@@ -2085,8 +2092,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 const batchResults = await Promise.all(batchPromises);
                 console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
                 
-                // Combine results from parallel batches
+                // Combine results from parallel batches (both grammar and guidelines)
                 batchResults.forEach(batchAnalysis => {
+                  // Combine grammar analysis
+                  if (batchAnalysis.grammarBreakdown) {
+                    Object.keys(combinedGrammarAnalysis).forEach(key => {
+                      if (batchAnalysis.grammarBreakdown[key]) {
+                        combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchAnalysis.grammarBreakdown[key];
+                      }
+                    });
+                  }
+                  
+                  // Combine guidelines analysis
                   if (batchAnalysis.guidelinesBreakdown) {
                     Object.keys(combinedGuidelinesAnalysis).forEach(key => {
                       if (batchAnalysis.guidelinesBreakdown[key]) {
@@ -2098,10 +2115,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
               
               console.log('🔄 All batches analyzed successfully');
+              console.log('🔄 Combined grammar analysis keys:', Object.keys(combinedGrammarAnalysis));
               console.log('🔄 Combined guidelines analysis keys:', Object.keys(combinedGuidelinesAnalysis));
               
             } catch (error) {
-              console.log('❌ Guidelines batch analysis failed:', error.message);
+              console.log('❌ Batch analysis failed:', error.message);
+              combinedGrammarAnalysis = {
+                spellingErrors: 'AI ANALYSIS FAILED: Unable to analyze spelling issues. Please check AI configuration.',
+                grammarIssues: 'AI ANALYSIS FAILED: Unable to analyze grammar issues. Please check AI configuration.',
+                punctuationProblems: 'AI ANALYSIS FAILED: Unable to analyze punctuation issues. Please check AI configuration.',
+                scoreExplanation: 'AI ANALYSIS FAILED: Grammar analysis not available. Please check AI configuration.'
+              };
               combinedGuidelinesAnalysis = {
                 salesEffectiveness: 'AI ANALYSIS FAILED: Unable to analyze sales guidelines. Please check AI configuration.',
                 engagementQuality: 'AI ANALYSIS FAILED: Unable to analyze engagement guidelines. Please check AI configuration.',
@@ -2119,12 +2143,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             // Create comprehensive analysis with combined counts and custom guidelines
             const reAnalysis = {
-              grammarBreakdown: {
-                spellingErrors: `Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found ${combinedGrammarErrors} spelling errors total across all ${analysisMessageTexts.length} messages.`,
-                grammarIssues: `Main grammar issues: frequent wrong verb tenses like 'I was went' instead of 'I went', sentence fragments like incomplete thoughts, and subject-verb disagreements like 'he don't' instead of 'he doesn't'. Found ${combinedGrammarIssues} grammar errors total across all ${analysisMessageTexts.length} messages.`,
-                punctuationProblems: `Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. ONLYFANS RULE: Only use ! and ? (including multiple iterations). Found ${combinedPunctuationErrors} inappropriate punctuation uses total across all ${analysisMessageTexts.length} messages.`,
-                scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
-              },
+              grammarBreakdown: combinedGrammarAnalysis,
               guidelinesBreakdown: combinedGuidelinesAnalysis,
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
