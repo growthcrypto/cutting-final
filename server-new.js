@@ -1328,6 +1328,11 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: First message:', sampledMessages[0]);
     console.log('🚨 DEBUGGING: Last message:', sampledMessages[sampledMessages.length - 1]);
     
+    // CRITICAL: Check if messages are actually in the prompt
+    const messagesInPrompt = prompt.match(/MESSAGES TO ANALYZE.*?\n(.*?)(?=CUSTOM GUIDELINES|$)/s);
+    console.log('🚨 CRITICAL: Messages section in prompt:', messagesInPrompt ? messagesInPrompt[1].substring(0, 500) : 'NOT FOUND');
+    console.log('🚨 CRITICAL: First 1000 chars of prompt:', prompt.substring(0, 1000));
+    
     console.log('🚀 Making OpenAI API call...');
     console.log('🚨 DEBUGGING: About to call OpenAI API');
     console.log('🚨 DEBUGGING: OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
