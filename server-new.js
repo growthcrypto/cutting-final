@@ -1318,6 +1318,9 @@ ANALYSIS REQUIREMENTS:
     const aiResponse = completion.choices[0].message.content;
     console.log('🚨 RAW AI RESPONSE:', aiResponse);
     console.log('🚨 AI RESPONSE LENGTH:', aiResponse.length);
+    console.log('🚨 AI RESPONSE CONTAINS GRAMMAR:', aiResponse.includes('grammarBreakdown'));
+    console.log('🚨 AI RESPONSE CONTAINS SPELLING:', aiResponse.includes('spellingErrors'));
+    console.log('🚨 AI RESPONSE CONTAINS EXAMPLES:', aiResponse.includes('Message 1:'));
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
@@ -1368,6 +1371,11 @@ ANALYSIS REQUIREMENTS:
         console.log('🚨 GRAMMAR BREAKDOWN CONTENT:', analysisResult.grammarBreakdown);
         console.log('🚨 GRAMMAR BREAKDOWN KEYS:', Object.keys(analysisResult.grammarBreakdown));
         console.log('🚨 GRAMMAR BREAKDOWN VALUES:', Object.values(analysisResult.grammarBreakdown));
+        console.log('🚨 SPELLING ERRORS VALUE:', analysisResult.grammarBreakdown.spellingErrors);
+        console.log('🚨 GRAMMAR ISSUES VALUE:', analysisResult.grammarBreakdown.grammarIssues);
+        console.log('🚨 PUNCTUATION PROBLEMS VALUE:', analysisResult.grammarBreakdown.punctuationProblems);
+        console.log('🚨 INFORMAL LANGUAGE VALUE:', analysisResult.grammarBreakdown.informalLanguage);
+        console.log('🚨 SCORE EXPLANATION VALUE:', analysisResult.grammarBreakdown.scoreExplanation);
       }
       
       // Check what the AI actually returned for breakdown sections
