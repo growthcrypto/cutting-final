@@ -1278,6 +1278,9 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: Messages being sent to AI:', sampledMessages);
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
+    console.log('🚨 DEBUGGING: Messages length:', sampledMessages.length);
+    console.log('🚨 DEBUGGING: First message:', sampledMessages[0]);
+    console.log('🚨 DEBUGGING: Last message:', sampledMessages[sampledMessages.length - 1]);
     
     console.log('🚀 Making OpenAI API call...');
     console.log('🚨 DEBUGGING: About to call OpenAI API');
@@ -1314,6 +1317,9 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 AI RESPONSE CONTAINS GRAMMAR:', aiResponse.includes('grammarBreakdown'));
     console.log('🚨 AI RESPONSE CONTAINS SPELLING:', aiResponse.includes('spellingErrors'));
     console.log('🚨 AI RESPONSE CONTAINS EXAMPLES:', aiResponse.includes('Message 1:'));
+    console.log('🚨 AI RESPONSE CONTAINS MESSAGES:', aiResponse.includes('MESSAGES:'));
+    console.log('🚨 AI RESPONSE CONTAINS JSON:', aiResponse.includes('{'));
+    console.log('🚨 AI RESPONSE CONTAINS UNDEFINED:', aiResponse.includes('undefined'));
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
