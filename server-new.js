@@ -1991,6 +1991,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
           console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
           console.log('🔄 Re-analysis overallBreakdown:', !!reAnalysis.overallBreakdown);
+          console.log('🔄 FULL RE-ANALYSIS RESULT:', JSON.stringify(reAnalysis, null, 2));
           
           // FORCE UPDATE the breakdown sections with new analysis
           if (reAnalysis.grammarBreakdown) {
