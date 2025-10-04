@@ -1999,57 +1999,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔄 Re-analyzing messages with new prompt...');
           console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
           
-          // SMART SAMPLING: Analyze all messages in batches to stay within token limits
-          console.log('🔄 Analyzing all', analysisMessageTexts.length, 'messages with smart sampling...');
-          
-          // Calculate optimal batch size (aim for ~15k tokens, ~80 messages per batch)
-          const batchSize = Math.min(80, Math.floor(analysisMessageTexts.length / 3));
-          const batches = [];
-          
-          for (let i = 0; i < analysisMessageTexts.length; i += batchSize) {
-            batches.push(analysisMessageTexts.slice(i, i + batchSize));
-          }
-          
-          console.log('🔄 Created', batches.length, 'batches of', batchSize, 'messages each');
-          
-          try {
-            // Analyze ALL batches and combine results
-            console.log('🔄 Analyzing', batches.length, 'batches to cover all', analysisMessageTexts.length, 'messages');
-            
-            let combinedGrammarErrors = 0;
-            let combinedGrammarIssues = 0;
-            let combinedPunctuationErrors = 0;
-            let allGrammarExamples = [];
-            let allGrammarIssueExamples = [];
-            let allPunctuationExamples = [];
-            
-            // Process each batch
-            for (let i = 0; i < batches.length; i++) {
-              console.log('🔄 Processing batch', i + 1, 'of', batches.length, '(', batches[i].length, 'messages)');
-              const batchAnalysis = await analyzeMessages(batches[i], `Batch ${i + 1}`);
-              
-              // Extract counts from batch analysis (we'll need to parse the text)
-              if (batchAnalysis.grammarBreakdown) {
-                const grammarText = batchAnalysis.grammarBreakdown.spellingErrors || '';
-                const grammarIssuesText = batchAnalysis.grammarBreakdown.grammarIssues || '';
-                const punctuationText = batchAnalysis.grammarBreakdown.punctuationProblems || '';
-                
-                // Extract numbers from text (e.g., "Found 15 spelling errors")
-                const spellingMatch = grammarText.match(/Found (\d+)/);
-                const grammarMatch = grammarIssuesText.match(/Found (\d+)/);
-                const punctuationMatch = punctuationText.match(/Found (\d+)/);
-                
-                if (spellingMatch) combinedGrammarErrors += parseInt(spellingMatch[1]);
-                if (grammarMatch) combinedGrammarIssues += parseInt(grammarMatch[1]);
-                if (punctuationMatch) combinedPunctuationErrors += parseInt(punctuationMatch[1]);
-              }
-            }
+          // OLD BATCHING SYSTEM REMOVED - Using new comprehensive batching below
             
             // Get AI analysis for BOTH grammar and guidelines using ALL messages in batches
             console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
             console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
-            const batchSize = 400; // Increased batch size for faster processing
+            const batchSize = 400; // Optimized batch size for faster processing
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
             
@@ -2141,7 +2097,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
             console.log('🔄 Found', customGuidelines.length, 'custom guidelines');
             
-            // Create comprehensive analysis with combined counts and custom guidelines
+            // Create comprehensive analysis with combined results
             const reAnalysis = {
               grammarBreakdown: combinedGrammarAnalysis,
               guidelinesBreakdown: combinedGuidelinesAnalysis,
