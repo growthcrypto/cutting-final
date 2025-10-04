@@ -1980,13 +1980,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
       aiAnalysis.messagesSent = analyticsData.messagesSent;
       
-      // Force re-analysis of messages with new prompt if messageContent is available
-      console.log('🔄 Checking messageContent for re-analysis:', messageContent ? messageContent.length : 0);
-      if (messageContent && messageContent.length > 0) {
+      // Force re-analysis of messages with new prompt if analysisMessageTexts is available
+      console.log('🔄 Checking analysisMessageTexts for re-analysis:', analysisMessageTexts ? analysisMessageTexts.length : 0);
+      if (analysisMessageTexts && analysisMessageTexts.length > 0) {
         console.log('🔄 Re-analyzing messages with new prompt...');
-        console.log('🔄 MessageContent sample:', messageContent.slice(0, 3));
+        console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
         try {
-          const reAnalysis = await analyzeMessages(messageContent, 'Re-analysis');
+          const reAnalysis = await analyzeMessages(analysisMessageTexts, 'Re-analysis');
           console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
           console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
           console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
@@ -2009,7 +2009,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔄 Re-analysis failed:', error.message);
         }
       } else {
-        console.log('🔄 No messageContent available for re-analysis');
+        console.log('🔄 No analysisMessageTexts available for re-analysis');
       }
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
