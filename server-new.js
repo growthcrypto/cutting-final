@@ -2044,13 +2044,22 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
-            // Get AI analysis for guidelines using ALL messages (not just first batch)
-            console.log('🔄 Getting AI analysis for guidelines using ALL messages...');
-            console.log('🔄 Message count for guidelines analysis:', analysisMessageTexts.length);
-            const guidelinesAnalysis = await analyzeMessages(analysisMessageTexts, 'Guidelines Analysis - ALL MESSAGES');
-            console.log('🔄 Guidelines analysis completed:', !!guidelinesAnalysis.guidelinesBreakdown);
-            console.log('🔄 Guidelines analysis keys:', guidelinesAnalysis.guidelinesBreakdown ? Object.keys(guidelinesAnalysis.guidelinesBreakdown) : 'NO GUIDELINES BREAKDOWN');
-            console.log('🔄 Guidelines analysis content:', JSON.stringify(guidelinesAnalysis.guidelinesBreakdown, null, 2));
+            // Get AI analysis for guidelines using a representative sample (to avoid token limits)
+            console.log('🔄 Getting AI analysis for guidelines using representative sample...');
+            const sampleSize = Math.min(200, analysisMessageTexts.length); // Use 200 messages max to avoid token limits
+            const guidelinesSample = analysisMessageTexts.slice(0, sampleSize);
+            console.log('🔄 Using sample of', sampleSize, 'messages for guidelines analysis');
+            
+            let guidelinesAnalysis = {};
+            try {
+              guidelinesAnalysis = await analyzeMessages(guidelinesSample, 'Guidelines Analysis');
+              console.log('🔄 Guidelines analysis completed:', !!guidelinesAnalysis.guidelinesBreakdown);
+              console.log('🔄 Guidelines analysis keys:', guidelinesAnalysis.guidelinesBreakdown ? Object.keys(guidelinesAnalysis.guidelinesBreakdown) : 'NO GUIDELINES BREAKDOWN');
+              console.log('🔄 Guidelines analysis content:', JSON.stringify(guidelinesAnalysis.guidelinesBreakdown, null, 2));
+            } catch (error) {
+              console.log('❌ Guidelines analysis failed:', error.message);
+              guidelinesAnalysis = { guidelinesBreakdown: null };
+            }
             
             // Get custom guidelines from database
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
