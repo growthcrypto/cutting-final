@@ -2207,23 +2207,29 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         // Clean up repetitive content from combined analysis and use the best results
         const cleanSpelling = combinedGrammarAnalysis.spellingErrors ? 
           combinedGrammarAnalysis.spellingErrors.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No spelling errors found - informal OnlyFans language is correct')
+            arr.indexOf(item) === index && item.trim().length > 0 && 
+            !item.includes('No spelling errors found - informal OnlyFans language is correct') &&
+            !item.includes('No spelling errors found')
           ).join('.') + '.' : "No spelling errors found - informal OnlyFans language is correct.";
         
         const cleanGrammar = combinedGrammarAnalysis.grammarIssues ? 
           combinedGrammarAnalysis.grammarIssues.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No grammar errors found - informal OnlyFans language is correct')
+            arr.indexOf(item) === index && item.trim().length > 0 && 
+            !item.includes('No grammar errors found - informal OnlyFans language is correct') &&
+            !item.includes('No grammar errors found')
           ).join('.') + '.' : "No grammar errors found - informal OnlyFans language is correct.";
         
         const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems ? 
           combinedGrammarAnalysis.punctuationProblems.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No punctuation errors found - informal OnlyFans language is correct')
+            arr.indexOf(item) === index && item.trim().length > 0 && 
+            !item.includes('No punctuation errors found - informal OnlyFans language is correct') &&
+            !item.includes('No punctuation errors found')
           ).join('.') + '.' : "No punctuation errors found - informal OnlyFans language is correct.";
         
         const formattedGrammarAnalysis = {
-          spellingErrors: cleanSpelling || "No spelling errors found - informal OnlyFans language is correct.",
-          grammarIssues: cleanGrammar || "No grammar errors found - informal OnlyFans language is correct.",
-          punctuationProblems: cleanPunctuation || "No punctuation errors found - informal OnlyFans language is correct.",
+          spellingErrors: cleanSpelling && cleanSpelling !== '.' ? cleanSpelling : "No spelling errors found - informal OnlyFans language is correct.",
+          grammarIssues: cleanGrammar && cleanGrammar !== '.' ? cleanGrammar : "No grammar errors found - informal OnlyFans language is correct.",
+          punctuationProblems: cleanPunctuation && cleanPunctuation !== '.' ? cleanPunctuation : "No punctuation errors found - informal OnlyFans language is correct.",
           scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
         };
             
