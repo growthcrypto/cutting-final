@@ -1119,10 +1119,16 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans chat messages and provide COMPREHENSIVE analysis with COUNTERS. Return ONLY valid JSON.
+    // Get custom guidelines for the prompt
+  const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
+  
+  const prompt = `Analyze these OnlyFans chat messages and provide COMPREHENSIVE analysis with COUNTERS. Return ONLY valid JSON.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
+
+CUSTOM GUIDELINES TO EVALUATE AGAINST:
+${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.description} (Weight: ${g.weight})`).join('\n')}
 
 ONLYFANS CHATTING RULES:
 - PUNCTUATION: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES.
@@ -1177,11 +1183,11 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "COMPREHENSIVE sales analysis: Count ALL sales techniques used across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 8 direct sales attempts across 80 messages: 3 PPV promotions, 3 subscription upsells, 2 tip requests').",
-    "engagementQuality": "COMPREHENSIVE engagement analysis: Count ALL engagement strategies used across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 15 engagement techniques across 80 messages: 8 questions asked, 4 personal stories shared, 3 compliments given').",
-    "captionQuality": "COMPREHENSIVE PPV caption analysis: Count ALL PPV captions and their effectiveness across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 5 PPV captions across 80 messages: 2 effective with clear value proposition, 2 weak with unclear benefits, 1 missing urgency').",
-    "conversationFlow": "COMPREHENSIVE conversation analysis: Count ALL conversation patterns across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 conversation starters across 80 messages: 6 questions, 4 statements, 2 compliments').",
-    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 sales/engagement areas with specific counts and examples that need improvement?"
+    "salesEffectiveness": "COMPREHENSIVE sales analysis: Evaluate compliance with CUSTOM SALES GUIDELINES. Count violations and successes across ALL messages. Provide detailed statement about sales guideline compliance with specific examples and total count (e.g., 'Sales guideline violations: Found 8 violations of 'Always ask for tips' guideline, 3 violations of 'Use urgency in PPV captions' guideline. Found 12 sales guideline violations total across all messages.').",
+    "engagementQuality": "COMPREHENSIVE engagement analysis: Evaluate compliance with CUSTOM ENGAGEMENT GUIDELINES. Count violations and successes across ALL messages. Provide detailed statement about engagement guideline compliance with specific examples and total count (e.g., 'Engagement guideline violations: Found 5 violations of 'Always respond within 5 minutes' guideline, 2 violations of 'Ask personal questions' guideline. Found 7 engagement guideline violations total across all messages.').",
+    "captionQuality": "COMPREHENSIVE messaging analysis: Evaluate compliance with CUSTOM MESSAGING GUIDELINES. Count violations and successes across ALL messages. Provide detailed statement about messaging guideline compliance with specific examples and total count (e.g., 'Messaging guideline violations: Found 4 violations of 'Include emojis in captions' guideline, 1 violation of 'Keep captions under 50 words' guideline. Found 5 messaging guideline violations total across all messages.').",
+    "conversationFlow": "COMPREHENSIVE professionalism analysis: Evaluate compliance with CUSTOM PROFESSIONALISM GUIDELINES. Count violations and successes across ALL messages. Provide detailed statement about professionalism guideline compliance with specific examples and total count (e.g., 'Professionalism guideline violations: Found 3 violations of 'Always be polite' guideline, 2 violations of 'Avoid slang' guideline. Found 5 professionalism guideline violations total across all messages.').",
+    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages against your CUSTOM GUIDELINES, what are the TOP 3 guideline compliance areas with specific counts and examples that need improvement?"
   },
   "overallBreakdown": {
     "messageClarity": "COMPREHENSIVE clarity analysis: Count ALL clarity issues across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 10 unclear messages across 80 messages: 4 run-on sentences, 3 vague statements, 2 confusing questions, 1 incomplete thought').",
@@ -2036,7 +2042,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
-            // Create comprehensive analysis with combined counts
+            // Get custom guidelines from database
+            const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
+            console.log('🔄 Found', customGuidelines.length, 'custom guidelines');
+            
+            // Create comprehensive analysis with combined counts and custom guidelines
             const reAnalysis = {
               grammarBreakdown: {
                 spellingErrors: `Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found ${combinedGrammarErrors} spelling errors total across all ${analysisMessageTexts.length} messages.`,
@@ -2045,11 +2055,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
               },
               guidelinesBreakdown: {
-                salesEffectiveness: `Main sales analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving direct sales techniques, PPV promotion strategies, and conversion optimization.`,
-                engagementQuality: `Main engagement analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversation starters, maintaining fan interest, and building emotional connections.`,
-                captionQuality: `Main PPV caption analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving PPV caption effectiveness, value proposition clarity, and urgency creation.`,
-                conversationFlow: `Main conversation analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversation flow, response timing, and topic transitions.`,
-                scoreExplanation: `Comprehensive guidelines analysis of all ${analysisMessageTexts.length} messages: Focus on improving sales effectiveness, engagement quality, and conversation flow.`
+                salesEffectiveness: `CUSTOM GUIDELINES ANALYSIS: ${customGuidelines.filter(g => g.category === 'sales').map(g => `${g.title}: ${g.description}`).join(' | ')}. Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with these specific sales guidelines.`,
+                engagementQuality: `CUSTOM GUIDELINES ANALYSIS: ${customGuidelines.filter(g => g.category === 'engagement').map(g => `${g.title}: ${g.description}`).join(' | ')}. Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with these specific engagement guidelines.`,
+                captionQuality: `CUSTOM GUIDELINES ANALYSIS: ${customGuidelines.filter(g => g.category === 'messaging').map(g => `${g.title}: ${g.description}`).join(' | ')}. Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with these specific messaging/caption guidelines.`,
+                conversationFlow: `CUSTOM GUIDELINES ANALYSIS: ${customGuidelines.filter(g => g.category === 'professionalism').map(g => `${g.title}: ${g.description}`).join(' | ')}. Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with these specific professionalism guidelines.`,
+                scoreExplanation: `Comprehensive guidelines analysis of all ${analysisMessageTexts.length} messages: Evaluate compliance with your custom guidelines for sales, engagement, messaging, and professionalism.`
               },
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
