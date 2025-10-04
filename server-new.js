@@ -1166,10 +1166,10 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. Provide overall statement about main spelling issues and total count (e.g., 'Main spelling issues: frequent missing apostrophes in contractions, common typos in casual words, and autocorrect mistakes. Found 15 spelling errors total.').",
-    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. Provide overall statement about main grammar issues and total count (e.g., 'Main grammar issues: frequent wrong verb tenses, sentence fragments, and subject-verb disagreements. Found 12 grammar errors total.').",
-    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL punctuation issues found across ALL messages. Provide overall statement about main punctuation issues and total count (e.g., 'Main punctuation issues: frequent missing periods at sentence ends, inconsistent comma usage, and missing apostrophes in contractions. Found 20 punctuation errors total.').",
-    "informalLanguage": "COMPREHENSIVE informal language analysis: Count ALL informal language patterns found across ALL messages. Provide overall statement about main informal language issues and total count (e.g., 'Main informal language issues: frequent use of 'u' instead of 'you', 'ur' instead of 'your', and 'gonna' instead of 'going to'. Found 25 informal language patterns total.').",
+    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. Provide detailed statement about main spelling issues with specific examples and total count (e.g., 'Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found 15 spelling errors total across all messages.').",
+    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. Provide detailed statement about main grammar issues with specific examples and total count (e.g., 'Main grammar issues: frequent wrong verb tenses like 'I was went' instead of 'I went', sentence fragments like incomplete thoughts, and subject-verb disagreements like 'he don't' instead of 'he doesn't'. Found 12 grammar errors total across all messages.').",
+    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL punctuation issues found across ALL messages. Provide detailed statement about main punctuation issues with specific examples and total count (e.g., 'Main punctuation issues: frequent missing periods at sentence ends like 'How are you' without a question mark, inconsistent comma usage in lists, and missing apostrophes in contractions like 'wont' instead of 'won't'. Found 20 punctuation errors total across all messages.').",
+    "informalLanguage": "COMPREHENSIVE informal language analysis: Count ALL informal language patterns found across ALL messages. Provide detailed statement about main informal language issues with specific examples and total count (e.g., 'Main informal language issues: frequent use of 'u' instead of 'you' like 'u are so nice', 'ur' instead of 'your' like 'ur hand', and 'gonna' instead of 'going to' like 'im gonna show u'. Found 25 informal language patterns total across all messages.').",
     "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
   },
   "guidelinesBreakdown": {
@@ -1191,10 +1191,11 @@ CRITICAL INSTRUCTIONS:
 1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
 2. Do NOT mention specific message numbers or message references
 3. Look for DIVERSE problems - spelling, grammar, punctuation, informal language, sales, engagement, clarity, emotional impact
-4. Provide overall statements with total counts for each category
+4. Provide detailed statements with specific examples and total counts for each category
 5. Focus on the MAIN AREAS that need improvement
 6. Do NOT repeat the same issue type multiple times
 7. CRITICAL: NO message numbers - chatters cannot access message files
+8. MANDATORY: Always include total counts (e.g., "Found X errors total across all messages")
 
 Return ONLY the JSON object above. No additional text.
 
