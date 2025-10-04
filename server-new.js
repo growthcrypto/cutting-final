@@ -2114,9 +2114,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines')
             };
             
+            // Clean up and format the grammar analysis for better readability
+            const formattedGrammarAnalysis = {
+              spellingErrors: formatGrammarText(combinedGrammarAnalysis.spellingErrors, 'Spelling Issues'),
+              grammarIssues: formatGrammarText(combinedGrammarAnalysis.grammarIssues, 'Grammar Issues'),
+              punctuationProblems: formatGrammarText(combinedGrammarAnalysis.punctuationProblems, 'Punctuation Problems'),
+              scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+            };
+            
             // Create comprehensive analysis with combined results
             const reAnalysis = {
-              grammarBreakdown: combinedGrammarAnalysis,
+              grammarBreakdown: formattedGrammarAnalysis,
               guidelinesBreakdown: formattedGuidelinesAnalysis,
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
@@ -2728,6 +2736,73 @@ app.listen(PORT, () => {
   }, 2000);
 });
 
+// Helper function to format grammar text for better readability
+function formatGrammarText(text, category) {
+  if (!text || text.trim().length === 0) {
+    return `No ${category.toLowerCase()} analysis available.`;
+  }
+  
+  // Extract unique grammar issues with counts
+  const issues = new Set();
+  
+  // Extract specific grammar issues with counts
+  const issueMatches = text.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
+  if (issueMatches) {
+    issueMatches.forEach(match => {
+      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
+      if (countMatch) {
+        issues.add(`${countMatch[1]} ${countMatch[2]} ${countMatch[3]}`);
+      }
+    });
+  }
+  
+  // Extract other key grammar issues (without duplicates)
+  const otherPatterns = [
+    /missing apostrophes/gi,
+    /typos/gi,
+    /autocorrect mistakes/gi,
+    /wrong verb tenses/gi,
+    /sentence fragments/gi,
+    /subject-verb disagreements/gi,
+    /formal punctuation/gi,
+    /missing excitement punctuation/gi
+  ];
+  
+  otherPatterns.forEach(pattern => {
+    const matches = text.match(pattern);
+    if (matches) {
+      const issue = matches[0].toLowerCase();
+      if (issue.includes('apostrophes')) {
+        issues.add('Missing apostrophes in contractions');
+      } else if (issue.includes('typos')) {
+        issues.add('Common typos in casual words');
+      } else if (issue.includes('autocorrect')) {
+        issues.add('Autocorrect mistakes');
+      } else if (issue.includes('verb tenses')) {
+        issues.add('Wrong verb tenses');
+      } else if (issue.includes('fragments')) {
+        issues.add('Sentence fragments');
+      } else if (issue.includes('subject-verb')) {
+        issues.add('Subject-verb disagreements');
+      } else if (issue.includes('formal punctuation')) {
+        issues.add('Inappropriate formal punctuation');
+      } else if (issue.includes('excitement')) {
+        issues.add('Missing excitement punctuation');
+      }
+    }
+  });
+  
+  // Convert to array and limit to top 3
+  const issueArray = Array.from(issues).slice(0, 3);
+  
+  if (issueArray.length === 0) {
+    return `No specific ${category.toLowerCase()} found.`;
+  }
+  
+  // Format as clean, simple bullet points
+  return issueArray.map(issue => `• ${issue}`).join('\n\n');
+}
+
 // Helper function to format guidelines text for better readability
 function formatGuidelinesText(text, category) {
   if (!text || text.trim().length === 0) {
@@ -2780,7 +2855,7 @@ function formatGuidelinesText(text, category) {
     return `No specific ${category.toLowerCase()} violations found.`;
   }
   
-  // Format as clean, simple bullet points
+  // Format as clean, properly spaced bullet points
   return violationArray.map(violation => `• ${violation}`).join('\n\n');
 }
 
