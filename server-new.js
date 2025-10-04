@@ -1424,38 +1424,7 @@ ANALYSIS REQUIREMENTS:
       console.log('🔍 AI Analysis Result has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
       console.log('🔍 AI Analysis Result has overallBreakdown:', !!analysisResult.overallBreakdown);
       
-      // Ensure breakdown sections are included
-      if (!analysisResult.grammarBreakdown) {
-        console.log('🔍 Adding missing grammarBreakdown');
-        analysisResult.grammarBreakdown = {
-          spellingErrors: "No spelling errors found",
-          grammarIssues: "No grammar issues found", 
-          punctuationProblems: "No punctuation problems found",
-          informalLanguage: "No informal language found",
-          scoreExplanation: "Grammar analysis completed"
-        };
-      }
-      
-      if (!analysisResult.guidelinesBreakdown) {
-        console.log('🔍 Adding missing guidelinesBreakdown');
-        analysisResult.guidelinesBreakdown = {
-          salesEffectiveness: "No sales techniques found",
-          engagementQuality: "No engagement strategies found",
-          captionQuality: "No PPV captions found", 
-          conversationFlow: "No conversation patterns found",
-          scoreExplanation: "Guidelines analysis completed"
-        };
-      }
-      
-      if (!analysisResult.overallBreakdown) {
-        console.log('🔍 Adding missing overallBreakdown');
-        analysisResult.overallBreakdown = {
-          messageClarity: "No clarity issues found",
-          emotionalImpact: "No emotional connections found",
-          conversionPotential: "No conversion opportunities found",
-          scoreExplanation: "Overall analysis completed"
-        };
-      }
+      // Let the AI provide the breakdown sections - no fallback
       
       return analysisResult;
     } catch (parseError) {
