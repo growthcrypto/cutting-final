@@ -1126,7 +1126,7 @@ ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
-2. Provide specific examples with message numbers
+2. Provide overall statements about main issues (NO message numbers)
 3. Give comprehensive statistics and patterns
 4. Find diverse, real issues - do NOT repeat the same error type
 5. Focus on MAIN issues that need improvement
@@ -1165,10 +1165,10 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 15 spelling errors across 80 messages: 8 missing apostrophes, 4 typos, 3 autocorrect mistakes').",
-    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 grammar errors across 80 messages: 5 wrong verb tenses, 4 sentence fragments, 3 subject-verb disagreements').",
-    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL punctuation issues found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 20 punctuation errors across 80 messages: 8 missing periods, 6 missing commas, 4 missing apostrophes, 2 excessive exclamation marks').",
-    "informalLanguage": "COMPREHENSIVE informal language analysis: Count ALL informal language patterns found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 25 informal patterns across 80 messages: 12 'u' instead of 'you', 8 'ur' instead of 'your', 5 'gonna' instead of 'going to').",
+    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. Provide overall statement about main spelling issues and total count (e.g., 'Main spelling issues: frequent missing apostrophes in contractions, common typos in casual words, and autocorrect mistakes. Found 15 spelling errors total.').",
+    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. Provide overall statement about main grammar issues and total count (e.g., 'Main grammar issues: frequent wrong verb tenses, sentence fragments, and subject-verb disagreements. Found 12 grammar errors total.').",
+    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL punctuation issues found across ALL messages. Provide overall statement about main punctuation issues and total count (e.g., 'Main punctuation issues: frequent missing periods at sentence ends, inconsistent comma usage, and missing apostrophes in contractions. Found 20 punctuation errors total.').",
+    "informalLanguage": "COMPREHENSIVE informal language analysis: Count ALL informal language patterns found across ALL messages. Provide overall statement about main informal language issues and total count (e.g., 'Main informal language issues: frequent use of 'u' instead of 'you', 'ur' instead of 'your', and 'gonna' instead of 'going to'. Found 25 informal language patterns total.').",
     "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
   },
   "guidelinesBreakdown": {
