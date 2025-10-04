@@ -2825,7 +2825,9 @@ function formatGrammarText(text, category) {
     'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
     'inconsistent use of contractions', 'u are instead of you are', 'u and you',
     'contractions like', 'missing apostrophes', 'informal language',
-    'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love'
+    'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love',
+    'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll',
+    'ilove', 'u\'ll', 'u instead of', 'ur instead of', 'im instead of', 'dont instead of', 'cant instead of'
   ];
   
   const hasBadPhrases = badPhrases.some(phrase => text.toLowerCase().includes(phrase));
@@ -2839,6 +2841,8 @@ function formatGrammarText(text, category) {
     .replace(/No significant issues found No significant issues found/g, 'No significant issues found')
     .replace(/No significant issues found No significant issues found No significant issues found/g, 'No significant issues found')
     .replace(/Found formal punctuation like periods in some messages Found formal punctuation like periods in some messages/g, 'Found formal punctuation like periods in some messages')
+    .replace(/Found formal punctuation like periods in some messages Punctuation problems found/g, 'Found formal punctuation like periods in some messages')
+    .replace(/Spelling errors found:.*?No significant issues found/g, 'No significant issues found')
     .replace(/\s+/g, ' ')
     .trim();
   
