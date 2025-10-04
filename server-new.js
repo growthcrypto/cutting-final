@@ -1119,14 +1119,19 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans chat messages from chatter "${chatterName}":
+    const prompt = `You are an expert OnlyFans chat analyst. Analyze these messages for REAL grammar issues, communication problems, and sales effectiveness. Find diverse, actionable issues - not repetitive examples.
 
 MESSAGES TO ANALYZE:
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-You MUST return ONLY valid JSON with this EXACT structure. Analyze the messages above and fill in REAL values:
+ANALYSIS REQUIREMENTS:
+- Find REAL grammar errors, spelling mistakes, punctuation issues
+- Identify ACTUAL sales techniques, engagement strategies, conversation flow
+- Provide DIVERSE examples - different types of issues, not the same pattern
+- Be SPECIFIC - quote exact text and explain the problem
+- Be ACTIONABLE - suggest improvements
 
-CRITICAL: You MUST analyze each message and provide specific examples. Do NOT return undefined values. Every field must have actual content.
+You MUST return ONLY valid JSON with this EXACT structure:
 
 {
   "overallScore": 85,
@@ -1160,24 +1165,24 @@ CRITICAL: You MUST analyze each message and provide specific examples. Do NOT re
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "ANALYZE THE MESSAGES ABOVE AND FIND SPELLING ERRORS. List specific examples with message numbers.",
-    "grammarIssues": "ANALYZE THE MESSAGES ABOVE AND FIND GRAMMAR ISSUES. List specific examples with message numbers.",
-    "punctuationProblems": "ANALYZE THE MESSAGES ABOVE AND FIND PUNCTUATION PROBLEMS. List specific examples with message numbers.",
-    "informalLanguage": "ANALYZE THE MESSAGES ABOVE AND FIND INFORMAL LANGUAGE. List specific examples with message numbers.",
-    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF GRAMMAR ISSUES FOUND."
+    "spellingErrors": "Find actual spelling mistakes. Quote exact text and provide correct spelling.",
+    "grammarIssues": "Find actual grammar mistakes. Quote exact text and explain the error.",
+    "punctuationProblems": "Find actual punctuation issues. Quote exact text and suggest corrections.",
+    "informalLanguage": "Find actual informal language. Quote exact text and suggest formal alternatives.",
+    "scoreExplanation": "Provide a summary of grammar analysis with specific counts and examples."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "ANALYZE THE MESSAGES ABOVE AND FIND SALES EFFECTIVENESS. List specific examples with message numbers.",
-    "engagementQuality": "ANALYZE THE MESSAGES ABOVE AND FIND ENGAGEMENT QUALITY. List specific examples with message numbers.",
-    "captionQuality": "ANALYZE THE MESSAGES ABOVE AND FIND CAPTION QUALITY. List specific examples with message numbers.",
-    "conversationFlow": "ANALYZE THE MESSAGES ABOVE AND FIND CONVERSATION FLOW. List specific examples with message numbers.",
-    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF GUIDELINES ANALYSIS."
+    "salesEffectiveness": "Find actual sales techniques. Quote exact text and evaluate effectiveness.",
+    "engagementQuality": "Find actual engagement strategies. Quote exact text and assess quality.",
+    "captionQuality": "Find actual PPV captions. Quote exact text and evaluate persuasiveness.",
+    "conversationFlow": "Find actual conversation patterns. Quote exact text and assess flow.",
+    "scoreExplanation": "Provide a summary of guidelines analysis with specific counts and examples."
   },
   "overallBreakdown": {
-    "messageClarity": "ANALYZE THE MESSAGES ABOVE AND FIND MESSAGE CLARITY. List specific examples with message numbers.",
-    "emotionalImpact": "ANALYZE THE MESSAGES ABOVE AND FIND EMOTIONAL IMPACT. List specific examples with message numbers.",
-    "conversionPotential": "ANALYZE THE MESSAGES ABOVE AND FIND CONVERSION POTENTIAL. List specific examples with message numbers.",
-    "scoreExplanation": "ANALYZE THE MESSAGES ABOVE AND PROVIDE A SUMMARY OF OVERALL ANALYSIS."
+    "messageClarity": "Find actual clarity issues. Quote exact text and suggest improvements.",
+    "emotionalImpact": "Find actual emotional connections. Quote exact text and assess impact.",
+    "conversionPotential": "Find actual conversion opportunities. Quote exact text and evaluate potential.",
+    "scoreExplanation": "Provide a summary of overall analysis with specific counts and examples."
   }
 }
 
