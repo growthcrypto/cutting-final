@@ -1979,6 +1979,28 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
       aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
       aiAnalysis.messagesSent = analyticsData.messagesSent;
+      
+      // Force re-analysis of messages with new prompt if messageContent is available
+      if (messageContent && messageContent.length > 0) {
+        console.log('🔄 Re-analyzing messages with new prompt...');
+        try {
+          const reAnalysis = await analyzeMessages(messageContent, 'Re-analysis');
+          console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
+          
+          // Update the breakdown sections with new analysis
+          if (reAnalysis.grammarBreakdown) {
+            aiAnalysis.grammarBreakdown = reAnalysis.grammarBreakdown;
+          }
+          if (reAnalysis.guidelinesBreakdown) {
+            aiAnalysis.guidelinesBreakdown = reAnalysis.guidelinesBreakdown;
+          }
+          if (reAnalysis.overallBreakdown) {
+            aiAnalysis.overallBreakdown = reAnalysis.overallBreakdown;
+          }
+        } catch (error) {
+          console.log('🔄 Re-analysis failed:', error.message);
+        }
+      }
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
       aiAnalysis.grammarScore = analyticsData.grammarScore;
