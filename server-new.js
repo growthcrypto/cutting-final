@@ -1200,7 +1200,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
            "grammarBreakdown": {
              "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i', 'dont', 'ilove', 'u are', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. If you find NO real spelling errors, say 'No spelling errors found'.",
              "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy', 'dont know', 'ilove you', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. If you find NO real grammar errors, say 'No grammar errors found'.",
-             "punctuationProblems": "CRITICAL: DO NOT FLAG MULTIPLE PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. DO NOT suggest changing 'how are u?' to 'how are you?'. ONLY flag inappropriate punctuation like 'How are you.' (formal periods), 'Hello, how are you,' (formal commas). If you find NO inappropriate punctuation, say 'No punctuation problems found'.",
+             "punctuationProblems": "CRITICAL: DO NOT FLAG MULTIPLE PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. DO NOT flag multiple question marks or exclamation points. DO NOT flag informal punctuation. ONLY flag FORMAL punctuation like 'How are you.' (formal periods), 'Hello, how are you,' (formal commas), missing excitement punctuation. If you find NO formal punctuation errors, say 'No punctuation problems found'.",
              "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
            },
   "guidelinesBreakdown": {
@@ -2818,6 +2818,10 @@ function formatGrammarText(text, category) {
     .replace(/Inconsistent punctuation usage with excessive question marks and missing periods/g, '') // Remove informal language errors
     .replace(/Inconsistent punctuation usage with excessive question marks and missing exclamation marks/g, '') // Remove informal language errors
     .replace(/Inconsistent punctuation usage/g, '') // Remove informal language errors
+    .replace(/Some messages end with multiple question marks or exclamation points/g, '') // Remove informal language errors
+    .replace(/while others lack appropriate punctuation/g, '') // Remove informal language errors
+    .replace(/lacks proper punctuation/g, '') // Remove informal language errors
+    .replace(/Found incons/g, '') // Remove cutoff text
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2881,7 +2885,13 @@ function formatGrammarText(text, category) {
   // If no structured content, return cleaned text
   if (!analysis.trim()) {
     if (cleanText.length > 100) {
-      return cleanText.substring(0, 300) + (cleanText.length > 300 ? '...' : '');
+      // Find a good break point to avoid cutting off mid-word
+      let truncated = cleanText.substring(0, 400);
+      const lastSpace = truncated.lastIndexOf(' ');
+      if (lastSpace > 200) {
+        truncated = cleanText.substring(0, lastSpace);
+      }
+      return truncated + (cleanText.length > 400 ? '...' : '');
     }
     return cleanText;
   }
