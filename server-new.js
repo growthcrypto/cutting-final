@@ -1922,6 +1922,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const analysisMessageTexts = (() => {
         const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
         if (fromRecords.length > 0) return fromRecords;
+        // Get latestMessageAnalysis from the current scope
+        const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
         const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
         return fromSample;
       })();
@@ -2038,6 +2040,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
             return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean);
           }
+          // Get latestMessageAnalysis from the current scope
+          const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
           return fromSample;
         } catch (_) {
