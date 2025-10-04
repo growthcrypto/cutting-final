@@ -1149,10 +1149,12 @@ CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for c
          - 'u are' and 'you are' are BOTH CORRECT - do not flag either as errors
          - 'u're' and 'you're' are BOTH CORRECT - do not flag either as errors
          - Multiple punctuation 'how are u???' is PERFECT - do not flag as excessive
+         - DO NOT FLAG INCONSISTENT USE OF CONTRACTIONS
+         - DO NOT FLAG INCONSISTENT USE OF INFORMAL VS FORMAL LANGUAGE
+         - DO NOT SUGGEST CHANGING 'dont' to 'don't' or 'u' to 'you'
          - ONLY flag actual spelling errors like 'weel' instead of 'well', 'recieve' instead of 'receive'
          - ONLY flag actual grammar errors like 'I was went' instead of 'I went'
          - DO NOT SUGGEST CHANGING INFORMAL LANGUAGE TO FORMAL LANGUAGE
-         - DO NOT FLAG INCONSISTENT USE OF INFORMAL VS FORMAL LANGUAGE
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
@@ -2797,7 +2799,7 @@ function formatGrammarText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up repetitive text
+  // Clean up repetitive text and informal language errors
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
@@ -2808,6 +2810,14 @@ function formatGrammarText(text, category) {
     .replace(/No punctuation problems found/g, '') // Remove repetitive phrases
     .replace(/No spelling errors found/g, '') // Remove repetitive "no spelling errors"
     .replace(/No grammar errors found/g, '') // Remove repetitive "no grammar errors"
+    .replace(/Inconsistent use of contractions like 'u' and 'you'/g, '') // Remove informal language errors
+    .replace(/Inconsistent use of contractions like 'im' and 'I'm'/g, '') // Remove informal language errors
+    .replace(/Inconsistent use of contractions like 'dont' and 'don't'/g, '') // Remove informal language errors
+    .replace(/Inconsistent use of contractions/g, '') // Remove informal language errors
+    .replace(/Inconsistent punctuation usage with excessive question marks/g, '') // Remove informal language errors
+    .replace(/Inconsistent punctuation usage with excessive question marks and missing periods/g, '') // Remove informal language errors
+    .replace(/Inconsistent punctuation usage with excessive question marks and missing exclamation marks/g, '') // Remove informal language errors
+    .replace(/Inconsistent punctuation usage/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2870,7 +2880,10 @@ function formatGrammarText(text, category) {
   
   // If no structured content, return cleaned text
   if (!analysis.trim()) {
-    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+    if (cleanText.length > 100) {
+      return cleanText.substring(0, 300) + (cleanText.length > 300 ? '...' : '');
+    }
+    return cleanText;
   }
   
   return analysis;
