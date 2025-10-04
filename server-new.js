@@ -2059,11 +2059,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                     });
                   }
                   
-                  // Combine guidelines analysis
+                  // Combine guidelines analysis with better formatting
                   if (batchAnalysis.guidelinesBreakdown) {
                     Object.keys(combinedGuidelinesAnalysis).forEach(key => {
                       if (batchAnalysis.guidelinesBreakdown[key]) {
-                        combinedGuidelinesAnalysis[key] += (combinedGuidelinesAnalysis[key] ? ' ' : '') + batchAnalysis.guidelinesBreakdown[key];
+                        // Clean up the text and add proper formatting
+                        let cleanText = batchAnalysis.guidelinesBreakdown[key]
+                          .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
+                          .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+                          .trim();
+                        
+                        if (cleanText && cleanText.length > 10) {
+                          combinedGuidelinesAnalysis[key] += (combinedGuidelinesAnalysis[key] ? '\n\n' : '') + cleanText;
+                        }
                       }
                     });
                   }
@@ -2097,10 +2105,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
             console.log('🔄 Found', customGuidelines.length, 'custom guidelines');
             
+            // Clean up and format the guidelines analysis for better readability
+            const formattedGuidelinesAnalysis = {
+              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness'),
+              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality'),
+              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality'),
+              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow'),
+              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines')
+            };
+            
             // Create comprehensive analysis with combined results
             const reAnalysis = {
               grammarBreakdown: combinedGrammarAnalysis,
-              guidelinesBreakdown: combinedGuidelinesAnalysis,
+              guidelinesBreakdown: formattedGuidelinesAnalysis,
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
                 emotionalImpact: `Main emotional analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving emotional connections, building rapport, and creating meaningful interactions.`,
@@ -2708,6 +2725,41 @@ app.listen(PORT, () => {
     updateCreatorNames();
   }, 2000);
 });
+
+// Helper function to format guidelines text for better readability
+function formatGuidelinesText(text, category) {
+  if (!text || text.trim().length === 0) {
+    return `No ${category.toLowerCase()} analysis available.`;
+  }
+  
+  // Clean up repetitive text
+  let cleanText = text
+    .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
+    .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
+  
+  // Split into sentences and format
+  const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  
+  if (sentences.length === 0) {
+    return `No ${category.toLowerCase()} analysis available.`;
+  }
+  
+  // Format as bullet points
+  const formattedSentences = sentences.map((sentence, index) => {
+    const trimmed = sentence.trim();
+    if (trimmed.length > 0) {
+      return `• ${trimmed.charAt(0).toUpperCase() + trimmed.slice(1)}.`;
+    }
+    return '';
+  }).filter(s => s.length > 0);
+  
+  // Limit to top 5 most important points
+  const topPoints = formattedSentences.slice(0, 5);
+  
+  return topPoints.join('\n\n');
+}
 
 // Deterministic analysis for individual chatter (no AI, data-only)
 function generateDeterministicIndividualAnalysis(analyticsData, interval) {
