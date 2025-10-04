@@ -2815,6 +2815,10 @@ function formatGrammarText(text, category) {
     .replace(/Excessive use of question marks in 'do u like what u're seeing hee\?'/g, '') // Remove informal language errors
     .replace(/Found 'u' instead of 'you' in multiple messages/g, '') // Remove informal language errors
     .replace(/Found 'ilove' instead of 'I love' in multiple messages/g, '') // Remove informal language errors
+    .replace(/'re' instead of 'you'/g, '') // Remove informal language errors
+    .replace(/'wyd' instead of 'what are you doing'/g, '') // Remove informal language errors
+    .replace(/'he dont' instead of 'he doesn'/g, '') // Remove informal language errors
+    .replace(/'u???' instead of 'u?'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2822,17 +2826,51 @@ function formatGrammarText(text, category) {
   const errors = [];
   const examples = [];
   
-  // Extract error counts
+  // Extract error counts (unique only)
   const countMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
   if (countMatches) {
+    const errorMap = new Map();
     countMatches.forEach(match => {
       const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
       if (countMatch) {
-        errors.push(`${countMatch[1]} ${countMatch[2]} ${countMatch[3]}`);
+        const count = parseInt(countMatch[1]);
+        const type = countMatch[2];
+        if (errorMap.has(type)) {
+          errorMap.set(type, errorMap.get(type) + count);
+        } else {
+          errorMap.set(type, count);
+        }
       }
+    });
+    
+    // Convert to array
+    errorMap.forEach((count, type) => {
+      errors.push(`${count} ${type} errors`);
     });
   }
   
+  // Check if AI is still flagging informal language as errors
+  const informalPatterns = [
+    /'u'\s+instead\s+of\s+'you'/g,
+    /'ur'\s+instead\s+of\s+'your'/g,
+    /'im'\s+instead\s+of\s+'I'm'/g,
+    /'dont'\s+instead\s+of\s+'don't'/g,
+    /'cant'\s+instead\s+of\s+'can't'/g,
+    /'ilove'\s+instead\s+of\s+'I love'/g,
+    /'u are'\s+instead\s+of\s+'you are'/g,
+    /'u're'\s+instead\s+of\s+'you're'/g,
+    /'do u'\s+instead\s+of\s+'do you'/g,
+    /'re'\s+instead\s+of\s+'you'/g,
+    /'wyd'\s+instead\s+of\s+'what are you doing'/g,
+    /'he dont'\s+instead\s+of\s+'he doesn'/g,
+    /'u\?\?\?'\s+instead\s+of\s+'u\?'/g
+  ];
+  
+  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
+  if (hasInformalErrors) {
+    return "No errors found - informal OnlyFans language is correct.";
+  }
+
   // Extract specific examples
   const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
   if (exampleMatches) {
