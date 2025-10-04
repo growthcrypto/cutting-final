@@ -1324,8 +1324,9 @@ ANALYSIS REQUIREMENTS:
           content: prompt
         }
       ],
-      temperature: 0.7,
-      max_tokens: 2000
+      temperature: 0.1, // Lower temperature for faster, more consistent responses
+      max_tokens: 1500, // Reduced for faster processing
+      stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
     console.log('🚨 DEBUGGING: OpenAI API call successful');
@@ -2048,7 +2049,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Getting AI analysis for guidelines using ALL messages in batches...');
             console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
-            const batchSize = 200;
+            const batchSize = 400; // Increased batch size for faster processing
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
             
@@ -2061,24 +2062,39 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             };
             
             try {
-              // Analyze each batch
-              for (let i = 0; i < totalBatches; i++) {
-                const start = i * batchSize;
-                const end = Math.min(start + batchSize, analysisMessageTexts.length);
-                const batch = analysisMessageTexts.slice(start, end);
+              // Analyze batches in parallel (up to 3 at a time to avoid rate limits)
+              const parallelBatches = 3;
+              for (let i = 0; i < totalBatches; i += parallelBatches) {
+                const batchPromises = [];
                 
-                console.log(`🔄 Analyzing batch ${i + 1}/${totalBatches} (messages ${start + 1}-${end})`);
-                
-                const batchAnalysis = await analyzeMessages(batch, `Guidelines Analysis - Batch ${i + 1}/${totalBatches}`);
-                
-                if (batchAnalysis.guidelinesBreakdown) {
-                  // Combine results from each batch
-                  Object.keys(combinedGuidelinesAnalysis).forEach(key => {
-                    if (batchAnalysis.guidelinesBreakdown[key]) {
-                      combinedGuidelinesAnalysis[key] += (combinedGuidelinesAnalysis[key] ? ' ' : '') + batchAnalysis.guidelinesBreakdown[key];
-                    }
-                  });
+                // Create parallel batch promises
+                for (let j = 0; j < parallelBatches && (i + j) < totalBatches; j++) {
+                  const batchIndex = i + j;
+                  const start = batchIndex * batchSize;
+                  const end = Math.min(start + batchSize, analysisMessageTexts.length);
+                  const batch = analysisMessageTexts.slice(start, end);
+                  
+                  console.log(`🔄 Analyzing batch ${batchIndex + 1}/${totalBatches} (messages ${start + 1}-${end})`);
+                  
+                  batchPromises.push(
+                    analyzeMessages(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
+                  );
                 }
+                
+                // Wait for all parallel batches to complete
+                const batchResults = await Promise.all(batchPromises);
+                console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
+                
+                // Combine results from parallel batches
+                batchResults.forEach(batchAnalysis => {
+                  if (batchAnalysis.guidelinesBreakdown) {
+                    Object.keys(combinedGuidelinesAnalysis).forEach(key => {
+                      if (batchAnalysis.guidelinesBreakdown[key]) {
+                        combinedGuidelinesAnalysis[key] += (combinedGuidelinesAnalysis[key] ? ' ' : '') + batchAnalysis.guidelinesBreakdown[key];
+                      }
+                    });
+                  }
+                });
               }
               
               console.log('🔄 All batches analyzed successfully');
