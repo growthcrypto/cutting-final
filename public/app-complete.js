@@ -5088,10 +5088,20 @@ function formatBreakdownContent(content) {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
     }
     
-    // Check if content is detailed analysis (new format without bullet points)
+    // Check if content is structured analysis (new format with counts and issues)
+    if (content.length > 50 && (content.includes('Found') || content.includes('Key issues include'))) {
+      // This is structured analysis with counts, format it nicely
+      return `<div class="text-gray-300 leading-relaxed text-sm">
+        <div class="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
+          <div class="text-gray-300 leading-relaxed">${content}</div>
+        </div>
+      </div>`;
+    }
+    
+    // Check if content is detailed analysis (long text without structure)
     if (content.length > 100 && !content.includes('•')) {
       // This is detailed analysis text, format it nicely
-      return `<div class="text-gray-300 leading-relaxed text-sm space-y-3">
+      return `<div class="text-gray-300 leading-relaxed text-sm">
         <div class="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
           <div class="text-gray-300 leading-relaxed">${content}</div>
         </div>
