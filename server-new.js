@@ -1134,10 +1134,13 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
 
-ONLYFANS CHATTING RULES:
-- PUNCTUATION: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES.
-- LANGUAGE: Both formal and informal language are acceptable. Focus on grammar and spelling issues only.
-- GRAMMAR: Basic grammar rules still apply (spelling, verb tenses, etc.)
+         ONLYFANS CHATTING RULES:
+         - PUNCTUATION: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES.
+         - LANGUAGE: Both formal and informal language are acceptable. Focus on grammar and spelling issues only.
+         - GRAMMAR: Basic grammar rules still apply (spelling, verb tenses, etc.)
+         - INFORMAL IS GOOD: 'u' instead of 'you', 'ur' instead of 'your', 'im' instead of 'I'm' are PERFECT for OnlyFans chatting
+         - FORMAL IS BAD: 'I' instead of 'i', 'you' instead of 'u', 'your' instead of 'ur' are MISTAKES for OnlyFans chatting
+         - MULTIPLE PUNCTUATION IS GOOD: 'how are u???' is PERFECT, 'how are u.' is a MISTAKE
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
@@ -1180,12 +1183,12 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "salesConversation": "good",
     "fanRetention": "excellent"
   },
-  "grammarBreakdown": {
-    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. Provide detailed statement about main spelling issues with specific examples and total count (e.g., 'Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found 15 spelling errors total across all messages.').",
-    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. Provide detailed statement about main grammar issues with specific examples and total count (e.g., 'Main grammar issues: frequent wrong verb tenses like 'I was went' instead of 'I went', sentence fragments like incomplete thoughts, and subject-verb disagreements like 'he don't' instead of 'he doesn't'. Found 12 grammar errors total across all messages.').",
-    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL inappropriate punctuation found across ALL messages. ONLYFANS CHATTING RULES: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES. Provide detailed statement about inappropriate punctuation with specific examples and total count (e.g., 'Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. Found 20 inappropriate punctuation uses total across all messages.').",
-    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
-  },
+           "grammarBreakdown": {
+             "spellingErrors": "COMPREHENSIVE spelling analysis: Count ONLY actual spelling errors (not informal OnlyFans language). GOOD: 'u', 'ur', 'im', 'dont' are PERFECT for OnlyFans. BAD: 'recieve' instead of 'receive', 'teh' instead of 'the', 'definately' instead of 'definitely'. Provide detailed statement about REAL spelling errors with specific examples and total count.",
+             "grammarIssues": "COMPREHENSIVE grammar analysis: Count ONLY actual grammar mistakes (not informal OnlyFans language). GOOD: 'i go', 'u are', 'im happy' are PERFECT for OnlyFans. BAD: 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. Provide detailed statement about REAL grammar errors with specific examples and total count.",
+             "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ONLY inappropriate punctuation for OnlyFans chatting. GOOD: 'how are u???', 'omg!!!', 'really???' are PERFECT. BAD: 'How are you.' (formal periods), 'Hello, how are you,' (formal commas), missing excitement punctuation. Provide detailed statement about inappropriate punctuation with specific examples and total count.",
+             "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
+           },
   "guidelinesBreakdown": {
     "salesEffectiveness": "STRICT sales analysis: ANALYZE ALL messages for compliance with your custom sales guidelines. Be STRICT - find violations. For each violation, specify WHICH guideline was violated by exact name. Count violations and successes. Provide detailed statement about sales guideline compliance with specific examples from the messages and total count (e.g., 'Sales guideline analysis: Found 8 violations of 'Always ask for tips' guideline in messages like 'how are you' without asking for tips, 3 violations of 'Use urgency in PPV captions' guideline in messages like 'check this out' without urgency. Found 12 sales guideline violations total across all messages.').",
     "engagementQuality": "STRICT engagement analysis: ANALYZE ALL messages for compliance with your custom engagement guidelines. Be STRICT - find violations. For each violation, specify WHICH guideline was violated by exact name. Count violations and successes. Provide detailed statement about engagement guideline compliance with specific examples from the messages and total count (e.g., 'Engagement guideline analysis: Found 5 violations of 'Always respond within 5 minutes' guideline in delayed responses, 2 violations of 'Ask personal questions' guideline in messages like 'how are you' without follow-up questions. Found 7 engagement guideline violations total across all messages.').",
@@ -2804,32 +2807,32 @@ function formatGrammarText(text, category) {
     });
   }
   
-  // Extract key issues
+  // Extract key issues (only real errors, not informal OnlyFans language)
   const issuePatterns = [
-    /missing apostrophes/gi,
-    /typos/gi,
-    /autocorrect mistakes/gi,
-    /wrong verb tenses/gi,
-    /sentence fragments/gi,
-    /formal punctuation/gi
+    /actual spelling errors/gi,
+    /real grammar mistakes/gi,
+    /inappropriate punctuation/gi,
+    /formal periods/gi,
+    /formal commas/gi,
+    /missing excitement punctuation/gi
   ];
   
   issuePatterns.forEach(pattern => {
     const matches = cleanText.match(pattern);
     if (matches) {
       const issue = matches[0].toLowerCase();
-      if (issue.includes('apostrophes')) {
-        issues.push('Missing apostrophes in contractions');
-      } else if (issue.includes('typos')) {
-        issues.push('Common typos in casual words');
-      } else if (issue.includes('autocorrect')) {
-        issues.push('Autocorrect mistakes');
-      } else if (issue.includes('verb tenses')) {
-        issues.push('Wrong verb tenses');
-      } else if (issue.includes('fragments')) {
-        issues.push('Sentence fragments');
-      } else if (issue.includes('formal punctuation')) {
-        issues.push('Inappropriate formal punctuation');
+      if (issue.includes('actual spelling')) {
+        issues.push('Real spelling errors found');
+      } else if (issue.includes('real grammar')) {
+        issues.push('Actual grammar mistakes found');
+      } else if (issue.includes('inappropriate punctuation')) {
+        issues.push('Inappropriate punctuation usage');
+      } else if (issue.includes('formal periods')) {
+        issues.push('Use of formal periods instead of excitement punctuation');
+      } else if (issue.includes('formal commas')) {
+        issues.push('Use of formal commas instead of casual punctuation');
+      } else if (issue.includes('missing excitement')) {
+        issues.push('Missing excitement punctuation');
       }
     }
   });
