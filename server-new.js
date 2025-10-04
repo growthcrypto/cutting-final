@@ -1338,6 +1338,8 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
+    console.log('🚨 DEBUGGING: Prompt contains DIVERSE:', prompt.includes('DIVERSE'));
+    console.log('🚨 DEBUGGING: Prompt contains CRITICAL INSTRUCTIONS:', prompt.includes('CRITICAL INSTRUCTIONS'));
     console.log('🚨 DEBUGGING: First 500 chars of prompt:', prompt.substring(0, 500));
     console.log('🚨 DEBUGGING: Last 500 chars of prompt:', prompt.substring(prompt.length - 500));
     
