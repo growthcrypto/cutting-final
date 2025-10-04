@@ -1146,10 +1146,13 @@ CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for c
          - 'dont' and 'don't' are BOTH CORRECT - do not flag either as errors
          - 'ilove' and 'I love' are BOTH CORRECT - do not flag either as errors
          - 'how are u?' and 'how are you?' are BOTH CORRECT - do not flag either as errors
+         - 'u are' and 'you are' are BOTH CORRECT - do not flag either as errors
+         - 'u're' and 'you're' are BOTH CORRECT - do not flag either as errors
          - Multiple punctuation 'how are u???' is PERFECT - do not flag as excessive
          - ONLY flag actual spelling errors like 'weel' instead of 'well', 'recieve' instead of 'receive'
          - ONLY flag actual grammar errors like 'I was went' instead of 'I went'
          - DO NOT SUGGEST CHANGING INFORMAL LANGUAGE TO FORMAL LANGUAGE
+         - DO NOT FLAG INCONSISTENT USE OF INFORMAL VS FORMAL LANGUAGE
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
@@ -1193,8 +1196,8 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i', 'dont', 'ilove' are PERFECT for OnlyFans. DO NOT suggest changing 'u' to 'you', 'ur' to 'your', 'im' to 'I'm', 'i' to 'I', 'dont' to 'don't', 'ilove' to 'I love'. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. If you find NO real spelling errors, say 'No spelling errors found'.",
-             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy', 'dont know', 'ilove you' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. If you find NO real grammar errors, say 'No grammar errors found'.",
+             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'i', 'dont', 'ilove', 'u are', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. If you find NO real spelling errors, say 'No spelling errors found'.",
+             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'i go', 'u are', 'im happy', 'dont know', 'ilove you', 'u're' are PERFECT for OnlyFans. DO NOT suggest changing informal to formal language. DO NOT flag inconsistent use of informal vs formal language. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. If you find NO real grammar errors, say 'No grammar errors found'.",
              "punctuationProblems": "CRITICAL: DO NOT FLAG MULTIPLE PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. DO NOT suggest changing 'how are u?' to 'how are you?'. ONLY flag inappropriate punctuation like 'How are you.' (formal periods), 'Hello, how are you,' (formal commas). If you find NO inappropriate punctuation, say 'No punctuation problems found'.",
              "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
            },
