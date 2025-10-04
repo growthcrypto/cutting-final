@@ -1198,10 +1198,10 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're' are PERFECT for OnlyFans. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. NEVER suggest changing 'u' to 'you' or 'dont' to 'don't'. Format as: 'Found X spelling errors. Examples: [actual misspellings only].'",
-             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'u are', 'dont know', 'cant understand', 'im happy', 'u're', 'he dont' are PERFECT for OnlyFans. ONLY flag real grammar mistakes like 'I was went' instead of 'I went'. NEVER suggest changing informal to formal language. Format as: 'Found X grammar errors. Examples: [actual grammar mistakes only].'",
-             "punctuationProblems": "CRITICAL: PUNCTUATION ANALYSIS IS ONLY FOR FORMAL PUNCTUATION ERRORS. DO NOT FLAG INFORMAL LANGUAGE AS PUNCTUATION ERRORS. 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' are ALL PERFECT for OnlyFans. ONLY flag FORMAL punctuation like periods (.) at end of sentences, formal commas in lists. NEVER flag informal pronouns, contractions, or multiple punctuation. MANDATORY: Always provide specific examples. Format as: 'Found X punctuation errors. Examples: [specific formal punctuation errors like 'How are you.' instead of 'How are you?', 'Hello, how are you,' instead of 'Hello, how are you?'].'",
-             "scoreExplanation": "Provide a complete summary of the grammar analysis. Format: 'Grammar score: X/100. Main issues: [specific issue 1], [specific issue 2], [specific issue 3]. Total errors found: [count].' Provide the complete summary without any truncation or word limits."
+             "spellingErrors": "ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive'. DO NOT flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're' - these are PERFECT for OnlyFans. Format: 'Found X spelling errors. Examples: [actual misspellings only].'",
+             "grammarIssues": "ONLY flag real grammar mistakes like 'I was went' instead of 'I went'. DO NOT flag 'u are', 'dont know', 'cant understand', 'im happy', 'u're', 'he dont' - these are PERFECT for OnlyFans. Format: 'Found X grammar errors. Examples: [actual grammar mistakes only].'",
+             "punctuationProblems": "ONLY flag FORMAL punctuation like periods (.) and formal commas. DO NOT flag 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' - these are PERFECT for OnlyFans. Format: 'Found X punctuation errors. Examples: [formal punctuation only].'",
+             "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2], [issue 3]. Total errors: [count]. Keep it under 50 words."
            },
   "guidelinesBreakdown": {
     "salesEffectiveness": "SALES GUIDELINE ANALYSIS: Analyze messages for sales guideline violations. Focus on sales-specific issues like immediate sales requests, lack of relationship building, missing urgency in PPV captions. Provide specific examples of sales guideline violations. Format: 'Found X violations of [sales guideline name]: [specific sales example 1], [specific sales example 2]. Found Y violations of [different sales guideline name]: [different sales example 1], [different sales example 2].'",
@@ -1354,7 +1354,7 @@ ANALYSIS REQUIREMENTS:
           content: prompt
         }
       ],
-      temperature: 0.1, // Lower temperature for faster, more consistent responses
+      temperature: 0.0, // Zero temperature for completely consistent responses
       max_tokens: 4000, // Increased to remove limits and prevent cutoff
       stream: false // Ensure no streaming for faster completion
     });
@@ -2913,15 +2913,32 @@ function formatGrammarText(text, category) {
     return "No errors found - informal OnlyFans language is correct.";
   }
 
-  // Extract specific examples
+  // Check for repetitive errors (same error mentioned multiple times)
+  const errorCounts = {};
   const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
   if (exampleMatches) {
     exampleMatches.forEach(match => {
+      const key = match.toLowerCase();
+      errorCounts[key] = (errorCounts[key] || 0) + 1;
+    });
+    
+    // If any error appears more than once, it's repetitive
+    const hasRepetitiveErrors = Object.values(errorCounts).some(count => count > 1);
+    if (hasRepetitiveErrors) {
+      return "No errors found - analysis contains repetitive errors.";
+    }
+  }
+
+  // Extract specific examples (avoid duplicates)
+  if (exampleMatches) {
+    const uniqueExamples = new Set();
+    exampleMatches.forEach(match => {
       const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
       if (exampleMatch) {
-        examples.push(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+        uniqueExamples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
       }
     });
+    examples.push(...Array.from(uniqueExamples));
   }
   
   // Create formatted analysis
