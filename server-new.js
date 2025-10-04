@@ -1119,19 +1119,12 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `You are an expert OnlyFans chat analyst. Analyze these messages and find DIVERSE, REAL issues. Do NOT repeat the same type of error multiple times. Find different types of problems.
+    const prompt = `Analyze these OnlyFans chat messages and find REAL issues. Return ONLY valid JSON.
 
-MESSAGES TO ANALYZE:
+MESSAGES:
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-CRITICAL INSTRUCTIONS:
-- Find DIFFERENT types of issues - not the same pattern repeated
-- If you find 5 messages with missing apostrophes, only show 1-2 examples
-- Find spelling errors, grammar mistakes, punctuation issues, informal language, sales techniques, engagement strategies
-- Be DIVERSE - show different types of problems, not repetitive examples
-- Quote exact text and explain the specific issue
-
-You MUST return ONLY valid JSON with this EXACT structure:
+Return this EXACT JSON structure with REAL examples from the messages above:
 
 {
   "overallScore": 85,
@@ -1165,24 +1158,24 @@ You MUST return ONLY valid JSON with this EXACT structure:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Message 1: 'recieve' should be 'receive' | Message 5: 'definately' should be 'definitely'",
-    "grammarIssues": "Message 3: Missing apostrophe in 'dont' should be 'don't' | Message 7: 'your' instead of 'you're'",
-    "punctuationProblems": "Message 2: Missing period at end | Message 8: Missing comma after 'however'",
-    "informalLanguage": "Message 4: Using 'u' instead of 'you' | Message 9: Using 'ur' instead of 'your'",
-    "scoreExplanation": "Grammar analysis found 2 spelling errors, 2 grammar issues, 2 punctuation problems, and 2 informal language patterns."
+    "spellingErrors": "Find spelling mistakes in the messages above. List specific examples.",
+    "grammarIssues": "Find grammar mistakes in the messages above. List specific examples.",
+    "punctuationProblems": "Find punctuation issues in the messages above. List specific examples.",
+    "informalLanguage": "Find informal language in the messages above. List specific examples.",
+    "scoreExplanation": "Summarize the grammar analysis with specific counts."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Message 6: Good sales approach with clear pricing '$25 for this exclusive content' | Message 12: Effective PPV promotion 'unlock to see more'",
-    "engagementQuality": "Message 3: Strong engagement question 'how was your day?' | Message 8: Good follow-up 'what do you think?'",
-    "captionQuality": "Message 10: Compelling PPV caption 'you won't want to miss this' | Message 15: Clear value proposition 'exclusive content just for you'",
-    "conversationFlow": "Message 5: Natural conversation flow 'that sounds amazing' | Message 11: Good timing 'perfect timing for this'",
-    "scoreExplanation": "Guidelines analysis found 2 sales techniques, 2 engagement strategies, 2 compelling captions, and 2 good conversation flows."
+    "salesEffectiveness": "Find sales techniques in the messages above. List specific examples.",
+    "engagementQuality": "Find engagement strategies in the messages above. List specific examples.",
+    "captionQuality": "Find PPV captions in the messages above. List specific examples.",
+    "conversationFlow": "Find conversation patterns in the messages above. List specific examples.",
+    "scoreExplanation": "Summarize the guidelines analysis with specific counts."
   },
   "overallBreakdown": {
-    "messageClarity": "Message 2: Clear and easy to understand 'I hope you're having a great day' | Message 7: Well-structured 'Let me know what you think'",
-    "emotionalImpact": "Message 4: Strong emotional connection 'I love talking to you' | Message 9: Personal touch 'you mean so much to me'",
-    "conversionPotential": "Message 6: Good conversion potential 'this exclusive content is perfect for you' | Message 13: Clear call-to-action 'unlock now to see more'",
-    "scoreExplanation": "Overall analysis found 2 clear messages, 2 strong emotional connections, and 2 good conversion opportunities."
+    "messageClarity": "Find clarity issues in the messages above. List specific examples.",
+    "emotionalImpact": "Find emotional connections in the messages above. List specific examples.",
+    "conversionPotential": "Find conversion opportunities in the messages above. List specific examples.",
+    "scoreExplanation": "Summarize the overall analysis with specific counts."
   }
 }
 
