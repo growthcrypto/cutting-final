@@ -2824,7 +2824,8 @@ function formatGrammarText(text, category) {
     'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
     'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
     'inconsistent use of contractions', 'u are instead of you are', 'u and you',
-    'contractions like', 'missing apostrophes', 'informal language'
+    'contractions like', 'missing apostrophes', 'informal language',
+    'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love'
   ];
   
   const hasBadPhrases = badPhrases.some(phrase => text.toLowerCase().includes(phrase));
@@ -2833,8 +2834,16 @@ function formatGrammarText(text, category) {
     return "No errors found - informal OnlyFans language is correct.";
   }
   
-  // Return text as-is, limit length
-  return text.length > 150 ? text.substring(0, 150) + '...' : text;
+  // Clean up repetitive text
+  let cleanText = text
+    .replace(/No significant issues found No significant issues found/g, 'No significant issues found')
+    .replace(/No significant issues found No significant issues found No significant issues found/g, 'No significant issues found')
+    .replace(/Found formal punctuation like periods in some messages Found formal punctuation like periods in some messages/g, 'Found formal punctuation like periods in some messages')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Return cleaned text, limit length
+  return cleanText.length > 150 ? cleanText.substring(0, 150) + '...' : cleanText;
 }
 
 // Helper function to format guidelines text for clean analysis
