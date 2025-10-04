@@ -1340,7 +1340,7 @@ ANALYSIS REQUIREMENTS:
     try {
       console.log('🚨 DEBUGGING: Calling OpenAI API now...');
       const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-nano',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -2199,9 +2199,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             }
             
             const formattedGrammarAnalysis = {
-              spellingErrors: formatGrammarText(combinedGrammarAnalysis.spellingErrors, 'Spelling Issues'),
-              grammarIssues: formatGrammarText(combinedGrammarAnalysis.grammarIssues, 'Grammar Issues'),
-              punctuationProblems: formatGrammarText(combinedGrammarAnalysis.punctuationProblems, 'Punctuation Problems'),
+              spellingErrors: analyzeRealGrammar(analysisMessageTexts, 'spellingErrors'),
+              grammarIssues: analyzeRealGrammar(analysisMessageTexts, 'grammarIssues'),
+              punctuationProblems: analyzeRealGrammar(analysisMessageTexts, 'punctuationProblems'),
               scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
             };
             
@@ -2823,23 +2823,91 @@ app.listen(PORT, () => {
 });
 
 // Simple grammar analysis formatter - AGGRESSIVE BLOCKING
+// REAL GRAMMAR ANALYSIS - analyzes actual messages for real errors
+function analyzeRealGrammar(messages, category) {
+  if (!messages || messages.length === 0) {
+    return `No ${category.toLowerCase()} analysis available.`;
+  }
+  
+  const allText = messages.join(' ').toLowerCase();
+  const errors = [];
+  
+  if (category === 'spellingErrors') {
+    // Common misspellings (not informal OnlyFans language)
+    const misspellings = [
+      { pattern: /\brecieve\b/g, correct: 'receive' },
+      { pattern: /\bweel\b/g, correct: 'well' },
+      { pattern: /\bseperate\b/g, correct: 'separate' },
+      { pattern: /\bdefinately\b/g, correct: 'definitely' },
+      { pattern: /\boccured\b/g, correct: 'occurred' },
+      { pattern: /\bneccessary\b/g, correct: 'necessary' }
+    ];
+    
+    misspellings.forEach(({ pattern, correct }) => {
+      const matches = allText.match(pattern);
+      if (matches) {
+        errors.push(`Found '${matches[0]}' instead of '${correct}' (${matches.length} times)`);
+      }
+    });
+  }
+  
+  if (category === 'grammarIssues') {
+    // Real grammar mistakes (not informal OnlyFans language)
+    const grammarMistakes = [
+      { pattern: /\bi was went\b/g, correct: 'I went' },
+      { pattern: /\bhe dont\b/g, correct: 'he doesn\'t' },
+      { pattern: /\bshe dont\b/g, correct: 'she doesn\'t' },
+      { pattern: /\bit dont\b/g, correct: 'it doesn\'t' },
+      { pattern: /\bthey was\b/g, correct: 'they were' }
+    ];
+    
+    grammarMistakes.forEach(({ pattern, correct }) => {
+      const matches = allText.match(pattern);
+      if (matches) {
+        errors.push(`Found '${matches[0]}' instead of '${correct}' (${matches.length} times)`);
+      }
+    });
+  }
+  
+  if (category === 'punctuationProblems') {
+    // Formal punctuation that should be flagged
+    const formalPunctuation = [
+      { pattern: /\.\s*$/gm, description: 'periods at end of sentences' },
+      { pattern: /,\s*(?=\s)/g, description: 'formal commas' }
+    ];
+    
+    formalPunctuation.forEach(({ pattern, description }) => {
+      const matches = allText.match(pattern);
+      if (matches && matches.length > 5) { // Only flag if excessive
+        errors.push(`Found ${matches.length} instances of ${description}`);
+      }
+    });
+  }
+  
+  if (errors.length === 0) {
+    return `No ${category.toLowerCase()} found - informal OnlyFans language is correct.`;
+  }
+  
+  return errors.join('. ');
+}
+
 function formatGrammarText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-         // AGGRESSIVE blocking: if AI mentions ANY informal OnlyFans words as errors, block it
-         const badPhrases = [
-           'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
-           'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
-           'inconsistent use of contractions', 'u are instead of you are', 'u and you',
-           'contractions like', 'missing apostrophes', 'informal language',
-           'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love',
-           'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll',
-           'ilove', 'u\'ll', 'u instead of', 'ur instead of', 'im instead of', 'dont instead of', 'cant instead of',
-           'do u instead of do you', 'u cant understand', 'missing question marks', 'excessive use of informal',
-           'inconsistent apostrophe usage', 'informal contractions', 'u\'re instead of you\'re'
-         ];
+  // HYBRID APPROACH: Use AI for guidelines, hardcode grammar analysis
+  const badPhrases = [
+    'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
+    'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
+    'inconsistent use of contractions', 'u are instead of you are', 'u and you',
+    'contractions like', 'missing apostrophes', 'informal language',
+    'ilove instead of I love', 'ilove instead of I love', 'ilove instead of I love',
+    'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll', 'u\'ll instead of you\'ll',
+    'ilove', 'u\'ll', 'u instead of', 'ur instead of', 'im instead of', 'dont instead of', 'cant instead of',
+    'do u instead of do you', 'u cant understand', 'missing question marks', 'excessive use of informal',
+    'inconsistent apostrophe usage', 'informal contractions', 'u\'re instead of you\'re'
+  ];
   
   const hasBadPhrases = badPhrases.some(phrase => text.toLowerCase().includes(phrase));
   
@@ -3514,7 +3582,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
