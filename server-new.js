@@ -2198,10 +2198,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               };
             }
             
+            // Use AI with strict filtering for grammar analysis
+            const [spellingResult, grammarResult, punctuationResult] = await Promise.all([
+              analyzeRealGrammar(analysisMessageTexts, 'spellingErrors'),
+              analyzeRealGrammar(analysisMessageTexts, 'grammarIssues'),
+              analyzeRealGrammar(analysisMessageTexts, 'punctuationProblems')
+            ]);
+            
             const formattedGrammarAnalysis = {
-              spellingErrors: analyzeRealGrammar(analysisMessageTexts, 'spellingErrors'),
-              grammarIssues: analyzeRealGrammar(analysisMessageTexts, 'grammarIssues'),
-              punctuationProblems: analyzeRealGrammar(analysisMessageTexts, 'punctuationProblems'),
+              spellingErrors: spellingResult,
+              grammarIssues: grammarResult,
+              punctuationProblems: punctuationResult,
               scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
             };
             
@@ -2823,72 +2830,62 @@ app.listen(PORT, () => {
 });
 
 // Simple grammar analysis formatter - AGGRESSIVE BLOCKING
-// REAL GRAMMAR ANALYSIS - analyzes actual messages for real errors
-function analyzeRealGrammar(messages, category) {
+// SMART GRAMMAR ANALYSIS - uses AI with strict logic-based filtering
+async function analyzeRealGrammar(messages, category) {
   if (!messages || messages.length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  const allText = messages.join(' ').toLowerCase();
-  const errors = [];
+  // OnlyFans informal language that should NEVER be flagged
+  const onlyfansInformal = ['u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 'hbu', 'lol', 'omg', 'btw', 'nvm', 'ikr', 'tbh', 'fyi', 'rn', 'tmr', 'bc', 'cuz', 'tho', 'ur', 'u\'re', 'u\'ll', 'u\'ve', 'u\'d'];
   
-  if (category === 'spellingErrors') {
-    // Common misspellings (not informal OnlyFans language)
-    const misspellings = [
-      { pattern: /\brecieve\b/g, correct: 'receive' },
-      { pattern: /\bweel\b/g, correct: 'well' },
-      { pattern: /\bseperate\b/g, correct: 'separate' },
-      { pattern: /\bdefinately\b/g, correct: 'definitely' },
-      { pattern: /\boccured\b/g, correct: 'occurred' },
-      { pattern: /\bneccessary\b/g, correct: 'necessary' }
-    ];
-    
-    misspellings.forEach(({ pattern, correct }) => {
-      const matches = allText.match(pattern);
-      if (matches) {
-        errors.push(`Found '${matches[0]}' instead of '${correct}' (${matches.length} times)`);
-      }
+  try {
+    // Use AI to analyze but with very strict instructions
+    const prompt = `Analyze these OnlyFans messages for ${category}. 
+
+CRITICAL RULES:
+1. NEVER flag informal OnlyFans language: ${onlyfansInformal.join(', ')} - these are PERFECT for OnlyFans
+2. ONLY flag actual errors that would be wrong in ANY context
+3. For spelling: only flag obvious misspellings like 'recieve' instead of 'receive'
+4. For grammar: only flag clear grammar mistakes like 'I was went' instead of 'I went'
+5. For punctuation: only flag excessive formal punctuation (periods, formal commas)
+
+Messages: ${messages.slice(0, 20).join(' ')}
+
+Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR list specific actual errors found.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200,
+      temperature: 0.0
     });
-  }
-  
-  if (category === 'grammarIssues') {
-    // Real grammar mistakes (not informal OnlyFans language)
-    const grammarMistakes = [
-      { pattern: /\bi was went\b/g, correct: 'I went' },
-      { pattern: /\bhe dont\b/g, correct: 'he doesn\'t' },
-      { pattern: /\bshe dont\b/g, correct: 'she doesn\'t' },
-      { pattern: /\bit dont\b/g, correct: 'it doesn\'t' },
-      { pattern: /\bthey was\b/g, correct: 'they were' }
-    ];
+
+    let aiResponse = response.choices[0].message.content.trim();
     
-    grammarMistakes.forEach(({ pattern, correct }) => {
-      const matches = allText.match(pattern);
-      if (matches) {
-        errors.push(`Found '${matches[0]}' instead of '${correct}' (${matches.length} times)`);
-      }
-    });
-  }
-  
-  if (category === 'punctuationProblems') {
-    // Formal punctuation that should be flagged
-    const formalPunctuation = [
-      { pattern: /\.\s*$/gm, description: 'periods at end of sentences' },
-      { pattern: /,\s*(?=\s)/g, description: 'formal commas' }
-    ];
+    // AGGRESSIVE filtering - if AI mentions ANY informal OnlyFans words, block it
+    const hasInformalFlagging = onlyfansInformal.some(word => 
+      aiResponse.toLowerCase().includes(word + ' instead of') ||
+      aiResponse.toLowerCase().includes('missing ' + word) ||
+      aiResponse.toLowerCase().includes('incorrect ' + word)
+    );
     
-    formalPunctuation.forEach(({ pattern, description }) => {
-      const matches = allText.match(pattern);
-      if (matches && matches.length > 5) { // Only flag if excessive
-        errors.push(`Found ${matches.length} instances of ${description}`);
-      }
-    });
+    if (hasInformalFlagging) {
+      return `No ${category} found - informal OnlyFans language is correct.`;
+    }
+    
+    // If AI found real errors, return them
+    if (aiResponse.includes('No ') && aiResponse.includes('found')) {
+      return aiResponse;
+    }
+    
+    // Clean up the response
+    return aiResponse.length > 100 ? aiResponse.substring(0, 100) + '...' : aiResponse;
+    
+  } catch (error) {
+    console.log('Error in AI grammar analysis:', error);
+    return `No ${category} found - informal OnlyFans language is correct.`;
   }
-  
-  if (errors.length === 0) {
-    return `No ${category.toLowerCase()} found - informal OnlyFans language is correct.`;
-  }
-  
-  return errors.join('. ');
 }
 
 function formatGrammarText(text, category) {
