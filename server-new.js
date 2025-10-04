@@ -1198,9 +1198,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Analyze spelling errors in OnlyFans messages. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. DO NOT flag informal language like 'u', 'ur', 'im', 'dont', 'cant' - these are PERFECT for OnlyFans. Provide detailed analysis with specific examples and counts.",
-             "grammarIssues": "Analyze grammar errors in OnlyFans messages. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't', sentence fragments. DO NOT flag informal language like 'u are', 'dont know', 'cant understand' - these are PERFECT for OnlyFans. Provide detailed analysis with specific examples and counts.",
-             "punctuationProblems": "Analyze punctuation errors in OnlyFans messages. ONLY flag FORMAL punctuation like 'How are you.' (periods), 'Hello, how are you,' (formal commas). DO NOT flag multiple punctuation like 'how are u???', 'omg!!!' - these are PERFECT for OnlyFans. Provide detailed analysis with specific examples and counts.",
+             "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'dont', 'cant', 'ilove' are PERFECT for OnlyFans. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. Format as: 'Found X spelling errors. Examples: [specific examples].'",
+             "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'u are', 'dont know', 'cant understand', 'im happy', 'u're' are PERFECT for OnlyFans. ONLY flag real grammar mistakes like 'I was went' instead of 'I went', 'he don't' instead of 'he doesn't'. Format as: 'Found X grammar errors. Examples: [specific examples].'",
+             "punctuationProblems": "CRITICAL: DO NOT FLAG INFORMAL PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???' are PERFECT for OnlyFans. ONLY flag FORMAL punctuation like 'How are you.' (periods), 'Hello, how are you,' (formal commas). Format as: 'Found X punctuation errors. Examples: [specific examples].'",
              "scoreExplanation": "Provide a comprehensive summary of the grammar analysis with specific counts and examples of the main issues found."
            },
   "guidelinesBreakdown": {
@@ -2799,12 +2799,68 @@ function formatGrammarText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Just return the AI's analysis as-is, with minimal cleanup
+  // Clean up repetitive text and format properly
   let cleanText = text
+    .replace(/No significant.*?found/g, '') // Remove repetitive "no significant issues found"
+    .replace(/Multiple.*?found/g, '') // Remove repetitive "multiple errors found"
+    .replace(/Total.*?errors?:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/For example,|For instance,|such as|like/g, '') // Remove repetitive phrases
+    .replace(/in multiple messages|across messages|in various messages/g, '') // Remove repetitive phrases
+    .replace(/Inconsistent use of contractions:/g, '') // Remove informal language errors
+    .replace(/'u are' and 'you are' used interchangeably/g, '') // Remove informal language errors
+    .replace(/Missing apostrophes in contractions like 'dont' instead of 'don't'/g, '') // Remove informal language errors
+    .replace(/Missing apostrophes in contractions like 'im' instead of 'I'm'/g, '') // Remove informal language errors
+    .replace(/Missing apostrophes in contractions like 'u're' instead of 'you're'/g, '') // Remove informal language errors
+    .replace(/Excessive use of question marks in 'how are u???'/g, '') // Remove informal language errors
+    .replace(/Excessive use of question marks in 'do u like what u're seeing hee?'/g, '') // Remove informal language errors
+    .replace(/Found 'u' instead of 'you' in multiple messages/g, '') // Remove informal language errors
+    .replace(/Found 'ilove' instead of 'I love' in multiple messages/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  return cleanText;
+  // Extract unique errors and format them nicely
+  const errors = [];
+  const examples = [];
+  
+  // Extract error counts
+  const countMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
+  if (countMatches) {
+    countMatches.forEach(match => {
+      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
+      if (countMatch) {
+        errors.push(`${countMatch[1]} ${countMatch[2]} ${countMatch[3]}`);
+      }
+    });
+  }
+  
+  // Extract specific examples
+  const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
+  if (exampleMatches) {
+    exampleMatches.forEach(match => {
+      const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
+      if (exampleMatch) {
+        examples.push(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+      }
+    });
+  }
+  
+  // Create formatted analysis
+  let analysis = '';
+  
+  if (errors.length > 0) {
+    analysis += `Found ${errors.join(', ')}. `;
+  }
+  
+  if (examples.length > 0) {
+    analysis += `Examples: ${examples.slice(0, 3).join(', ')}.`;
+  }
+  
+  // If no structured content, return cleaned text
+  if (!analysis.trim()) {
+    return cleanText.length > 200 ? cleanText.substring(0, 200) + '...' : cleanText;
+  }
+  
+  return analysis;
 }
 
 // Helper function to format guidelines text for clean analysis
