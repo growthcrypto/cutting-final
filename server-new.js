@@ -1934,8 +1934,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🚨 ABOUT TO CALL generateAIAnalysis');
       console.log('🚨 analysisMessageTexts:', analysisMessageTexts);
       console.log('🚨 analysisMessageTexts length:', analysisMessageTexts ? analysisMessageTexts.length : 0);
+      console.log('🚨 analyticsData keys:', Object.keys(analyticsData));
+      console.log('🚨 analysisType:', analysisType);
+      console.log('🚨 interval:', interval);
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
       console.log('🚨 generateAIAnalysis COMPLETED');
+      console.log('🚨 aiAnalysis keys:', Object.keys(aiAnalysis));
       
       // Add raw metrics to response for UI display
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
@@ -2829,6 +2833,9 @@ async function generateAIAnalysis(analyticsData, analysisType, interval, message
     console.log('🚨 STARTING AI ANALYSIS FUNCTION');
     console.log('🚨 MESSAGE CONTENT:', messageContent);
     console.log('🚨 MESSAGE CONTENT LENGTH:', messageContent ? messageContent.length : 0);
+    console.log('🚨 ANALYTICS DATA:', analyticsData);
+    console.log('🚨 ANALYSIS TYPE:', analysisType);
+    console.log('🚨 INTERVAL:', interval);
     
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
