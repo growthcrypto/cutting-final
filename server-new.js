@@ -1343,7 +1343,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for completely consistent responses
-      max_tokens: 6000, // Increased to prevent summary cutoff
+      max_tokens: 4000, // Maximum supported by gpt-3.5-turbo
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
