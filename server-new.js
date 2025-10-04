@@ -2874,13 +2874,8 @@ Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR 
       return `No ${category} found - informal OnlyFans language is correct.`;
     }
     
-    // If AI found real errors, return them
-    if (aiResponse.includes('No ') && aiResponse.includes('found')) {
-      return aiResponse;
-    }
-    
-    // Clean up the response
-    return aiResponse.length > 100 ? aiResponse.substring(0, 100) + '...' : aiResponse;
+    // Return raw AI response without formatting
+    return aiResponse;
     
   } catch (error) {
     console.log('Error in AI grammar analysis:', error);
@@ -2912,18 +2907,8 @@ function formatGrammarText(text, category) {
     return "No errors found - informal OnlyFans language is correct.";
   }
   
-  // Clean up repetitive text
-  let cleanText = text
-    .replace(/No significant issues found No significant issues found/g, 'No significant issues found')
-    .replace(/No significant issues found No significant issues found No significant issues found/g, 'No significant issues found')
-    .replace(/Found formal punctuation like periods in some messages Found formal punctuation like periods in some messages/g, 'Found formal punctuation like periods in some messages')
-    .replace(/Found formal punctuation like periods in some messages Punctuation problems found/g, 'Found formal punctuation like periods in some messages')
-    .replace(/Spelling errors found:.*?No significant issues found/g, 'No significant issues found')
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  // Return cleaned text, limit length
-  return cleanText.length > 150 ? cleanText.substring(0, 150) + '...' : cleanText;
+  // Return raw text without formatting
+  return text;
 }
 
 // Helper function to format guidelines text for clean analysis
