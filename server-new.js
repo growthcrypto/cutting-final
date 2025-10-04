@@ -1935,7 +1935,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         return fromSample;
       })();
 
+      console.log('🚨 ABOUT TO CALL generateAIAnalysis');
+      console.log('🚨 analysisMessageTexts:', analysisMessageTexts);
+      console.log('🚨 analysisMessageTexts length:', analysisMessageTexts ? analysisMessageTexts.length : 0);
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
+      console.log('🚨 generateAIAnalysis COMPLETED');
       
       // Add raw metrics to response for UI display
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
@@ -2826,6 +2830,10 @@ function cleanAnalysisResponse(analysis) {
 // AI Analysis function using OpenAI
 async function generateAIAnalysis(analyticsData, analysisType, interval, messageContent = []) {
   try {
+    console.log('🚨 STARTING AI ANALYSIS FUNCTION');
+    console.log('🚨 MESSAGE CONTENT:', messageContent);
+    console.log('🚨 MESSAGE CONTENT LENGTH:', messageContent ? messageContent.length : 0);
+    
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
       console.log('OpenAI not configured in generateAIAnalysis, returning fallback analysis');
