@@ -1993,26 +1993,46 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔄 Re-analysis overallBreakdown:', !!reAnalysis.overallBreakdown);
           
           // FORCE UPDATE the breakdown sections with new analysis
-          aiAnalysis.grammarBreakdown = reAnalysis.grammarBreakdown || {
-            spellingErrors: "No spelling errors found",
-            grammarIssues: "No grammar issues found",
-            punctuationProblems: "No punctuation problems found",
-            informalLanguage: "No informal language found",
-            scoreExplanation: "Grammar analysis completed"
-          };
-          aiAnalysis.guidelinesBreakdown = reAnalysis.guidelinesBreakdown || {
-            salesEffectiveness: "No sales techniques found",
-            engagementQuality: "No engagement strategies found",
-            captionQuality: "No PPV captions found",
-            conversationFlow: "No conversation patterns found",
-            scoreExplanation: "Guidelines analysis completed"
-          };
-          aiAnalysis.overallBreakdown = reAnalysis.overallBreakdown || {
-            messageClarity: "No clarity issues found",
-            emotionalImpact: "No emotional connections found",
-            conversionPotential: "No conversion opportunities found",
-            scoreExplanation: "Overall analysis completed"
-          };
+          if (reAnalysis.grammarBreakdown) {
+            aiAnalysis.grammarBreakdown = reAnalysis.grammarBreakdown;
+            console.log('🔄 Updated grammarBreakdown with AI analysis');
+          } else {
+            console.log('🔄 AI did not return grammarBreakdown, using fallback');
+            aiAnalysis.grammarBreakdown = {
+              spellingErrors: "AI analysis failed - no spelling errors found",
+              grammarIssues: "AI analysis failed - no grammar issues found",
+              punctuationProblems: "AI analysis failed - no punctuation problems found",
+              informalLanguage: "AI analysis failed - no informal language found",
+              scoreExplanation: "AI analysis failed - grammar analysis completed"
+            };
+          }
+          
+          if (reAnalysis.guidelinesBreakdown) {
+            aiAnalysis.guidelinesBreakdown = reAnalysis.guidelinesBreakdown;
+            console.log('🔄 Updated guidelinesBreakdown with AI analysis');
+          } else {
+            console.log('🔄 AI did not return guidelinesBreakdown, using fallback');
+            aiAnalysis.guidelinesBreakdown = {
+              salesEffectiveness: "AI analysis failed - no sales techniques found",
+              engagementQuality: "AI analysis failed - no engagement strategies found",
+              captionQuality: "AI analysis failed - no PPV captions found",
+              conversationFlow: "AI analysis failed - no conversation patterns found",
+              scoreExplanation: "AI analysis failed - guidelines analysis completed"
+            };
+          }
+          
+          if (reAnalysis.overallBreakdown) {
+            aiAnalysis.overallBreakdown = reAnalysis.overallBreakdown;
+            console.log('🔄 Updated overallBreakdown with AI analysis');
+          } else {
+            console.log('🔄 AI did not return overallBreakdown, using fallback');
+            aiAnalysis.overallBreakdown = {
+              messageClarity: "AI analysis failed - no clarity issues found",
+              emotionalImpact: "AI analysis failed - no emotional connections found",
+              conversionPotential: "AI analysis failed - no conversion opportunities found",
+              scoreExplanation: "AI analysis failed - overall analysis completed"
+            };
+          }
           console.log('🔄 FORCED UPDATE COMPLETED');
         } catch (error) {
           console.log('🔄 Re-analysis failed:', error.message);
