@@ -1316,6 +1316,9 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 AI RESPONSE CONTAINS MESSAGES:', aiResponse.includes('MESSAGES:'));
     console.log('🚨 AI RESPONSE CONTAINS JSON:', aiResponse.includes('{'));
     console.log('🚨 AI RESPONSE CONTAINS UNDEFINED:', aiResponse.includes('undefined'));
+    console.log('🚨 AI RESPONSE CONTAINS OVERALL:', aiResponse.includes('overallBreakdown'));
+    console.log('🚨 AI RESPONSE CONTAINS GUIDELINES:', aiResponse.includes('guidelinesBreakdown'));
+    console.log('🚨 AI RESPONSE CONTAINS SCORE:', aiResponse.includes('scoreExplanation'));
     console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
     console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
     console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
