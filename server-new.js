@@ -1168,24 +1168,24 @@ Return this EXACT JSON with DIVERSE examples from the messages:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Find DIVERSE spelling errors from different messages. List 3-5 different examples.",
-    "grammarIssues": "Find DIVERSE grammar mistakes from different messages. List 3-5 different examples.",
-    "punctuationProblems": "Find DIVERSE punctuation issues from different messages. List 3-5 different examples.",
-    "informalLanguage": "Find DIVERSE informal language from different messages. List 3-5 different examples.",
-    "scoreExplanation": "Summarize the grammar analysis with specific counts of different error types found."
+    "spellingErrors": "Identify the MAIN spelling issues this chatter needs to fix. Be specific.",
+    "grammarIssues": "Identify the MAIN grammar issues this chatter needs to fix. Be specific.",
+    "punctuationProblems": "Identify the MAIN punctuation issues this chatter needs to fix. Be specific.",
+    "informalLanguage": "Identify the MAIN informal language patterns this chatter uses. Be specific.",
+    "scoreExplanation": "Summary: What are the TOP 3 grammar areas this chatter should focus on improving?"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Find DIVERSE sales techniques from different messages. List 3-5 different examples.",
-    "engagementQuality": "Find DIVERSE engagement strategies from different messages. List 3-5 different examples.",
-    "captionQuality": "Find DIVERSE PPV captions from different messages. List 3-5 different examples.",
-    "conversationFlow": "Find DIVERSE conversation patterns from different messages. List 3-5 different examples.",
-    "scoreExplanation": "Summarize the guidelines analysis with specific counts of different techniques found."
+    "salesEffectiveness": "What are the MAIN strengths/weaknesses in this chatter's sales approach? Be specific.",
+    "engagementQuality": "What are the MAIN strengths/weaknesses in this chatter's engagement? Be specific.",
+    "captionQuality": "What are the MAIN strengths/weaknesses in this chatter's PPV captions? Be specific.",
+    "conversationFlow": "What are the MAIN strengths/weaknesses in this chatter's conversation flow? Be specific.",
+    "scoreExplanation": "Summary: What are the TOP 3 areas this chatter should focus on to improve sales?"
   },
   "overallBreakdown": {
-    "messageClarity": "Find DIVERSE clarity issues from different messages. List 3-5 different examples.",
-    "emotionalImpact": "Find DIVERSE emotional connections from different messages. List 3-5 different examples.",
-    "conversionPotential": "Find DIVERSE conversion opportunities from different messages. List 3-5 different examples.",
-    "scoreExplanation": "Summarize the overall analysis with specific counts of different areas found."
+    "messageClarity": "How clear and effective is this chatter's overall communication? Be specific about strengths/weaknesses.",
+    "emotionalImpact": "How well does this chatter build emotional connections? Be specific about strengths/weaknesses.",
+    "conversionPotential": "What is this chatter's conversion potential? Be specific about what's working and what isn't.",
+    "scoreExplanation": "Summary: What are the TOP 3 priorities for this chatter to maximize revenue?"
   }
 }
 
