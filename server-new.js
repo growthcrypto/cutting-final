@@ -1233,6 +1233,8 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
          12. ONLY flag actual grammar mistakes like 'I was went' instead of 'I went'
          13. ONLY flag formal punctuation like periods (.) and formal commas
          14. CRITICAL: PROVIDE DIFFERENT SPECIFIC EXAMPLES FOR EACH GUIDELINE VIOLATION - DO NOT REPEAT THE SAME EXAMPLE
+         15. CRITICAL: PUNCTUATION ANALYSIS - DO NOT FLAG 'u?', 'you?', 'how are u???', 'wyd now/', 'why?' as errors - these are PERFECT for OnlyFans
+         16. CRITICAL: PUNCTUATION ANALYSIS - ONLY flag FORMAL punctuation like 'How are you.' (periods), 'Hello, how are you,' (formal commas)
 
 Return ONLY the JSON object above. No additional text.
 
@@ -2830,6 +2832,9 @@ function formatGrammarText(text, category) {
     .replace(/'how are u\?' instead of 'how are u\?'/g, '') // Remove informal language errors
     .replace(/'u\?' instead of 'you\?'/g, '') // Remove informal language errors
     .replace(/'u' instead of 'you'/g, '') // Remove informal language errors
+    .replace(/'how are u\?' instead of 'how are you\?'/g, '') // Remove informal language errors
+    .replace(/'wyd now/' instead of 'what are you doing\?'/g, '') // Remove informal language errors
+    .replace(/'why\?' instead of 'why'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2879,7 +2884,10 @@ function formatGrammarText(text, category) {
     /'really\?'\s+instead\s+of\s+'really'/g,
     /'how are u\?'\s+instead\s+of\s+'how are u\?'/g,
     /'u\?'\s+instead\s+of\s+'you\?'/g,
-    /'u'\s+instead\s+of\s+'you'/g
+    /'u'\s+instead\s+of\s+'you'/g,
+    /'how are u\?'\s+instead\s+of\s+'how are you\?'/g,
+    /'wyd now/'\s+instead\s+of\s+'what are you doing\?'/g,
+    /'why\?'\s+instead\s+of\s+'why'/g
   ];
   
   // Don't block analysis - let the AI do its job with better instructions
