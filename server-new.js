@@ -1200,7 +1200,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
            "grammarBreakdown": {
              "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're' are PERFECT for OnlyFans. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. NEVER suggest changing 'u' to 'you' or 'dont' to 'don't'. Format as: 'Found X spelling errors. Examples: [actual misspellings only].'",
              "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'u are', 'dont know', 'cant understand', 'im happy', 'u're', 'he dont' are PERFECT for OnlyFans. ONLY flag real grammar mistakes like 'I was went' instead of 'I went'. NEVER suggest changing informal to formal language. Format as: 'Found X grammar errors. Examples: [actual grammar mistakes only].'",
-             "punctuationProblems": "CRITICAL: DO NOT FLAG INFORMAL PUNCTUATION AS ERRORS. 'how are u???', 'omg!!!', 'really???', 'how are u?' are PERFECT for OnlyFans. ONLY flag FORMAL punctuation like 'How are you.' (periods), 'Hello, how are you,' (formal commas). NEVER suggest changing multiple punctuation to single punctuation. Format as: 'Found X punctuation errors. Examples: [formal punctuation only].'",
+             "punctuationProblems": "CRITICAL: PUNCTUATION ANALYSIS IS ONLY FOR FORMAL PUNCTUATION ERRORS. DO NOT FLAG INFORMAL LANGUAGE AS PUNCTUATION ERRORS. 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' are ALL PERFECT for OnlyFans. ONLY flag FORMAL punctuation like periods (.) at end of sentences, formal commas in lists. NEVER flag informal pronouns, contractions, or multiple punctuation. Format as: 'Found X punctuation errors. Examples: [formal punctuation only like periods and formal commas].'",
              "scoreExplanation": "Provide a comprehensive summary of the grammar analysis with specific counts and examples of the main issues found."
            },
   "guidelinesBreakdown": {
@@ -2827,6 +2827,8 @@ function formatGrammarText(text, category) {
     .replace(/'how are u\?\?\?' instead of 'how are you\?'/g, '') // Remove informal language errors
     .replace(/'really\?' instead of 'really'/g, '') // Remove informal language errors
     .replace(/'how are u\?' instead of 'how are u\?'/g, '') // Remove informal language errors
+    .replace(/'u\?' instead of 'you\?'/g, '') // Remove informal language errors
+    .replace(/'u' instead of 'you'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2874,7 +2876,9 @@ function formatGrammarText(text, category) {
     /'u\?\?\?'\s+instead\s+of\s+'u\?'/g,
     /'how are u\?\?\?'\s+instead\s+of\s+'how are you\?'/g,
     /'really\?'\s+instead\s+of\s+'really'/g,
-    /'how are u\?'\s+instead\s+of\s+'how are u\?'/g
+    /'how are u\?'\s+instead\s+of\s+'how are u\?'/g,
+    /'u\?'\s+instead\s+of\s+'you\?'/g,
+    /'u'\s+instead\s+of\s+'you'/g
   ];
   
   // Don't block analysis - let the AI do its job with better instructions
