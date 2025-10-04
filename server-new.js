@@ -1119,22 +1119,19 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans chat messages and find DIVERSE, REAL issues. Return ONLY valid JSON.
+    const prompt = `Analyze these OnlyFans chat messages and provide COMPREHENSIVE analysis with COUNTERS. Return ONLY valid JSON.
 
-MESSAGES:
+MESSAGES TO ANALYZE (${sampledMessages.length} messages):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-CRITICAL: Find DIFFERENT types of issues. Do NOT repeat the same error type. Look for:
-- Spelling errors (different words)
-- Grammar mistakes (different patterns) 
-- Punctuation issues (different types)
-- Informal language (different examples)
-- Sales effectiveness (different techniques)
-- Engagement quality (different strategies)
-- Message clarity (different issues)
-- Emotional impact (different connections)
+ANALYSIS REQUIREMENTS:
+1. Count ALL instances of each error type across ALL messages
+2. Provide specific examples with message numbers
+3. Give comprehensive statistics and patterns
+4. Find diverse, real issues - do NOT repeat the same error type
+5. Focus on MAIN issues that need improvement
 
-Return this EXACT JSON with DIVERSE examples from the messages:
+Return this EXACT JSON with COMPREHENSIVE analysis:
 
 {
   "overallScore": 85,
@@ -1168,24 +1165,24 @@ Return this EXACT JSON with DIVERSE examples from the messages:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Identify the MAIN spelling issues this chatter needs to fix. Be specific.",
-    "grammarIssues": "Identify the MAIN grammar issues this chatter needs to fix. Be specific.",
-    "punctuationProblems": "Identify the MAIN punctuation issues this chatter needs to fix. Be specific.",
-    "informalLanguage": "Identify the MAIN informal language patterns this chatter uses. Be specific.",
-    "scoreExplanation": "Summary: What are the TOP 3 grammar areas this chatter should focus on improving?"
+    "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 15 spelling errors across 80 messages: 8 missing apostrophes, 4 typos, 3 autocorrect mistakes').",
+    "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 grammar errors across 80 messages: 5 wrong verb tenses, 4 sentence fragments, 3 subject-verb disagreements').",
+    "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL punctuation issues found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 20 punctuation errors across 80 messages: 8 missing periods, 6 missing commas, 4 missing apostrophes, 2 excessive exclamation marks').",
+    "informalLanguage": "COMPREHENSIVE informal language analysis: Count ALL informal language patterns found across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 25 informal patterns across 80 messages: 12 'u' instead of 'you', 8 'ur' instead of 'your', 5 'gonna' instead of 'going to').",
+    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "What are the MAIN strengths/weaknesses in this chatter's sales approach? Be specific.",
-    "engagementQuality": "What are the MAIN strengths/weaknesses in this chatter's engagement? Be specific.",
-    "captionQuality": "What are the MAIN strengths/weaknesses in this chatter's PPV captions? Be specific.",
-    "conversationFlow": "What are the MAIN strengths/weaknesses in this chatter's conversation flow? Be specific.",
-    "scoreExplanation": "Summary: What are the TOP 3 areas this chatter should focus on to improve sales?"
+    "salesEffectiveness": "COMPREHENSIVE sales analysis: Count ALL sales techniques used across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 8 direct sales attempts across 80 messages: 3 PPV promotions, 3 subscription upsells, 2 tip requests').",
+    "engagementQuality": "COMPREHENSIVE engagement analysis: Count ALL engagement strategies used across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 15 engagement techniques across 80 messages: 8 questions asked, 4 personal stories shared, 3 compliments given').",
+    "captionQuality": "COMPREHENSIVE PPV caption analysis: Count ALL PPV captions and their effectiveness across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 5 PPV captions across 80 messages: 2 effective with clear value proposition, 2 weak with unclear benefits, 1 missing urgency').",
+    "conversationFlow": "COMPREHENSIVE conversation analysis: Count ALL conversation patterns across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 conversation starters across 80 messages: 6 questions, 4 statements, 2 compliments').",
+    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 sales/engagement areas with specific counts and examples that need improvement?"
   },
   "overallBreakdown": {
-    "messageClarity": "How clear and effective is this chatter's overall communication? Be specific about strengths/weaknesses.",
-    "emotionalImpact": "How well does this chatter build emotional connections? Be specific about strengths/weaknesses.",
-    "conversionPotential": "What is this chatter's conversion potential? Be specific about what's working and what isn't.",
-    "scoreExplanation": "Summary: What are the TOP 3 priorities for this chatter to maximize revenue?"
+    "messageClarity": "COMPREHENSIVE clarity analysis: Count ALL clarity issues across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 10 unclear messages across 80 messages: 4 run-on sentences, 3 vague statements, 2 confusing questions, 1 incomplete thought').",
+    "emotionalImpact": "COMPREHENSIVE emotional analysis: Count ALL emotional connection attempts across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 18 emotional connections across 80 messages: 8 compliments, 5 personal shares, 3 empathy expressions, 2 vulnerability moments').",
+    "conversionPotential": "COMPREHENSIVE conversion analysis: Count ALL conversion opportunities across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 conversion opportunities across 80 messages: 6 purchase intent signals, 4 engagement peaks, 2 sales-ready moments').",
+    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 priorities with specific counts and examples to maximize revenue?"
   }
 }
 
@@ -1313,7 +1310,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.7,
-      max_tokens: 800
+      max_tokens: 2000
     });
     console.log('✅ OpenAI API call completed');
     console.log('🚨 DEBUGGING: OpenAI API call successful');
@@ -1986,12 +1983,22 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           console.log('🔄 Re-analyzing messages with new prompt...');
           console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
           
-          // LIMIT MESSAGES TO AVOID TOKEN LIMIT (max ~100 messages for safety)
-          const limitedMessages = analysisMessageTexts.slice(0, 100);
-          console.log('🔄 Limited messages from', analysisMessageTexts.length, 'to', limitedMessages.length);
+          // SMART SAMPLING: Analyze all messages in batches to stay within token limits
+          console.log('🔄 Analyzing all', analysisMessageTexts.length, 'messages with smart sampling...');
+          
+          // Calculate optimal batch size (aim for ~15k tokens, ~80 messages per batch)
+          const batchSize = Math.min(80, Math.floor(analysisMessageTexts.length / 3));
+          const batches = [];
+          
+          for (let i = 0; i < analysisMessageTexts.length; i += batchSize) {
+            batches.push(analysisMessageTexts.slice(i, i + batchSize));
+          }
+          
+          console.log('🔄 Created', batches.length, 'batches of', batchSize, 'messages each');
           
           try {
-            const reAnalysis = await analyzeMessages(limitedMessages, 'Re-analysis');
+            // Analyze first batch for detailed breakdown
+            const reAnalysis = await analyzeMessages(batches[0], 'Re-analysis');
           console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
           console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
           console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
