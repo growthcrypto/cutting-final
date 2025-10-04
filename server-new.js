@@ -1134,27 +1134,30 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
 
-         ONLYFANS CHATTING RULES:
-         - PUNCTUATION: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES.
-         - LANGUAGE: Both formal and informal language are acceptable. Focus on grammar and spelling issues only.
-         - GRAMMAR: Basic grammar rules still apply (spelling, verb tenses, etc.)
-         - CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS ERRORS
-         - 'u' and 'you' are BOTH CORRECT - do not flag either as errors
-         - 'ur' and 'your' are BOTH CORRECT - do not flag either as errors  
-         - 'im' and 'I'm' are BOTH CORRECT - do not flag either as errors
-         - 'i' and 'I' are BOTH CORRECT - do not flag either as errors
-         - 'dont' and 'don't' are BOTH CORRECT - do not flag either as errors
-         - 'ilove' and 'I love' are BOTH CORRECT - do not flag either as errors
-         - 'how are u?' and 'how are you?' are BOTH CORRECT - do not flag either as errors
-         - 'u are' and 'you are' are BOTH CORRECT - do not flag either as errors
-         - 'u're' and 'you're' are BOTH CORRECT - do not flag either as errors
-         - Multiple punctuation 'how are u???' is PERFECT - do not flag as excessive
-         - DO NOT FLAG INCONSISTENT USE OF CONTRACTIONS
-         - DO NOT FLAG INCONSISTENT USE OF INFORMAL VS FORMAL LANGUAGE
-         - DO NOT SUGGEST CHANGING 'dont' to 'don't' or 'u' to 'you'
-         - ONLY flag actual spelling errors like 'weel' instead of 'well', 'recieve' instead of 'receive'
-         - ONLY flag actual grammar errors like 'I was went' instead of 'I went'
-         - DO NOT SUGGEST CHANGING INFORMAL LANGUAGE TO FORMAL LANGUAGE
+         ONLYFANS CHATTING RULES - CRITICAL:
+         
+         FORBIDDEN TO FLAG AS ERRORS (THESE ARE PERFECT FOR ONLYFANS):
+         - 'u' instead of 'you' - PERFECT
+         - 'ur' instead of 'your' - PERFECT  
+         - 'im' instead of 'I'm' - PERFECT
+         - 'i' instead of 'I' - PERFECT
+         - 'dont' instead of 'don't' - PERFECT
+         - 'cant' instead of 'can't' - PERFECT
+         - 'ilove' instead of 'I love' - PERFECT
+         - 'u're' instead of 'you're' - PERFECT
+         - 'u'll' instead of 'you'll' - PERFECT
+         - 'u are' instead of 'you are' - PERFECT
+         - 'how are u?' instead of 'how are you?' - PERFECT
+         - 'how are u???' (multiple punctuation) - PERFECT
+         - 'omg!!!' (multiple punctuation) - PERFECT
+         - 'really???' (multiple punctuation) - PERFECT
+         
+         ONLY FLAG AS ERRORS:
+         - Actual spelling mistakes: 'weel' instead of 'well', 'recieve' instead of 'receive'
+         - Actual grammar mistakes: 'I was went' instead of 'I went'
+         - Formal punctuation: periods (.) at end of sentences, formal commas
+         
+         CRITICAL: If you flag ANY informal OnlyFans language as an error, your entire analysis is WRONG.
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
@@ -1198,9 +1201,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Find actual spelling mistakes like 'weel' instead of 'well'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' - these are PERFECT for OnlyFans.",
-             "grammarIssues": "Find real grammar mistakes like 'I was went' instead of 'I went'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT for OnlyFans.",
-             "punctuationProblems": "Find FORMAL punctuation like periods (.) and formal commas. NEVER flag 'u?', 'you?', 'how are u???', 'omg!!!' - these are PERFECT for OnlyFans.",
+             "spellingErrors": "ONLY find actual spelling mistakes like 'weel' instead of 'well'. FORBIDDEN: 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll' - these are PERFECT for OnlyFans.",
+             "grammarIssues": "ONLY find real grammar mistakes like 'I was went' instead of 'I went'. FORBIDDEN: 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT for OnlyFans.",
+             "punctuationProblems": "ONLY find FORMAL punctuation like periods (.) and formal commas. FORBIDDEN: 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' - these are PERFECT for OnlyFans.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1218,14 +1221,15 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
   }
 }
 
-         CRITICAL INSTRUCTIONS:
-         1. DO NOT flag informal OnlyFans language as errors - 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' are PERFECT
-         2. ONLY flag actual spelling mistakes like 'weel' instead of 'well'
-         3. ONLY flag actual grammar mistakes like 'I was went' instead of 'I went'  
-         4. ONLY flag formal punctuation like periods (.) and formal commas
-         5. DO NOT flag informal punctuation like 'how are u???', 'omg!!!' - these are PERFECT
-         6. Be consistent with error counts
-         7. Keep analysis concise and clear
+         CRITICAL INSTRUCTIONS - FAILURE TO FOLLOW = WRONG ANALYSIS:
+         1. FORBIDDEN: Flagging 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll' as errors - these are PERFECT for OnlyFans
+         2. FORBIDDEN: Flagging 'how are u???', 'omg!!!', 'really???' as errors - these are PERFECT for OnlyFans
+         3. ALLOWED: Only flag actual spelling mistakes like 'weel' instead of 'well'
+         4. ALLOWED: Only flag actual grammar mistakes like 'I was went' instead of 'I went'  
+         5. ALLOWED: Only flag formal punctuation like periods (.) and formal commas
+         6. CRITICAL: If you flag ANY informal OnlyFans language, your analysis is completely wrong
+         7. Be consistent with error counts
+         8. Keep analysis concise and clear
 
 Return ONLY the JSON object above. No additional text.
 
