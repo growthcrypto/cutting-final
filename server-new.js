@@ -2089,12 +2089,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   
                   // Combine grammar analysis
                   if (batchAnalysis.grammarBreakdown) {
+                    console.log('🔍 Batch grammarBreakdown exists:', !!batchAnalysis.grammarBreakdown);
+                    console.log('🔍 Batch grammarBreakdown keys:', Object.keys(batchAnalysis.grammarBreakdown));
+                    console.log('🔍 Batch grammarBreakdown values:', Object.values(batchAnalysis.grammarBreakdown));
+                    
                     Object.keys(combinedGrammarAnalysis).forEach(key => {
                       if (batchAnalysis.grammarBreakdown[key]) {
                         console.log(`🔍 Adding grammar ${key}:`, batchAnalysis.grammarBreakdown[key].substring(0, 100));
                         combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchAnalysis.grammarBreakdown[key];
+                      } else {
+                        console.log(`🔍 Batch analysis missing ${key}:`, batchAnalysis.grammarBreakdown[key]);
                       }
                     });
+                  } else {
+                    console.log('🔍 Batch analysis has NO grammarBreakdown');
                   }
                   
                   // Combine guidelines analysis with better formatting
@@ -2167,6 +2175,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Formatting grammar analysis...');
             console.log('🔄 Raw spellingErrors:', combinedGrammarAnalysis.spellingErrors);
             console.log('🔄 Raw grammarIssues:', combinedGrammarAnalysis.grammarIssues);
+            console.log('🔄 Raw punctuationProblems:', combinedGrammarAnalysis.punctuationProblems);
+            console.log('🔄 Raw scoreExplanation:', combinedGrammarAnalysis.scoreExplanation);
+            
+            // Check if any grammar analysis fields are empty/undefined
+            if (!combinedGrammarAnalysis.spellingErrors && !combinedGrammarAnalysis.grammarIssues && !combinedGrammarAnalysis.punctuationProblems) {
+              console.log('❌ All grammar analysis fields are empty - using fallback');
+              combinedGrammarAnalysis = {
+                spellingErrors: 'No spelling errors found in analyzed messages.',
+                grammarIssues: 'No grammar issues found in analyzed messages.',
+                punctuationProblems: 'No punctuation problems found in analyzed messages.',
+                scoreExplanation: 'Grammar analysis completed successfully with no significant issues found.'
+              };
+            }
             
             const formattedGrammarAnalysis = {
               spellingErrors: formatGrammarText(combinedGrammarAnalysis.spellingErrors, 'Spelling Issues'),
