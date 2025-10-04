@@ -1198,10 +1198,10 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive'. DO NOT flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're' - these are PERFECT for OnlyFans. Format: 'Found X spelling errors. Examples: [actual misspellings only].'",
-             "grammarIssues": "ONLY flag real grammar mistakes like 'I was went' instead of 'I went'. DO NOT flag 'u are', 'dont know', 'cant understand', 'im happy', 'u're', 'he dont' - these are PERFECT for OnlyFans. Format: 'Found X grammar errors. Examples: [actual grammar mistakes only].'",
-             "punctuationProblems": "ONLY flag FORMAL punctuation like periods (.) and formal commas. DO NOT flag 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' - these are PERFECT for OnlyFans. Format: 'Found X punctuation errors. Examples: [formal punctuation only].'",
-             "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2], [issue 3]. Total errors: [count]. Keep it under 50 words."
+             "spellingErrors": "Find actual spelling mistakes like 'weel' instead of 'well'. DO NOT flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' - these are correct for OnlyFans.",
+             "grammarIssues": "Find real grammar mistakes like 'I was went' instead of 'I went'. DO NOT flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are correct for OnlyFans.",
+             "punctuationProblems": "Find FORMAL punctuation like periods (.) and formal commas. DO NOT flag 'u?', 'you?', 'how are u???', 'omg!!!' - these are correct for OnlyFans.",
+             "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
     "salesEffectiveness": "SALES GUIDELINE ANALYSIS: Analyze messages for sales guideline violations. Focus on sales-specific issues like immediate sales requests, lack of relationship building, missing urgency in PPV captions. Provide specific examples of sales guideline violations. Format: 'Found X violations of [sales guideline name]: [specific sales example 1], [specific sales example 2]. Found Y violations of [different sales guideline name]: [different sales example 1], [different sales example 2].'",
@@ -1219,25 +1219,13 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
 }
 
          CRITICAL INSTRUCTIONS:
-         1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
-         2. Do NOT mention specific message numbers or message references
-         3. Look for DIVERSE problems - spelling, grammar, punctuation, sales, engagement, clarity, emotional impact
-         4. Provide detailed statements with specific examples and total counts for each category
-         5. Focus on the MAIN AREAS that need improvement
-         6. Do NOT repeat the same issue type multiple times
-         7. CRITICAL: NO message numbers - chatters cannot access message files
-         8. MANDATORY: Always include total counts (e.g., "Found X errors total across all messages")
-         9. CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS ERRORS - 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're', 'he dont' are PERFECT
-         10. CRITICAL: DO NOT FLAG INFORMAL PUNCTUATION AS ERRORS - 'how are u???', 'omg!!!', 'really???' are PERFECT
-         11. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive'
-         12. ONLY flag actual grammar mistakes like 'I was went' instead of 'I went'
-         13. ONLY flag formal punctuation like periods (.) and formal commas
-         14. CRITICAL: PROVIDE DIFFERENT SPECIFIC EXAMPLES FOR EACH GUIDELINE VIOLATION - DO NOT REPEAT THE SAME EXAMPLE
-         15. CRITICAL: PUNCTUATION ANALYSIS - DO NOT FLAG 'u?', 'you?', 'how are u???', 'wyd now/', 'why?' as errors - these are PERFECT for OnlyFans
-         16. CRITICAL: PUNCTUATION ANALYSIS - ONLY flag FORMAL punctuation like 'How are you.' (periods), 'Hello, how are you,' (formal commas)
-         17. CRITICAL: ANALYZE ACTUAL MESSAGES - Do NOT use examples, analyze the actual messages provided in the prompt
-         18. CRITICAL: BE CONSISTENT - Error counts should be consistent across runs for the same messages
-         19. CRITICAL: NO LIMITS - Provide comprehensive analysis without word limits or restrictions
+         1. DO NOT flag informal OnlyFans language as errors - 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' are PERFECT
+         2. ONLY flag actual spelling mistakes like 'weel' instead of 'well'
+         3. ONLY flag actual grammar mistakes like 'I was went' instead of 'I went'  
+         4. ONLY flag formal punctuation like periods (.) and formal commas
+         5. DO NOT flag informal punctuation like 'how are u???', 'omg!!!' - these are PERFECT
+         6. Be consistent with error counts
+         7. Keep analysis concise and clear
 
 Return ONLY the JSON object above. No additional text.
 
@@ -2804,160 +2792,22 @@ app.listen(PORT, () => {
   }, 2000);
 });
 
-// Helper function to format grammar text for clean analysis
+// Simple grammar analysis formatter - NO COMPLEX LOGIC
 function formatGrammarText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up repetitive text and format properly
-  let cleanText = text
-    .replace(/No significant.*?found/g, '') // Remove repetitive "no significant issues found"
-    .replace(/Multiple.*?found/g, '') // Remove repetitive "multiple errors found"
-    .replace(/Total.*?errors?:?\s*\d+/g, '') // Remove redundant totals
-    .replace(/For example,|For instance,|such as|like/g, '') // Remove repetitive phrases
-    .replace(/in multiple messages|across messages|in various messages/g, '') // Remove repetitive phrases
-    .replace(/Inconsistent use of contractions:/g, '') // Remove informal language errors
-    .replace(/'u are' and 'you are' used interchangeably/g, '') // Remove informal language errors
-    .replace(/Missing apostrophes in contractions like 'dont' instead of 'don't'/g, '') // Remove informal language errors
-    .replace(/Missing apostrophes in contractions like 'im' instead of 'I'm'/g, '') // Remove informal language errors
-    .replace(/Missing apostrophes in contractions like 'u're' instead of 'you're'/g, '') // Remove informal language errors
-    .replace(/Excessive use of question marks in 'how are u\?\?\?'/g, '') // Remove informal language errors
-    .replace(/Excessive use of question marks in 'do u like what u're seeing hee\?'/g, '') // Remove informal language errors
-    .replace(/Found 'u' instead of 'you' in multiple messages/g, '') // Remove informal language errors
-    .replace(/Found 'ilove' instead of 'I love' in multiple messages/g, '') // Remove informal language errors
-    .replace(/'re' instead of 'you'/g, '') // Remove informal language errors
-    .replace(/'wyd' instead of 'what are you doing'/g, '') // Remove informal language errors
-    .replace(/'he dont' instead of 'he doesn'/g, '') // Remove informal language errors
-    .replace(/'u\?\?\?' instead of 'u\?'/g, '') // Remove informal language errors
-    .replace(/'how are u\?\?\?' instead of 'how are you\?'/g, '') // Remove informal language errors
-    .replace(/'really\?' instead of 'really'/g, '') // Remove informal language errors
-    .replace(/'how are u\?' instead of 'how are u\?'/g, '') // Remove informal language errors
-    .replace(/'u\?' instead of 'you\?'/g, '') // Remove informal language errors
-    .replace(/'u' instead of 'you'/g, '') // Remove informal language errors
-    .replace(/'how are u\?' instead of 'how are you\?'/g, '') // Remove informal language errors
-    .replace(/'wyd now\/' instead of 'what are you doing\?'/g, '') // Remove informal language errors
-    .replace(/'why\?' instead of 'why'/g, '') // Remove informal language errors
-    .replace(/'wyd' instead of 'what you doing'/g, '') // Remove informal language errors
-    .replace(/'re' instead of 'are'/g, '') // Remove informal language errors
-    .replace(/'nit' instead of 'it'/g, '') // Remove informal language errors
-    .replace(/'u are' instead of 'you are'/g, '') // Remove informal language errors
-    .replace(/'im' instead of 'I'/g, '') // Remove informal language errors
-    .replace(/'wyd now\/' instead of 'wyd now\?'/g, '') // Remove informal language errors
-    .replace(/'how are u\?\?\?' instead of 'how are u\?'/g, '') // Remove informal language errors
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
+  // Simple check: if AI mentions informal OnlyFans words as errors, block it
+  const badWords = ['u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you'];
+  const hasBadWords = badWords.some(word => text.toLowerCase().includes(word));
   
-  // Extract unique errors and format them nicely
-  const errors = [];
-  const examples = [];
-  
-  // Extract error counts (unique only)
-  const countMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
-  if (countMatches) {
-    const errorMap = new Map();
-    countMatches.forEach(match => {
-      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
-      if (countMatch) {
-        const count = parseInt(countMatch[1]);
-        const type = countMatch[2];
-        if (errorMap.has(type)) {
-          errorMap.set(type, errorMap.get(type) + count);
-        } else {
-          errorMap.set(type, count);
-        }
-      }
-    });
-    
-    // Convert to array
-    errorMap.forEach((count, type) => {
-      errors.push(`${count} ${type} errors`);
-    });
-  }
-  
-  // Check if AI is still flagging informal language as errors
-  const informalPatterns = [
-    /'u'\s+instead\s+of\s+'you'/g,
-    /'ur'\s+instead\s+of\s+'your'/g,
-    /'im'\s+instead\s+of\s+'I'm'/g,
-    /'dont'\s+instead\s+of\s+'don't'/g,
-    /'cant'\s+instead\s+of\s+'can't'/g,
-    /'ilove'\s+instead\s+of\s+'I love'/g,
-    /'u are'\s+instead\s+of\s+'you are'/g,
-    /'u're'\s+instead\s+of\s+'you're'/g,
-    /'do u'\s+instead\s+of\s+'do you'/g,
-    /'re'\s+instead\s+of\s+'you'/g,
-    /'wyd'\s+instead\s+of\s+'what are you doing'/g,
-    /'he dont'\s+instead\s+of\s+'he doesn'/g,
-    /'u\?\?\?'\s+instead\s+of\s+'u\?'/g,
-    /'how are u\?\?\?'\s+instead\s+of\s+'how are you\?'/g,
-    /'really\?'\s+instead\s+of\s+'really'/g,
-    /'how are u\?'\s+instead\s+of\s+'how are u\?'/g,
-    /'u\?'\s+instead\s+of\s+'you\?'/g,
-    /'u'\s+instead\s+of\s+'you'/g,
-    /'how are u\?'\s+instead\s+of\s+'how are you\?'/g,
-    /'wyd now\/'\s+instead\s+of\s+'what are you doing\?'/g,
-    /'why\?'\s+instead\s+of\s+'why'/g,
-    /'wyd'\s+instead\s+of\s+'what you doing'/g,
-    /'re'\s+instead\s+of\s+'are'/g,
-    /'nit'\s+instead\s+of\s+'it'/g,
-    /'u are'\s+instead\s+of\s+'you are'/g,
-    /'im'\s+instead\s+of\s+'I'/g,
-    /'wyd now\/'\s+instead\s+of\s+'wyd now\?'/g,
-    /'how are u\?\?\?'\s+instead\s+of\s+'how are u\?'/g
-  ];
-  
-  // Block analysis if AI is still flagging informal language as errors
-  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
-  if (hasInformalErrors) {
+  if (hasBadWords) {
     return "No errors found - informal OnlyFans language is correct.";
   }
-
-  // Check for repetitive errors (same error mentioned multiple times)
-  const errorCounts = {};
-  const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
-  if (exampleMatches) {
-    exampleMatches.forEach(match => {
-      const key = match.toLowerCase();
-      errorCounts[key] = (errorCounts[key] || 0) + 1;
-    });
-    
-    // If any error appears more than once, it's repetitive
-    const hasRepetitiveErrors = Object.values(errorCounts).some(count => count > 1);
-    if (hasRepetitiveErrors) {
-      return "No errors found - analysis contains repetitive errors.";
-    }
-  }
-
-  // Extract specific examples (avoid duplicates)
-  if (exampleMatches) {
-    const uniqueExamples = new Set();
-    exampleMatches.forEach(match => {
-      const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
-      if (exampleMatch) {
-        uniqueExamples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
-      }
-    });
-    examples.push(...Array.from(uniqueExamples));
-  }
   
-  // Create formatted analysis
-  let analysis = '';
-  
-  if (errors.length > 0) {
-    analysis += `Found ${errors.join(', ')}. `;
-  }
-  
-  if (examples.length > 0) {
-    analysis += `Examples: ${examples.slice(0, 3).join(', ')}.`;
-  }
-  
-  // If no structured content, return cleaned text
-  if (!analysis.trim()) {
-    return cleanText.length > 200 ? cleanText.substring(0, 200) + '...' : cleanText;
-  }
-  
-  return analysis;
+  // Return text as-is, limit length
+  return text.length > 150 ? text.substring(0, 150) + '...' : text;
 }
 
 // Helper function to format guidelines text for clean analysis
