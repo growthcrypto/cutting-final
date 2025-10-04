@@ -2125,13 +2125,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 scoreExplanation: `Comprehensive overall analysis of all ${analysisMessageTexts.length} messages: Focus on improving message clarity, emotional impact, and conversion potential.`
               }
             };
-          console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
-          console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
-          console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
-          console.log('🔄 Re-analysis overallBreakdown:', !!reAnalysis.overallBreakdown);
-          console.log('🔄 FULL RE-ANALYSIS RESULT:', JSON.stringify(reAnalysis, null, 2));
           
-          // FORCE UPDATE the breakdown sections with new analysis
+          try {
+            console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
+            console.log('🔄 Re-analysis grammarBreakdown:', !!reAnalysis.grammarBreakdown);
+            console.log('🔄 Re-analysis guidelinesBreakdown:', !!reAnalysis.guidelinesBreakdown);
+            console.log('🔄 Re-analysis overallBreakdown:', !!reAnalysis.overallBreakdown);
+            console.log('🔄 FULL RE-ANALYSIS RESULT:', JSON.stringify(reAnalysis, null, 2));
+            
+            // FORCE UPDATE the breakdown sections with new analysis
           if (reAnalysis.grammarBreakdown) {
             aiAnalysis.grammarBreakdown = reAnalysis.grammarBreakdown;
             console.log('🔄 Updated grammarBreakdown with AI analysis');
@@ -2176,9 +2178,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         } catch (error) {
           console.log('🔄 Re-analysis failed:', error.message);
         }
-        } else {
-          console.log('🔄 No analysisMessageTexts available for re-analysis');
-        }
+      } else {
+        console.log('🔄 No analysisMessageTexts available for re-analysis');
+      }
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
       aiAnalysis.grammarScore = analyticsData.grammarScore;
