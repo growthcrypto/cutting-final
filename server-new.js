@@ -2815,6 +2815,7 @@ function formatGrammarText(text, category) {
     /'dont'\s+instead\s+of\s+'don't'/g,
     /'ilove'\s+instead\s+of\s+'I love'/g,
     /'i dont'\s+instead\s+of\s+'I don'/g,
+    /'do u'\s+instead\s+of\s+'do you'/g,
     /'re'\s+instead\s+of\s+'you'/g
   ];
   
