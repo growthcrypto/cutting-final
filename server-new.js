@@ -2833,7 +2833,7 @@ function formatGrammarText(text, category) {
     .replace(/'u\?' instead of 'you\?'/g, '') // Remove informal language errors
     .replace(/'u' instead of 'you'/g, '') // Remove informal language errors
     .replace(/'how are u\?' instead of 'how are you\?'/g, '') // Remove informal language errors
-    .replace(/'wyd now/' instead of 'what are you doing\?'/g, '') // Remove informal language errors
+    .replace(/'wyd now\/' instead of 'what are you doing\?'/g, '') // Remove informal language errors
     .replace(/'why\?' instead of 'why'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
@@ -2886,7 +2886,7 @@ function formatGrammarText(text, category) {
     /'u\?'\s+instead\s+of\s+'you\?'/g,
     /'u'\s+instead\s+of\s+'you'/g,
     /'how are u\?'\s+instead\s+of\s+'how are you\?'/g,
-    /'wyd now/'\s+instead\s+of\s+'what are you doing\?'/g,
+    /'wyd now\/'\s+instead\s+of\s+'what are you doing\?'/g,
     /'why\?'\s+instead\s+of\s+'why'/g
   ];
   
