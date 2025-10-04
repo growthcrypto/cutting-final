@@ -2811,8 +2811,8 @@ function formatGrammarText(text, category) {
     .replace(/Missing apostrophes in contractions like 'dont' instead of 'don't'/g, '') // Remove informal language errors
     .replace(/Missing apostrophes in contractions like 'im' instead of 'I'm'/g, '') // Remove informal language errors
     .replace(/Missing apostrophes in contractions like 'u're' instead of 'you're'/g, '') // Remove informal language errors
-    .replace(/Excessive use of question marks in 'how are u???'/g, '') // Remove informal language errors
-    .replace(/Excessive use of question marks in 'do u like what u're seeing hee?'/g, '') // Remove informal language errors
+    .replace(/Excessive use of question marks in 'how are u\?\?\?'/g, '') // Remove informal language errors
+    .replace(/Excessive use of question marks in 'do u like what u're seeing hee\?'/g, '') // Remove informal language errors
     .replace(/Found 'u' instead of 'you' in multiple messages/g, '') // Remove informal language errors
     .replace(/Found 'ilove' instead of 'I love' in multiple messages/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
