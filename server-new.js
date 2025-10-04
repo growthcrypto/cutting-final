@@ -1119,17 +1119,17 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `You are an expert OnlyFans chat analyst. Analyze these messages for REAL grammar issues, communication problems, and sales effectiveness. Find diverse, actionable issues - not repetitive examples.
+    const prompt = `You are an expert OnlyFans chat analyst. Analyze these messages and find DIVERSE, REAL issues. Do NOT repeat the same type of error multiple times. Find different types of problems.
 
 MESSAGES TO ANALYZE:
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-ANALYSIS REQUIREMENTS:
-- Find REAL grammar errors, spelling mistakes, punctuation issues
-- Identify ACTUAL sales techniques, engagement strategies, conversation flow
-- Provide DIVERSE examples - different types of issues, not the same pattern
-- Be SPECIFIC - quote exact text and explain the problem
-- Be ACTIONABLE - suggest improvements
+CRITICAL INSTRUCTIONS:
+- Find DIFFERENT types of issues - not the same pattern repeated
+- If you find 5 messages with missing apostrophes, only show 1-2 examples
+- Find spelling errors, grammar mistakes, punctuation issues, informal language, sales techniques, engagement strategies
+- Be DIVERSE - show different types of problems, not repetitive examples
+- Quote exact text and explain the specific issue
 
 You MUST return ONLY valid JSON with this EXACT structure:
 
