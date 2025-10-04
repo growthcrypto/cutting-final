@@ -2784,80 +2784,85 @@ app.listen(PORT, () => {
   }, 2000);
 });
 
-// Helper function to format grammar text for detailed analysis
+// Helper function to format grammar text for clean analysis
 function formatGrammarText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up the text
+  // Clean up repetitive text
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/No significant issues found/g, '') // Remove repetitive "no issues"
+    .replace(/Multiple instances of/g, '') // Remove generic phrases
+    .replace(/CRITICAL:/g, '') // Remove critical prefixes
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  // Extract counts and create structured analysis
-  const counts = [];
-  const issues = [];
+  // Extract unique spelling/grammar errors with counts
+  const errors = new Map();
   
-  // Extract specific counts
-  const countMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
-  if (countMatches) {
-    countMatches.forEach(match => {
+  // Extract specific error counts
+  const errorMatches = cleanText.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
+  if (errorMatches) {
+    errorMatches.forEach(match => {
       const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
       if (countMatch) {
-        counts.push(`${countMatch[1]} ${countMatch[2]} ${countMatch[3]}`);
+        const count = parseInt(countMatch[1]);
+        const type = countMatch[2];
+        if (errors.has(type)) {
+          errors.set(type, errors.get(type) + count);
+        } else {
+          errors.set(type, count);
+        }
       }
     });
   }
   
-  // Extract key issues (only real errors, not informal OnlyFans language)
-  const issuePatterns = [
-    /actual spelling errors/gi,
-    /real grammar mistakes/gi,
-    /inappropriate punctuation/gi,
-    /formal periods/gi,
-    /formal commas/gi,
-    /missing excitement punctuation/gi
+  // Extract specific error examples (unique only)
+  const errorExamples = new Set();
+  const examplePatterns = [
+    /'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
+    /like\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g,
+    /such\s+as\s+'([^']+)'\s+instead\s+of\s+'([^']+)'/g
   ];
   
-  issuePatterns.forEach(pattern => {
+  examplePatterns.forEach(pattern => {
     const matches = cleanText.match(pattern);
     if (matches) {
-      const issue = matches[0].toLowerCase();
-      if (issue.includes('actual spelling')) {
-        issues.push('Real spelling errors found');
-      } else if (issue.includes('real grammar')) {
-        issues.push('Actual grammar mistakes found');
-      } else if (issue.includes('inappropriate punctuation')) {
-        issues.push('Inappropriate punctuation usage');
-      } else if (issue.includes('formal periods')) {
-        issues.push('Use of formal periods instead of excitement punctuation');
-      } else if (issue.includes('formal commas')) {
-        issues.push('Use of formal commas instead of casual punctuation');
-      } else if (issue.includes('missing excitement')) {
-        issues.push('Missing excitement punctuation');
-      }
+      matches.forEach(match => {
+        const exampleMatch = match.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/);
+        if (exampleMatch) {
+          errorExamples.add(`'${exampleMatch[1]}' instead of '${exampleMatch[2]}'`);
+        }
+      });
     }
   });
   
-  // Create structured analysis
+  // Create clean, structured analysis
   let analysis = '';
-  if (counts.length > 0) {
-    analysis += `Found ${counts.join(', ')}. `;
-  }
-  if (issues.length > 0) {
-    analysis += `Key issues include: ${issues.join(', ')}. `;
+  
+  // Add error counts (unique counts only)
+  if (errors.size > 0) {
+    const errorList = Array.from(errors.entries())
+      .map(([type, count]) => `${count} ${type} errors`)
+      .slice(0, 2); // Limit to top 2
+    analysis += `Found ${errorList.join(', ')}. `;
   }
   
-  // Add remaining context if available
-  const remainingText = cleanText.replace(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g, '').trim();
-  if (remainingText.length > 20) {
-    analysis += remainingText;
+  // Add specific examples (unique only)
+  if (errorExamples.size > 0) {
+    const examplesList = Array.from(errorExamples).slice(0, 3); // Limit to top 3
+    analysis += `Examples include: ${examplesList.join(', ')}.`;
   }
   
-  return analysis || `Analysis of ${category.toLowerCase()}: ${cleanText}`;
+  // If no structured content, return cleaned text
+  if (!analysis.trim()) {
+    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+  }
+  
+  return analysis;
 }
 
 // Helper function to format guidelines text for clean analysis
@@ -2932,10 +2937,23 @@ function formatGuidelinesText(text, category) {
     analysis += `Found ${violationList.join(', ')}. `;
   }
   
-  // Add key issues (unique only)
+  // Add key issues with more detail (unique only)
   if (violationTypes.size > 0) {
     const issuesList = Array.from(violationTypes).slice(0, 3); // Limit to top 3
-    analysis += `Key issues include: ${issuesList.join(', ')}.`;
+    analysis += `Key issues include: ${issuesList.join(', ')}. `;
+  }
+  
+  // Add specific examples from the text
+  const exampleMatches = cleanText.match(/in messages like '([^']+)'/g);
+  if (exampleMatches && exampleMatches.length > 0) {
+    const examples = exampleMatches.slice(0, 2).map(match => {
+      const example = match.match(/in messages like '([^']+)'/);
+      return example ? example[1] : null;
+    }).filter(Boolean);
+    
+    if (examples.length > 0) {
+      analysis += `Examples: ${examples.join(', ')}.`;
+    }
   }
   
   // If no structured content, return cleaned text
