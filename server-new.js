@@ -1119,12 +1119,12 @@ async function analyzeMessages(messages, chatterName) {
       console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
     }
     
-    const prompt = `Analyze these OnlyFans chat messages and find REAL issues. Return ONLY valid JSON.
+    const prompt = `Analyze these OnlyFans chat messages and return ONLY valid JSON.
 
 MESSAGES:
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
-Return this EXACT JSON structure with REAL examples from the messages above:
+Return this EXACT JSON with REAL examples from the messages:
 
 {
   "overallScore": 85,
@@ -1158,34 +1158,30 @@ Return this EXACT JSON structure with REAL examples from the messages above:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Find spelling mistakes in the messages above. List specific examples.",
-    "grammarIssues": "Find grammar mistakes in the messages above. List specific examples.",
-    "punctuationProblems": "Find punctuation issues in the messages above. List specific examples.",
-    "informalLanguage": "Find informal language in the messages above. List specific examples.",
-    "scoreExplanation": "Summarize the grammar analysis with specific counts."
+    "spellingErrors": "Message 1: 'u' instead of 'you' | Message 5: 'u're' instead of 'you're'",
+    "grammarIssues": "Message 3: Missing apostrophe in 'dont' | Message 7: Missing apostrophe in 'cant'",
+    "punctuationProblems": "Message 2: Missing period | Message 4: Missing question mark",
+    "informalLanguage": "Message 1: 'u' instead of 'you' | Message 6: 'haha' instead of 'laugh'",
+    "scoreExplanation": "Found 15 spelling errors, 8 grammar issues, 12 punctuation problems, 20 informal language patterns in 50 messages."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Find sales techniques in the messages above. List specific examples.",
-    "engagementQuality": "Find engagement strategies in the messages above. List specific examples.",
-    "captionQuality": "Find PPV captions in the messages above. List specific examples.",
-    "conversationFlow": "Find conversation patterns in the messages above. List specific examples.",
-    "scoreExplanation": "Summarize the guidelines analysis with specific counts."
+    "salesEffectiveness": "Message 10: Good sales approach | Message 15: Effective engagement",
+    "engagementQuality": "Message 3: Good conversation starter | Message 8: Maintains interest",
+    "captionQuality": "Message 12: Good PPV caption | Message 18: Effective sales pitch",
+    "conversationFlow": "Message 5: Smooth transition | Message 9: Good follow-up",
+    "scoreExplanation": "Found 8 effective sales techniques, 12 good engagement strategies, 5 quality captions, 15 smooth conversation flows."
   },
   "overallBreakdown": {
-    "messageClarity": "Find clarity issues in the messages above. List specific examples.",
-    "emotionalImpact": "Find emotional connections in the messages above. List specific examples.",
-    "conversionPotential": "Find conversion opportunities in the messages above. List specific examples.",
-    "scoreExplanation": "Summarize the overall analysis with specific counts."
+    "messageClarity": "Message 2: Clear communication | Message 7: Easy to understand",
+    "emotionalImpact": "Message 4: Creates connection | Message 11: Builds rapport",
+    "conversionPotential": "Message 6: High conversion potential | Message 13: Good sales opportunity",
+    "scoreExplanation": "Found 18 clear messages, 22 emotional connections, 12 high conversion opportunities in 50 messages."
   }
 }
 
-CRITICAL: You MUST analyze the actual messages above and provide specific examples. Do NOT return undefined values. Every field must have actual content based on the message analysis.
+IMPORTANT: Replace the example values above with REAL analysis of the actual messages. Do NOT return undefined values.
 
-For breakdown sections, provide specific examples from the actual messages analyzed. Include real issues found, specific strengths, and concrete recommendations based on the message content.
-
-IMPORTANT: The scoreExplanation field must contain a summary of your analysis. For example: "Grammar analysis of 10 messages found 4 spelling errors, 3 grammar issues, 2 punctuation problems, and 5 informal language patterns"
-
-CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting. The JSON must be valid and complete.
+Return ONLY the JSON object above. No additional text.
 
 ANALYSIS REQUIREMENTS:
 - Analyze the actual message content to determine chatting style, patterns, and engagement
