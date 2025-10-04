@@ -1940,6 +1940,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
       console.log('🚨 generateAIAnalysis COMPLETED');
       console.log('🚨 aiAnalysis keys:', Object.keys(aiAnalysis));
+      console.log('🚨 aiAnalysis has grammarBreakdown:', !!aiAnalysis.grammarBreakdown);
+      console.log('🚨 aiAnalysis has guidelinesBreakdown:', !!aiAnalysis.guidelinesBreakdown);
+      console.log('🚨 aiAnalysis has overallBreakdown:', !!aiAnalysis.overallBreakdown);
+      console.log('🚨 aiAnalysis grammarBreakdown:', aiAnalysis.grammarBreakdown);
+      console.log('🚨 aiAnalysis guidelinesBreakdown:', aiAnalysis.guidelinesBreakdown);
+      console.log('🚨 aiAnalysis overallBreakdown:', aiAnalysis.overallBreakdown);
       
       // Add raw metrics to response for UI display
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
