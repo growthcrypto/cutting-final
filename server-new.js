@@ -2204,29 +2204,28 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('🔍 DEBUGGING: aiAnalysis.grammarBreakdown:', mainGrammarBreakdown);
         console.log('🔍 DEBUGGING: combinedGrammarAnalysis:', combinedGrammarAnalysis);
         
-        // Check if we have real AI analysis or just fallback text
-        const hasRealAnalysis = mainGrammarBreakdown.spellingErrors && 
-          !mainGrammarBreakdown.spellingErrors.includes('informal OnlyFans language is correct');
+        // Clean up repetitive content from combined analysis and use the best results
+        const cleanSpelling = combinedGrammarAnalysis.spellingErrors ? 
+          combinedGrammarAnalysis.spellingErrors.split('.').filter((item, index, arr) => 
+            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No spelling errors found - informal OnlyFans language is correct')
+          ).join('.') + '.' : "No spelling errors found - informal OnlyFans language is correct.";
         
-        let formattedGrammarAnalysis;
+        const cleanGrammar = combinedGrammarAnalysis.grammarIssues ? 
+          combinedGrammarAnalysis.grammarIssues.split('.').filter((item, index, arr) => 
+            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No grammar errors found - informal OnlyFans language is correct')
+          ).join('.') + '.' : "No grammar errors found - informal OnlyFans language is correct.";
         
-        if (hasRealAnalysis) {
-          // Use the main AI analysis
-          formattedGrammarAnalysis = {
-            spellingErrors: mainGrammarBreakdown.spellingErrors,
-            grammarIssues: mainGrammarBreakdown.grammarIssues,
-            punctuationProblems: mainGrammarBreakdown.punctuationProblems,
-            scoreExplanation: formatGrammarText(mainGrammarBreakdown.scoreExplanation, 'Grammar Analysis')
-          };
-        } else {
-          // Use the combined analysis which has the real results
-          formattedGrammarAnalysis = {
-            spellingErrors: combinedGrammarAnalysis.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
-            grammarIssues: combinedGrammarAnalysis.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
-            punctuationProblems: combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
-            scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
-          };
-        }
+        const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems ? 
+          combinedGrammarAnalysis.punctuationProblems.split('.').filter((item, index, arr) => 
+            arr.indexOf(item) === index && item.trim().length > 0 && !item.includes('No punctuation errors found - informal OnlyFans language is correct')
+          ).join('.') + '.' : "No punctuation errors found - informal OnlyFans language is correct.";
+        
+        const formattedGrammarAnalysis = {
+          spellingErrors: cleanSpelling || "No spelling errors found - informal OnlyFans language is correct.",
+          grammarIssues: cleanGrammar || "No grammar errors found - informal OnlyFans language is correct.",
+          punctuationProblems: cleanPunctuation || "No punctuation errors found - informal OnlyFans language is correct.",
+          scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+        };
             
             console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
             console.log('🔄 Formatted grammarIssues:', formattedGrammarAnalysis.grammarIssues);
