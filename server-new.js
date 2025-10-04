@@ -2050,13 +2050,26 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 // Wait for all parallel batches to complete
                 const batchResults = await Promise.all(batchPromises);
                 console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
+                console.log(`🔍 Batch results length:`, batchResults.length);
+                console.log(`🔍 First batch result keys:`, batchResults[0] ? Object.keys(batchResults[0]) : 'NO RESULT');
+                console.log(`🔍 First batch guidelinesBreakdown:`, batchResults[0]?.guidelinesBreakdown ? 'EXISTS' : 'MISSING');
+                console.log(`🔍 First batch grammarBreakdown:`, batchResults[0]?.grammarBreakdown ? 'EXISTS' : 'MISSING');
                 
                 // Combine results from parallel batches (both grammar and guidelines)
-                batchResults.forEach(batchAnalysis => {
+                console.log(`🔍 Starting to combine results from ${batchResults.length} batches`);
+                batchResults.forEach((batchAnalysis, index) => {
+                  console.log(`🔍 Processing batch ${index + 1} result:`, {
+                    hasGrammar: !!batchAnalysis.grammarBreakdown,
+                    hasGuidelines: !!batchAnalysis.guidelinesBreakdown,
+                    grammarKeys: batchAnalysis.grammarBreakdown ? Object.keys(batchAnalysis.grammarBreakdown) : [],
+                    guidelinesKeys: batchAnalysis.guidelinesBreakdown ? Object.keys(batchAnalysis.guidelinesBreakdown) : []
+                  });
+                  
                   // Combine grammar analysis
                   if (batchAnalysis.grammarBreakdown) {
                     Object.keys(combinedGrammarAnalysis).forEach(key => {
                       if (batchAnalysis.grammarBreakdown[key]) {
+                        console.log(`🔍 Adding grammar ${key}:`, batchAnalysis.grammarBreakdown[key].substring(0, 100));
                         combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchAnalysis.grammarBreakdown[key];
                       }
                     });
@@ -2066,6 +2079,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   if (batchAnalysis.guidelinesBreakdown) {
                     Object.keys(combinedGuidelinesAnalysis).forEach(key => {
                       if (batchAnalysis.guidelinesBreakdown[key]) {
+                        console.log(`🔍 Adding guidelines ${key}:`, batchAnalysis.guidelinesBreakdown[key].substring(0, 100));
                         // Clean up the text and add proper formatting
                         let cleanText = batchAnalysis.guidelinesBreakdown[key]
                           .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
