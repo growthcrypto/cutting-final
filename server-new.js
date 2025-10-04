@@ -2199,7 +2199,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             }
             
         // Use the main AI analysis results directly (not the combined batch results)
-        const mainGrammarBreakdown = latestMessageAnalysis.grammarBreakdown || {};
+        const mainGrammarBreakdown = aiAnalysis.grammarBreakdown || {};
         
         const formattedGrammarAnalysis = {
           spellingErrors: mainGrammarBreakdown.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
