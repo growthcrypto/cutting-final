@@ -1165,24 +1165,24 @@ You MUST return ONLY valid JSON with this EXACT structure:
     "fanRetention": "excellent"
   },
   "grammarBreakdown": {
-    "spellingErrors": "Find actual spelling mistakes. Quote exact text and provide correct spelling.",
-    "grammarIssues": "Find actual grammar mistakes. Quote exact text and explain the error.",
-    "punctuationProblems": "Find actual punctuation issues. Quote exact text and suggest corrections.",
-    "informalLanguage": "Find actual informal language. Quote exact text and suggest formal alternatives.",
-    "scoreExplanation": "Provide a summary of grammar analysis with specific counts and examples."
+    "spellingErrors": "Message 1: 'recieve' should be 'receive' | Message 5: 'definately' should be 'definitely'",
+    "grammarIssues": "Message 3: Missing apostrophe in 'dont' should be 'don't' | Message 7: 'your' instead of 'you're'",
+    "punctuationProblems": "Message 2: Missing period at end | Message 8: Missing comma after 'however'",
+    "informalLanguage": "Message 4: Using 'u' instead of 'you' | Message 9: Using 'ur' instead of 'your'",
+    "scoreExplanation": "Grammar analysis found 2 spelling errors, 2 grammar issues, 2 punctuation problems, and 2 informal language patterns."
   },
   "guidelinesBreakdown": {
-    "salesEffectiveness": "Find actual sales techniques. Quote exact text and evaluate effectiveness.",
-    "engagementQuality": "Find actual engagement strategies. Quote exact text and assess quality.",
-    "captionQuality": "Find actual PPV captions. Quote exact text and evaluate persuasiveness.",
-    "conversationFlow": "Find actual conversation patterns. Quote exact text and assess flow.",
-    "scoreExplanation": "Provide a summary of guidelines analysis with specific counts and examples."
+    "salesEffectiveness": "Message 6: Good sales approach with clear pricing '$25 for this exclusive content' | Message 12: Effective PPV promotion 'unlock to see more'",
+    "engagementQuality": "Message 3: Strong engagement question 'how was your day?' | Message 8: Good follow-up 'what do you think?'",
+    "captionQuality": "Message 10: Compelling PPV caption 'you won't want to miss this' | Message 15: Clear value proposition 'exclusive content just for you'",
+    "conversationFlow": "Message 5: Natural conversation flow 'that sounds amazing' | Message 11: Good timing 'perfect timing for this'",
+    "scoreExplanation": "Guidelines analysis found 2 sales techniques, 2 engagement strategies, 2 compelling captions, and 2 good conversation flows."
   },
   "overallBreakdown": {
-    "messageClarity": "Find actual clarity issues. Quote exact text and suggest improvements.",
-    "emotionalImpact": "Find actual emotional connections. Quote exact text and assess impact.",
-    "conversionPotential": "Find actual conversion opportunities. Quote exact text and evaluate potential.",
-    "scoreExplanation": "Provide a summary of overall analysis with specific counts and examples."
+    "messageClarity": "Message 2: Clear and easy to understand 'I hope you're having a great day' | Message 7: Well-structured 'Let me know what you think'",
+    "emotionalImpact": "Message 4: Strong emotional connection 'I love talking to you' | Message 9: Personal touch 'you mean so much to me'",
+    "conversionPotential": "Message 6: Good conversion potential 'this exclusive content is perfect for you' | Message 13: Clear call-to-action 'unlock now to see more'",
+    "scoreExplanation": "Overall analysis found 2 clear messages, 2 strong emotional connections, and 2 good conversion opportunities."
   }
 }
 
