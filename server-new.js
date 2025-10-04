@@ -2176,9 +2176,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         } catch (error) {
           console.log('🔄 Re-analysis failed:', error.message);
         }
-      } else {
-        console.log('🔄 No analysisMessageTexts available for re-analysis');
-      }
+        } else {
+          console.log('🔄 No analysisMessageTexts available for re-analysis');
+        }
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
       aiAnalysis.grammarScore = analyticsData.grammarScore;
