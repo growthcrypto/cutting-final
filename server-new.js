@@ -2198,19 +2198,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               };
             }
             
-            // Use AI with strict filtering for grammar analysis
-            const [spellingResult, grammarResult, punctuationResult] = await Promise.all([
-              analyzeRealGrammar(analysisMessageTexts, 'spellingErrors'),
-              analyzeRealGrammar(analysisMessageTexts, 'grammarIssues'),
-              analyzeRealGrammar(analysisMessageTexts, 'punctuationProblems')
-            ]);
-            
-            const formattedGrammarAnalysis = {
-              spellingErrors: spellingResult,
-              grammarIssues: grammarResult,
-              punctuationProblems: punctuationResult,
-              scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
-            };
+        // Use the main AI analysis results for grammar breakdown
+        const formattedGrammarAnalysis = {
+          spellingErrors: combinedGrammarAnalysis.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
+          grammarIssues: combinedGrammarAnalysis.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
+          punctuationProblems: combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
+          scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+        };
             
             console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
             console.log('🔄 Formatted grammarIssues:', formattedGrammarAnalysis.grammarIssues);
