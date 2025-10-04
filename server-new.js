@@ -1198,9 +1198,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Find actual spelling mistakes like 'weel' instead of 'well'. DO NOT flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' - these are correct for OnlyFans.",
-             "grammarIssues": "Find real grammar mistakes like 'I was went' instead of 'I went'. DO NOT flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are correct for OnlyFans.",
-             "punctuationProblems": "Find FORMAL punctuation like periods (.) and formal commas. DO NOT flag 'u?', 'you?', 'how are u???', 'omg!!!' - these are correct for OnlyFans.",
+             "spellingErrors": "Find actual spelling mistakes like 'weel' instead of 'well'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd' - these are PERFECT for OnlyFans.",
+             "grammarIssues": "Find real grammar mistakes like 'I was went' instead of 'I went'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT for OnlyFans.",
+             "punctuationProblems": "Find FORMAL punctuation like periods (.) and formal commas. NEVER flag 'u?', 'you?', 'how are u???', 'omg!!!' - these are PERFECT for OnlyFans.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1343,7 +1343,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for completely consistent responses
-      max_tokens: 4000, // Increased to remove limits and prevent cutoff
+      max_tokens: 6000, // Increased to prevent summary cutoff
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -2792,17 +2792,23 @@ app.listen(PORT, () => {
   }, 2000);
 });
 
-// Simple grammar analysis formatter - NO COMPLEX LOGIC
+// Simple grammar analysis formatter - AGGRESSIVE BLOCKING
 function formatGrammarText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Simple check: if AI mentions informal OnlyFans words as errors, block it
-  const badWords = ['u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you'];
-  const hasBadWords = badWords.some(word => text.toLowerCase().includes(word));
+  // AGGRESSIVE blocking: if AI mentions ANY informal OnlyFans words as errors, block it
+  const badPhrases = [
+    'u instead of you', 'ur instead of your', 'im instead of I', 'dont instead of don', 
+    'cant instead of can', 'ilove instead of I love', 'wyd instead of what', 're instead of you',
+    'inconsistent use of contractions', 'u are instead of you are', 'u and you',
+    'contractions like', 'missing apostrophes', 'informal language'
+  ];
   
-  if (hasBadWords) {
+  const hasBadPhrases = badPhrases.some(phrase => text.toLowerCase().includes(phrase));
+  
+  if (hasBadPhrases) {
     return "No errors found - informal OnlyFans language is correct.";
   }
   
