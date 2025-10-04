@@ -1096,6 +1096,8 @@ async function analyzeMessages(messages, chatterName) {
     }
     
     console.log('✅ OpenAI is configured, proceeding with AI analysis...');
+    console.log('🔍 About to call OpenAI API with', messages.length, 'messages');
+    console.log('🔍 First few messages:', messages.slice(0, 3));
     console.log('🔍 OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
     console.log('🔍 OpenAI API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
 
@@ -2039,6 +2041,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   
                   console.log(`🔄 Analyzing batch ${batchIndex + 1}/${totalBatches} (messages ${start + 1}-${end})`);
                   
+                  console.log(`🔄 Calling AI for batch ${batchIndex + 1}/${totalBatches} with ${batch.length} messages`);
                   batchPromises.push(
                     analyzeMessages(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
                   );
@@ -2106,6 +2109,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Found', customGuidelines.length, 'custom guidelines');
             
             // Clean up and format the guidelines analysis for better readability
+            console.log('🔄 Formatting guidelines analysis...');
+            console.log('🔄 Raw salesEffectiveness:', combinedGuidelinesAnalysis.salesEffectiveness);
+            console.log('🔄 Raw engagementQuality:', combinedGuidelinesAnalysis.engagementQuality);
+            
             const formattedGuidelinesAnalysis = {
               salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness'),
               engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality'),
@@ -2114,13 +2121,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines')
             };
             
+            console.log('🔄 Formatted salesEffectiveness:', formattedGuidelinesAnalysis.salesEffectiveness);
+            console.log('🔄 Formatted engagementQuality:', formattedGuidelinesAnalysis.engagementQuality);
+            
             // Clean up and format the grammar analysis for better readability
+            console.log('🔄 Formatting grammar analysis...');
+            console.log('🔄 Raw spellingErrors:', combinedGrammarAnalysis.spellingErrors);
+            console.log('🔄 Raw grammarIssues:', combinedGrammarAnalysis.grammarIssues);
+            
             const formattedGrammarAnalysis = {
               spellingErrors: formatGrammarText(combinedGrammarAnalysis.spellingErrors, 'Spelling Issues'),
               grammarIssues: formatGrammarText(combinedGrammarAnalysis.grammarIssues, 'Grammar Issues'),
               punctuationProblems: formatGrammarText(combinedGrammarAnalysis.punctuationProblems, 'Punctuation Problems'),
               scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
             };
+            
+            console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
+            console.log('🔄 Formatted grammarIssues:', formattedGrammarAnalysis.grammarIssues);
             
             // Create comprehensive analysis with combined results
             const reAnalysis = {
