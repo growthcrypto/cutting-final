@@ -2818,7 +2818,7 @@ function formatGrammarText(text, category) {
     .replace(/'re' instead of 'you'/g, '') // Remove informal language errors
     .replace(/'wyd' instead of 'what are you doing'/g, '') // Remove informal language errors
     .replace(/'he dont' instead of 'he doesn'/g, '') // Remove informal language errors
-    .replace(/'u???' instead of 'u?'/g, '') // Remove informal language errors
+    .replace(/'u\?\?\?' instead of 'u\?'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
