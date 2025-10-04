@@ -2201,12 +2201,32 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         // Use the main AI analysis results directly (not the combined batch results)
         const mainGrammarBreakdown = aiAnalysis.grammarBreakdown || {};
         
-        const formattedGrammarAnalysis = {
-          spellingErrors: mainGrammarBreakdown.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
-          grammarIssues: mainGrammarBreakdown.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
-          punctuationProblems: mainGrammarBreakdown.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
-          scoreExplanation: formatGrammarText(mainGrammarBreakdown.scoreExplanation || combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
-        };
+        console.log('🔍 DEBUGGING: aiAnalysis.grammarBreakdown:', mainGrammarBreakdown);
+        console.log('🔍 DEBUGGING: combinedGrammarAnalysis:', combinedGrammarAnalysis);
+        
+        // Check if we have real AI analysis or just fallback text
+        const hasRealAnalysis = mainGrammarBreakdown.spellingErrors && 
+          !mainGrammarBreakdown.spellingErrors.includes('informal OnlyFans language is correct');
+        
+        let formattedGrammarAnalysis;
+        
+        if (hasRealAnalysis) {
+          // Use the main AI analysis
+          formattedGrammarAnalysis = {
+            spellingErrors: mainGrammarBreakdown.spellingErrors,
+            grammarIssues: mainGrammarBreakdown.grammarIssues,
+            punctuationProblems: mainGrammarBreakdown.punctuationProblems,
+            scoreExplanation: formatGrammarText(mainGrammarBreakdown.scoreExplanation, 'Grammar Analysis')
+          };
+        } else {
+          // Use the combined analysis which has the real results
+          formattedGrammarAnalysis = {
+            spellingErrors: combinedGrammarAnalysis.spellingErrors || "No spelling errors found - informal OnlyFans language is correct.",
+            grammarIssues: combinedGrammarAnalysis.grammarIssues || "No grammar errors found - informal OnlyFans language is correct.",
+            punctuationProblems: combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.",
+            scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+          };
+        }
             
             console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
             console.log('🔄 Formatted grammarIssues:', formattedGrammarAnalysis.grammarIssues);
