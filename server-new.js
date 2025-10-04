@@ -2776,71 +2776,26 @@ app.listen(PORT, () => {
   }, 2000);
 });
 
-// Helper function to format grammar text for better readability
+// Helper function to format grammar text for detailed analysis
 function formatGrammarText(text, category) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Extract unique grammar issues with counts
-  const issues = new Set();
+  // Clean up the text but keep detailed content
+  let cleanText = text
+    .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
+    .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
   
-  // Extract specific grammar issues with counts
-  const issueMatches = text.match(/(\d+)\s+(?:spelling|grammar|punctuation)\s+(?:errors?|issues?|problems?)/g);
-  if (issueMatches) {
-    issueMatches.forEach(match => {
-      const countMatch = match.match(/(\d+)\s+(spelling|grammar|punctuation)\s+(errors?|issues?|problems?)/);
-      if (countMatch) {
-        issues.add(`${countMatch[1]} ${countMatch[2]} ${countMatch[3]}`);
-      }
-    });
+  // If the text is already detailed and meaningful, return it as-is
+  if (cleanText.length > 50) {
+    return cleanText;
   }
   
-  // Extract other key grammar issues (without duplicates)
-  const otherPatterns = [
-    /missing apostrophes/gi,
-    /typos/gi,
-    /autocorrect mistakes/gi,
-    /wrong verb tenses/gi,
-    /sentence fragments/gi,
-    /subject-verb disagreements/gi,
-    /formal punctuation/gi,
-    /missing excitement punctuation/gi
-  ];
-  
-  otherPatterns.forEach(pattern => {
-    const matches = text.match(pattern);
-    if (matches) {
-      const issue = matches[0].toLowerCase();
-      if (issue.includes('apostrophes')) {
-        issues.add('Missing apostrophes in contractions');
-      } else if (issue.includes('typos')) {
-        issues.add('Common typos in casual words');
-      } else if (issue.includes('autocorrect')) {
-        issues.add('Autocorrect mistakes');
-      } else if (issue.includes('verb tenses')) {
-        issues.add('Wrong verb tenses');
-      } else if (issue.includes('fragments')) {
-        issues.add('Sentence fragments');
-      } else if (issue.includes('subject-verb')) {
-        issues.add('Subject-verb disagreements');
-      } else if (issue.includes('formal punctuation')) {
-        issues.add('Inappropriate formal punctuation');
-      } else if (issue.includes('excitement')) {
-        issues.add('Missing excitement punctuation');
-      }
-    }
-  });
-  
-  // Convert to array and limit to top 3
-  const issueArray = Array.from(issues).slice(0, 3);
-  
-  if (issueArray.length === 0) {
-    return `No specific ${category.toLowerCase()} found.`;
-  }
-  
-  // Format as clean, simple bullet points
-  return issueArray.map(issue => `• ${issue}`).join('\n\n');
+  // Fallback for short text
+  return `Analysis of ${category.toLowerCase()}: ${cleanText}`;
 }
 
 // Helper function to format guidelines text for better readability
@@ -2849,54 +2804,20 @@ function formatGuidelinesText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Extract unique violations with counts
-  const violations = new Set();
+  // Clean up the text but keep detailed content
+  let cleanText = text
+    .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
+    .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+    .trim();
   
-  // Extract specific guideline violations with counts
-  const guidelineMatches = text.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/g);
-  if (guidelineMatches) {
-    guidelineMatches.forEach(match => {
-      const countMatch = match.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/);
-      if (countMatch) {
-        violations.add(`${countMatch[1]} violations of '${countMatch[2]}' guideline`);
-      }
-    });
+  // If the text is already detailed and meaningful, return it as-is
+  if (cleanText.length > 50) {
+    return cleanText;
   }
   
-  // Extract other key violations (without duplicates)
-  const otherPatterns = [
-    /lack of urgency in PPV captions/gi,
-    /delayed sales initiation/gi,
-    /lack of personalization/gi,
-    /immediate sales requests/gi,
-    /lack of urgency/gi
-  ];
-  
-  otherPatterns.forEach(pattern => {
-    const matches = text.match(pattern);
-    if (matches) {
-      const violation = matches[0].toLowerCase();
-      if (violation.includes('urgency')) {
-        violations.add('Lack of urgency in PPV captions');
-      } else if (violation.includes('personalization')) {
-        violations.add('Lack of personalization in sales approach');
-      } else if (violation.includes('delayed')) {
-        violations.add('Delayed sales initiation issues');
-      } else if (violation.includes('immediate')) {
-        violations.add('Immediate sales requests without relationship building');
-      }
-    }
-  });
-  
-  // Convert to array and limit to top 3
-  const violationArray = Array.from(violations).slice(0, 3);
-  
-  if (violationArray.length === 0) {
-    return `No specific ${category.toLowerCase()} violations found.`;
-  }
-  
-  // Format as clean, properly spaced bullet points
-  return violationArray.map(violation => `• ${violation}`).join('\n\n');
+  // Fallback for short text
+  return `Analysis of ${category.toLowerCase()}: ${cleanText}`;
 }
 
 // Deterministic analysis for individual chatter (no AI, data-only)

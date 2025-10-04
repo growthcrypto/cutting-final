@@ -5088,27 +5088,37 @@ function formatBreakdownContent(content) {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
     }
     
-    // Check if content already has bullet points (new format with proper spacing)
+    // Check if content is detailed analysis (new format without bullet points)
+    if (content.length > 100 && !content.includes('•')) {
+      // This is detailed analysis text, format it nicely
+      return `<div class="text-gray-300 leading-relaxed text-sm space-y-3">
+        <div class="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
+          <div class="text-gray-300 leading-relaxed">${content}</div>
+        </div>
+      </div>`;
+    }
+    
+    // Check if content already has bullet points (old format)
     if (content.includes('•')) {
-        // Split by double line breaks to get separate bullet points
-        const items = content.split('\n\n').filter(item => item.trim().length > 0);
-        
-        if (items.length > 1) {
-            return items.map(item => {
-                const trimmed = item.trim();
-                if (trimmed.startsWith('•')) {
-                    // Remove the bullet point and format properly
-                    const text = trimmed.substring(1).trim();
-                    return `
-                        <div class="mb-4 flex items-start">
-                            <span class="text-blue-400 mr-3 mt-1 text-lg font-bold">•</span>
-                            <span class="text-gray-300 leading-relaxed text-sm">${text}</span>
-                        </div>
-                    `;
-                }
-                return `<div class="mb-4 text-gray-300 leading-relaxed text-sm">${trimmed}</div>`;
-            }).join('');
-        }
+      // Split by double line breaks to get separate bullet points
+      const items = content.split('\n\n').filter(item => item.trim().length > 0);
+      
+      if (items.length > 1) {
+        return items.map(item => {
+          const trimmed = item.trim();
+          if (trimmed.startsWith('•')) {
+            // Remove the bullet point and format properly
+            const text = trimmed.substring(1).trim();
+            return `
+              <div class="mb-4 flex items-start">
+                <span class="text-blue-400 mr-3 mt-1 text-lg font-bold">•</span>
+                <span class="text-gray-300 leading-relaxed text-sm">${text}</span>
+              </div>
+            `;
+          }
+          return `<div class="mb-4 text-gray-300 leading-relaxed text-sm">${trimmed}</div>`;
+        }).join('');
+      }
     }
     
     // Fallback: Split by " | " to separate different examples (old format)
