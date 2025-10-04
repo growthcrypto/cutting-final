@@ -2046,8 +2046,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             // Get AI analysis for guidelines using ALL messages (not just first batch)
             console.log('🔄 Getting AI analysis for guidelines using ALL messages...');
+            console.log('🔄 Message count for guidelines analysis:', analysisMessageTexts.length);
             const guidelinesAnalysis = await analyzeMessages(analysisMessageTexts, 'Guidelines Analysis - ALL MESSAGES');
             console.log('🔄 Guidelines analysis completed:', !!guidelinesAnalysis.guidelinesBreakdown);
+            console.log('🔄 Guidelines analysis keys:', guidelinesAnalysis.guidelinesBreakdown ? Object.keys(guidelinesAnalysis.guidelinesBreakdown) : 'NO GUIDELINES BREAKDOWN');
+            console.log('🔄 Guidelines analysis content:', JSON.stringify(guidelinesAnalysis.guidelinesBreakdown, null, 2));
             
             // Get custom guidelines from database
             const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
@@ -2062,11 +2065,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
               },
               guidelinesBreakdown: guidelinesAnalysis.guidelinesBreakdown || {
-                salesEffectiveness: `Sales guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom sales guidelines. Count violations and provide specific examples from the messages.`,
-                engagementQuality: `Engagement guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom engagement guidelines. Count violations and provide specific examples from the messages.`,
-                captionQuality: `Messaging guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom messaging guidelines. Count violations and provide specific examples from the messages.`,
-                conversationFlow: `Professionalism guideline analysis: Based on analysis of all ${analysisMessageTexts.length} messages, evaluate compliance with your custom professionalism guidelines. Count violations and provide specific examples from the messages.`,
-                scoreExplanation: `Comprehensive guidelines analysis of all ${analysisMessageTexts.length} messages: Evaluate compliance with your custom guidelines and provide specific analysis with counts and examples.`
+                salesEffectiveness: `AI ANALYSIS FAILED: Unable to analyze sales guidelines. Please check AI configuration.`,
+                engagementQuality: `AI ANALYSIS FAILED: Unable to analyze engagement guidelines. Please check AI configuration.`,
+                captionQuality: `AI ANALYSIS FAILED: Unable to analyze messaging guidelines. Please check AI configuration.`,
+                conversationFlow: `AI ANALYSIS FAILED: Unable to analyze professionalism guidelines. Please check AI configuration.`,
+                scoreExplanation: `AI ANALYSIS FAILED: Guidelines analysis not available. Please check AI configuration.`
               },
               overallBreakdown: {
                 messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
