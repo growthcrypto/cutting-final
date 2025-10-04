@@ -1201,7 +1201,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
              "spellingErrors": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS SPELLING ERRORS. 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'wyd', 're' are PERFECT for OnlyFans. ONLY flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the'. NEVER suggest changing 'u' to 'you' or 'dont' to 'don't'. Format as: 'Found X spelling errors. Examples: [actual misspellings only].'",
              "grammarIssues": "CRITICAL: DO NOT FLAG INFORMAL ONLYFANS LANGUAGE AS GRAMMAR ERRORS. 'u are', 'dont know', 'cant understand', 'im happy', 'u're', 'he dont' are PERFECT for OnlyFans. ONLY flag real grammar mistakes like 'I was went' instead of 'I went'. NEVER suggest changing informal to formal language. Format as: 'Found X grammar errors. Examples: [actual grammar mistakes only].'",
              "punctuationProblems": "CRITICAL: PUNCTUATION ANALYSIS IS ONLY FOR FORMAL PUNCTUATION ERRORS. DO NOT FLAG INFORMAL LANGUAGE AS PUNCTUATION ERRORS. 'u?', 'you?', 'how are u???', 'omg!!!', 'really???' are ALL PERFECT for OnlyFans. ONLY flag FORMAL punctuation like periods (.) at end of sentences, formal commas in lists. NEVER flag informal pronouns, contractions, or multiple punctuation. MANDATORY: Always provide specific examples. Format as: 'Found X punctuation errors. Examples: [specific formal punctuation errors like 'How are you.' instead of 'How are you?', 'Hello, how are you,' instead of 'Hello, how are you?'].'",
-             "scoreExplanation": "Provide a comprehensive summary of the grammar analysis based on ACTUAL MESSAGE ANALYSIS. Format: 'Grammar score: X/100. Main issues: [specific issue 1], [specific issue 2], [specific issue 3]. Total errors found: [count].' Analyze the actual messages provided, not examples. Be consistent with error counts."
+             "scoreExplanation": "Provide a complete summary of the grammar analysis. Format: 'Grammar score: X/100. Main issues: [specific issue 1], [specific issue 2], [specific issue 3]. Total errors found: [count].' Provide the complete summary without any truncation or word limits."
            },
   "guidelinesBreakdown": {
     "salesEffectiveness": "SALES GUIDELINE ANALYSIS: Analyze messages for sales guideline violations. Focus on sales-specific issues like immediate sales requests, lack of relationship building, missing urgency in PPV captions. Provide specific examples of sales guideline violations. Format: 'Found X violations of [sales guideline name]: [specific sales example 1], [specific sales example 2]. Found Y violations of [different sales guideline name]: [different sales example 1], [different sales example 2].'",
@@ -2838,6 +2838,13 @@ function formatGrammarText(text, category) {
     .replace(/'how are u\?' instead of 'how are you\?'/g, '') // Remove informal language errors
     .replace(/'wyd now\/' instead of 'what are you doing\?'/g, '') // Remove informal language errors
     .replace(/'why\?' instead of 'why'/g, '') // Remove informal language errors
+    .replace(/'wyd' instead of 'what you doing'/g, '') // Remove informal language errors
+    .replace(/'re' instead of 'are'/g, '') // Remove informal language errors
+    .replace(/'nit' instead of 'it'/g, '') // Remove informal language errors
+    .replace(/'u are' instead of 'you are'/g, '') // Remove informal language errors
+    .replace(/'im' instead of 'I'/g, '') // Remove informal language errors
+    .replace(/'wyd now\/' instead of 'wyd now\?'/g, '') // Remove informal language errors
+    .replace(/'how are u\?\?\?' instead of 'how are u\?'/g, '') // Remove informal language errors
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
@@ -2890,14 +2897,21 @@ function formatGrammarText(text, category) {
     /'u'\s+instead\s+of\s+'you'/g,
     /'how are u\?'\s+instead\s+of\s+'how are you\?'/g,
     /'wyd now\/'\s+instead\s+of\s+'what are you doing\?'/g,
-    /'why\?'\s+instead\s+of\s+'why'/g
+    /'why\?'\s+instead\s+of\s+'why'/g,
+    /'wyd'\s+instead\s+of\s+'what you doing'/g,
+    /'re'\s+instead\s+of\s+'are'/g,
+    /'nit'\s+instead\s+of\s+'it'/g,
+    /'u are'\s+instead\s+of\s+'you are'/g,
+    /'im'\s+instead\s+of\s+'I'/g,
+    /'wyd now\/'\s+instead\s+of\s+'wyd now\?'/g,
+    /'how are u\?\?\?'\s+instead\s+of\s+'how are u\?'/g
   ];
   
-  // Don't block analysis - let the AI do its job with better instructions
-  // const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
-  // if (hasInformalErrors) {
-  //   return "No errors found - informal OnlyFans language is correct.";
-  // }
+  // Block analysis if AI is still flagging informal language as errors
+  const hasInformalErrors = informalPatterns.some(pattern => pattern.test(cleanText));
+  if (hasInformalErrors) {
+    return "No errors found - informal OnlyFans language is correct.";
+  }
 
   // Extract specific examples
   const exampleMatches = cleanText.match(/'([^']+)'\s+instead\s+of\s+'([^']+)'/g);
