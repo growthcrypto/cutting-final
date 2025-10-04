@@ -2734,33 +2734,61 @@ function formatGuidelinesText(text, category) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
   
-  // Clean up repetitive text
+  // Clean up repetitive text and extract key violations
   let cleanText = text
     .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
     .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
+    .replace(/Found violations?/g, '') // Remove repetitive "Found violations"
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
-  // Split into sentences and format
-  const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  // Extract specific violations with counts
+  const violations = [];
   
-  if (sentences.length === 0) {
-    return `No ${category.toLowerCase()} analysis available.`;
+  // Look for specific guideline violations with counts
+  const guidelineMatches = cleanText.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline[^.]*\.?/g);
+  if (guidelineMatches) {
+    guidelineMatches.forEach(match => {
+      const countMatch = match.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/);
+      if (countMatch) {
+        violations.push(`${countMatch[1]} violations of '${countMatch[2]}' guideline`);
+      }
+    });
   }
   
-  // Format as bullet points
-  const formattedSentences = sentences.map((sentence, index) => {
-    const trimmed = sentence.trim();
-    if (trimmed.length > 0) {
-      return `• ${trimmed.charAt(0).toUpperCase() + trimmed.slice(1)}.`;
+  // Look for other specific violations
+  const otherViolations = cleanText.match(/[^.!?]*(?:violation|issue|problem)[^.!?]*[.!?]/g);
+  if (otherViolations) {
+    otherViolations.forEach(violation => {
+      const cleaned = violation.trim().replace(/^[^a-zA-Z]*/, ''); // Remove leading non-letters
+      if (cleaned.length > 20 && !violations.some(v => v.includes(cleaned.substring(0, 20)))) {
+        violations.push(cleaned);
+      }
+    });
+  }
+  
+  // If no specific violations found, create general summary
+  if (violations.length === 0) {
+    const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 15);
+    if (sentences.length > 0) {
+      violations.push(sentences[0].trim() + '.');
+    }
+  }
+  
+  if (violations.length === 0) {
+    return `No specific ${category.toLowerCase()} violations found.`;
+  }
+  
+  // Format as clean bullet points
+  const formattedViolations = violations.slice(0, 4).map(violation => {
+    const cleaned = violation.trim();
+    if (cleaned.length > 0) {
+      return `• ${cleaned.charAt(0).toUpperCase() + cleaned.slice(1)}`;
     }
     return '';
-  }).filter(s => s.length > 0);
+  }).filter(v => v.length > 0);
   
-  // Limit to top 5 most important points
-  const topPoints = formattedSentences.slice(0, 5);
-  
-  return topPoints.join('\n\n');
+  return formattedViolations.join('\n\n');
 }
 
 // Deterministic analysis for individual chatter (no AI, data-only)
