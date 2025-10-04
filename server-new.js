@@ -1174,7 +1174,6 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "spellingErrors": "COMPREHENSIVE spelling analysis: Count ALL spelling errors found across ALL messages. Provide detailed statement about main spelling issues with specific examples and total count (e.g., 'Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found 15 spelling errors total across all messages.').",
     "grammarIssues": "COMPREHENSIVE grammar analysis: Count ALL grammar mistakes found across ALL messages. Provide detailed statement about main grammar issues with specific examples and total count (e.g., 'Main grammar issues: frequent wrong verb tenses like 'I was went' instead of 'I went', sentence fragments like incomplete thoughts, and subject-verb disagreements like 'he don't' instead of 'he doesn't'. Found 12 grammar errors total across all messages.').",
     "punctuationProblems": "COMPREHENSIVE punctuation analysis: Count ALL inappropriate punctuation found across ALL messages. ONLYFANS CHATTING RULES: Only acceptable punctuation is ! and ? (including multiple iterations like 'how are u???'). Formal punctuation like periods (.) and formal commas are MISTAKES. Provide detailed statement about inappropriate punctuation with specific examples and total count (e.g., 'Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. Found 20 inappropriate punctuation uses total across all messages.').",
-    "informalLanguage": "COMPREHENSIVE language analysis: Count ALL grammar and spelling issues in language usage across ALL messages. ONLYFANS CHATTING RULES: Both formal and informal language are acceptable. Focus on actual grammar and spelling mistakes. Provide detailed statement about language issues with specific examples and total count (e.g., 'Main language issues: frequent spelling mistakes like 'recieve' instead of 'receive', grammar errors like 'I was went' instead of 'I went', and typos like 'teh' instead of 'the'. Found 25 language errors total across all messages.').",
     "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 grammar areas with specific counts and examples that need improvement?"
   },
   "guidelinesBreakdown": {
@@ -2011,11 +2010,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             let combinedGrammarErrors = 0;
             let combinedGrammarIssues = 0;
             let combinedPunctuationErrors = 0;
-            let combinedInformalPatterns = 0;
             let allGrammarExamples = [];
             let allGrammarIssueExamples = [];
             let allPunctuationExamples = [];
-            let allInformalExamples = [];
             
             // Process each batch
             for (let i = 0; i < batches.length; i++) {
@@ -2027,18 +2024,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 const grammarText = batchAnalysis.grammarBreakdown.spellingErrors || '';
                 const grammarIssuesText = batchAnalysis.grammarBreakdown.grammarIssues || '';
                 const punctuationText = batchAnalysis.grammarBreakdown.punctuationProblems || '';
-                const informalText = batchAnalysis.grammarBreakdown.informalLanguage || '';
                 
                 // Extract numbers from text (e.g., "Found 15 spelling errors")
                 const spellingMatch = grammarText.match(/Found (\d+)/);
                 const grammarMatch = grammarIssuesText.match(/Found (\d+)/);
                 const punctuationMatch = punctuationText.match(/Found (\d+)/);
-                const informalMatch = informalText.match(/Found (\d+)/);
                 
                 if (spellingMatch) combinedGrammarErrors += parseInt(spellingMatch[1]);
                 if (grammarMatch) combinedGrammarIssues += parseInt(grammarMatch[1]);
                 if (punctuationMatch) combinedPunctuationErrors += parseInt(punctuationMatch[1]);
-                if (informalMatch) combinedInformalPatterns += parseInt(informalMatch[1]);
               }
             }
             
@@ -2048,8 +2042,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 spellingErrors: `Main spelling issues: frequent missing apostrophes in contractions like 'dont' instead of 'don't', common typos in casual words like 'recieve' instead of 'receive', and autocorrect mistakes like 'teh' instead of 'the'. Found ${combinedGrammarErrors} spelling errors total across all ${analysisMessageTexts.length} messages.`,
                 grammarIssues: `Main grammar issues: frequent wrong verb tenses like 'I was went' instead of 'I went', sentence fragments like incomplete thoughts, and subject-verb disagreements like 'he don't' instead of 'he doesn't'. Found ${combinedGrammarIssues} grammar errors total across all ${analysisMessageTexts.length} messages.`,
                 punctuationProblems: `Main punctuation issues: frequent use of formal periods like 'How are you.' instead of 'How are you???', inappropriate formal commas, and missing excitement punctuation. ONLYFANS RULE: Only use ! and ? (including multiple iterations). Found ${combinedPunctuationErrors} inappropriate punctuation uses total across all ${analysisMessageTexts.length} messages.`,
-                informalLanguage: `Main language issues: frequent spelling mistakes like 'recieve' instead of 'receive', grammar errors like 'I was went' instead of 'I went', and typos like 'teh' instead of 'the'. Both formal and informal language are acceptable. Found ${combinedInformalPatterns} language errors total across all ${analysisMessageTexts.length} messages.`,
                 scoreExplanation: `Comprehensive analysis of all ${analysisMessageTexts.length} messages: Focus on improving spelling accuracy, grammar consistency, and using ONLY ! and ? punctuation (avoid formal periods and commas).`
+              },
+              guidelinesBreakdown: {
+                salesEffectiveness: `Main sales analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving direct sales techniques, PPV promotion strategies, and conversion optimization.`,
+                engagementQuality: `Main engagement analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversation starters, maintaining fan interest, and building emotional connections.`,
+                captionQuality: `Main PPV caption analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving PPV caption effectiveness, value proposition clarity, and urgency creation.`,
+                conversationFlow: `Main conversation analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversation flow, response timing, and topic transitions.`,
+                scoreExplanation: `Comprehensive guidelines analysis of all ${analysisMessageTexts.length} messages: Focus on improving sales effectiveness, engagement quality, and conversation flow.`
+              },
+              overallBreakdown: {
+                messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
+                emotionalImpact: `Main emotional analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving emotional connections, building rapport, and creating meaningful interactions.`,
+                conversionPotential: `Main conversion analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversion opportunities, sales timing, and revenue generation.`,
+                scoreExplanation: `Comprehensive overall analysis of all ${analysisMessageTexts.length} messages: Focus on improving message clarity, emotional impact, and conversion potential.`
               }
             };
           console.log('🔄 Re-analysis completed:', Object.keys(reAnalysis));
