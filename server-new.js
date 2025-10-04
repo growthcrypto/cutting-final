@@ -1126,10 +1126,11 @@ ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
 
 ANALYSIS REQUIREMENTS:
 1. Count ALL instances of each error type across ALL messages
-2. Provide overall statements about main issues (NO message numbers)
+2. Provide overall statements about main issues (NO message numbers - chatters can't access message files)
 3. Give comprehensive statistics and patterns
 4. Find diverse, real issues - do NOT repeat the same error type
 5. Focus on MAIN issues that need improvement
+6. CRITICAL: Do NOT mention specific message numbers or message references
 
 Return this EXACT JSON with COMPREHENSIVE analysis:
 
@@ -1188,11 +1189,12 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
 
 CRITICAL INSTRUCTIONS:
 1. Find DIFFERENT types of issues - do NOT repeat the same error pattern
-2. Use DIFFERENT messages for each example - do NOT use the same message multiple times
+2. Do NOT mention specific message numbers or message references
 3. Look for DIVERSE problems - spelling, grammar, punctuation, informal language, sales, engagement, clarity, emotional impact
-4. Provide 3-5 DIFFERENT examples for each category
+4. Provide overall statements with total counts for each category
 5. Focus on the MAIN AREAS that need improvement
 6. Do NOT repeat the same issue type multiple times
+7. CRITICAL: NO message numbers - chatters cannot access message files
 
 Return ONLY the JSON object above. No additional text.
 
