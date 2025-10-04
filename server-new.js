@@ -2057,7 +2057,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 
                 // Combine results from parallel batches (both grammar and guidelines)
                 console.log(`🔍 Starting to combine results from ${batchResults.length} batches`);
-                batchResults.forEach((batchAnalysis, index) => {
+                console.log(`🔍 BatchResults type:`, typeof batchResults);
+                console.log(`🔍 BatchResults is array:`, Array.isArray(batchResults));
+                console.log(`🔍 BatchResults length:`, batchResults.length);
+                
+                if (batchResults && batchResults.length > 0) {
+                  console.log(`🔍 About to process ${batchResults.length} batch results`);
+                  batchResults.forEach((batchAnalysis, index) => {
                   console.log(`🔍 Processing batch ${index + 1} result:`, {
                     hasGrammar: !!batchAnalysis.grammarBreakdown,
                     hasGuidelines: !!batchAnalysis.guidelinesBreakdown,
@@ -2093,6 +2099,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                     });
                   }
                 });
+                } else {
+                  console.log(`🔍 No batch results to process`);
+                }
               }
               
               console.log('🔄 All batches analyzed successfully');
