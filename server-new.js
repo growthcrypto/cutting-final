@@ -3110,8 +3110,10 @@ function calculateGrammarScore(totalErrors, totalMessages) {
   
   const errorRate = totalErrors / totalMessages;
   
-  // Score calculation: 100 - (error rate * 100), with minimum of 0
-  let score = Math.max(0, 100 - (errorRate * 100));
+  // MUCH STRICTER scoring: Penalize errors more heavily
+  // Formula: 100 - (error rate * 200), with minimum of 0
+  // This means 5% error rate = 0 score, 2.5% error rate = 50 score
+  let score = Math.max(0, 100 - (errorRate * 200));
   
   // Round to nearest integer
   return Math.round(score);
