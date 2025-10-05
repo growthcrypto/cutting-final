@@ -2636,6 +2636,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
       console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+      
+      // CRITICAL DEBUG: Check what's actually being sent in the response
+      console.log('🔍 RESPONSE OBJECT KEYS:', Object.keys(aiAnalysis));
+      console.log('🔍 RESPONSE OBJECT FULL:', JSON.stringify(aiAnalysis, null, 2));
       console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
