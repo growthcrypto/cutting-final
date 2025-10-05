@@ -2979,6 +2979,17 @@ function formatGrammarResults(text, type) {
     const allNumbers = [...cleanText.matchAll(/(\d+)/g)];
     console.log(`🔍 DEBUG punctuation: allNumbers found=`, allNumbers.map(m => m[1]));
     
+    // Additional debugging: show the first 200 characters of the text
+    console.log(`🔍 DEBUG punctuation: first 200 chars=`, cleanText.substring(0, 200));
+    
+    // Check for any text that might contain punctuation counts
+    const hasPunctuation = cleanText.toLowerCase().includes('punctuation');
+    const hasPeriods = cleanText.toLowerCase().includes('period');
+    const hasCommas = cleanText.toLowerCase().includes('comma');
+    const hasErrors = cleanText.toLowerCase().includes('error');
+    const hasProblems = cleanText.toLowerCase().includes('problem');
+    console.log(`🔍 DEBUG punctuation: contains keywords - punctuation:${hasPunctuation}, periods:${hasPeriods}, commas:${hasCommas}, errors:${hasErrors}, problems:${hasProblems}`);
+    
     console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
     console.log(`🔍 DEBUG punctuation: periodMatches2=`, periodMatches2);
     console.log(`🔍 DEBUG punctuation: periodMatches3=`, periodMatches3);
@@ -3031,6 +3042,29 @@ function formatGrammarResults(text, type) {
     });
     
     console.log(`🔍 DEBUG punctuation: totalPeriods=${totalPeriods}, totalCommas=${totalCommas}`);
+    
+    // EMERGENCY FALLBACK: If no patterns matched but we have numbers, try to extract them
+    if (totalPeriods === 0 && totalCommas === 0 && allNumbers.length > 0) {
+      console.log(`🔍 DEBUG punctuation: EMERGENCY FALLBACK - trying to extract numbers from text`);
+      // Try to find any number that might be related to punctuation
+      const possiblePunctuationNumbers = allNumbers.filter(num => {
+        const numStr = num[1];
+        const numIndex = cleanText.indexOf(numStr);
+        const context = cleanText.substring(Math.max(0, numIndex - 50), numIndex + 50);
+        console.log(`🔍 DEBUG punctuation: checking number ${numStr} in context: "${context}"`);
+        return context.toLowerCase().includes('period') || 
+               context.toLowerCase().includes('comma') || 
+               context.toLowerCase().includes('punctuation') ||
+               context.toLowerCase().includes('error') ||
+               context.toLowerCase().includes('problem');
+      });
+      
+      if (possiblePunctuationNumbers.length > 0) {
+        const totalFromFallback = possiblePunctuationNumbers.reduce((sum, match) => sum + parseInt(match[1]), 0);
+        console.log(`🔍 DEBUG punctuation: EMERGENCY FALLBACK found ${totalFromFallback} punctuation issues`);
+        return `Found ${totalFromFallback} punctuation issues across analyzed messages.`;
+      }
+    }
     
     if (totalPeriods === 0 && totalCommas === 0) {
       console.log(`🔍 DEBUG punctuation: No matches found, returning default message`);
