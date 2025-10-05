@@ -2488,10 +2488,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
       aiAnalysis.overallScore = analyticsData.overallMessageScore;
       
-      // Add message analysis data for detailed breakdown
-      aiAnalysis.chattingStyle = analyticsData.chattingStyle;
-      aiAnalysis.messagePatterns = analyticsData.messagePatterns;
-      aiAnalysis.engagementMetrics = analyticsData.engagementMetrics;
+      // Add message analysis data for detailed breakdown - only if analyticsData has content
+      if (analyticsData.chattingStyle && Object.keys(analyticsData.chattingStyle).length > 0) {
+        aiAnalysis.chattingStyle = analyticsData.chattingStyle;
+      }
+      if (analyticsData.messagePatterns && Object.keys(analyticsData.messagePatterns).length > 0) {
+        aiAnalysis.messagePatterns = analyticsData.messagePatterns;
+      }
+      if (analyticsData.engagementMetrics && Object.keys(analyticsData.engagementMetrics).length > 0) {
+        aiAnalysis.engagementMetrics = analyticsData.engagementMetrics;
+      }
       aiAnalysis.strengths = analyticsData.strengths;
       aiAnalysis.weaknesses = analyticsData.weaknesses;
       aiAnalysis.recommendations = analyticsData.recommendations;
