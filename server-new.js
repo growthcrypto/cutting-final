@@ -1413,6 +1413,18 @@ CONSISTENCY REQUIREMENTS:
       console.log('🔍 Raw JSON preview (first 500 chars):', jsonText.substring(0, 500));
       console.log('🔍 Raw JSON preview (last 500 chars):', jsonText.substring(Math.max(0, jsonText.length - 500)));
       
+      // Debug: Show characters around common error positions
+      const errorPositions = [7081, 1087, 1055];
+      errorPositions.forEach(pos => {
+        if (jsonText.length > pos) {
+          const start = Math.max(0, pos - 50);
+          const end = Math.min(jsonText.length, pos + 50);
+          console.log(`🔍 Characters around position ${pos}:`, jsonText.substring(start, end));
+          console.log(`🔍 Character at position ${pos}:`, jsonText.charAt(pos));
+          console.log(`🔍 Character codes around ${pos}:`, Array.from(jsonText.substring(start, end)).map(c => c.charCodeAt(0)));
+        }
+      });
+      
       // Auto-fix common JSON issues
       jsonText = jsonText
         .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
@@ -1428,7 +1440,13 @@ CONSISTENCY REQUIREMENTS:
         .replace(/\]\s*\[/g, '], [') // Fix missing commas between arrays
         .replace(/\}\s*\{/g, '}, {') // Fix missing commas between objects
         .replace(/\]\s*\{/g, '], {') // Fix missing commas between array and object
-        .replace(/\}\s*\[/g, '}, ['); // Fix missing commas between object and array
+        .replace(/\}\s*\[/g, '}, [') // Fix missing commas between object and array
+        .replace(/:\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,\}\]])/g, ': "$1"$2') // Quote unquoted identifiers
+        .replace(/:\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*$/g, ': "$1"') // Quote unquoted identifiers at end
+        .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":') // Quote unquoted keys
+        .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,\}\]])/g, '$1"$2"$3') // Quote unquoted values
+        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote any unquoted strings
+        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)$/g, ': "$1"'); // Quote unquoted strings at end
       
       console.log('🔧 Attempting to parse JSON with auto-corrections...');
       const analysisResult = JSON.parse(jsonText);
@@ -1472,30 +1490,76 @@ CONSISTENCY REQUIREMENTS:
         return aggressiveResult;
       } catch (aggressiveError) {
         console.error('❌ Aggressive JSON fixes also failed:', aggressiveError.message);
-        console.log('🔄 Falling back to basic analysis due to JSON parsing failure...');
+        console.log('🔄 Attempting to extract partial JSON structure...');
         
-        // Return a basic analysis structure to prevent complete failure
-        return {
-          grammarBreakdown: {
-            spellingErrors: "AI analysis failed - unable to parse response",
-            grammarIssues: "AI analysis failed - unable to parse response", 
-            punctuationProblems: "AI analysis failed - unable to parse response",
-            scoreExplanation: "AI analysis failed - unable to parse response"
-          },
-          guidelinesBreakdown: {
-            salesEffectiveness: "AI analysis failed - unable to parse response",
-            engagementQuality: "AI analysis failed - unable to parse response",
-            captionQuality: "AI analysis failed - unable to parse response",
-            conversationFlow: "AI analysis failed - unable to parse response",
-            scoreExplanation: "AI analysis failed - unable to parse response"
-          },
-          overallBreakdown: {
-            messageClarity: "AI analysis failed - unable to parse response",
-            emotionalImpact: "AI analysis failed - unable to parse response",
-            conversionPotential: "AI analysis failed - unable to parse response",
-            scoreExplanation: "AI analysis failed - unable to parse response"
+        // Try to extract just the essential parts from the malformed JSON
+        try {
+          const partialJson = {
+            grammarBreakdown: {},
+            guidelinesBreakdown: {},
+            overallBreakdown: {}
+          };
+          
+          // Try to extract grammar breakdown
+          const grammarMatch = jsonMatch[0].match(/"grammarBreakdown"\s*:\s*\{[^}]*\}/);
+          if (grammarMatch) {
+            try {
+              partialJson.grammarBreakdown = JSON.parse(grammarMatch[0].replace(/"grammarBreakdown"\s*:\s*/, ''));
+            } catch (e) {
+              console.log('Could not parse grammarBreakdown');
+            }
           }
-        };
+          
+          // Try to extract guidelines breakdown
+          const guidelinesMatch = jsonMatch[0].match(/"guidelinesBreakdown"\s*:\s*\{[^}]*\}/);
+          if (guidelinesMatch) {
+            try {
+              partialJson.guidelinesBreakdown = JSON.parse(guidelinesMatch[0].replace(/"guidelinesBreakdown"\s*:\s*/, ''));
+            } catch (e) {
+              console.log('Could not parse guidelinesBreakdown');
+            }
+          }
+          
+          // Try to extract overall breakdown
+          const overallMatch = jsonMatch[0].match(/"overallBreakdown"\s*:\s*\{[^}]*\}/);
+          if (overallMatch) {
+            try {
+              partialJson.overallBreakdown = JSON.parse(overallMatch[0].replace(/"overallBreakdown"\s*:\s*/, ''));
+            } catch (e) {
+              console.log('Could not parse overallBreakdown');
+            }
+          }
+          
+          console.log('✅ Partial JSON extraction succeeded!');
+          return partialJson;
+          
+        } catch (extractError) {
+          console.error('❌ Partial JSON extraction also failed:', extractError.message);
+          console.log('🔄 Falling back to basic analysis due to complete JSON parsing failure...');
+          
+          // Return a basic analysis structure to prevent complete failure
+          return {
+            grammarBreakdown: {
+              spellingErrors: "AI analysis failed - unable to parse response",
+              grammarIssues: "AI analysis failed - unable to parse response", 
+              punctuationProblems: "AI analysis failed - unable to parse response",
+              scoreExplanation: "AI analysis failed - unable to parse response"
+            },
+            guidelinesBreakdown: {
+              salesEffectiveness: "AI analysis failed - unable to parse response",
+              engagementQuality: "AI analysis failed - unable to parse response",
+              captionQuality: "AI analysis failed - unable to parse response",
+              conversationFlow: "AI analysis failed - unable to parse response",
+              scoreExplanation: "AI analysis failed - unable to parse response"
+            },
+            overallBreakdown: {
+              messageClarity: "AI analysis failed - unable to parse response",
+              emotionalImpact: "AI analysis failed - unable to parse response",
+              conversionPotential: "AI analysis failed - unable to parse response",
+              scoreExplanation: "AI analysis failed - unable to parse response"
+            }
+          };
+        }
       }
     }
     } catch (apiError) {
