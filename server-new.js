@@ -2074,9 +2074,21 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
             console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
-            const batchSize = calculateOptimalBatchSize(analysisMessageTexts);
+            let batchSize = calculateOptimalBatchSize(analysisMessageTexts);
+            
+            // CRITICAL FIX: If batch size is too small, force a reasonable minimum
+            if (batchSize < 50) {
+              console.log(`🚨 WARNING: Batch size too small (${batchSize}), forcing minimum of 50 messages`);
+              batchSize = 50;
+            }
+            
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
+            console.log('🚨 CRITICAL DEBUG - Batch calculation:');
+            console.log('🚨 Total messages:', analysisMessageTexts.length);
+            console.log('🚨 Calculated batch size:', batchSize);
+            console.log('🚨 Total batches:', totalBatches);
+            console.log('🚨 Math check:', analysisMessageTexts.length, '÷', batchSize, '=', totalBatches);
             
             let combinedGrammarAnalysis = {
               spellingErrors: '',
