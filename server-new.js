@@ -1172,16 +1172,18 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
 
-OUTPUT REQUIREMENT (STRICT): After your narrative, you MUST output a single JSON block labeled exactly as below. Titles must be the uploaded guideline Titles. Matching must be based on Descriptions. Provide counts per violated guideline and up to 10 example message indices if available.
+CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
 
 GUIDELINES_V2_JSON:
 {
-  "generalChatting": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "psychology": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "captions": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "sales": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] }
+  "generalChatting": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "psychology": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "captions": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "sales": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] }
 }
 END_GUIDELINES_V2_JSON
+
+FAILURE TO PROVIDE THIS EXACT JSON FORMAT WILL RESULT IN ANALYSIS FAILURE.
 
          ONLYFANS CHATTING RULES - CRITICAL:
          
@@ -2486,11 +2488,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 const endTag = 'END_GUIDELINES_V2_JSON';
                 const startIdx = raw.indexOf(startTag);
                 const endIdx = raw.indexOf(endTag);
-                if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return null;
+                console.log('🔍 JSON Parser: startIdx=', startIdx, 'endIdx=', endIdx);
+                if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+                  console.log('❌ JSON Parser: Missing start/end tags');
+                  return null;
+                }
                 const jsonSlice = raw.slice(startIdx + startTag.length, endIdx).trim();
+                console.log('🔍 JSON Parser: jsonSlice length=', jsonSlice.length);
+                console.log('🔍 JSON Parser: jsonSlice preview=', jsonSlice.substring(0, 200));
                 const parsed = JSON.parse(jsonSlice);
+                console.log('✅ JSON Parser: Successfully parsed JSON');
                 return parsed && typeof parsed === 'object' ? parsed : null;
               } catch (e) {
+                console.log('❌ JSON Parser: Parse error:', e.message);
                 return null;
               }
             }
