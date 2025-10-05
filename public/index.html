@@ -1236,7 +1236,7 @@
                                     <span>Market positioning insights</span>
                                 </div>
                             </div>
-                            <button class="w-full premium-button text-white font-medium py-3 px-6 rounded-xl">
+                            <button onclick="showAgencyAnalysis()" class="w-full premium-button text-white font-medium py-3 px-6 rounded-xl">
                                 <i class="fas fa-brain mr-2"></i>Run Agency Analysis
                             </button>
                         </div>
@@ -1269,7 +1269,7 @@
                                     <span>Skill development roadmap</span>
                                 </div>
                             </div>
-                            <button class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                            <button onclick="showChatterAnalysis()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3 px-6 rounded-xl transition-all">
                                 <i class="fas fa-user-check mr-2"></i>Run Individual Analysis
                             </button>
                         </div>
@@ -1306,7 +1306,10 @@
                                     <i class="fas fa-brain text-purple-400 text-6xl"></i>
                                 </div>
                                 <h4 class="text-3xl font-semibold text-white mb-6">Ready for Deep Analysis</h4>
-                                <p class="text-gray-400 text-xl mb-8 max-w-2xl mx-auto">Click "Run Agency Analysis" above to generate comprehensive insights with revenue optimization, team performance analysis, and strategic recommendations.</p>
+                                <p class="text-gray-400 text-xl mb-8 max-w-2xl mx-auto">Generate comprehensive insights with revenue optimization, team performance analysis, and strategic recommendations.</p>
+                                <button id="runAgencyAnalysis" class="premium-button text-white font-medium py-4 px-8 rounded-xl text-lg">
+                                    <i class="fas fa-brain mr-3"></i>Run Agency Analysis
+                                </button>
                                 <div class="flex items-center justify-center space-x-8 text-gray-500">
                                     <div class="flex items-center">
                                         <i class="fas fa-chart-line mr-3"></i>
@@ -1338,6 +1341,9 @@
                                         <select id="chatterAnalysisSelect" class="bg-gray-700 border border-gray-600 rounded-xl px-6 py-3 text-white text-lg">
                                             <option value="">Select Chatter...</option>
                                         </select>
+                                        <button id="runChatterAnalysis" class="bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                                            <i class="fas fa-play mr-2"></i>Run Analysis
+                                        </button>
                                         <span class="px-4 py-2 bg-cyan-500/20 text-cyan-400 text-lg font-medium rounded-full">DETAILED</span>
                                     </div>
                                 </div>
