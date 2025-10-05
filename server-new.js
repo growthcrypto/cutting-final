@@ -584,13 +584,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     });
     
     // Calculate metrics from daily reports (PPV sales and tips)
-    const totalRevenue = dailyReports.reduce((sum, report) => {
-      const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
-      const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
-      return sum + ppvRevenue + tipsRevenue;
-    }, 0);
+    const totalPPVRevenue = dailyReports.reduce((sum, report) => sum + report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0), 0);
+    const totalTipRevenue = dailyReports.reduce((sum, report) => sum + report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0), 0);
+    const totalRevenue = totalPPVRevenue + totalTipRevenue;
 
-    const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
+    // Note: daily reports include only unlocked PPVs; 'sent' is tracked in chatter performance
+    const totalPPVsSent = 0;
     
     // Add metrics from chatter performance data (only count non-null values)
     const chatterPPVsSent = chatterPerformance.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
@@ -627,8 +626,8 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
     // Combine data from all sources
-    const combinedPPVsSent = totalPPVsSent + chatterPPVsSent;
-    const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked;
+    const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
+    const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
     const combinedMessagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0) + chatterMessagesSent;
     const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
 
@@ -644,7 +643,8 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       ppvsUnlocked: combinedPPVsUnlocked,
       fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
-      avgPPVPrice: combinedPPVsSent > 0 ? Math.round((totalRevenue / combinedPPVsSent) * 100) / 100 : 0,
+      // Average PPV price should be computed from PPV revenue over unlocked (purchased) PPVs
+      avgPPVPrice: combinedPPVsUnlocked > 0 ? Math.round((totalPPVRevenue / combinedPPVsUnlocked) * 100) / 100 : 0,
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
     
@@ -1971,13 +1971,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const dailyReports = await DailyChatterReport.find(dateQuery);
       const ofAccountData = await AccountData.find(dateQuery);
       
-      const totalRevenue = dailyReports.reduce((sum, report) => {
-        const ppvRevenue = report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0);
-        const tipsRevenue = report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0);
-        return sum + ppvRevenue + tipsRevenue;
-      }, 0);
+      const totalPPVRevenue = dailyReports.reduce((sum, report) => sum + report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0), 0);
+      const totalTipRevenue = dailyReports.reduce((sum, report) => sum + report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0), 0);
+      const totalRevenue = totalPPVRevenue + totalTipRevenue;
 
-      const totalPPVsSent = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0);
+      // Reports reflect purchases (unlocked), not all sent
+      const totalPPVsSent = 0;
       // Calculate avg response time only from reports that have response time data
       const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
       const avgResponseTime = dailyReportsWithResponseTime.length > 0 
