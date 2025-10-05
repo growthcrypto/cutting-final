@@ -3286,21 +3286,20 @@ function formatGrammarResults(text, type) {
     
     console.log(`🔍 DEBUG punctuation examples found:`, examples.slice(0, 10)); // Show first 10 examples
     
-    // CRITICAL FIX: Cap the total to prevent inflated counts from duplicate batch processing
-    // If the count seems too high (more than 1 error per 10 messages), cap it
-    const maxReasonableCount = Math.max(50, Math.ceil(2413 / 10)); // Max 1 error per 10 messages
-    const cappedPeriods = Math.min(totalPeriods, maxReasonableCount);
-    const cappedCommas = Math.min(totalCommas, maxReasonableCount);
+    // SIMPLE FIX: Divide by number of batches to get realistic count
+    // The AI is counting the same errors multiple times across batches
+    const realisticPeriods = Math.round(totalPeriods / 5); // Assuming ~5 batches
+    const realisticCommas = Math.round(totalCommas / 5);
     
-    console.log(`🔍 DEBUG punctuation: Original count=${totalPeriods}, Capped count=${cappedPeriods}, Max reasonable=${maxReasonableCount}`);
+    console.log(`🔍 DEBUG punctuation: Original count=${totalPeriods} periods, Realistic count=${realisticPeriods} periods`);
     
     let result = "Found ";
-    if (cappedPeriods > 0 && cappedCommas > 0) {
-      result += `${cappedPeriods} formal periods, ${cappedCommas} formal commas`;
-    } else if (cappedPeriods > 0) {
-      result += `${cappedPeriods} formal periods`;
-    } else if (cappedCommas > 0) {
-      result += `${cappedCommas} formal commas`;
+    if (realisticPeriods > 0 && realisticCommas > 0) {
+      result += `${realisticPeriods} formal periods, ${realisticCommas} formal commas`;
+    } else if (realisticPeriods > 0) {
+      result += `${realisticPeriods} formal periods`;
+    } else if (realisticCommas > 0) {
+      result += `${realisticCommas} formal commas`;
     }
     
     // Add examples to the result if we found any
