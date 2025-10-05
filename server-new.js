@@ -2008,13 +2008,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
     // Generate AI analysis using OpenAI (agency and individual)
     try {
-      // Build messageContent strictly from the selected window's analysis record
+      // Build messageContent from ALL MessageAnalysis records for comprehensive analysis
       const analysisMessageTexts = (() => {
+        // First try to get all messages from all MessageAnalysis records
+        const allMessagesFromAllRecords = [];
+        messagesAnalysis.forEach(record => {
+          if (Array.isArray(record.messageRecords)) {
+            const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
+            allMessagesFromAllRecords.push(...messagesFromRecord);
+          }
+        });
+        
+        if (allMessagesFromAllRecords.length > 0) {
+          console.log(`🔄 Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysis.length} MessageAnalysis records`);
+          return allMessagesFromAllRecords;
+        }
+        
+        // Fallback to analyticsData.messageRecords if available
         const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
-        if (fromRecords.length > 0) return fromRecords;
-        // Get latestMessageAnalysis from the current scope
+        if (fromRecords.length > 0) {
+          console.log(`🔄 Using ${fromRecords.length} messages from analyticsData.messageRecords`);
+          return fromRecords;
+        }
+        
+        // Final fallback to latestMessageAnalysis messagesSample
         const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
         const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
+        console.log(`🔄 Using ${fromSample.length} messages from latestMessageAnalysis.messagesSample`);
         return fromSample;
       })();
 
@@ -2408,15 +2428,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
-      // Helper to extract message texts for deterministic breakdowns (strictly within selected window)
+      // Helper to extract message texts for deterministic breakdowns (from ALL MessageAnalysis records)
       const getWindowMessages = () => {
         try {
+          // First try to get all messages from all MessageAnalysis records
+          const allMessagesFromAllRecords = [];
+          messagesAnalysis.forEach(record => {
+            if (Array.isArray(record.messageRecords)) {
+              const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
+              allMessagesFromAllRecords.push(...messagesFromRecord);
+            }
+          });
+          
+          if (allMessagesFromAllRecords.length > 0) {
+            console.log(`🔄 getWindowMessages: Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysis.length} MessageAnalysis records`);
+            return allMessagesFromAllRecords;
+          }
+          
+          // Fallback to analyticsData.messageRecords if available
           if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
+            console.log(`🔄 getWindowMessages: Using ${analyticsData.messageRecords.length} messages from analyticsData.messageRecords`);
             return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean);
           }
-          // Get latestMessageAnalysis from the current scope
+          
+          // Final fallback to latestMessageAnalysis messagesSample
           const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
+          console.log(`🔄 getWindowMessages: Using ${fromSample.length} messages from latestMessageAnalysis.messagesSample`);
           return fromSample;
         } catch (_) {
           return [];
