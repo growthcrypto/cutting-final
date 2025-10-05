@@ -2107,7 +2107,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             try {
               // Analyze batches in parallel (up to 3 at a time to avoid rate limits)
-              const parallelBatches = 20; // Increased from 3 to 20 for much faster processing
+              const parallelBatches = 5; // Reduced from 20 to 5 to avoid rate limits
               for (let i = 0; i < totalBatches; i += parallelBatches) {
                 const batchPromises = [];
                 
@@ -2125,7 +2125,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   
                   console.log(`🔄 Calling AI for batch ${batchIndex + 1}/${totalBatches} with ${batch.length} messages`);
                   batchPromises.push(
-                    analyzeMessages(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
+                    analyzeMessagesWithRetry(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
                   );
                 }
                 
@@ -2134,6 +2134,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
                 console.log(`🔍 Batch results length:`, batchResults.length);
                 console.log(`🔍 First batch result keys:`, batchResults[0] ? Object.keys(batchResults[0]) : 'NO RESULT');
+                
+                // Add delay between batch groups to respect rate limits
+                if (i + parallelBatches < totalBatches) {
+                  console.log('⏳ Waiting 3 seconds to respect rate limits...');
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                }
                 console.log(`🔍 First batch guidelinesBreakdown:`, batchResults[0]?.guidelinesBreakdown ? 'EXISTS' : 'MISSING');
                 console.log(`🔍 First batch grammarBreakdown:`, batchResults[0]?.grammarBreakdown ? 'EXISTS' : 'MISSING');
                 
@@ -2916,6 +2922,25 @@ function estimateTokenUsage(messages) {
   const totalChars = messages.join(' ').length;
   const estimatedTokens = Math.ceil(totalChars / 4);
   return estimatedTokens;
+}
+
+// Retry function with exponential backoff for rate limits
+async function analyzeMessagesWithRetry(messages, chatterName, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await analyzeMessages(messages, chatterName);
+    } catch (error) {
+      if (error.message.includes('429') || error.message.includes('Rate limit')) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+        console.log(`⏳ Rate limit hit, retrying in ${delay/1000}s (attempt ${attempt}/${maxRetries})`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+      throw error; // Re-throw if not a rate limit error or max retries reached
+    }
+  }
 }
 
 // Calculate optimal batch size based on message length
