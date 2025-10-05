@@ -2365,19 +2365,84 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Raw salesEffectiveness:', combinedGuidelinesAnalysis.salesEffectiveness);
             console.log('🔄 Raw engagementQuality:', combinedGuidelinesAnalysis.engagementQuality);
             
-            // Build per-section allowlists from uploaded guidelines
+            // Build per-section allowlists from uploaded guidelines (use DESCRIPTION as the matcher; title is just an identifier)
             const norm = (s) => (s || '').toLowerCase().trim();
-            const salesTitles = new Set(customGuidelines.filter(g => /sales|ppv/i.test(g.category || '')).map(g => norm(g.title)));
-            const engagementTitles = new Set(customGuidelines.filter(g => /engage|engagement/i.test(g.category || '')).map(g => norm(g.title)));
-            const captionTitles = new Set(customGuidelines.filter(g => /caption|messag/i.test(g.category || '')).map(g => norm(g.title)));
-            const flowTitles = new Set(customGuidelines.filter(g => /conversation|flow|professional/i.test(g.category || '')).map(g => norm(g.title)));
+            const salesPhrases = new Set(
+              customGuidelines
+                .filter(g => /sales|ppv/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const engagementPhrases = new Set(
+              customGuidelines
+                .filter(g => /engage|engagement/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const captionPhrases = new Set(
+              customGuidelines
+                .filter(g => /caption|messag/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const flowPhrases = new Set(
+              customGuidelines
+                .filter(g => /conversation|flow|professional/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
 
             const formattedGuidelinesAnalysis = {
-              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', salesTitles),
-              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', engagementTitles),
-              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', captionTitles),
-              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', flowTitles),
-              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines', new Set([...salesTitles, ...engagementTitles, ...captionTitles, ...flowTitles]))
+              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', salesPhrases),
+              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', engagementPhrases),
+              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', captionPhrases),
+              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', flowPhrases),
+              scoreExplanation: formatGuidelinesText(
+                combinedGuidelinesAnalysis.scoreExplanation,
+                'Overall Guidelines',
+                new Set([...salesPhrases, ...engagementPhrases, ...captionPhrases, ...flowPhrases])
+              )
+            };
+
+            // NEW: Build V2 breakdown using four categories requested by user
+            const generalPhrases = new Set(
+              customGuidelines
+                .filter(g => /general\s*chat|general|chat/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const psychologyPhrases = new Set(
+              customGuidelines
+                .filter(g => /psych/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const captionsPhrases = new Set(
+              customGuidelines
+                .filter(g => /caption/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+            const salesOnlyPhrases = new Set(
+              customGuidelines
+                .filter(g => /sales/i.test(g.category || ''))
+                .map(g => norm(g.description))
+                .filter(Boolean)
+            );
+
+            const allGuidelinesText = [
+              combinedGuidelinesAnalysis.salesEffectiveness,
+              combinedGuidelinesAnalysis.engagementQuality,
+              combinedGuidelinesAnalysis.captionQuality,
+              combinedGuidelinesAnalysis.conversationFlow,
+              combinedGuidelinesAnalysis.scoreExplanation
+            ].filter(Boolean).join(' ');
+
+            const guidelinesBreakdownV2 = {
+              generalChatting: formatGuidelinesText(allGuidelinesText, 'General Chatting', generalPhrases),
+              psychology: formatGuidelinesText(allGuidelinesText, 'Psychology', psychologyPhrases),
+              captions: formatGuidelinesText(allGuidelinesText, 'Captions', captionsPhrases),
+              sales: formatGuidelinesText(allGuidelinesText, 'Sales', salesOnlyPhrases)
             };
             
             // Derive violation counts per section from the formatted text
@@ -2386,11 +2451,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               const m = line.match(/Found\s+(\d+)\s+violations?/i) || line.match(/\((\d+)\)/);
               return m ? parseInt(m[1]) || 0 : 0;
             }
-            const salesCount = extractCount(formattedGuidelinesAnalysis.salesEffectiveness);
-            const engageCount = extractCount(formattedGuidelinesAnalysis.engagementQuality);
-            const captionCount = extractCount(formattedGuidelinesAnalysis.captionQuality);
-            const flowCount = extractCount(formattedGuidelinesAnalysis.conversationFlow);
-            const totalGuidelineViolations = salesCount + engageCount + captionCount + flowCount;
+            // Compute counts from V2 categories
+            const v2General = extractCount(guidelinesBreakdownV2.generalChatting);
+            const v2Psych = extractCount(guidelinesBreakdownV2.psychology);
+            const v2Captions = extractCount(guidelinesBreakdownV2.captions);
+            const v2Sales = extractCount(guidelinesBreakdownV2.sales);
+            const totalGuidelineViolations = v2General + v2Psych + v2Captions + v2Sales;
 
             // Calculate guidelines score using same rubric as grammar (errors vs total messages)
             const calculatedGuidelinesScore = calculateGrammarScore(totalGuidelineViolations, analysisMessageTexts.length || 1);
@@ -2398,14 +2464,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
             // Build concise overall summary and main issues (top 2)
             const entriesGuides = [
-              ['sales effectiveness', salesCount],
-              ['engagement quality', engageCount],
-              ['caption quality', captionCount],
-              ['conversation flow', flowCount]
+              ['general chatting', v2General],
+              ['psychology', v2Psych],
+              ['captions', v2Captions],
+              ['sales', v2Sales]
             ].filter(([, c]) => c > 0).sort((a,b)=>b[1]-a[1]);
             const topIssues = entriesGuides.slice(0,2).map(([n,c])=>`${n} (${c})`).join(', ');
             const conciseGuidelinesSummary = `Overall guidelines: ${calculatedGuidelinesScore}/100. Total violations: ${totalGuidelineViolations}.${topIssues ? ' Main issues: ' + topIssues + '.' : ''}`;
             formattedGuidelinesAnalysis.scoreExplanation = conciseGuidelinesSummary;
+
+            // Attach V2 breakdown to be used by frontend if present
+            formattedGuidelinesAnalysis.guidelinesBreakdownV2 = {
+              ...guidelinesBreakdownV2,
+              scoreExplanation: conciseGuidelinesSummary
+            };
             
             console.log('🔄 Formatted salesEffectiveness:', formattedGuidelinesAnalysis.salesEffectiveness);
             console.log('🔄 Formatted engagementQuality:', formattedGuidelinesAnalysis.engagementQuality);
@@ -3743,7 +3815,7 @@ function getMainIssues(spellingCount, grammarCount, punctuationCount) {
 }
 
 // Helper function to format guidelines text for clean analysis
-function formatGuidelinesText(text, category, allowedTitles) {
+function formatGuidelinesText(text, category, allowedPhrases) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
@@ -3778,10 +3850,12 @@ function formatGuidelinesText(text, category, allowedTitles) {
         .replace(/section/i, '')
         .trim()
         .toLowerCase();
-      // Filter out any labels not in uploaded guidelines (allowedTitles)
-      if (allowedTitles && allowedTitles.size > 0) {
-        // Accept if exact match or substring matches any allowed title
-        const isAllowed = Array.from(allowedTitles).some(t => label.includes(t) || t.includes(label));
+      // Exclude generic category terms that are not real guidelines
+      const genericTerms = new Set(['sales effectiveness','engagement quality','caption quality','conversation flow','personal sharing']);
+      if (genericTerms.has(label)) continue;
+      // Filter out any labels not in uploaded guideline DESCRIPTIONS (allowedPhrases)
+      if (allowedPhrases && allowedPhrases.size > 0) {
+        const isAllowed = Array.from(allowedPhrases).some(p => label.includes(p) || p.includes(label));
         if (!isAllowed) continue;
       }
       if (!label) continue;
@@ -3828,25 +3902,24 @@ function formatGuidelinesText(text, category, allowedTitles) {
     analysis += `Found ${total} violations. Top issues: ${top.join(', ')}. `;
   }
   
-  // If no structured violations captured, try mapping uploaded guideline titles to counts
-  if (!analysis.trim() && allowedTitles && allowedTitles.size > 0) {
-    const titleCounts = new Map();
-    allowedTitles.forEach((t) => {
-      if (!t) return;
-      const titleEsc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const reWithCount = new RegExp(`Found\\s+(\\d+)\\s+violations?[^\n]*?(?:of|in)\\s+['\"]?${titleEsc}['\"]?`, 'i');
-      const reTitleOnly = new RegExp(`\b${titleEsc}\b`, 'i');
+  // If no structured violations captured, try mapping uploaded guideline DESCRIPTIONS to counts
+  if (!analysis.trim() && allowedPhrases && allowedPhrases.size > 0) {
+    const phraseCounts = new Map();
+    allowedPhrases.forEach((p) => {
+      if (!p) return;
+      const phraseEsc = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reWithCount = new RegExp(`Found\\s+(\\d+)\\s+violations?[^\n]*?(?:of|in)\\s+['\"]?${phraseEsc}['\"]?`, 'i');
+      const rePhraseOnly = new RegExp(`${phraseEsc}`, 'i');
       const m = cleanText.match(reWithCount);
       if (m) {
         const c = parseInt(m[1]) || 0;
-        if (c > 0) titleCounts.set(t, (titleCounts.get(t) || 0) + c);
-      } else if (reTitleOnly.test(cleanText)) {
-        // If title appears but no explicit count, count as 1 minimal violation signal
-        titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+        if (c > 0) phraseCounts.set(p, (phraseCounts.get(p) || 0) + c);
+      } else if (rePhraseOnly.test(cleanText)) {
+        phraseCounts.set(p, (phraseCounts.get(p) || 0) + 1);
       }
     });
-    if (titleCounts.size > 0) {
-      const entries = Array.from(titleCounts.entries());
+    if (phraseCounts.size > 0) {
+      const entries = Array.from(phraseCounts.entries());
       const total = entries.reduce((s, [, c]) => s + (c || 0), 0);
       const top = entries
         .sort((a, b) => (b[1] || 0) - (a[1] || 0))
