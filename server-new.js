@@ -1646,6 +1646,58 @@ app.post('/api/debug/test-password', checkDatabaseConnection, async (req, res) =
   }
 });
 
+// Debug endpoint to get punctuation examples
+app.get('/api/debug/punctuation-examples', checkDatabaseConnection, async (req, res) => {
+  try {
+    const { chatterName } = req.query;
+    
+    if (!chatterName) {
+      return res.status(400).json({ error: 'chatterName parameter required' });
+    }
+    
+    // Get all MessageAnalysis records for this chatter
+    const records = await MessageAnalysis.find({ chatterName }).sort({ createdAt: -1 });
+    
+    if (records.length === 0) {
+      return res.json({ 
+        message: 'No records found', 
+        chatterName,
+        examples: [] 
+      });
+    }
+    
+    // Extract punctuation examples from the most recent record
+    const latestRecord = records[0];
+    const examples = [];
+    
+    if (latestRecord.grammarBreakdown && latestRecord.grammarBreakdown.punctuationProblems) {
+      const punctuationText = latestRecord.grammarBreakdown.punctuationProblems;
+      
+      // Extract examples using regex
+      const exampleMatches = [...punctuationText.matchAll(/'([^']+)' should be '([^']+)'/g)];
+      exampleMatches.forEach(match => {
+        examples.push({
+          original: match[1],
+          corrected: match[2],
+          type: 'punctuation'
+        });
+      });
+    }
+    
+    res.json({
+      chatterName,
+      totalExamples: examples.length,
+      examples: examples.slice(0, 20), // Show first 20 examples
+      recordId: latestRecord._id,
+      recordDate: latestRecord.createdAt
+    });
+    
+  } catch (error) {
+    console.error('Error fetching punctuation examples:', error);
+    res.status(500).json({ error: 'Failed to fetch punctuation examples' });
+  }
+});
+
 // Debug endpoint to check message analysis data
 app.get('/api/debug/message-analysis', checkDatabaseConnection, async (req, res) => {
   try {
@@ -3221,6 +3273,15 @@ function formatGrammarResults(text, type) {
       return "No punctuation errors found - informal OnlyFans language is correct.";
     }
     
+    // Extract examples of punctuation issues for debugging
+    const examples = [];
+    const exampleMatches = [...cleanText.matchAll(/'([^']+)' should be '([^']+)'/g)];
+    exampleMatches.forEach(match => {
+      examples.push(`${match[1]} → ${match[2]}`);
+    });
+    
+    console.log(`🔍 DEBUG punctuation examples found:`, examples.slice(0, 10)); // Show first 10 examples
+    
     let result = "Found ";
     if (totalPeriods > 0 && totalCommas > 0) {
       result += `${totalPeriods} formal periods, ${totalCommas} formal commas`;
@@ -3228,6 +3289,12 @@ function formatGrammarResults(text, type) {
       result += `${totalPeriods} formal periods`;
     } else if (totalCommas > 0) {
       result += `${totalCommas} formal commas`;
+    }
+    
+    // Add examples to the result if we found any
+    if (examples.length > 0) {
+      const exampleText = examples.slice(0, 5).join(', '); // Show first 5 examples
+      result += `. Examples: ${exampleText}`;
     }
     
     return result + " across analyzed messages.";
