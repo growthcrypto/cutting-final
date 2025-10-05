@@ -3110,10 +3110,10 @@ function calculateGrammarScore(totalErrors, totalMessages) {
   
   const errorRate = totalErrors / totalMessages;
   
-  // MUCH STRICTER scoring: Penalize errors more heavily
-  // Formula: 100 - (error rate * 200), with minimum of 0
-  // This means 5% error rate = 0 score, 2.5% error rate = 50 score
-  let score = Math.max(0, 100 - (errorRate * 200));
+  // BALANCED scoring: Stricter than before but not too harsh
+  // Formula: 100 - (error rate * 150), with minimum of 0
+  // This means 5% error rate = 25 score, 2.5% error rate = 62.5 score
+  let score = Math.max(0, 100 - (errorRate * 150));
   
   // Round to nearest integer
   return Math.round(score);
