@@ -3685,17 +3685,26 @@ function formatGrammarResults(text, type) {
   
   if (type === 'grammar') {
     // Extract grammar errors and return count with summary
-    const grammarMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
-    const uniqueGrammarErrors = new Set();
-    grammarMatches.forEach(match => {
-      uniqueGrammarErrors.add(`${match[1]}`);
-    });
+    // Look for patterns like "Found X grammar" or count message references
+    const foundMatches = [...cleanText.matchAll(/Found (\d+) grammar/gi)];
+    const messageMatches = [...cleanText.matchAll(/Message \d+/g)];
     
-    if (uniqueGrammarErrors.size === 0) {
+    let totalErrors = 0;
+    
+    if (foundMatches.length > 0) {
+      // Use the "Found X grammar" pattern
+      totalErrors = parseInt(foundMatches[0][1]);
+    } else if (messageMatches.length > 0) {
+      // Count unique message references
+      const uniqueMessages = new Set(messageMatches.map(match => match[0]));
+      totalErrors = uniqueMessages.size;
+    }
+    
+    if (totalErrors === 0) {
       return "No grammar errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
+    return `Found ${totalErrors} grammar error${totalErrors !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'punctuation') {
