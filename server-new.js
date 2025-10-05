@@ -2360,6 +2360,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines', allowedTitles)
             };
             
+            // Derive violation counts per section from the formatted text
+            function extractCount(line) {
+              if (!line) return 0;
+              const m = line.match(/Found\s+(\d+)\s+violations?/i) || line.match(/\((\d+)\)/);
+              return m ? parseInt(m[1]) || 0 : 0;
+            }
+            const salesCount = extractCount(formattedGuidelinesAnalysis.salesEffectiveness);
+            const engageCount = extractCount(formattedGuidelinesAnalysis.engagementQuality);
+            const captionCount = extractCount(formattedGuidelinesAnalysis.captionQuality);
+            const flowCount = extractCount(formattedGuidelinesAnalysis.conversationFlow);
+            const totalGuidelineViolations = salesCount + engageCount + captionCount + flowCount;
+
+            // Calculate guidelines score using same rubric as grammar (errors vs total messages)
+            const calculatedGuidelinesScore = calculateGrammarScore(totalGuidelineViolations, analysisMessageTexts.length || 1);
+            analyticsData.guidelinesScore = calculatedGuidelinesScore;
+
+            // Build concise overall summary and main issues (top 2)
+            const entriesGuides = [
+              ['sales effectiveness', salesCount],
+              ['engagement quality', engageCount],
+              ['caption quality', captionCount],
+              ['conversation flow', flowCount]
+            ].filter(([, c]) => c > 0).sort((a,b)=>b[1]-a[1]);
+            const topIssues = entriesGuides.slice(0,2).map(([n,c])=>`${n} (${c})`).join(', ');
+            const conciseGuidelinesSummary = `Overall guidelines: ${calculatedGuidelinesScore}/100. Total violations: ${totalGuidelineViolations}.${topIssues ? ' Main issues: ' + topIssues + '.' : ''}`;
+            formattedGuidelinesAnalysis.scoreExplanation = conciseGuidelinesSummary;
+            
             console.log('🔄 Formatted salesEffectiveness:', formattedGuidelinesAnalysis.salesEffectiveness);
             console.log('🔄 Formatted engagementQuality:', formattedGuidelinesAnalysis.engagementQuality);
             
@@ -2487,7 +2514,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
       aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore || analyticsData.grammarScore;
       aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
-      aiAnalysis.overallScore = analyticsData.overallMessageScore;
+      // Derive overall score as average of grammar and guidelines when available
+      if (aiAnalysis.grammarScore != null && aiAnalysis.guidelinesScore != null) {
+        aiAnalysis.overallScore = Math.round((aiAnalysis.grammarScore + aiAnalysis.guidelinesScore) / 2);
+      } else {
+        aiAnalysis.overallScore = analyticsData.overallMessageScore;
+      }
       
       // Add message analysis data for detailed breakdown - only if analyticsData has content
       if (analyticsData.chattingStyle && Object.keys(analyticsData.chattingStyle).length > 0) {
