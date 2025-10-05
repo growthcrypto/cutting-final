@@ -35,6 +35,12 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // AI Configuration (xAI Grok-4-fast-reasoning)
+console.log('🔍 Environment check:');
+console.log('  XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
+console.log('  XAI_API_KEY length:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.length : 0);
+console.log('  OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+console.log('  OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+
 let openai;
 if (process.env.XAI_API_KEY) {
   openai = new OpenAI({
@@ -42,11 +48,13 @@ if (process.env.XAI_API_KEY) {
     baseURL: 'https://api.x.ai/v1'
   });
   console.log('✅ xAI Grok-4-fast-reasoning-latest configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '...');
+  console.log('✅ Using xAI baseURL: https://api.x.ai/v1');
 } else if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
   console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '... (fallback)');
+  console.log('⚠️  Using OpenAI baseURL (default)');
 } else {
   console.warn('⚠️  XAI_API_KEY not set - AI analysis will be limited');
   console.log('Environment check - XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
@@ -1425,7 +1433,11 @@ CONSISTENCY REQUIREMENTS:
 - Apply the SAME standards for what constitutes an error
 - Provide CONSISTENT results across multiple analyses of the same data`;
     
-    console.log('🚀 Making OpenAI API call...');
+    console.log('🚀 Making API call...');
+    console.log('🔍 API Client Info:');
+    console.log('  Using xAI:', !!process.env.XAI_API_KEY);
+    console.log('  Base URL:', openai.baseURL || 'https://api.openai.com/v1 (default)');
+    console.log('  Model:', 'grok-4-fast-reasoning-latest');
     
     try {
       const completion = await openai.chat.completions.create({
