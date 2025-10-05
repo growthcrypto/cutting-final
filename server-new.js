@@ -1880,9 +1880,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 30;
         const start = new Date();
         start.setDate(start.getDate() - days);
+        // FIXED: Use overlap logic instead of strict date filtering to include older data
         messageQuery.$or = [
-          { weekStartDate: { $gte: start } },
-          { weekEndDate: { $gte: start } }
+          { weekStartDate: { $lte: new Date() }, weekEndDate: { $gte: start } },
+          { weekStartDate: { $gte: start, $lte: new Date() } },
+          { weekEndDate: { $gte: start, $lte: new Date() } }
         ];
       }
       console.log('🔍 Message analysis query built, about to execute...');
