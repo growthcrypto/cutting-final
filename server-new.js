@@ -3286,20 +3286,16 @@ function formatGrammarResults(text, type) {
     
     console.log(`🔍 DEBUG punctuation examples found:`, examples.slice(0, 10)); // Show first 10 examples
     
-    // SIMPLE FIX: Divide by number of batches to get realistic count
-    // The AI is counting the same errors multiple times across batches
-    const realisticPeriods = Math.round(totalPeriods / 5); // Assuming ~5 batches
-    const realisticCommas = Math.round(totalCommas / 5);
-    
-    console.log(`🔍 DEBUG punctuation: Original count=${totalPeriods} periods, Realistic count=${realisticPeriods} periods`);
+    // Use the actual count - the issue might be in the regex parsing, not batch processing
+    console.log(`🔍 DEBUG punctuation: Final count=${totalPeriods} periods, ${totalCommas} commas`);
     
     let result = "Found ";
-    if (realisticPeriods > 0 && realisticCommas > 0) {
-      result += `${realisticPeriods} formal periods, ${realisticCommas} formal commas`;
-    } else if (realisticPeriods > 0) {
-      result += `${realisticPeriods} formal periods`;
-    } else if (realisticCommas > 0) {
-      result += `${realisticCommas} formal commas`;
+    if (totalPeriods > 0 && totalCommas > 0) {
+      result += `${totalPeriods} formal periods, ${totalCommas} formal commas`;
+    } else if (totalPeriods > 0) {
+      result += `${totalPeriods} formal periods`;
+    } else if (totalCommas > 0) {
+      result += `${totalCommas} formal commas`;
     }
     
     // Add examples to the result if we found any
