@@ -1406,7 +1406,18 @@ CONSISTENCY REQUIREMENTS:
     }
     
     try {
-      const analysisResult = JSON.parse(jsonMatch[0]);
+      let jsonText = jsonMatch[0];
+      
+      // Auto-fix common JSON issues
+      jsonText = jsonText
+        .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+        .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // Fix unescaped backslashes
+        .replace(/(\w+):/g, '"$1":') // Quote unquoted keys
+        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2'); // Quote unquoted string values
+      
+      console.log('🔧 Attempting to parse JSON with auto-corrections...');
+      const analysisResult = JSON.parse(jsonText);
+      
       if (analysisResult.grammarBreakdown) {
         // Grammar breakdown found
       }
@@ -1426,7 +1437,51 @@ CONSISTENCY REQUIREMENTS:
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError.message);
       console.error('❌ Malformed JSON:', jsonMatch[0]);
-      throw new Error('AI returned malformed JSON');
+      console.error('❌ Parse Error Details:', parseError);
+      
+      // Try one more time with more aggressive fixes
+      try {
+        console.log('🔧 Attempting aggressive JSON fixes...');
+        let aggressiveJson = jsonMatch[0]
+          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+          .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // Fix unescaped backslashes
+          .replace(/(\w+):/g, '"$1":') // Quote unquoted keys
+          .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote unquoted string values
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+          .replace(/\n/g, '\\n') // Escape newlines
+          .replace(/\r/g, '\\r') // Escape carriage returns
+          .replace(/\t/g, '\\t'); // Escape tabs
+        
+        const aggressiveResult = JSON.parse(aggressiveJson);
+        console.log('✅ Aggressive JSON fixes succeeded!');
+        return aggressiveResult;
+      } catch (aggressiveError) {
+        console.error('❌ Aggressive JSON fixes also failed:', aggressiveError.message);
+        console.log('🔄 Falling back to basic analysis due to JSON parsing failure...');
+        
+        // Return a basic analysis structure to prevent complete failure
+        return {
+          grammarBreakdown: {
+            spellingErrors: "AI analysis failed - unable to parse response",
+            grammarIssues: "AI analysis failed - unable to parse response", 
+            punctuationProblems: "AI analysis failed - unable to parse response",
+            scoreExplanation: "AI analysis failed - unable to parse response"
+          },
+          guidelinesBreakdown: {
+            salesEffectiveness: "AI analysis failed - unable to parse response",
+            engagementQuality: "AI analysis failed - unable to parse response",
+            captionQuality: "AI analysis failed - unable to parse response",
+            conversationFlow: "AI analysis failed - unable to parse response",
+            scoreExplanation: "AI analysis failed - unable to parse response"
+          },
+          overallBreakdown: {
+            messageClarity: "AI analysis failed - unable to parse response",
+            emotionalImpact: "AI analysis failed - unable to parse response",
+            conversionPotential: "AI analysis failed - unable to parse response",
+            scoreExplanation: "AI analysis failed - unable to parse response"
+          }
+        };
+      }
     }
     } catch (apiError) {
       console.error('❌ OpenAI API Error:', apiError.message);
