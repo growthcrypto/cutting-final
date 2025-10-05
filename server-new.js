@@ -2589,7 +2589,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           emojiUsage: aiAnalysis.chattingStyle.emojiUsage,
           messageLength: aiAnalysis.chattingStyle.messageLength
         });
+      } else {
+        console.log('🔍 ERROR: aiAnalysis.chattingStyle is null/undefined!');
       }
+      
+      // Debug the final response being sent
+      console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
+      console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
+      console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
       console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
