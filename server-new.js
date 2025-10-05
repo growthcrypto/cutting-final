@@ -634,6 +634,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const analytics = {
       totalRevenue: Math.round(totalRevenue),
       netRevenue: Math.round(netRevenue),
+      ppvRevenue: Math.round(totalPPVRevenue),
       recurringRevenue: Math.round(recurringRevenue),
       totalSubs: Math.round(totalSubs),
       newSubs: Math.round(newSubs),
@@ -4286,7 +4287,7 @@ Respond in STRICT JSON with this exact shape:
   "advancedMetrics": {
     "efficiencyRatios": {
       "messagesPerPPV": "DETAILED analysis of the ${analyticsData.messagesSent}/${analyticsData.ppvsSent} = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} ratio with specific benchmarks and actionable insights",
-      "revenueEfficiency": "DETAILED analysis of $${analyticsData.netSales}/${analyticsData.ppvsSent} = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV and $${analyticsData.netSales}/${analyticsData.messagesSent} = $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message with pricing recommendations", 
+      "revenueEfficiency": "DETAILED analysis of $${analyticsData.ppvRevenue || analyticsData.netSales}/${analyticsData.ppvsUnlocked} = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.ppvsUnlocked || 1)).toFixed(2)} per PPV (purchased) and $${(analyticsData.ppvRevenue || analyticsData.netSales)}/${analyticsData.messagesSent} = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.messagesSent || 1)).toFixed(2)} per message with pricing recommendations",
       "messageQualityImpact": "DETAILED analysis of how the ${analyticsData.grammarScore}/100 grammar and ${analyticsData.guidelinesScore}/100 guidelines scores correlate with the ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate"
     },
     "behavioralPatterns": {
