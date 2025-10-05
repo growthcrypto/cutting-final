@@ -34,16 +34,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// OpenAI Configuration
+// AI Configuration (xAI Grok-4-fast-reasoning)
 let openai;
-if (process.env.OPENAI_API_KEY) {
+if (process.env.XAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.XAI_API_KEY,
+    baseURL: 'https://api.x.ai/v1'
+  });
+  console.log('✅ xAI Grok-4-fast-reasoning configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '...');
+} else if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
-  console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '...');
+  console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '... (fallback)');
 } else {
-  console.warn('⚠️  OPENAI_API_KEY not set - AI analysis will be limited');
-  console.log('Environment check - OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+  console.warn('⚠️  XAI_API_KEY not set - AI analysis will be limited');
+  console.log('Environment check - XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
   // Create a mock openai object to prevent errors
   openai = {
     chat: {
@@ -1423,7 +1429,7 @@ CONSISTENCY REQUIREMENTS:
     
     try {
       const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'grok-4-fast-reasoning',
       messages: [
         {
           role: 'system',
@@ -1434,8 +1440,8 @@ CONSISTENCY REQUIREMENTS:
           content: prompt
         }
       ],
-      temperature: 0.0, // Zero temperature for completely consistent responses
-      max_tokens: 12000, // Increased for comprehensive analysis of large message sets
+      temperature: 0.1, // Low temperature for consistent JSON output
+      max_tokens: 16000, // Increased for Grok-4-fast-reasoning's larger context
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -3793,7 +3799,7 @@ Messages: ${messages.join(' ')}
 Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR list specific actual errors found.`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'grok-4-fast-reasoning',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.0
@@ -4708,7 +4714,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "grok-4-fast-reasoning",
       messages: [
         {
           role: "system",
@@ -4719,8 +4725,8 @@ CRITICAL ANALYSIS REQUIREMENTS:
           content: prompt
         }
       ],
-      temperature: 0.3,
-      max_tokens: 4000
+      temperature: 0.1,
+      max_tokens: 8000
     });
 
     const aiResponse = completion.choices[0].message.content;
