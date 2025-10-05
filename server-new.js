@@ -2962,6 +2962,11 @@ function formatGrammarResults(text, type) {
     const periodMatches3 = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
     const periodMatches4 = [...cleanText.matchAll(/(\d+) formal periods?/g)];
     const periodMatches5 = [...cleanText.matchAll(/(\d+) periods?/g)];
+    const periodMatches6 = [...cleanText.matchAll(/(\d+) punctuation errors?:/g)];
+    const periodMatches7 = [...cleanText.matchAll(/Found (\d+) punctuation errors?:/g)];
+    const periodMatches8 = [...cleanText.matchAll(/(\d+) excessive periods?/g)];
+    const periodMatches9 = [...cleanText.matchAll(/(\d+) missing periods?/g)];
+    const periodMatches10 = [...cleanText.matchAll(/(\d+) periods? at the end of sentences?/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
     
     console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
@@ -2969,6 +2974,11 @@ function formatGrammarResults(text, type) {
     console.log(`🔍 DEBUG punctuation: periodMatches3=`, periodMatches3);
     console.log(`🔍 DEBUG punctuation: periodMatches4=`, periodMatches4);
     console.log(`🔍 DEBUG punctuation: periodMatches5=`, periodMatches5);
+    console.log(`🔍 DEBUG punctuation: periodMatches6=`, periodMatches6);
+    console.log(`🔍 DEBUG punctuation: periodMatches7=`, periodMatches7);
+    console.log(`🔍 DEBUG punctuation: periodMatches8=`, periodMatches8);
+    console.log(`🔍 DEBUG punctuation: periodMatches9=`, periodMatches9);
+    console.log(`🔍 DEBUG punctuation: periodMatches10=`, periodMatches10);
     console.log(`🔍 DEBUG punctuation: commaMatches=`, commaMatches);
     
     let totalPeriods = 0;
@@ -2988,6 +2998,21 @@ function formatGrammarResults(text, type) {
       totalPeriods += parseInt(match[1]);
     });
     periodMatches5.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches6.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches7.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches8.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches9.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches10.forEach(match => {
       totalPeriods += parseInt(match[1]);
     });
     
