@@ -1762,6 +1762,40 @@ app.delete('/api/debug/wipe-messages', checkDatabaseConnection, async (req, res)
   }
 });
 
+// Debug endpoint to clean up duplicate gypsy records
+app.delete('/api/debug/cleanup-gypsy', checkDatabaseConnection, async (req, res) => {
+  try {
+    // Keep the record with the best analysis data
+    const keepRecordId = '68df0011e3e520e905b2c378';
+    
+    // Delete all other gypsy records
+    const result = await MessageAnalysis.deleteMany({
+      chatterName: 'gypsy',
+      _id: { $ne: keepRecordId }
+    });
+    
+    // Verify what's left
+    const remaining = await MessageAnalysis.find({ chatterName: 'gypsy' });
+    
+    res.json({
+      message: 'Gypsy records cleaned up successfully',
+      deleted: result.deletedCount,
+      kept: keepRecordId,
+      remaining: remaining.length,
+      remainingRecords: remaining.map(r => ({
+        id: r._id,
+        totalMessages: r.totalMessages,
+        overallScore: r.overallScore,
+        grammarScore: r.grammarScore,
+        guidelinesScore: r.guidelinesScore
+      }))
+    });
+  } catch (error) {
+    console.error('Error cleaning up gypsy records:', error);
+    res.status(500).json({ error: 'Failed to clean up gypsy records' });
+  }
+});
+
 // AI Analysis endpoint for comprehensive analysis
 app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
