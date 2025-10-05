@@ -40,10 +40,14 @@ console.log('  XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
 console.log('  XAI_API_KEY length:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.length : 0);
 console.log('  XAI_API_KEY starts with xai-:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.startsWith('xai-') : false);
 console.log('  XAI_API_KEY first 10 chars:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.substring(0, 10) : 'N/A');
+console.log('  XAI_API_KEY last 10 chars:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.substring(-10) : 'N/A');
 console.log('  OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
 console.log('  OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
 console.log('  All env vars with XAI:', Object.keys(process.env).filter(key => key.includes('XAI')));
 console.log('  All env vars with OPENAI:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
+console.log('  ALL ENVIRONMENT VARIABLES:', Object.keys(process.env).sort());
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+console.log('  RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
 
 let openai;
 if (process.env.XAI_API_KEY) {
@@ -1437,11 +1441,14 @@ CONSISTENCY REQUIREMENTS:
 - Apply the SAME standards for what constitutes an error
 - Provide CONSISTENT results across multiple analyses of the same data`;
     
-    console.log('🚀 Making API call...');
-    console.log('🔍 API Client Info:');
-    console.log('  Using xAI:', !!process.env.XAI_API_KEY);
-    console.log('  Base URL:', openai.baseURL || 'https://api.openai.com/v1 (default)');
-    console.log('  Model:', 'grok-4-fast-reasoning-latest');
+console.log('🚀 Making API call...');
+console.log('🔍 API Client Info:');
+console.log('  Using xAI:', !!process.env.XAI_API_KEY);
+console.log('  Base URL:', openai.baseURL || 'https://api.openai.com/v1 (default)');
+console.log('  Model:', 'grok-4-fast-reasoning-latest');
+console.log('  API Key starts with:', openai.apiKey ? openai.apiKey.substring(0, 10) : 'NO KEY');
+console.log('  API Key length:', openai.apiKey ? openai.apiKey.length : 0);
+console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
     
     try {
       const completion = await openai.chat.completions.create({
