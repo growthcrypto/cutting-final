@@ -1365,7 +1365,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for completely consistent responses
-      max_tokens: 4000, // Maximum supported by gpt-3.5-turbo
+      max_tokens: 8000, // Increased for comprehensive analysis of large message sets
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -2084,6 +2084,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   const batch = analysisMessageTexts.slice(start, end);
                   
                   console.log(`🔄 Analyzing batch ${batchIndex + 1}/${totalBatches} (messages ${start + 1}-${end})`);
+                  console.log(`🔄 Batch ${batchIndex + 1} contains ${batch.length} messages`);
+                  console.log(`🔄 First message in batch: ${batch[0]}`);
+                  console.log(`🔄 Last message in batch: ${batch[batch.length - 1]}`);
                   
                   console.log(`🔄 Calling AI for batch ${batchIndex + 1}/${totalBatches} with ${batch.length} messages`);
                   batchPromises.push(
