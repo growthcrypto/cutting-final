@@ -2960,11 +2960,15 @@ function formatGrammarResults(text, type) {
     const periodMatches1 = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
     const periodMatches2 = [...cleanText.matchAll(/Found (\d+) punctuation problems?:/g)];
     const periodMatches3 = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
+    const periodMatches4 = [...cleanText.matchAll(/(\d+) formal periods?/g)];
+    const periodMatches5 = [...cleanText.matchAll(/(\d+) periods?/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
     
     console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
     console.log(`🔍 DEBUG punctuation: periodMatches2=`, periodMatches2);
     console.log(`🔍 DEBUG punctuation: periodMatches3=`, periodMatches3);
+    console.log(`🔍 DEBUG punctuation: periodMatches4=`, periodMatches4);
+    console.log(`🔍 DEBUG punctuation: periodMatches5=`, periodMatches5);
     console.log(`🔍 DEBUG punctuation: commaMatches=`, commaMatches);
     
     let totalPeriods = 0;
@@ -2978,6 +2982,12 @@ function formatGrammarResults(text, type) {
       totalPeriods += parseInt(match[1]);
     });
     periodMatches3.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches4.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches5.forEach(match => {
       totalPeriods += parseInt(match[1]);
     });
     
