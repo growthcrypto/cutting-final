@@ -1204,7 +1204,9 @@ async function analyzeMessages(messages, chatterName) {
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
 
-  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+            const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+
+CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. Do NOT vary your analysis criteria between runs.
 
 CONVERSATION FLOW ANALYSIS: The messages are organized by conversation with each fan. When analyzing guidelines like "Information Gathering" or "Follow-up Questions", you MUST consider the ENTIRE conversation flow with each fan, not just individual messages. For example:
 - If a chatter asks "how old are u?" in message 65, and then asks follow-up questions about age-related topics in later messages in the SAME conversation, this shows proper information gathering
@@ -1213,15 +1215,17 @@ CONVERSATION FLOW ANALYSIS: The messages are organized by conversation with each
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. 
 
-IMPORTANT: Look for actual errors in the messages:
-- Spelling mistakes (typos, wrong words, autocorrect errors)
-- Grammar errors (wrong verb tenses, subject-verb disagreement, pronoun errors)
-- Punctuation issues (missing periods, commas, apostrophes, question marks)
-- Capitalization problems (inconsistent sentence starts)
-- Run-on sentences
-- Missing words
-- Contraction errors (missing apostrophes in don't, can't, won't, etc.)
-- Common typos and misspellings
+IMPORTANT: Look for actual errors in the messages using CONSISTENT criteria:
+- Spelling mistakes (typos, wrong words, autocorrect errors) - count each unique misspelling once
+- Grammar errors (wrong verb tenses, subject-verb disagreement, pronoun errors) - count each grammatical mistake once
+- Punctuation issues (missing periods, commas, apostrophes, question marks) - count each punctuation error once
+- Capitalization problems (inconsistent sentence starts) - count each capitalization error once
+- Run-on sentences - count each run-on sentence once
+- Missing words - count each missing word once
+- Contraction errors (missing apostrophes in don't, can't, won't, etc.) - count each contraction error once
+- Common typos and misspellings - count each unique typo once
+
+COUNTING RULES: Count each error only once per message. If the same error appears multiple times in the same message, count it as one error. Be systematic and consistent in your counting approach.
 
 PUNCTUATION RULES: Flag ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged.
 
@@ -1541,7 +1545,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
           content: prompt
         }
       ],
-      temperature: 0.1, // Low temperature for consistent JSON output
+      temperature: 0.0, // Zero temperature for maximum consistency
                 max_tokens: 12000, // Increased to allow complete AI responses
       stream: false // Ensure no streaming for faster completion
     });
@@ -4851,7 +4855,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
           content: prompt
         }
       ],
-      temperature: 0.1,
+      temperature: 0.0, // Zero temperature for maximum consistency
       max_tokens: 8000
     });
 
