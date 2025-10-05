@@ -24,7 +24,17 @@ const creatorAccountSchema = new mongoose.Schema({
 const guidelineSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  category: { type: String, enum: ['sales', 'engagement', 'language', 'professionalism', 'messaging'], required: true },
+  // Accept both legacy and new categories for backward compatibility
+  category: { 
+    type: String, 
+    enum: [
+      // Legacy
+      'sales', 'engagement', 'language', 'professionalism', 'messaging',
+      // New
+      'General Chatting', 'Psychology', 'Captions', 'Sales'
+    ], 
+    required: true 
+  },
   weight: { type: Number, default: 1, min: 1, max: 5 }, // Importance weighting
   examples: [{ type: String }], // Good examples
   counterExamples: [{ type: String }], // What not to do
