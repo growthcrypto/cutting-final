@@ -2452,6 +2452,24 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 sales: extractGuidelineViolations(salesText, salesOnlyPhrases)
               }
             };
+
+            // DEBUG: Log raw texts and extracted violations for operator visibility
+            console.log('🧩 Guidelines V2 RAW - General Chatting:', generalText);
+            console.log('🧩 Guidelines V2 RAW - Psychology:', psychologyText);
+            console.log('🧩 Guidelines V2 RAW - Captions:', captionsText);
+            console.log('🧩 Guidelines V2 RAW - Sales:', salesText);
+            try {
+              const d = guidelinesBreakdownV2.details;
+              const fmt = (cat, obj) => `${cat}: total=${obj.total} ${obj.items.map(i=>`| ${i.label} (${i.count}) msgs:[${(i.examples||[]).join(',')}]`).join(' ')}`;
+              console.log('🧩 Guidelines V2 DETAILS:', [
+                fmt('General', d.generalChatting),
+                fmt('Psychology', d.psychology),
+                fmt('Captions', d.captions),
+                fmt('Sales', d.sales)
+              ].join(' || '));
+            } catch (e) {
+              console.log('🧩 Guidelines V2 DETAILS logging failed:', e.message);
+            }
             
             // Derive violation counts per section from the formatted text
             function extractCount(line) {
