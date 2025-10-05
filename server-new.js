@@ -3803,7 +3803,7 @@ function formatGrammarResults(text, type) {
     
     // Extract punctuation issues and return count with summary
     const periodMatches = [...cleanText.matchAll(/(\d+) punctuation (?:problems?|errors?)/g)];
-    const commaMatches = [...cleanText.matchAll(/(\d+) (?:formal )?commas?/g)];
+    const commaMatches2 = [...cleanText.matchAll(/(\d+) (?:formal )?commas?/g)];
     const allMatches = [...cleanText.matchAll(/(\d+)/g)];
     
     let totalIssues = 0;
@@ -3811,8 +3811,8 @@ function formatGrammarResults(text, type) {
     // Try to extract numbers from the text
     if (periodMatches.length > 0) {
       totalIssues += parseInt(periodMatches[0][1]);
-    } else if (commaMatches.length > 0) {
-      totalIssues += parseInt(commaMatches[0][1]);
+    } else if (commaMatches2.length > 0) {
+      totalIssues += parseInt(commaMatches2[0][1]);
     } else if (allMatches.length > 0) {
       // Fallback: use the first number found
       totalIssues = parseInt(allMatches[0][1]);
