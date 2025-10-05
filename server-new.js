@@ -2449,11 +2449,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 // Process the single batch result
                 if (batchResult) {
                   
-                  // Combine grammar analysis
+                  // Combine grammar analysis - use the latest batch result to avoid inconsistent counts
                   if (batchResult.grammarBreakdown) {
-                    Object.keys(combinedGrammarAnalysis).forEach(key => {
+                    Object.keys(batchResult.grammarBreakdown).forEach(key => {
                       if (batchResult.grammarBreakdown[key]) {
-                        combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchResult.grammarBreakdown[key];
+                        combinedGrammarAnalysis[key] = batchResult.grammarBreakdown[key];
                       }
                     });
                   }
@@ -3853,123 +3853,18 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'punctuation') {
-    console.log(`🔍 DEBUG punctuation: cleanText="${cleanText}"`);
-    console.log(`🔍 DEBUG punctuation: cleanText length=${cleanText.length}`);
-    console.log(`🔍 DEBUG punctuation: cleanText includes 'Found'=${cleanText.includes('Found')}`);
-    console.log(`🔍 DEBUG punctuation: cleanText includes 'punctuation'=${cleanText.includes('punctuation')}`);
-    console.log(`🔍 DEBUG punctuation: cleanText includes 'periods'=${cleanText.includes('periods')}`);
-    console.log(`🔍 DEBUG punctuation: cleanText includes 'errors'=${cleanText.includes('errors')}`);
-    console.log(`🔍 DEBUG punctuation: cleanText includes 'problems'=${cleanText.includes('problems')}`);
-    // Extract punctuation issues and count them properly - try multiple patterns
-    const periodMatches1 = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
-    const periodMatches2 = [...cleanText.matchAll(/Found (\d+) punctuation problems?:/g)];
-    const periodMatches3 = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
-    const periodMatches4 = [...cleanText.matchAll(/(\d+) formal periods?/g)];
-    const periodMatches5 = [...cleanText.matchAll(/(\d+) periods?/g)];
-    const periodMatches6 = [...cleanText.matchAll(/(\d+) punctuation errors?:/g)];
-    const periodMatches7 = [...cleanText.matchAll(/Found (\d+) punctuation errors?:/g)];
-    const periodMatches8 = [...cleanText.matchAll(/(\d+) excessive periods?/g)];
-    const periodMatches9 = [...cleanText.matchAll(/(\d+) missing periods?/g)];
-    const periodMatches10 = [...cleanText.matchAll(/(\d+) periods? at the end of sentences?/g)];
-    const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
-    
-    // Fallback: catch ANY number in the text to see what's actually there
-    const allNumbers = [...cleanText.matchAll(/(\d+)/g)];
-    console.log(`🔍 DEBUG punctuation: allNumbers found=`, allNumbers.map(m => m[1]));
-    
-    // Additional debugging: show the first 200 characters of the text
-    console.log(`🔍 DEBUG punctuation: first 200 chars=`, cleanText.substring(0, 200));
-    
-    // Check for any text that might contain punctuation counts
-    const hasPunctuation = cleanText.toLowerCase().includes('punctuation');
-    const hasPeriods = cleanText.toLowerCase().includes('period');
-    const hasCommas = cleanText.toLowerCase().includes('comma');
-    const hasErrors = cleanText.toLowerCase().includes('error');
-    const hasProblems = cleanText.toLowerCase().includes('problem');
-    console.log(`🔍 DEBUG punctuation: contains keywords - punctuation:${hasPunctuation}, periods:${hasPeriods}, commas:${hasCommas}, errors:${hasErrors}, problems:${hasProblems}`);
-    
-    console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
-    console.log(`🔍 DEBUG punctuation: periodMatches2=`, periodMatches2);
-    console.log(`🔍 DEBUG punctuation: periodMatches3=`, periodMatches3);
-    console.log(`🔍 DEBUG punctuation: periodMatches4=`, periodMatches4);
-    console.log(`🔍 DEBUG punctuation: periodMatches5=`, periodMatches5);
-    console.log(`🔍 DEBUG punctuation: periodMatches6=`, periodMatches6);
-    console.log(`🔍 DEBUG punctuation: periodMatches7=`, periodMatches7);
-    console.log(`🔍 DEBUG punctuation: periodMatches8=`, periodMatches8);
-    console.log(`🔍 DEBUG punctuation: periodMatches9=`, periodMatches9);
-    console.log(`🔍 DEBUG punctuation: periodMatches10=`, periodMatches10);
-    console.log(`🔍 DEBUG punctuation: commaMatches=`, commaMatches);
-    
-    let totalPeriods = 0;
-    let totalCommas = 0;
-    
-    // Use only the first pattern that finds matches to avoid double counting
-    const allPeriodMatches = [
-      ...periodMatches1, ...periodMatches2, ...periodMatches3, ...periodMatches4, ...periodMatches5,
-      ...periodMatches6, ...periodMatches7, ...periodMatches8, ...periodMatches9, ...periodMatches10
-    ];
-    
-    // Only count the first match to avoid duplicates
-    if (allPeriodMatches.length > 0) {
-      totalPeriods = parseInt(allPeriodMatches[0][1]);
-    }
-    
-    commaMatches.forEach(match => {
-      totalCommas += parseInt(match[1]);
-    });
-    
-    console.log(`🔍 DEBUG punctuation: totalPeriods=${totalPeriods}, totalCommas=${totalCommas}`);
-    
-    // EMERGENCY FALLBACK: If no patterns matched but we have numbers, try to extract them
-    if (totalPeriods === 0 && totalCommas === 0 && allNumbers.length > 0) {
-      console.log(`🔍 DEBUG punctuation: EMERGENCY FALLBACK - trying to extract numbers from text`);
-      // Try to find any number that might be related to punctuation
-      const possiblePunctuationNumbers = allNumbers.filter(num => {
-        const numStr = num[1];
-        const numIndex = cleanText.indexOf(numStr);
-        const context = cleanText.substring(Math.max(0, numIndex - 50), numIndex + 50);
-        console.log(`🔍 DEBUG punctuation: checking number ${numStr} in context: "${context}"`);
-        return context.toLowerCase().includes('period') || 
-               context.toLowerCase().includes('comma') || 
-               context.toLowerCase().includes('punctuation') ||
-               context.toLowerCase().includes('error') ||
-               context.toLowerCase().includes('problem');
-      });
-      
-      if (possiblePunctuationNumbers.length > 0) {
-        const totalFromFallback = possiblePunctuationNumbers.reduce((sum, match) => sum + parseInt(match[1]), 0);
-        console.log(`🔍 DEBUG punctuation: EMERGENCY FALLBACK found ${totalFromFallback} punctuation issues`);
-        return `Found ${totalFromFallback} punctuation issues across analyzed messages.`;
-      }
-    }
-    
-    if (totalPeriods === 0 && totalCommas === 0) {
-      console.log(`🔍 DEBUG punctuation: No matches found, returning default message`);
-      return "No punctuation errors found - informal OnlyFans language is correct.";
-    }
-    
-    // Extract examples of punctuation issues for debugging
-    const examples = [];
-    const exampleMatches = [...cleanText.matchAll(/'([^']+)' should be '([^']+)'/g)];
-    exampleMatches.forEach(match => {
-      examples.push(`${match[1]} → ${match[2]}`);
-    });
-    
-    // Extract punctuation issues and return count with summary
-    const periodMatches = [...cleanText.matchAll(/(\d+) punctuation (?:problems?|errors?)/g)];
-    const commaMatches2 = [...cleanText.matchAll(/(\d+) (?:formal )?commas?/g)];
-    const allMatches = [...cleanText.matchAll(/(\d+)/g)];
+    // Look for the actual count from AI analysis, not count every period/comma
+    const foundMatches = [...cleanText.matchAll(/Found (\d+) punctuation (?:problems?|issues?|errors?)/gi)];
+    const totalMatches = [...cleanText.matchAll(/total.*?(\d+).*?(?:periods?|commas?|issues?)/gi)];
     
     let totalIssues = 0;
     
-    // Try to extract numbers from the text
-    if (periodMatches.length > 0) {
-      totalIssues += parseInt(periodMatches[0][1]);
-    } else if (commaMatches2.length > 0) {
-      totalIssues += parseInt(commaMatches2[0][1]);
-    } else if (allMatches.length > 0) {
-      // Fallback: use the first number found
-      totalIssues = parseInt(allMatches[0][1]);
+    if (foundMatches.length > 0) {
+      // Use the "Found X punctuation" pattern
+      totalIssues = parseInt(foundMatches[0][1]);
+    } else if (totalMatches.length > 0) {
+      // Use the "total X periods/commas" pattern
+      totalIssues = parseInt(totalMatches[0][1]);
     }
     
     if (totalIssues === 0) {
