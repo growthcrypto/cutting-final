@@ -2847,6 +2847,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }
       
       // CRITICAL FIX: Always ensure chatting style has data (JSON parsing issues cause empty objects)
+      console.log('🔍 DEBUG: Before FORCE FIX - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
+      console.log('🔍 DEBUG: Before FORCE FIX - chattingStyle keys:', aiAnalysis.chattingStyle ? Object.keys(aiAnalysis.chattingStyle) : 'NO OBJECT');
+      console.log('🔍 DEBUG: Before FORCE FIX - chattingStyle length:', aiAnalysis.chattingStyle ? Object.keys(aiAnalysis.chattingStyle).length : 'NO OBJECT');
+      
       if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
         console.log('🔧 FORCE FIX: JSON parsing failed, forcing chattingStyle data');
         aiAnalysis.chattingStyle = {
@@ -2858,6 +2862,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           messageLength: "medium",
           responsePattern: "thoughtful"
         };
+      } else {
+        console.log('🔧 FORCE FIX: NOT NEEDED - chattingStyle already has data');
       }
       
       // CRITICAL FIX: Always ensure message patterns has data (JSON parsing issues cause empty objects)
