@@ -4058,11 +4058,10 @@ function createGuidelinesSection() {
                     <div>
                         <label class="block text-sm font-medium mb-2">Category</label>
                         <select id="guidelineCategory" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                            <option value="messaging">Messaging</option>
-                            <option value="sales">Sales Technique</option>
-                            <option value="customer_service">Customer Service</option>
-                            <option value="compliance">Compliance</option>
-                            <option value="grammar">Grammar & Style</option>
+                            <option value="General Chatting">General Chatting</option>
+                            <option value="Psychology">Psychology</option>
+                            <option value="Captions">Captions</option>
+                            <option value="Sales">Sales</option>
                         </select>
                     </div>
                     <div>
@@ -5262,7 +5261,7 @@ function renderSophisticatedChatterAnalysis(data) {
                     <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
                         <div class="text-sm font-bold text-purple-400 mb-2">Guidelines Score</div>
                         <div class="text-2xl font-bold text-white mb-2">${data.guidelinesScore || 'N/A'}/100</div>
-                        <div class="text-xs text-gray-400">Sales effectiveness, engagement quality</div>
+                        <div class="text-xs text-gray-400">General Chatting, Psychology, Captions, Sales</div>
                     </div>
                 </div>
                 
@@ -5477,6 +5476,36 @@ function renderSophisticatedChatterAnalysis(data) {
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        ${data.guidelinesBreakdown && data.guidelinesBreakdown.guidelinesBreakdownV2 ? `
+                                        <div class="p-4 bg-blue-500/5 rounded-xl border border-blue-500/20">
+                                            <div class="flex items-center mb-3">
+                                                <i class="fas fa-comments text-blue-400 mr-3 text-lg"></i>
+                                                <span class="text-lg font-semibold text-blue-400">General Chatting</span>
+                                            </div>
+                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.generalChatting)}</div>
+                                        </div>
+                                        <div class="p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/20">
+                                            <div class="flex items-center mb-3">
+                                                <i class="fas fa-brain text-indigo-400 mr-3 text-lg"></i>
+                                                <span class="text-lg font-semibold text-indigo-400">Psychology</span>
+                                            </div>
+                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.psychology)}</div>
+                                        </div>
+                                        <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
+                                            <div class="flex items-center mb-3">
+                                                <i class="fas fa-camera text-teal-400 mr-3 text-lg"></i>
+                                                <span class="text-lg font-semibold text-teal-400">Captions</span>
+                                            </div>
+                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.captions)}</div>
+                                        </div>
+                                        <div class="p-4 bg-green-500/5 rounded-xl border border-green-500/20">
+                                            <div class="flex items-center mb-3">
+                                                <i class="fas fa-dollar-sign text-green-400 mr-3 text-lg"></i>
+                                                <span class="text-lg font-semibold text-green-400">Sales</span>
+                                            </div>
+                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.sales)}</div>
+                                        </div>
+                                        ` : `
                                         ${data.guidelinesBreakdown.salesEffectiveness ? `
                                         <div class="p-4 bg-green-500/5 rounded-xl border border-green-500/20">
                                             <div class="flex items-center mb-3">
@@ -5486,7 +5515,6 @@ function renderSophisticatedChatterAnalysis(data) {
                                             <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.salesEffectiveness)}</div>
                                         </div>
                                         ` : ''}
-                                        
                                         ${data.guidelinesBreakdown.engagementQuality ? `
                                         <div class="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
                                             <div class="flex items-center mb-3">
@@ -5496,7 +5524,6 @@ function renderSophisticatedChatterAnalysis(data) {
                                             <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.engagementQuality)}</div>
                                         </div>
                                         ` : ''}
-                                        
                                         ${data.guidelinesBreakdown.captionQuality ? `
                                         <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
                                             <div class="flex items-center mb-3">
@@ -5506,7 +5533,6 @@ function renderSophisticatedChatterAnalysis(data) {
                                             <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.captionQuality)}</div>
                                         </div>
                                         ` : ''}
-                                        
                                         ${data.guidelinesBreakdown.conversationFlow ? `
                                         <div class="p-4 bg-cyan-500/5 rounded-xl border border-cyan-500/20">
                                             <div class="flex items-center mb-3">
@@ -5516,6 +5542,7 @@ function renderSophisticatedChatterAnalysis(data) {
                                             <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.conversationFlow)}</div>
                                         </div>
                                         ` : ''}
+                                        `}
                                     </div>
                                     
                                     ${data.guidelinesBreakdown.scoreExplanation ? `
