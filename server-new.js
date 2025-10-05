@@ -1274,15 +1274,16 @@ CRITICAL CONVERSATION FLOW ANALYSIS:
 
 CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each message (e.g., "Reply time: 3.5 minutes"). Do NOT infer reply times from message content patterns like "u left me unread last time". The reply time data is already provided - use it directly to check compliance with reply time guidelines.
 
-IMPORTANT: Only flag reply time violations for messages that actually exceed the time limit (e.g., >5 minutes). Do NOT flag every message as a violation. Most messages will have acceptable reply times - only flag the ones that are actually too slow.
+IMPORTANT: Only flag reply time violations for messages that actually exceed the time limit specified in the uploaded guidelines. Do NOT flag every message as a violation. Most messages will have acceptable reply times - only flag the ones that are actually too slow according to the guideline criteria.
 
-DATA-DRIVEN ANALYSIS: You MUST count violations by examining the actual data provided. For reply time violations, count ONLY messages where the reply time is actually >5 minutes. Do NOT make up numbers or estimates. Count the actual violations from the data provided.
+DATA-DRIVEN ANALYSIS: You MUST count violations by examining the actual data provided. For reply time violations, count ONLY messages where the reply time exceeds the threshold specified in the uploaded guidelines. Do NOT make up numbers or estimates. Count the actual violations from the data provided.
 
 VIOLATION COUNTING METHOD: 
-1. For reply time violations: Count each message where "Reply time: X minutes" and X > 5
-2. For other guidelines: Count each specific violation mentioned in the data
+1. For reply time violations: Count each message where "Reply time: X minutes" exceeds the guideline threshold specified in the uploaded guidelines
+2. For other guidelines: Count each specific violation mentioned in the data according to the exact criteria in the uploaded guidelines
 3. Provide the EXACT count, not estimates or approximations
 4. If you cannot find specific violations in the data, report 0 violations
+5. Use ONLY the criteria specified in the uploaded guidelines, not assumptions
 
 CATEGORIZATION RULES: Each guideline violation should only appear in ONE category. Do NOT duplicate violations across multiple categories. If a guideline belongs to a specific category, only report it in that category.
 
@@ -2404,14 +2405,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 console.log(`  Message ${index + 1}:`, typeof msg === 'string' ? msg : JSON.stringify(msg));
               });
               
-              // Count reply time violations in the actual data
-              const replyTimeViolations = analysisMessageTexts.filter(msg => {
-                if (typeof msg === 'object' && msg.replyTime) {
-                  return msg.replyTime > 5;
-                }
-                return false;
-              }).length;
-              console.log(`🔍 DEBUG: Actual reply time violations (>5 min) in data: ${replyTimeViolations}`);
+              // Count reply time violations in the actual data (need to know the actual threshold)
+              const replyTimeData = analysisMessageTexts.filter(msg => {
+                return typeof msg === 'object' && msg.replyTime && msg.replyTime > 0;
+              });
+              console.log(`🔍 DEBUG: Messages with reply time data: ${replyTimeData.length}`);
+              console.log(`🔍 DEBUG: Reply time range: ${Math.min(...replyTimeData.map(m => m.replyTime))} - ${Math.max(...replyTimeData.map(m => m.replyTime))} minutes`);
             }
             
             const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
