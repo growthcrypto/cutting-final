@@ -2873,15 +2873,14 @@ function formatGrammarResults(text, type) {
     const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
     const uniqueSpellingErrors = new Set();
     spellingMatches.forEach(match => {
-      uniqueSpellingErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+      uniqueSpellingErrors.add(`${match[1]}`);
     });
     
     if (uniqueSpellingErrors.size === 0) {
       return "No spelling errors found - informal OnlyFans language is correct.";
     }
     
-    const errorList = Array.from(uniqueSpellingErrors).slice(0, 3).join(', ');
-    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''}: ${errorList}${uniqueSpellingErrors.size > 3 ? '...' : ''}`;
+    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'grammar') {
@@ -2889,15 +2888,14 @@ function formatGrammarResults(text, type) {
     const grammarMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
     const uniqueGrammarErrors = new Set();
     grammarMatches.forEach(match => {
-      uniqueGrammarErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+      uniqueGrammarErrors.add(`${match[1]}`);
     });
     
     if (uniqueGrammarErrors.size === 0) {
       return "No grammar errors found - informal OnlyFans language is correct.";
     }
     
-    const errorList = Array.from(uniqueGrammarErrors).slice(0, 3).join(', ');
-    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''}: ${errorList}${uniqueGrammarErrors.size > 3 ? '...' : ''}`;
+    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'punctuation') {
@@ -2929,7 +2927,7 @@ function formatGrammarResults(text, type) {
       result += `${totalCommas} formal commas`;
     }
     
-    return result + " at the end of sentences.";
+    return result + " across analyzed messages.";
   }
   
   return cleanText;
