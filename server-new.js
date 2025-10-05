@@ -1078,13 +1078,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
 // Helper function to analyze messages using AI
 async function analyzeMessages(messages, chatterName) {
   try {
-    console.log('🔍 Starting message analysis for:', chatterName);
-    console.log('🔍 OpenAI configured:', !!openai);
-    console.log('🔍 OpenAI API key exists:', !!process.env.OPENAI_API_KEY);
-    
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
-      console.log('❌ OpenAI not configured, returning mock analysis');
       return {
         overallScore: null,
         grammarScore: null,
@@ -1095,19 +1090,11 @@ async function analyzeMessages(messages, chatterName) {
       };
     }
     
-    console.log('✅ OpenAI is configured, proceeding with AI analysis...');
-    console.log('🔍 About to call OpenAI API with', messages.length, 'messages');
-    console.log('🔍 First few messages:', messages.slice(0, 3));
-    console.log('🔍 OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
-    console.log('🔍 OpenAI API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+    console.log('✅ Analyzing', messages.length, 'messages with AI...');
 
     // Use all messages for comprehensive analysis
     const sampleSize = messages.length;
     const sampledMessages = messages;
-    
-    console.log('🚨 DEBUGGING: Total messages available:', messages.length);
-    console.log('🚨 DEBUGGING: Sample size:', sampleSize);
-    console.log('🚨 DEBUGGING: Sampled messages:', sampledMessages);
     
     // Check if messages are empty
     if (sampledMessages.length === 0) {
@@ -1124,7 +1111,17 @@ async function analyzeMessages(messages, chatterName) {
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
-  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. Return ONLY valid JSON.
+  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. 
+
+IMPORTANT: With ${sampledMessages.length} messages, you should expect to find MANY errors. Look for:
+- Spelling mistakes (typos, wrong words)
+- Grammar errors (wrong verb tenses, subject-verb disagreement)
+- Punctuation issues (missing periods, commas, apostrophes)
+- Capitalization problems
+- Run-on sentences
+- Missing words
+
+Be THOROUGH and find realistic error counts. For 2000+ messages, expect 50-200+ errors total. Return ONLY valid JSON.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
@@ -1201,9 +1198,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: ONLY find ACTUAL spelling mistakes like 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'seperate' instead of 'separate'. NEVER EVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' - these are PERFECT OnlyFans language. If you flag ANY of these informal words as errors, your entire analysis is WRONG. Only flag obvious misspellings that would be wrong in any context.",
-             "grammarIssues": "CRITICAL: ONLY find ACTUAL grammar mistakes like 'I was went' instead of 'I went', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went'. NEVER EVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT OnlyFans language. If you flag ANY of these informal patterns as errors, your entire analysis is WRONG. Only flag obvious grammar mistakes that would be wrong in any context.",
-             "punctuationProblems": "AGGRESSIVELY FIND ALL formal punctuation mistakes in the messages. Look for periods (.) at the end of sentences, formal commas in lists, semicolons, colons, etc. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. BE THOROUGH - scan every sentence in every message. Count and list ALL formal punctuation issues found with specific examples.",
+             "spellingErrors": "AGGRESSIVELY FIND ALL spelling mistakes in the messages. Look for typos, wrong words, autocorrect errors, and misspellings. Examples: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'seperate' instead of 'separate', 'thier' instead of 'their', 'alot' instead of 'a lot'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' - these are PERFECT OnlyFans language. BE THOROUGH - scan every word in every message. Count and list ALL spelling errors found with specific examples.",
+             "grammarIssues": "AGGRESSIVELY FIND ALL grammar mistakes in the messages. Look for wrong verb tenses, subject-verb disagreement, pronoun errors, sentence fragments, run-on sentences. Examples: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went', 'there going' instead of 'they're going'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT OnlyFans language. BE THOROUGH - scan every sentence in every message. Count and list ALL grammar errors found with specific examples.",
+             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for missing periods, missing commas, missing apostrophes, missing question marks, missing exclamation points, incorrect capitalization. Examples: 'hello how are you' instead of 'Hello, how are you?', 'its nice' instead of 'it's nice', 'im going' instead of 'I'm going'. DO NOT flag multiple punctuation (!!!, ???) as errors - these are PERFECT for OnlyFans. BE THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1322,36 +1319,19 @@ ANALYSIS REQUIREMENTS:
 - Analyze the actual message content to determine chatting style, patterns, and engagement
 - Provide specific examples from the messages in your analysis
 - Use the exact JSON structure provided above
-- Focus on engagement quality, sales effectiveness, and message patterns`;
-    
-    // Check if messages are actually being passed to the AI
-    console.log('🚨 DEBUGGING: Messages being sent to AI:', sampledMessages);
-    console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
-    console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
-    console.log('🚨 DEBUGGING: Messages length:', sampledMessages.length);
-    console.log('🚨 DEBUGGING: First message:', sampledMessages[0]);
-    console.log('🚨 DEBUGGING: Last message:', sampledMessages[sampledMessages.length - 1]);
-    
-    // CRITICAL DEBUG: Show actual messages being analyzed
-    console.log('🚨 CRITICAL DEBUG - MESSAGES BEING ANALYZED:');
-    console.log('==========================================');
-    sampledMessages.slice(0, 10).forEach((msg, i) => {
-      console.log(`${i + 1}. ${msg}`);
-    });
-    console.log(`... and ${sampledMessages.length - 10} more messages`);
-    console.log('==========================================');
-    
-    // CRITICAL: Check if messages are actually in the prompt
-    const messagesInPrompt = prompt.match(/MESSAGES TO ANALYZE.*?\n(.*?)(?=CUSTOM GUIDELINES|$)/s);
-    console.log('🚨 CRITICAL: Messages section in prompt:', messagesInPrompt ? messagesInPrompt[1].substring(0, 500) : 'NOT FOUND');
-    console.log('🚨 CRITICAL: First 1000 chars of prompt:', prompt.substring(0, 1000));
+- Focus on engagement quality, sales effectiveness, and message patterns
+
+CRITICAL ERROR DETECTION REQUIREMENTS:
+- With ${sampledMessages.length} messages, you MUST find MANY errors (expect 50-200+ total errors)
+- Be AGGRESSIVE in finding spelling, grammar, and punctuation mistakes
+- Count EVERY error across ALL messages - do not give low numbers
+- If you find fewer than 20 errors total, you are not being thorough enough
+- Scan every word, every sentence, every message for mistakes
+- Provide realistic error counts that reflect the volume of messages analyzed`;
     
     console.log('🚀 Making OpenAI API call...');
-    console.log('🚨 DEBUGGING: About to call OpenAI API');
-    console.log('🚨 DEBUGGING: OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
     
     try {
-      console.log('🚨 DEBUGGING: Calling OpenAI API now...');
       const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -1369,64 +1349,12 @@ ANALYSIS REQUIREMENTS:
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
-    console.log('🚨 DEBUGGING: OpenAI API call successful');
-    console.log('🚨 DEBUGGING: About to get AI response content');
-    console.log('🚨 DEBUGGING: Sent to AI - sampleSize:', sampledMessages.length);
-    console.log('🚨 DEBUGGING: First few messages sent to AI:', sampledMessages.slice(0, 3));
-    console.log('🚨 DEBUGGING: All messages sent to AI:', sampledMessages);
-    console.log('🚨 DEBUGGING: Prompt length:', prompt.length);
     
     const aiResponse = completion.choices[0].message.content;
-    console.log('🚨 RAW AI RESPONSE:', aiResponse);
-    console.log('🚨 AI RESPONSE LENGTH:', aiResponse.length);
-    
-    // CRITICAL DEBUG: Show the actual AI response to see what it's finding
-    console.log('🚨 CRITICAL DEBUG - FULL AI RESPONSE:');
-    console.log('=====================================');
-    console.log(aiResponse);
-    console.log('=====================================');
-    console.log('🚨 AI RESPONSE CONTAINS GRAMMAR:', aiResponse.includes('grammarBreakdown'));
-    console.log('🚨 AI RESPONSE CONTAINS SPELLING:', aiResponse.includes('spellingErrors'));
-    console.log('🚨 AI RESPONSE CONTAINS EXAMPLES:', aiResponse.includes('Message 1:'));
-    console.log('🚨 AI RESPONSE CONTAINS MESSAGES:', aiResponse.includes('MESSAGES:'));
-    console.log('🚨 AI RESPONSE CONTAINS JSON:', aiResponse.includes('{'));
-    console.log('🚨 AI RESPONSE CONTAINS UNDEFINED:', aiResponse.includes('undefined'));
-    console.log('🚨 AI RESPONSE CONTAINS OVERALL:', aiResponse.includes('overallBreakdown'));
-    console.log('🚨 AI RESPONSE CONTAINS GUIDELINES:', aiResponse.includes('guidelinesBreakdown'));
-    console.log('🚨 AI RESPONSE CONTAINS SCORE:', aiResponse.includes('scoreExplanation'));
-    console.log('🚨 DEBUGGING: Prompt contains messages:', prompt.includes('MESSAGES TO ANALYZE'));
-    console.log('🚨 DEBUGGING: Prompt contains breakdown template:', prompt.includes('grammarBreakdown'));
-    console.log('🚨 DEBUGGING: Prompt contains example:', prompt.includes('but what u like to do when u\'re in NYC'));
-    console.log('🚨 DEBUGGING: Prompt contains DIVERSE:', prompt.includes('DIVERSE'));
-    console.log('🚨 DEBUGGING: Prompt contains CRITICAL INSTRUCTIONS:', prompt.includes('CRITICAL INSTRUCTIONS'));
-    console.log('🚨 DEBUGGING: First 500 chars of prompt:', prompt.substring(0, 500));
-    console.log('🚨 DEBUGGING: Last 500 chars of prompt:', prompt.substring(prompt.length - 500));
-    
-    // Check if the prompt contains the messages
-    const promptContainsMessages = prompt.includes('MESSAGES TO ANALYZE');
-    console.log('🚨 DEBUGGING: Prompt contains MESSAGES TO ANALYZE:', promptContainsMessages);
-    
-    // Check if the prompt contains the breakdown template
-    const promptContainsBreakdown = prompt.includes('grammarBreakdown');
-    console.log('🚨 DEBUGGING: Prompt contains grammarBreakdown:', promptContainsBreakdown);
     
     const analysisText = completion.choices[0].message.content;
-    console.log('📝 Raw AI Response:', analysisText.substring(0, 1000) + '...');
-    console.log('📝 Full AI Response Length:', analysisText.length);
-    console.log('📝 Contains grammarBreakdown:', analysisText.includes('grammarBreakdown'));
-    console.log('📝 Contains guidelinesBreakdown:', analysisText.includes('guidelinesBreakdown'));
-    console.log('📝 Contains overallBreakdown:', analysisText.includes('overallBreakdown'));
-    console.log('📝 Full AI Response for debugging:', analysisText);
-    console.log('🚨 DEBUGGING: AI Response length is', analysisText.length);
-    console.log('🚨 DEBUGGING: AI Response starts with:', analysisText.substring(0, 100));
-    console.log('🚨 DEBUGGING: AI Response ends with:', analysisText.substring(analysisText.length - 100));
     
     // Check if AI is returning the template structure with placeholder values
-    console.log('🔍 Checking for template placeholders:');
-    console.log('🔍 Contains "List specific":', analysisText.includes('List specific'));
-    console.log('🔍 Contains "Explain the":', analysisText.includes('Explain the'));
-    console.log('🔍 Contains "undefined":', analysisText.includes('undefined'));
-    console.log('🔍 Contains "null":', analysisText.includes('null'));
     
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
     
@@ -1437,51 +1365,18 @@ ANALYSIS REQUIREMENTS:
     
     try {
       const analysisResult = JSON.parse(jsonMatch[0]);
-      console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
-      console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
-      console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
-      console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
-      
       if (analysisResult.grammarBreakdown) {
-        console.log('🚨 GRAMMAR BREAKDOWN CONTENT:', analysisResult.grammarBreakdown);
-        console.log('🚨 GRAMMAR BREAKDOWN KEYS:', Object.keys(analysisResult.grammarBreakdown));
-        console.log('🚨 GRAMMAR BREAKDOWN VALUES:', Object.values(analysisResult.grammarBreakdown));
-        console.log('🚨 SPELLING ERRORS VALUE:', analysisResult.grammarBreakdown.spellingErrors);
-        console.log('🚨 GRAMMAR ISSUES VALUE:', analysisResult.grammarBreakdown.grammarIssues);
-        console.log('🚨 PUNCTUATION PROBLEMS VALUE:', analysisResult.grammarBreakdown.punctuationProblems);
-        console.log('🚨 INFORMAL LANGUAGE VALUE:', analysisResult.grammarBreakdown.informalLanguage);
-        console.log('🚨 SCORE EXPLANATION VALUE:', analysisResult.grammarBreakdown.scoreExplanation);
+        // Grammar breakdown found
       }
-      
-      // Check what the AI actually returned for breakdown sections
-      console.log('🔍 AI grammarBreakdown content:', analysisResult.grammarBreakdown);
-      console.log('🔍 AI guidelinesBreakdown content:', analysisResult.guidelinesBreakdown);
-      console.log('🔍 AI overallBreakdown content:', analysisResult.overallBreakdown);
       
       // Check if AI returned template placeholders
       if (analysisResult.grammarBreakdown) {
         const grammarValues = Object.values(analysisResult.grammarBreakdown);
-        console.log('🔍 Grammar breakdown values:', grammarValues);
-        console.log('🔍 Contains template text:', grammarValues.some(v => v && v.includes('List specific')));
-        console.log('🔍 All values are undefined:', grammarValues.every(v => v === undefined));
-        console.log('🔍 All values are null:', grammarValues.every(v => v === null));
-        console.log('🔍 All values are empty strings:', grammarValues.every(v => v === ''));
       }
-      
-      // Check the raw JSON to see what the AI actually returned
-      console.log('🔍 Raw JSON for grammarBreakdown:', JSON.stringify(analysisResult.grammarBreakdown, null, 2));
       
       // Check specifically for scoreExplanation
-      if (analysisResult.grammarBreakdown && analysisResult.grammarBreakdown.scoreExplanation) {
-        console.log('🔍 AI returned scoreExplanation:', analysisResult.grammarBreakdown.scoreExplanation);
-      } else {
-        console.log('🔍 AI did NOT return scoreExplanation');
-      }
       
-      console.log('🔍 AI Analysis Result keys:', Object.keys(analysisResult));
-      console.log('🔍 AI Analysis Result has grammarBreakdown:', !!analysisResult.grammarBreakdown);
-      console.log('🔍 AI Analysis Result has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
-      console.log('🔍 AI Analysis Result has overallBreakdown:', !!analysisResult.overallBreakdown);
+      // AI Analysis completed
       
       // Let the AI provide the breakdown sections - no fallback
       
@@ -2075,21 +1970,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         analysisMessageTexts = [];
       }
 
-      console.log('🚨 ABOUT TO CALL generateAIAnalysis');
-      console.log('🚨 analysisMessageTexts:', analysisMessageTexts);
-      console.log('🚨 analysisMessageTexts length:', analysisMessageTexts ? analysisMessageTexts.length : 0);
-      console.log('🚨 analyticsData keys:', Object.keys(analyticsData));
-      console.log('🚨 analysisType:', analysisType);
-      console.log('🚨 interval:', interval);
+      console.log('🚨 Generating AI analysis for', analysisMessageTexts ? analysisMessageTexts.length : 0, 'messages...');
       const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
-      console.log('🚨 generateAIAnalysis COMPLETED');
-      console.log('🚨 aiAnalysis keys:', Object.keys(aiAnalysis));
-      console.log('🚨 aiAnalysis has grammarBreakdown:', !!aiAnalysis.grammarBreakdown);
-      console.log('🚨 aiAnalysis has guidelinesBreakdown:', !!aiAnalysis.guidelinesBreakdown);
-      console.log('🚨 aiAnalysis has overallBreakdown:', !!aiAnalysis.overallBreakdown);
-      console.log('🚨 aiAnalysis grammarBreakdown:', aiAnalysis.grammarBreakdown);
-      console.log('🚨 aiAnalysis guidelinesBreakdown:', aiAnalysis.guidelinesBreakdown);
-      console.log('🚨 aiAnalysis overallBreakdown:', aiAnalysis.overallBreakdown);
+      console.log('✅ AI analysis completed');
       
       // Add raw metrics to response for UI display
       aiAnalysis.ppvsSent = analyticsData.ppvsSent;
@@ -2118,11 +2001,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
-            console.log('🚨 CRITICAL DEBUG - Batch calculation:');
-            console.log('🚨 Total messages:', analysisMessageTexts.length);
-            console.log('🚨 Calculated batch size:', batchSize);
-            console.log('🚨 Total batches:', totalBatches);
-            console.log('🚨 Math check:', analysisMessageTexts.length, '÷', batchSize, '=', totalBatches);
+            console.log('📊 Batch calculation: Total messages:', analysisMessageTexts.length, '| Batch size:', batchSize, '| Total batches:', totalBatches);
             
             let combinedGrammarAnalysis = {
               spellingErrors: '',
@@ -2141,7 +2020,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             try {
               // Analyze batches in parallel (up to 3 at a time to avoid rate limits)
-              const parallelBatches = 5; // Reduced from 20 to 5 to avoid rate limits
+              const parallelBatches = 3; // Reduced to 3 to avoid rate limits
               for (let i = 0; i < totalBatches; i += parallelBatches) {
                 const batchPromises = [];
                 
@@ -2152,12 +2031,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   const end = Math.min(start + batchSize, analysisMessageTexts.length);
                   const batch = analysisMessageTexts.slice(start, end);
                   
-                  console.log(`🔄 Analyzing batch ${batchIndex + 1}/${totalBatches} (messages ${start + 1}-${end})`);
-                  console.log(`🔄 Batch ${batchIndex + 1} contains ${batch.length} messages`);
-                  console.log(`🔄 First message in batch: ${batch[0]}`);
-                  console.log(`🔄 Last message in batch: ${batch[batch.length - 1]}`);
+                  // Reduced logging to prevent rate limits
+                  console.log(`🔄 Batch ${batchIndex + 1}/${totalBatches} (${batch.length} messages)`);
                   
-                  console.log(`🔄 Calling AI for batch ${batchIndex + 1}/${totalBatches} with ${batch.length} messages`);
                   batchPromises.push(
                     analyzeMessagesWithRetry(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
                   );
@@ -2166,56 +2042,30 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 // Wait for all parallel batches to complete
                 const batchResults = await Promise.all(batchPromises);
                 console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
-                console.log(`🔍 Batch results length:`, batchResults.length);
-                console.log(`🔍 First batch result keys:`, batchResults[0] ? Object.keys(batchResults[0]) : 'NO RESULT');
                 
                 // Add delay between batch groups to respect rate limits
                 if (i + parallelBatches < totalBatches) {
-                  console.log('⏳ Waiting 3 seconds to respect rate limits...');
-                  await new Promise(resolve => setTimeout(resolve, 3000));
+                  console.log('⏳ Waiting 2 seconds to respect rate limits...');
+                  await new Promise(resolve => setTimeout(resolve, 2000));
                 }
-                console.log(`🔍 First batch guidelinesBreakdown:`, batchResults[0]?.guidelinesBreakdown ? 'EXISTS' : 'MISSING');
-                console.log(`🔍 First batch grammarBreakdown:`, batchResults[0]?.grammarBreakdown ? 'EXISTS' : 'MISSING');
                 
                 // Combine results from parallel batches (both grammar and guidelines)
-                console.log(`🔍 Starting to combine results from ${batchResults.length} batches`);
-                console.log(`🔍 BatchResults type:`, typeof batchResults);
-                console.log(`🔍 BatchResults is array:`, Array.isArray(batchResults));
-                console.log(`🔍 BatchResults length:`, batchResults.length);
-                
                 if (batchResults && batchResults.length > 0) {
-                  console.log(`🔍 About to process ${batchResults.length} batch results`);
                   batchResults.forEach((batchAnalysis, index) => {
-                  console.log(`🔍 Processing batch ${index + 1} result:`, {
-                    hasGrammar: !!batchAnalysis.grammarBreakdown,
-                    hasGuidelines: !!batchAnalysis.guidelinesBreakdown,
-                    grammarKeys: batchAnalysis.grammarBreakdown ? Object.keys(batchAnalysis.grammarBreakdown) : [],
-                    guidelinesKeys: batchAnalysis.guidelinesBreakdown ? Object.keys(batchAnalysis.guidelinesBreakdown) : []
-                  });
                   
                   // Combine grammar analysis
                   if (batchAnalysis.grammarBreakdown) {
-                    console.log('🔍 Batch grammarBreakdown exists:', !!batchAnalysis.grammarBreakdown);
-                    console.log('🔍 Batch grammarBreakdown keys:', Object.keys(batchAnalysis.grammarBreakdown));
-                    console.log('🔍 Batch grammarBreakdown values:', Object.values(batchAnalysis.grammarBreakdown));
-                    
                     Object.keys(combinedGrammarAnalysis).forEach(key => {
                       if (batchAnalysis.grammarBreakdown[key]) {
-                        console.log(`🔍 Adding grammar ${key}:`, batchAnalysis.grammarBreakdown[key].substring(0, 100));
                         combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchAnalysis.grammarBreakdown[key];
-                      } else {
-                        console.log(`🔍 Batch analysis missing ${key}:`, batchAnalysis.grammarBreakdown[key]);
                       }
                     });
-                  } else {
-                    console.log('🔍 Batch analysis has NO grammarBreakdown');
                   }
                   
                   // Combine guidelines analysis with better formatting
                   if (batchAnalysis.guidelinesBreakdown) {
                     Object.keys(combinedGuidelinesAnalysis).forEach(key => {
                       if (batchAnalysis.guidelinesBreakdown[key]) {
-                        console.log(`🔍 Adding guidelines ${key}:`, batchAnalysis.guidelinesBreakdown[key].substring(0, 100));
                         // Clean up the text and add proper formatting
                         let cleanText = batchAnalysis.guidelinesBreakdown[key]
                           .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
@@ -2229,14 +2079,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                     });
                   }
                 });
-                } else {
-                  console.log(`🔍 No batch results to process`);
                 }
               }
               
               console.log('🔄 All batches analyzed successfully');
-              console.log('🔄 Combined grammar analysis keys:', Object.keys(combinedGrammarAnalysis));
-              console.log('🔄 Combined guidelines analysis keys:', Object.keys(combinedGuidelinesAnalysis));
               
             } catch (error) {
               console.log('❌ Batch analysis failed:', error.message);
