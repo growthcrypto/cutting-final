@@ -2429,19 +2429,21 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
       // Helper to extract message texts for deterministic breakdowns (from ALL MessageAnalysis records)
-      const getWindowMessages = () => {
+      const getWindowMessages = (messagesAnalysisData) => {
         try {
           // First try to get all messages from all MessageAnalysis records
           const allMessagesFromAllRecords = [];
-          messagesAnalysis.forEach(record => {
-            if (Array.isArray(record.messageRecords)) {
-              const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
-              allMessagesFromAllRecords.push(...messagesFromRecord);
-            }
-          });
+          if (messagesAnalysisData && Array.isArray(messagesAnalysisData)) {
+            messagesAnalysisData.forEach(record => {
+              if (Array.isArray(record.messageRecords)) {
+                const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
+                allMessagesFromAllRecords.push(...messagesFromRecord);
+              }
+            });
+          }
           
           if (allMessagesFromAllRecords.length > 0) {
-            console.log(`🔄 getWindowMessages: Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysis.length} MessageAnalysis records`);
+            console.log(`🔄 getWindowMessages: Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysisData ? messagesAnalysisData.length : 0} MessageAnalysis records`);
             return allMessagesFromAllRecords;
           }
           
@@ -2452,7 +2454,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           }
           
           // Final fallback to latestMessageAnalysis messagesSample
-          const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
+          const latestMessageAnalysis = messagesAnalysisData && messagesAnalysisData.length > 0 ? messagesAnalysisData[0] : null;
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
           console.log(`🔄 getWindowMessages: Using ${fromSample.length} messages from latestMessageAnalysis.messagesSample`);
           return fromSample;
@@ -2553,12 +2555,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         }
       } else if (hasGrammarStructure && !hasGrammarContent) {
         console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - using deterministic examples');
-        const msgs = getWindowMessages();
+        const msgs = getWindowMessages(messagesAnalysis);
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
       } else if (!hasGrammarStructure) {
         console.log('🔍 No AI grammarBreakdown structure, using deterministic examples');
-        const msgs = getWindowMessages();
+        const msgs = getWindowMessages(messagesAnalysis);
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
       } else {
@@ -2571,7 +2573,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasGuidelinesContent) {
         console.log('🔍 No AI guidelinesBreakdown content, using deterministic examples');
-        const msgs = getWindowMessages();
+        const msgs = getWindowMessages(messagesAnalysis);
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.guidelinesBreakdown = det.guidelinesBreakdown;
       } else {
@@ -2588,7 +2590,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasOverallContent) {
         console.log('🔍 No AI overallBreakdown content, using deterministic examples');
-        const msgs = getWindowMessages();
+        const msgs = getWindowMessages(messagesAnalysis);
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.overallBreakdown = det.overallBreakdown;
       } else {
