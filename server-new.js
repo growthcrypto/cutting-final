@@ -3034,6 +3034,30 @@ function formatGrammarText(text, category) {
     return "No errors found - informal OnlyFans language is correct.";
   }
   
+  // Clean up repetitive score explanations
+  if (text.includes('Grammar score:')) {
+    // Split by "Grammar score:" to get individual score explanations
+    const scoreParts = text.split(/Grammar score:/).filter(part => part.trim());
+    
+    if (scoreParts.length > 1) {
+      // Extract the first complete score explanation
+      const firstPart = scoreParts[1].trim();
+      
+      // Parse the first score explanation
+      const scoreMatch = firstPart.match(/(\d+\/100)/);
+      const issuesMatch = firstPart.match(/Main issues:\s*([^.]+)/);
+      const totalMatch = firstPart.match(/Total errors:\s*(\d+)/);
+      
+      if (scoreMatch && issuesMatch && totalMatch) {
+        const score = scoreMatch[1];
+        const issues = issuesMatch[1].trim();
+        const total = totalMatch[1];
+        
+        return `Grammar score: ${score}. Main issues: ${issues}. Total errors: ${total}.`;
+      }
+    }
+  }
+  
   // Return raw text without formatting
   return text;
 }
