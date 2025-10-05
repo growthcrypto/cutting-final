@@ -2907,8 +2907,14 @@ function estimateTokenUsage(messages) {
 }
 
 // Calculate optimal batch size based on message length
-function calculateOptimalBatchSize(messages, maxTokens = 200000) { // Increased from 100k to 200k tokens
+function calculateOptimalBatchSize(messages, maxTokens = 500000) { // Increased to 500k tokens for very long messages
   if (messages.length === 0) return 500; // Increased default from 200 to 500
+  
+  // Debug: Check message lengths
+  const sampleMessages = messages.slice(0, 5);
+  const avgMessageLength = sampleMessages.reduce((sum, msg) => sum + msg.length, 0) / sampleMessages.length;
+  console.log(`🔍 DEBUG: Sample message lengths:`, sampleMessages.map(m => m.length));
+  console.log(`🔍 DEBUG: Average message length: ${Math.round(avgMessageLength)} characters`);
   
   // Start with a larger batch size for faster processing
   let batchSize = 500; // Increased from 200 to 500
@@ -2917,6 +2923,8 @@ function calculateOptimalBatchSize(messages, maxTokens = 200000) { // Increased 
   while (batchSize > 100) { // Increased minimum from 50 to 100
     const testBatch = messages.slice(0, batchSize);
     const estimatedTokens = estimateTokenUsage(testBatch);
+    
+    console.log(`🔍 DEBUG: Testing batch size ${batchSize} -> ${estimatedTokens} tokens (limit: ${maxTokens})`);
     
     if (estimatedTokens < maxTokens) {
       console.log(`✅ Optimal batch size: ${batchSize} messages (~${estimatedTokens} tokens)`);
@@ -2928,6 +2936,13 @@ function calculateOptimalBatchSize(messages, maxTokens = 200000) { // Increased 
   }
   
   console.log(`⚠️ Using minimum batch size: ${batchSize} messages`);
+  
+  // Final safety check - if batch size is still too small, force a reasonable minimum
+  if (batchSize < 50) {
+    console.log(`🚨 WARNING: Batch size too small (${batchSize}), forcing minimum of 50 messages`);
+    return 50;
+  }
+  
   return batchSize;
 }
 
