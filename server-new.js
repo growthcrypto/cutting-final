@@ -3808,6 +3808,34 @@ function formatGuidelinesText(text, category, allowedTitles) {
     analysis += `Found ${total} violations. Top issues: ${top.join(', ')}. `;
   }
   
+  // If no structured violations captured, try mapping uploaded guideline titles to counts
+  if (!analysis.trim() && allowedTitles && allowedTitles.size > 0) {
+    const titleCounts = new Map();
+    allowedTitles.forEach((t) => {
+      if (!t) return;
+      const titleEsc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reWithCount = new RegExp(`Found\\s+(\\d+)\\s+violations?[^\n]*?(?:of|in)\\s+['\"]?${titleEsc}['\"]?`, 'i');
+      const reTitleOnly = new RegExp(`\b${titleEsc}\b`, 'i');
+      const m = cleanText.match(reWithCount);
+      if (m) {
+        const c = parseInt(m[1]) || 0;
+        if (c > 0) titleCounts.set(t, (titleCounts.get(t) || 0) + c);
+      } else if (reTitleOnly.test(cleanText)) {
+        // If title appears but no explicit count, count as 1 minimal violation signal
+        titleCounts.set(t, (titleCounts.get(t) || 0) + 1);
+      }
+    });
+    if (titleCounts.size > 0) {
+      const entries = Array.from(titleCounts.entries());
+      const total = entries.reduce((s, [, c]) => s + (c || 0), 0);
+      const top = entries
+        .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+        .slice(0, 3)
+        .map(([name, count]) => `${name} (${count})`);
+      analysis += `Found ${total} violations. Top issues: ${top.join(', ')}. `;
+    }
+  }
+  
   // Add key issues with more detail (unique only)
   if (violationTypes.size > 0) {
     const issuesList = Array.from(violationTypes).slice(0, 3); // Limit to top 3
