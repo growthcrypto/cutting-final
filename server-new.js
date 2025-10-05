@@ -2858,7 +2858,7 @@ function formatGrammarResults(text, type) {
     return `No ${type} errors found - informal OnlyFans language is correct.`;
   }
   
-  // Remove repetitive phrases and clean up the text
+  // Clean up the text
   let cleanText = text
     .replace(/Found \d+ [^:]*:/g, '') // Remove "Found X errors:" prefixes
     .replace(/No significant issues found\./g, '')
@@ -2868,35 +2868,71 @@ function formatGrammarResults(text, type) {
     .replace(/\s+/g, ' ')
     .trim();
   
-  // Extract actual errors and count them
-  const errorPatterns = {
-    spelling: /'([^']+)' instead of '([^']+)'/g,
-    grammar: /'([^']+)' instead of '([^']+)'/g,
-    punctuation: /(\d+) instances? of ([^,]+)/g
-  };
-  
-  const pattern = errorPatterns[type];
-  if (!pattern) return cleanText;
-  
-  const matches = [...cleanText.matchAll(pattern)];
-  if (matches.length === 0) {
-    return `No ${type} errors found - informal OnlyFans language is correct.`;
+  if (type === 'spelling') {
+    // Extract spelling errors
+    const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
+    const uniqueSpellingErrors = new Set();
+    spellingMatches.forEach(match => {
+      uniqueSpellingErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+    });
+    
+    if (uniqueSpellingErrors.size === 0) {
+      return "No spelling errors found - informal OnlyFans language is correct.";
+    }
+    
+    const errorList = Array.from(uniqueSpellingErrors).slice(0, 3).join(', ');
+    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''}: ${errorList}${uniqueSpellingErrors.size > 3 ? '...' : ''}`;
   }
   
-  // Count unique errors
-  const uniqueErrors = new Set();
-  matches.forEach(match => {
-    if (type === 'punctuation') {
-      uniqueErrors.add(`${match[1]} ${match[2]}`);
-    } else {
-      uniqueErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+  if (type === 'grammar') {
+    // Extract grammar errors
+    const grammarMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
+    const uniqueGrammarErrors = new Set();
+    grammarMatches.forEach(match => {
+      uniqueGrammarErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+    });
+    
+    if (uniqueGrammarErrors.size === 0) {
+      return "No grammar errors found - informal OnlyFans language is correct.";
     }
-  });
+    
+    const errorList = Array.from(uniqueGrammarErrors).slice(0, 3).join(', ');
+    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''}: ${errorList}${uniqueGrammarErrors.size > 3 ? '...' : ''}`;
+  }
   
-  const errorCount = uniqueErrors.size;
-  const errorList = Array.from(uniqueErrors).slice(0, 5).join(', '); // Show first 5 examples
+  if (type === 'punctuation') {
+    // Extract punctuation issues and count them properly
+    const periodMatches = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
+    const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
+    
+    let totalPeriods = 0;
+    let totalCommas = 0;
+    
+    periodMatches.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    
+    commaMatches.forEach(match => {
+      totalCommas += parseInt(match[1]);
+    });
+    
+    if (totalPeriods === 0 && totalCommas === 0) {
+      return "No punctuation errors found - informal OnlyFans language is correct.";
+    }
+    
+    let result = "Found ";
+    if (totalPeriods > 0 && totalCommas > 0) {
+      result += `${totalPeriods} formal periods, ${totalCommas} formal commas`;
+    } else if (totalPeriods > 0) {
+      result += `${totalPeriods} formal periods`;
+    } else if (totalCommas > 0) {
+      result += `${totalCommas} formal commas`;
+    }
+    
+    return result + " at the end of sentences.";
+  }
   
-  return `Found ${errorCount} ${type} error${errorCount !== 1 ? 's' : ''}: ${errorList}${uniqueErrors.size > 5 ? '...' : ''}`;
+  return cleanText;
 }
 
 // Simple grammar analysis formatter - AGGRESSIVE BLOCKING
