@@ -2956,17 +2956,28 @@ function formatGrammarResults(text, type) {
   
   if (type === 'punctuation') {
     console.log(`🔍 DEBUG punctuation: cleanText="${cleanText}"`);
-    // Extract punctuation issues and count them properly - updated patterns to match AI output
-    const periodMatches = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
+    // Extract punctuation issues and count them properly - try multiple patterns
+    const periodMatches1 = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
+    const periodMatches2 = [...cleanText.matchAll(/Found (\d+) punctuation problems?:/g)];
+    const periodMatches3 = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
     
-    console.log(`🔍 DEBUG punctuation: periodMatches=`, periodMatches);
+    console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
+    console.log(`🔍 DEBUG punctuation: periodMatches2=`, periodMatches2);
+    console.log(`🔍 DEBUG punctuation: periodMatches3=`, periodMatches3);
     console.log(`🔍 DEBUG punctuation: commaMatches=`, commaMatches);
     
     let totalPeriods = 0;
     let totalCommas = 0;
     
-    periodMatches.forEach(match => {
+    // Try all patterns
+    periodMatches1.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches2.forEach(match => {
+      totalPeriods += parseInt(match[1]);
+    });
+    periodMatches3.forEach(match => {
       totalPeriods += parseInt(match[1]);
     });
     
