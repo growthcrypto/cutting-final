@@ -1365,7 +1365,7 @@ ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for completely consistent responses
-      max_tokens: 8000, // Increased for comprehensive analysis of large message sets
+      max_tokens: 12000, // Increased for comprehensive analysis of large message sets
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -2095,7 +2095,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             try {
               // Analyze batches in parallel (up to 3 at a time to avoid rate limits)
-              const parallelBatches = 3;
+              const parallelBatches = 20; // Increased from 3 to 20 for much faster processing
               for (let i = 0; i < totalBatches; i += parallelBatches) {
                 const batchPromises = [];
                 
@@ -2907,14 +2907,14 @@ function estimateTokenUsage(messages) {
 }
 
 // Calculate optimal batch size based on message length
-function calculateOptimalBatchSize(messages, maxTokens = 100000) {
-  if (messages.length === 0) return 200;
+function calculateOptimalBatchSize(messages, maxTokens = 200000) { // Increased from 100k to 200k tokens
+  if (messages.length === 0) return 500; // Increased default from 200 to 500
   
-  // Start with a reasonable batch size
-  let batchSize = 200;
+  // Start with a larger batch size for faster processing
+  let batchSize = 500; // Increased from 200 to 500
   
   // Test if this batch size fits within token limits
-  while (batchSize > 50) {
+  while (batchSize > 100) { // Increased minimum from 50 to 100
     const testBatch = messages.slice(0, batchSize);
     const estimatedTokens = estimateTokenUsage(testBatch);
     
