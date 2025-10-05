@@ -1123,7 +1123,7 @@ IMPORTANT: Look for actual errors in the messages:
 - Contraction errors (missing apostrophes in don't, can't, won't, etc.)
 - Common typos and misspellings
 
-PUNCTUATION RULES: Only flag ACTUAL punctuation mistakes. Both formal and informal punctuation are correct for OnlyFans. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans. DO NOT flag multiple punctuation (!!!, ???) as errors - these are perfect for OnlyFans. Only flag genuine punctuation errors like missing apostrophes in contractions when they create confusion.
+PUNCTUATION RULES: Flag FORMAL PUNCTUATION as errors. OnlyFans messages should have minimal punctuation. FLAG as errors: periods, commas, apostrophes, formal punctuation marks. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans. DO NOT flag multiple punctuation (!!!, ???) as errors - these are perfect for OnlyFans. Examples: 'Hello, how are you?' should be 'hello how are you', 'It's nice' should be 'its nice'.
 
 Be VERY THOROUGH and find ALL errors that actually exist. For 2000+ messages, expect to find 100-300+ errors total. Return ONLY valid JSON.
 
@@ -1204,7 +1204,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
            "grammarBreakdown": {
              "spellingErrors": "AGGRESSIVELY FIND ALL spelling mistakes in the messages. Look for typos, wrong words, autocorrect errors, and misspellings. Examples: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'seperate' instead of 'separate', 'thier' instead of 'their', 'alot' instead of 'a lot', 'freetime' instead of 'free time', 'outfit' as 'out fit'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every word in every message. Count and list ALL spelling errors found with specific examples.",
              "grammarIssues": "AGGRESSIVELY FIND ALL grammar mistakes in the messages. Look for wrong verb tenses, subject-verb disagreement, pronoun errors, sentence fragments, run-on sentences, missing words, incorrect word order. Examples: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went', 'there going' instead of 'they're going', 'i can wait' instead of 'i cant wait', 'do he have' instead of 'does he have'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL grammar errors found with specific examples.",
-             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for ACTUAL punctuation errors that create confusion or are clearly wrong. Examples: missing apostrophes that create confusion, incorrect punctuation placement. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are PERFECT for OnlyFans. DO NOT flag multiple punctuation (!!!, ???) as errors - these are PERFECT for OnlyFans. Both formal and informal punctuation styles are correct for OnlyFans. Only flag genuine punctuation mistakes. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
+             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for FORMAL PUNCTUATION that should be removed for OnlyFans. Examples: 'Hello, how are you?' should be 'hello how are you', 'It's nice' should be 'its nice', 'I'm going' should be 'im going'. FLAG as errors: periods, commas, apostrophes, formal punctuation marks. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are PERFECT for OnlyFans. DO NOT flag multiple punctuation (!!!, ???) as errors - these are PERFECT for OnlyFans. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1330,8 +1330,8 @@ CRITICAL ERROR DETECTION REQUIREMENTS:
 - Count EVERY error across ALL messages that actually exist
 - Scan every word, every sentence, every message for mistakes
 - Look for ACTUAL mistakes: spelling errors, grammar errors, typos, autocorrect errors
+- Look for FORMAL PUNCTUATION (periods, commas, apostrophes) - these are errors for OnlyFans
 - DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans
-- Both formal and informal punctuation styles are correct for OnlyFans
 - For 2000+ messages, expect to find 100-300+ errors total
 - Report the actual errors found, no more, no less`;
     
