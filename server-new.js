@@ -41,7 +41,7 @@ if (process.env.XAI_API_KEY) {
     apiKey: process.env.XAI_API_KEY,
     baseURL: 'https://api.x.ai/v1'
   });
-  console.log('✅ xAI Grok-beta configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '...');
+  console.log('✅ xAI Grok-4-fast-reasoning-latest configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '...');
 } else if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -1429,7 +1429,7 @@ CONSISTENCY REQUIREMENTS:
     
     try {
       const completion = await openai.chat.completions.create({
-      model: 'grok-beta',
+      model: 'grok-4-fast-reasoning-latest',
       messages: [
         {
           role: 'system',
@@ -3799,7 +3799,7 @@ Messages: ${messages.join(' ')}
 Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR list specific actual errors found.`;
 
     const response = await openai.chat.completions.create({
-      model: 'grok-beta',
+      model: 'grok-4-fast-reasoning-latest',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.0
@@ -4714,7 +4714,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "grok-beta",
+      model: "grok-4-fast-reasoning-latest",
       messages: [
         {
           role: "system",
