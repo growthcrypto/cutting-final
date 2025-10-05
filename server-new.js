@@ -1408,12 +1408,27 @@ CONSISTENCY REQUIREMENTS:
     try {
       let jsonText = jsonMatch[0];
       
+      // Debug: Show the raw JSON before fixes
+      console.log('🔍 Raw JSON length:', jsonText.length);
+      console.log('🔍 Raw JSON preview (first 500 chars):', jsonText.substring(0, 500));
+      console.log('🔍 Raw JSON preview (last 500 chars):', jsonText.substring(Math.max(0, jsonText.length - 500)));
+      
       // Auto-fix common JSON issues
       jsonText = jsonText
         .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
         .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // Fix unescaped backslashes
         .replace(/(\w+):/g, '"$1":') // Quote unquoted keys
-        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2'); // Quote unquoted string values
+        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote unquoted string values
+        .replace(/\[\s*\]/g, '[]') // Fix empty arrays with spaces
+        .replace(/\{\s*\}/g, '{}') // Fix empty objects with spaces
+        .replace(/\[\s*,/g, '[') // Remove leading commas in arrays
+        .replace(/,\s*\]/g, ']') // Remove trailing commas in arrays
+        .replace(/\{\s*,/g, '{') // Remove leading commas in objects
+        .replace(/,\s*\}/g, '}') // Remove trailing commas in objects
+        .replace(/\]\s*\[/g, '], [') // Fix missing commas between arrays
+        .replace(/\}\s*\{/g, '}, {') // Fix missing commas between objects
+        .replace(/\]\s*\{/g, '], {') // Fix missing commas between array and object
+        .replace(/\}\s*\[/g, '}, ['); // Fix missing commas between object and array
       
       console.log('🔧 Attempting to parse JSON with auto-corrections...');
       const analysisResult = JSON.parse(jsonText);
