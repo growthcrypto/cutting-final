@@ -2956,6 +2956,12 @@ function formatGrammarResults(text, type) {
   
   if (type === 'punctuation') {
     console.log(`🔍 DEBUG punctuation: cleanText="${cleanText}"`);
+    console.log(`🔍 DEBUG punctuation: cleanText length=${cleanText.length}`);
+    console.log(`🔍 DEBUG punctuation: cleanText includes 'Found'=${cleanText.includes('Found')}`);
+    console.log(`🔍 DEBUG punctuation: cleanText includes 'punctuation'=${cleanText.includes('punctuation')}`);
+    console.log(`🔍 DEBUG punctuation: cleanText includes 'periods'=${cleanText.includes('periods')}`);
+    console.log(`🔍 DEBUG punctuation: cleanText includes 'errors'=${cleanText.includes('errors')}`);
+    console.log(`🔍 DEBUG punctuation: cleanText includes 'problems'=${cleanText.includes('problems')}`);
     // Extract punctuation issues and count them properly - try multiple patterns
     const periodMatches1 = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
     const periodMatches2 = [...cleanText.matchAll(/Found (\d+) punctuation problems?:/g)];
@@ -2968,6 +2974,10 @@ function formatGrammarResults(text, type) {
     const periodMatches9 = [...cleanText.matchAll(/(\d+) missing periods?/g)];
     const periodMatches10 = [...cleanText.matchAll(/(\d+) periods? at the end of sentences?/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
+    
+    // Fallback: catch ANY number in the text to see what's actually there
+    const allNumbers = [...cleanText.matchAll(/(\d+)/g)];
+    console.log(`🔍 DEBUG punctuation: allNumbers found=`, allNumbers.map(m => m[1]));
     
     console.log(`🔍 DEBUG punctuation: periodMatches1=`, periodMatches1);
     console.log(`🔍 DEBUG punctuation: periodMatches2=`, periodMatches2);
