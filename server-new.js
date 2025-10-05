@@ -2365,13 +2365,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Raw salesEffectiveness:', combinedGuidelinesAnalysis.salesEffectiveness);
             console.log('🔄 Raw engagementQuality:', combinedGuidelinesAnalysis.engagementQuality);
             
-            const allowedTitles = new Set(customGuidelines.map(g => (g.title || '').toLowerCase().trim()));
+            // Build per-section allowlists from uploaded guidelines
+            const norm = (s) => (s || '').toLowerCase().trim();
+            const salesTitles = new Set(customGuidelines.filter(g => /sales|ppv/i.test(g.category || '')).map(g => norm(g.title)));
+            const engagementTitles = new Set(customGuidelines.filter(g => /engage|engagement/i.test(g.category || '')).map(g => norm(g.title)));
+            const captionTitles = new Set(customGuidelines.filter(g => /caption|messag/i.test(g.category || '')).map(g => norm(g.title)));
+            const flowTitles = new Set(customGuidelines.filter(g => /conversation|flow|professional/i.test(g.category || '')).map(g => norm(g.title)));
+
             const formattedGuidelinesAnalysis = {
-              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', allowedTitles),
-              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', allowedTitles),
-              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', allowedTitles),
-              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', allowedTitles),
-              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines', allowedTitles)
+              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', salesTitles),
+              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', engagementTitles),
+              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', captionTitles),
+              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', flowTitles),
+              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines', new Set([...salesTitles, ...engagementTitles, ...captionTitles, ...flowTitles]))
             };
             
             // Derive violation counts per section from the formatted text
