@@ -2051,7 +2051,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
             console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
-            const batchSize = 400; // Optimized batch size for faster processing
+            const batchSize = calculateOptimalBatchSize(analysisMessageTexts);
             const totalBatches = Math.ceil(analysisMessageTexts.length / batchSize);
             console.log('🔄 Will analyze in', totalBatches, 'batches of', batchSize, 'messages each');
             
@@ -2854,6 +2854,39 @@ app.listen(PORT, () => {
     updateCreatorNames();
   }, 2000);
 });
+
+// Estimate token usage for a batch of messages
+function estimateTokenUsage(messages) {
+  // Rough estimate: 1 token ≈ 4 characters for English text
+  const totalChars = messages.join(' ').length;
+  const estimatedTokens = Math.ceil(totalChars / 4);
+  return estimatedTokens;
+}
+
+// Calculate optimal batch size based on message length
+function calculateOptimalBatchSize(messages, maxTokens = 100000) {
+  if (messages.length === 0) return 200;
+  
+  // Start with a reasonable batch size
+  let batchSize = 200;
+  
+  // Test if this batch size fits within token limits
+  while (batchSize > 50) {
+    const testBatch = messages.slice(0, batchSize);
+    const estimatedTokens = estimateTokenUsage(testBatch);
+    
+    if (estimatedTokens < maxTokens) {
+      console.log(`✅ Optimal batch size: ${batchSize} messages (~${estimatedTokens} tokens)`);
+      return batchSize;
+    }
+    
+    // Reduce batch size if too large
+    batchSize = Math.floor(batchSize * 0.8);
+  }
+  
+  console.log(`⚠️ Using minimum batch size: ${batchSize} messages`);
+  return batchSize;
+}
 
 // Format grammar results to be concise with counters
 function formatGrammarResults(text, type) {
