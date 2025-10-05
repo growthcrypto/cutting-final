@@ -38,8 +38,12 @@ app.use(express.static('public'));
 console.log('🔍 Environment check:');
 console.log('  XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
 console.log('  XAI_API_KEY length:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.length : 0);
+console.log('  XAI_API_KEY starts with xai-:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.startsWith('xai-') : false);
+console.log('  XAI_API_KEY first 10 chars:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.substring(0, 10) : 'N/A');
 console.log('  OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
 console.log('  OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+console.log('  All env vars with XAI:', Object.keys(process.env).filter(key => key.includes('XAI')));
+console.log('  All env vars with OPENAI:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
 
 let openai;
 if (process.env.XAI_API_KEY) {
