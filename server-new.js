@@ -96,7 +96,7 @@ if (process.env.XAI_API_KEY) {
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/onlyfans_analytics';
 console.log('🔌 Attempting to connect to MongoDB...');
 console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
-console.log('🔥 SERVER STARTED WITH UPDATED CODE - XAI CONFIG TEST!');
+console.log('🔥 SERVER STARTED WITH UPDATED CODE - XAI ENV VAR TEST!');
 
 // Connect to MongoDB and wait for connection
 async function connectToMongoDB() {
