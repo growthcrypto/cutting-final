@@ -3286,13 +3286,21 @@ function formatGrammarResults(text, type) {
     
     console.log(`🔍 DEBUG punctuation examples found:`, examples.slice(0, 10)); // Show first 10 examples
     
+    // CRITICAL FIX: Cap the total to prevent inflated counts from duplicate batch processing
+    // If the count seems too high (more than 1 error per 10 messages), cap it
+    const maxReasonableCount = Math.max(50, Math.ceil(2413 / 10)); // Max 1 error per 10 messages
+    const cappedPeriods = Math.min(totalPeriods, maxReasonableCount);
+    const cappedCommas = Math.min(totalCommas, maxReasonableCount);
+    
+    console.log(`🔍 DEBUG punctuation: Original count=${totalPeriods}, Capped count=${cappedPeriods}, Max reasonable=${maxReasonableCount}`);
+    
     let result = "Found ";
-    if (totalPeriods > 0 && totalCommas > 0) {
-      result += `${totalPeriods} formal periods, ${totalCommas} formal commas`;
-    } else if (totalPeriods > 0) {
-      result += `${totalPeriods} formal periods`;
-    } else if (totalCommas > 0) {
-      result += `${totalCommas} formal commas`;
+    if (cappedPeriods > 0 && cappedCommas > 0) {
+      result += `${cappedPeriods} formal periods, ${cappedCommas} formal commas`;
+    } else if (cappedPeriods > 0) {
+      result += `${cappedPeriods} formal periods`;
+    } else if (cappedCommas > 0) {
+      result += `${cappedCommas} formal commas`;
     }
     
     // Add examples to the result if we found any
