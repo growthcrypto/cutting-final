@@ -1201,9 +1201,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Analyze messages for ACTUAL spelling mistakes like 'weel' instead of 'well' or 'recieve' instead of 'receive'. DO NOT flag informal OnlyFans language like 'u', 'ur', 'im', 'dont', 'cant', 'ilove' as errors - these are PERFECT for OnlyFans. Return 'No spelling errors found - informal OnlyFans language is correct.' if no actual misspellings found.",
-             "grammarIssues": "Analyze messages for ACTUAL grammar mistakes like 'I was went' instead of 'I went' or 'he dont' instead of 'he doesn't'. DO NOT flag informal OnlyFans language like 'u are', 'dont know', 'cant understand', 'im happy' as errors - these are PERFECT for OnlyFans. Return 'No grammar errors found - informal OnlyFans language is correct.' if no actual grammar mistakes found.",
-             "punctuationProblems": "Analyze messages for FORMAL punctuation mistakes like periods (.) at end of sentences or formal commas. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. Return 'No punctuation errors found - informal OnlyFans language is correct.' if no formal punctuation found.",
+             "spellingErrors": "Find ALL spelling mistakes in the messages. Look for misspelled words like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the', 'adn' instead of 'and', etc. DO NOT flag informal OnlyFans language like 'u', 'ur', 'im', 'dont', 'cant', 'ilove' as errors - these are PERFECT for OnlyFans. Count and list ALL actual misspellings found.",
+             "grammarIssues": "Find ALL grammar mistakes in the messages. Look for errors like 'I was went' instead of 'I went', 'he dont' instead of 'he doesn't', 'they was' instead of 'they were', etc. DO NOT flag informal OnlyFans language like 'u are', 'dont know', 'cant understand', 'im happy' as errors - these are PERFECT for OnlyFans. Count and list ALL actual grammar mistakes found.",
+             "punctuationProblems": "Find ALL formal punctuation mistakes in the messages. Look for periods (.) at the end of sentences, formal commas in lists, etc. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. Count and list ALL formal punctuation issues found.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1254,11 +1254,11 @@ IMPORTANT: You MUST fill in the actual values for each field based on the messag
 CRITICAL BREAKDOWN REQUIREMENTS - BE DIRECT AND ACTIONABLE:
 
 For grammarBreakdown:
-- spellingErrors: List specific misspelled words found in messages (e.g., "Found 'recieve' instead of 'receive' in message 3")
-- grammarIssues: Point out actual grammar mistakes (e.g., "Missing apostrophes in contractions like 'dont' instead of 'don't'")
-- punctuationProblems: Identify real punctuation issues (e.g., "Missing periods at end of sentences in messages 1, 5, 8")
+- spellingErrors: Find and count ALL spelling mistakes in the messages. Look for typos, misspellings, autocorrect errors. Provide specific examples and counts.
+- grammarIssues: Find and count ALL grammar mistakes in the messages. Look for verb tense errors, subject-verb disagreement, sentence structure issues. Provide specific examples and counts.
+- punctuationProblems: Find and count ALL formal punctuation mistakes in the messages. Look for periods at end of sentences, formal commas, etc. Provide specific examples and counts.
 - informalLanguage: Note specific informal patterns (e.g., "Excessive use of 'lol' and 'haha' in 12 out of 20 messages")
-- scoreExplanation: Explain the score with specific examples
+- scoreExplanation: Explain the score with specific examples and total error counts
 
 For guidelinesBreakdown:
 - salesEffectiveness: Point out actual sales mistakes (e.g., "PPV sent without building rapport first in message 15")
@@ -2219,20 +2219,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             !item.includes('No grammar errors found')
           ).join('.') + '.' : "No grammar errors found - informal OnlyFans language is correct.";
         
-        // More aggressive deduplication for punctuation
-        const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems ? 
-          combinedGrammarAnalysis.punctuationProblems.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && 
-            !item.includes('No punctuation errors found - informal OnlyFans language is correct') &&
-            !item.includes('No punctuation errors found')
-          ).map(item => item.trim()).filter(item => item.length > 0)
-          .filter((item, index, arr) => {
-            // Remove items that are too similar to previous items
-            return !arr.slice(0, index).some(prevItem => 
-              prevItem.includes('formal punctuation') && item.includes('formal punctuation') ||
-              prevItem.includes('missing periods') && item.includes('missing periods')
-            );
-          }).join('. ') + '.' : "No punctuation errors found - informal OnlyFans language is correct.";
+        // Use the raw punctuation analysis without cleaning - the AI should find real errors
+        const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.";
         
         const formattedGrammarAnalysis = {
           spellingErrors: cleanSpelling && cleanSpelling !== '.' ? cleanSpelling : "No spelling errors found - informal OnlyFans language is correct.",
