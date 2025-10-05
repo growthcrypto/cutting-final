@@ -2578,6 +2578,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
       console.log('🔍 Frontend engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+      
+      // Debug individual properties
+      if (aiAnalysis.chattingStyle) {
+        console.log('🔍 ChattingStyle properties:', {
+          directness: aiAnalysis.chattingStyle.directness,
+          friendliness: aiAnalysis.chattingStyle.friendliness,
+          salesApproach: aiAnalysis.chattingStyle.salesApproach,
+          personality: aiAnalysis.chattingStyle.personality,
+          emojiUsage: aiAnalysis.chattingStyle.emojiUsage,
+          messageLength: aiAnalysis.chattingStyle.messageLength
+        });
+      }
       console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
