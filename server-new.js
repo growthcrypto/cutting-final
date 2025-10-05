@@ -2034,55 +2034,43 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             };
             
             try {
-              // Analyze batches in parallel (up to 3 at a time to avoid rate limits)
-              const parallelBatches = 3; // Reduced to 3 to avoid rate limits
-              for (let i = 0; i < totalBatches; i += parallelBatches) {
-                const batchPromises = [];
+              // Process batches SEQUENTIALLY to ensure consistent results
+              for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+                const start = batchIndex * batchSize;
+                const end = Math.min(start + batchSize, analysisMessageTexts.length);
+                const batch = analysisMessageTexts.slice(start, end);
                 
-                // Create parallel batch promises
-                for (let j = 0; j < parallelBatches && (i + j) < totalBatches; j++) {
-                  const batchIndex = i + j;
-                  const start = batchIndex * batchSize;
-                  const end = Math.min(start + batchSize, analysisMessageTexts.length);
-                  const batch = analysisMessageTexts.slice(start, end);
-                  
-                  // Reduced logging to prevent rate limits
-                  console.log(`🔄 Batch ${batchIndex + 1}/${totalBatches} (${batch.length} messages)`);
-                  
-                  batchPromises.push(
-                    analyzeMessagesWithRetry(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`)
-                  );
+                console.log(`🔄 Batch ${batchIndex + 1}/${totalBatches} (${batch.length} messages)`);
+                
+                // Process each batch sequentially to ensure consistent results
+                const batchResult = await analyzeMessagesWithRetry(batch, `Guidelines Analysis - Batch ${batchIndex + 1}/${totalBatches}`);
+                
+                console.log(`✅ Completed batch ${batchIndex + 1}/${totalBatches}`);
+                
+                // Add small delay between batches to respect rate limits
+                if (batchIndex < totalBatches - 1) {
+                  console.log('⏳ Waiting 1 second to respect rate limits...');
+                  await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 
-                // Wait for all parallel batches to complete
-                const batchResults = await Promise.all(batchPromises);
-                console.log(`✅ Completed ${Math.min(i + parallelBatches, totalBatches)}/${totalBatches} batches`);
-                
-                // Add delay between batch groups to respect rate limits
-                if (i + parallelBatches < totalBatches) {
-                  console.log('⏳ Waiting 2 seconds to respect rate limits...');
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-                
-                // Combine results from parallel batches (both grammar and guidelines)
-                if (batchResults && batchResults.length > 0) {
-                  batchResults.forEach((batchAnalysis, index) => {
+                // Process the single batch result
+                if (batchResult) {
                   
                   // Combine grammar analysis
-                  if (batchAnalysis.grammarBreakdown) {
+                  if (batchResult.grammarBreakdown) {
                     Object.keys(combinedGrammarAnalysis).forEach(key => {
-                      if (batchAnalysis.grammarBreakdown[key]) {
-                        combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchAnalysis.grammarBreakdown[key];
+                      if (batchResult.grammarBreakdown[key]) {
+                        combinedGrammarAnalysis[key] += (combinedGrammarAnalysis[key] ? ' ' : '') + batchResult.grammarBreakdown[key];
                       }
                     });
                   }
                   
                   // Combine guidelines analysis with better formatting
-                  if (batchAnalysis.guidelinesBreakdown) {
+                  if (batchResult.guidelinesBreakdown) {
                     Object.keys(combinedGuidelinesAnalysis).forEach(key => {
-                      if (batchAnalysis.guidelinesBreakdown[key]) {
+                      if (batchResult.guidelinesBreakdown[key]) {
                         // Clean up the text and add proper formatting
-                        let cleanText = batchAnalysis.guidelinesBreakdown[key]
+                        let cleanText = batchResult.guidelinesBreakdown[key]
                           .replace(/STRICT \w+ analysis:/g, '') // Remove repetitive prefixes
                           .replace(/Total.*?found:?\s*\d+/g, '') // Remove redundant totals
                           .trim();
@@ -2093,7 +2081,6 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                       }
                     });
                   }
-                });
                 }
               }
               
