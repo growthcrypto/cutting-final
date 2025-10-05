@@ -1164,7 +1164,9 @@ async function analyzeMessages(messages, chatterName) {
         index: index + 1,
         text: msg.text,
         replyTime: msg.replyTime || 0,
-        timestamp: msg.timestamp
+        timestamp: msg.timestamp,
+        ppvRevenue: msg.ppvRevenue || 0,
+        isPPV: msg.isPPV || false
       });
     }
   });
@@ -1184,7 +1186,8 @@ async function analyzeMessages(messages, chatterName) {
     const messages = conversationFlows[fanUsername];
     const conversationText = messages.map(msg => {
       const replyTimeText = msg.replyTime > 0 ? ` (Reply time: ${msg.replyTime} minutes)` : '';
-      return `  Message ${msg.index}: "${msg.text}"${replyTimeText}`;
+      const ppvInfo = msg.ppvRevenue > 0 ? ` [PPV: $${msg.ppvRevenue}]` : '';
+      return `  Message ${msg.index}: "${msg.text}"${replyTimeText}${ppvInfo}`;
     }).join('\n');
     
     return `CONVERSATION WITH ${fanUsername} (${messages.length} messages):\n${conversationText}`;
@@ -1260,8 +1263,10 @@ CRITICAL CONVERSATION FLOW ANALYSIS:
 - For "Information Gathering" guidelines: Check if the chatter asks questions AND follows up on the answers within the SAME conversation
 - For "Follow-up Questions" guidelines: Look for question-answer-follow-up patterns within each conversation flow
 - For "Relationship Building" guidelines: Analyze the progression of intimacy and connection within each conversation
+- For "PPV Price Progression" guidelines: Analyze if PPV prices increase over time within the SAME conversation flow. Look for price progression patterns across multiple PPVs sent to the same fan
 - Do NOT flag violations for isolated questions - only flag if the chatter fails to follow up within the SAME conversation flow
 - Example: If chatter asks "how old are u?" and later asks about age-related interests in the SAME conversation, this is GOOD information gathering
+- Example: If chatter sends PPV at $10, then $15, then $20 to the same fan over time, this is GOOD price progression
 
 CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each message (e.g., "Reply time: 3.5 minutes"). Do NOT infer reply times from message content patterns like "u left me unread last time". The reply time data is already provided - use it directly to check compliance with reply time guidelines.
 
@@ -2333,7 +2338,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                     text: r.messageText,
                     replyTime: r.replyTime || 0,
                     timestamp: r.timestamp,
-                    fanUsername: r.fanUsername
+                    fanUsername: r.fanUsername,
+                    ppvRevenue: r.ppvRevenue || 0,
+                    isPPV: r.isPPV || false
                   };
                 }
                 return null;
@@ -2354,7 +2361,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 text: r.messageText,
                 replyTime: r.replyTime || 0,
                 timestamp: r.timestamp,
-                fanUsername: r.fanUsername
+                fanUsername: r.fanUsername,
+                ppvRevenue: r.ppvRevenue || 0,
+                isPPV: r.isPPV || false
               };
             }
             return null;
