@@ -2914,15 +2914,27 @@ function formatGrammarResults(text, type) {
     return `No ${type} errors found - informal OnlyFans language is correct.`;
   }
   
-  // Clean up the text
-  let cleanText = text
-    .replace(/Found \d+ [^:]*:/g, '') // Remove "Found X errors:" prefixes
-    .replace(/No significant issues found\./g, '')
-    .replace(/No significant spelling errors found\./g, '')
-    .replace(/No significant grammar errors found\./g, '')
-    .replace(/No significant punctuation errors found\./g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Clean up the text but PRESERVE "Found X" patterns for punctuation
+  let cleanText = text;
+  if (type !== 'punctuation') {
+    cleanText = text
+      .replace(/Found \d+ [^:]*:/g, '') // Remove "Found X errors:" prefixes
+      .replace(/No significant issues found\./g, '')
+      .replace(/No significant spelling errors found\./g, '')
+      .replace(/No significant grammar errors found\./g, '')
+      .replace(/No significant punctuation errors found\./g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  } else {
+    // For punctuation, only remove very specific repetitive text, keep "Found X" patterns
+    cleanText = text
+      .replace(/No significant issues found\./g, '')
+      .replace(/No significant spelling errors found\./g, '')
+      .replace(/No significant grammar errors found\./g, '')
+      .replace(/No significant punctuation errors found\./g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
   
   if (type === 'spelling') {
     // Extract spelling errors
