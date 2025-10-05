@@ -2000,7 +2000,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         ppvMessages: ppvMessages.length,
         purchasedPPVs: purchasedPPVs.length,
         avgReplyTime,
-        ppvConversionRate
+        ppvConversionRate,
+        // Store messagesAnalysis for later use
+        messagesAnalysis
       };
     } else {
       return res.status(400).json({ error: 'Invalid analysis type or missing chatterId for individual analysis' });
@@ -2008,35 +2010,36 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
     // Generate AI analysis using OpenAI (agency and individual)
     try {
-      // Build messageContent from ALL MessageAnalysis records for comprehensive analysis
-      const analysisMessageTexts = (() => {
-        // First try to get all messages from all MessageAnalysis records
+      // Build messageContent - for individual analysis, use all messages from all records
+      let analysisMessageTexts = [];
+      
+      if (analysisType === 'individual' && analyticsData.messagesAnalysis) {
+        // For individual analysis, get all messages from all MessageAnalysis records
         const allMessagesFromAllRecords = [];
-        messagesAnalysis.forEach(record => {
-          if (Array.isArray(record.messageRecords)) {
-            const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
-            allMessagesFromAllRecords.push(...messagesFromRecord);
-          }
-        });
+        if (analyticsData.messagesAnalysis && Array.isArray(analyticsData.messagesAnalysis)) {
+          analyticsData.messagesAnalysis.forEach(record => {
+            if (Array.isArray(record.messageRecords)) {
+              const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
+              allMessagesFromAllRecords.push(...messagesFromRecord);
+            }
+          });
+        }
         
         if (allMessagesFromAllRecords.length > 0) {
-          console.log(`🔄 Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysis.length} MessageAnalysis records`);
-          return allMessagesFromAllRecords;
+          console.log(`🔄 Retrieved ${allMessagesFromAllRecords.length} messages from ${analyticsData.messagesAnalysis.length} MessageAnalysis records`);
+          analysisMessageTexts = allMessagesFromAllRecords;
+        } else {
+          // Fallback to analyticsData.messageRecords if available
+          const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
+          if (fromRecords.length > 0) {
+            console.log(`🔄 Using ${fromRecords.length} messages from analyticsData.messageRecords`);
+            analysisMessageTexts = fromRecords;
+          }
         }
-        
-        // Fallback to analyticsData.messageRecords if available
-        const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
-        if (fromRecords.length > 0) {
-          console.log(`🔄 Using ${fromRecords.length} messages from analyticsData.messageRecords`);
-          return fromRecords;
-        }
-        
-        // Final fallback to latestMessageAnalysis messagesSample
-        const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
-        const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
-        console.log(`🔄 Using ${fromSample.length} messages from latestMessageAnalysis.messagesSample`);
-        return fromSample;
-      })();
+      } else {
+        // For agency analysis or when no individual data, use empty array
+        analysisMessageTexts = [];
+      }
 
       console.log('🚨 ABOUT TO CALL generateAIAnalysis');
       console.log('🚨 analysisMessageTexts:', analysisMessageTexts);
@@ -2429,12 +2432,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
       // Helper to extract message texts for deterministic breakdowns (from ALL MessageAnalysis records)
-      const getWindowMessages = (messagesAnalysisData) => {
+      const getWindowMessages = () => {
         try {
           // First try to get all messages from all MessageAnalysis records
           const allMessagesFromAllRecords = [];
-          if (messagesAnalysisData && Array.isArray(messagesAnalysisData)) {
-            messagesAnalysisData.forEach(record => {
+          if (analyticsData.messagesAnalysis && Array.isArray(analyticsData.messagesAnalysis)) {
+            analyticsData.messagesAnalysis.forEach(record => {
               if (Array.isArray(record.messageRecords)) {
                 const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
                 allMessagesFromAllRecords.push(...messagesFromRecord);
@@ -2443,7 +2446,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           }
           
           if (allMessagesFromAllRecords.length > 0) {
-            console.log(`🔄 getWindowMessages: Retrieved ${allMessagesFromAllRecords.length} messages from ${messagesAnalysisData ? messagesAnalysisData.length : 0} MessageAnalysis records`);
+            console.log(`🔄 getWindowMessages: Retrieved ${allMessagesFromAllRecords.length} messages from ${analyticsData.messagesAnalysis ? analyticsData.messagesAnalysis.length : 0} MessageAnalysis records`);
             return allMessagesFromAllRecords;
           }
           
@@ -2454,7 +2457,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           }
           
           // Final fallback to latestMessageAnalysis messagesSample
-          const latestMessageAnalysis = messagesAnalysisData && messagesAnalysisData.length > 0 ? messagesAnalysisData[0] : null;
+          const latestMessageAnalysis = analyticsData.messagesAnalysis && analyticsData.messagesAnalysis.length > 0 ? analyticsData.messagesAnalysis[0] : null;
           const fromSample = Array.isArray(latestMessageAnalysis?.messagesSample) ? latestMessageAnalysis.messagesSample.filter(Boolean) : [];
           console.log(`🔄 getWindowMessages: Using ${fromSample.length} messages from latestMessageAnalysis.messagesSample`);
           return fromSample;
@@ -2555,12 +2558,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         }
       } else if (hasGrammarStructure && !hasGrammarContent) {
         console.log('🔍 AI returned grammarBreakdown structure but with empty/undefined values - using deterministic examples');
-        const msgs = getWindowMessages(messagesAnalysis);
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
       } else if (!hasGrammarStructure) {
         console.log('🔍 No AI grammarBreakdown structure, using deterministic examples');
-        const msgs = getWindowMessages(messagesAnalysis);
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.grammarBreakdown = det.grammarBreakdown;
       } else {
@@ -2573,7 +2576,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasGuidelinesContent) {
         console.log('🔍 No AI guidelinesBreakdown content, using deterministic examples');
-        const msgs = getWindowMessages(messagesAnalysis);
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.guidelinesBreakdown = det.guidelinesBreakdown;
       } else {
@@ -2590,7 +2593,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       if (!hasOverallContent) {
         console.log('🔍 No AI overallBreakdown content, using deterministic examples');
-        const msgs = getWindowMessages(messagesAnalysis);
+        const msgs = getWindowMessages();
         const det = buildDeterministicBreakdowns(msgs);
         aiAnalysis.overallBreakdown = det.overallBreakdown;
       } else {
