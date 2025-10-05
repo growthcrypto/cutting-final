@@ -2247,7 +2247,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : null;
       const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : null;
       const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : null;
-      const totalMessages = messagesAnalysis.length > 0 ? messagesAnalysis.reduce((s,m)=> s + (m.totalMessages || 0), 0) : 0;
+      // Use the actual count of messages being analyzed, not the sum from multiple records
+      const totalMessages = analysisMessageTexts ? analysisMessageTexts.length : 0;
       
       // Chatting style analysis (from most recent message analysis)
       const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
