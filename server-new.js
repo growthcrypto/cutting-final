@@ -2535,6 +2535,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             }
 
             const v2Json = parseGuidelinesV2Json(combinedRawGuidelines);
+            
+            // Log raw guidelines analysis for debugging
+            console.log('🔍 RAW GUIDELINES ANALYSIS:');
+            console.log('  - Combined Raw Length:', combinedRawGuidelines.length);
+            console.log('  - V2 JSON Parsed:', !!v2Json);
+            if (v2Json) {
+              console.log('  - General Chatting Items:', v2Json.generalChatting?.items?.length || 0);
+              console.log('  - Psychology Items:', v2Json.psychology?.items?.length || 0);
+              console.log('  - Captions Items:', v2Json.captions?.items?.length || 0);
+              console.log('  - Sales Items:', v2Json.sales?.items?.length || 0);
+              
+              // Log detailed violations
+              if (v2Json.generalChatting?.items?.length > 0) {
+                console.log('  - General Chatting Violations:', v2Json.generalChatting.items.map(item => `${item.title}: ${item.count} violations`));
+              }
+              if (v2Json.psychology?.items?.length > 0) {
+                console.log('  - Psychology Violations:', v2Json.psychology.items.map(item => `${item.title}: ${item.count} violations`));
+              }
+              if (v2Json.captions?.items?.length > 0) {
+                console.log('  - Captions Violations:', v2Json.captions.items.map(item => `${item.title}: ${item.count} violations`));
+              }
+              if (v2Json.sales?.items?.length > 0) {
+                console.log('  - Sales Violations:', v2Json.sales.items.map(item => `${item.title}: ${item.count} violations`));
+              }
+            } else {
+              console.log('  - V2 JSON parsing failed, using fallback analysis');
+            }
 
             function summarizeFromItems(items) {
               const total = Array.isArray(items) ? items.reduce((s, it) => s + (Number(it.count) || 0), 0) : 0;
@@ -3642,19 +3669,33 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'spelling') {
-    // Return the detailed analysis instead of just a count
-    if (cleanText.length > 0) {
-      return cleanText;
+    // Extract spelling errors and return count with summary
+    const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
+    const uniqueSpellingErrors = new Set();
+    spellingMatches.forEach(match => {
+      uniqueSpellingErrors.add(`${match[1]}`);
+    });
+    
+    if (uniqueSpellingErrors.size === 0) {
+      return "No spelling errors found - informal OnlyFans language is correct.";
     }
-    return "No spelling errors found - informal OnlyFans language is correct.";
+    
+    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'grammar') {
-    // Return the detailed analysis instead of just a count
-    if (cleanText.length > 0) {
-      return cleanText;
+    // Extract grammar errors and return count with summary
+    const grammarMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
+    const uniqueGrammarErrors = new Set();
+    grammarMatches.forEach(match => {
+      uniqueGrammarErrors.add(`${match[1]}`);
+    });
+    
+    if (uniqueGrammarErrors.size === 0) {
+      return "No grammar errors found - informal OnlyFans language is correct.";
     }
-    return "No grammar errors found - informal OnlyFans language is correct.";
+    
+    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'punctuation') {
@@ -3760,11 +3801,28 @@ function formatGrammarResults(text, type) {
       examples.push(`${match[1]} → ${match[2]}`);
     });
     
-    // Return the detailed analysis instead of just a count
-    if (cleanText.length > 0) {
-      return cleanText;
+    // Extract punctuation issues and return count with summary
+    const periodMatches = [...cleanText.matchAll(/(\d+) punctuation (?:problems?|errors?)/g)];
+    const commaMatches = [...cleanText.matchAll(/(\d+) (?:formal )?commas?/g)];
+    const allMatches = [...cleanText.matchAll(/(\d+)/g)];
+    
+    let totalIssues = 0;
+    
+    // Try to extract numbers from the text
+    if (periodMatches.length > 0) {
+      totalIssues += parseInt(periodMatches[0][1]);
+    } else if (commaMatches.length > 0) {
+      totalIssues += parseInt(commaMatches[0][1]);
+    } else if (allMatches.length > 0) {
+      // Fallback: use the first number found
+      totalIssues = parseInt(allMatches[0][1]);
     }
-    return "No punctuation errors found - informal OnlyFans language is correct.";
+    
+    if (totalIssues === 0) {
+      return "No punctuation errors found - informal OnlyFans language is correct.";
+    }
+    
+    return `Found ${totalIssues} punctuation issue${totalIssues !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   return cleanText;
