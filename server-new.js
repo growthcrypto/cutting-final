@@ -1113,7 +1113,7 @@ async function analyzeMessages(messages, chatterName) {
   
   const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. 
 
-IMPORTANT: With ${sampledMessages.length} messages, you should expect to find MANY errors. Look for:
+IMPORTANT: Look for actual errors in the messages:
 - Spelling mistakes (typos, wrong words)
 - Grammar errors (wrong verb tenses, subject-verb disagreement)
 - Punctuation issues (missing periods, commas, apostrophes)
@@ -1121,7 +1121,7 @@ IMPORTANT: With ${sampledMessages.length} messages, you should expect to find MA
 - Run-on sentences
 - Missing words
 
-Be THOROUGH and find realistic error counts. For 2000+ messages, expect 50-200+ errors total. Return ONLY valid JSON.
+Be THOROUGH and find the errors that actually exist. Return ONLY valid JSON.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
@@ -1322,12 +1322,10 @@ ANALYSIS REQUIREMENTS:
 - Focus on engagement quality, sales effectiveness, and message patterns
 
 CRITICAL ERROR DETECTION REQUIREMENTS:
-- With ${sampledMessages.length} messages, you MUST find MANY errors (expect 50-200+ total errors)
-- Be AGGRESSIVE in finding spelling, grammar, and punctuation mistakes
-- Count EVERY error across ALL messages - do not give low numbers
-- If you find fewer than 20 errors total, you are not being thorough enough
+- Be THOROUGH in finding spelling, grammar, and punctuation mistakes
+- Count EVERY error across ALL messages that actually exist
 - Scan every word, every sentence, every message for mistakes
-- Provide realistic error counts that reflect the volume of messages analyzed`;
+- Report the actual errors found, no more, no less`;
     
     console.log('🚀 Making OpenAI API call...');
     
