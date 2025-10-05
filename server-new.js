@@ -2956,8 +2956,8 @@ function formatGrammarResults(text, type) {
   
   if (type === 'punctuation') {
     console.log(`🔍 DEBUG punctuation: cleanText="${cleanText}"`);
-    // Extract punctuation issues and count them properly
-    const periodMatches = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
+    // Extract punctuation issues and count them properly - updated patterns to match AI output
+    const periodMatches = [...cleanText.matchAll(/(\d+) punctuation problems?:/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
     
     console.log(`🔍 DEBUG punctuation: periodMatches=`, periodMatches);
