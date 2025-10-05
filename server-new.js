@@ -2443,7 +2443,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               generalChatting: formatGuidelinesText(generalText, 'General Chatting', generalPhrases),
               psychology: formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases),
               captions: formatGuidelinesText(captionsText, 'Captions', captionsPhrases),
-              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases)
+              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases),
+              // Details payload for UI drilldown
+              details: {
+                generalChatting: extractGuidelineViolations(generalText, generalPhrases),
+                psychology: extractGuidelineViolations(psychologyText, psychologyPhrases),
+                captions: extractGuidelineViolations(captionsText, captionsPhrases),
+                sales: extractGuidelineViolations(salesText, salesOnlyPhrases)
+              }
             };
             
             // Derive violation counts per section from the formatted text
@@ -3961,6 +3968,61 @@ function formatGuidelinesText(text, category, allowedPhrases) {
   }
   
   return analysis;
+}
+
+// Extract structured guideline violations (labels, counts, simple examples) for UI details
+function extractGuidelineViolations(text, allowedPhrases) {
+  if (!text || !text.trim()) return { total: 0, items: [] };
+  const norm = (s) => (s || '').toLowerCase().trim();
+  const cleanText = text.replace(/\s+/g, ' ').trim();
+  const itemsMap = new Map();
+
+  const patterns = [
+    /Found\s+(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/gi,
+    /Found\s+(\d+)\s+violations?\s+of\s+([^:]+):/gi,
+    /Found\s+(\d+)\s+violations?\s+in\s+([^:]+):/gi
+  ];
+
+  const genericTerms = new Set(['sales effectiveness','engagement quality','caption quality','conversation flow','personal sharing']);
+
+  patterns.forEach((re) => {
+    let m;
+    while ((m = re.exec(cleanText)) !== null) {
+      const count = parseInt(m[1]);
+      const labelRaw = (m[2] || '').toString().trim();
+      const label = norm(labelRaw.replace(/guidelines?/i, '').replace(/section/i, ''));
+      if (!label || isNaN(count)) continue;
+      if (genericTerms.has(label)) continue;
+      if (allowedPhrases && allowedPhrases.size > 0) {
+        const allowed = Array.from(allowedPhrases).some((p) => label.includes(norm(p)) || norm(p).includes(label));
+        if (!allowed) continue;
+      }
+      const prev = itemsMap.get(label) || { label, count: 0, examples: [] };
+      prev.count += count;
+      itemsMap.set(label, prev);
+    }
+  });
+
+  // Try to capture message number examples like "messages 12, 18, and 26"
+  const msgNums = [];
+  const msgRe = /messages?\s+([\d,\sand]+)/gi;
+  let mm;
+  while ((mm = msgRe.exec(cleanText)) !== null) {
+    const part = mm[1];
+    const nums = part.split(/[^\d]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+    msgNums.push(...nums);
+  }
+  // Attach same examples to each item if we have them
+  if (msgNums.length > 0) {
+    itemsMap.forEach((v, k) => {
+      v.examples = Array.from(new Set([...(v.examples || []), ...msgNums])).slice(0, 10);
+      itemsMap.set(k, v);
+    });
+  }
+
+  const items = Array.from(itemsMap.values()).sort((a, b) => (b.count || 0) - (a.count || 0));
+  const total = items.reduce((s, it) => s + (it.count || 0), 0);
+  return { total, items };
 }
 
 // Deterministic analysis for individual chatter (no AI, data-only)
