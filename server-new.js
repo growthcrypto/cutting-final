@@ -1139,16 +1139,31 @@ async function analyzeMessages(messages, chatterName) {
       throw new Error('No messages available for analysis');
     }
     
-    // Check if messages are strings
-    const nonStringMessages = sampledMessages.filter(msg => typeof msg !== 'string');
-    if (nonStringMessages.length > 0) {
-      console.log('❌ ERROR: Some messages are not strings:', nonStringMessages);
+    // Check if messages are strings or objects with text property
+    const nonValidMessages = sampledMessages.filter(msg => {
+      if (typeof msg === 'string') return false;
+      if (typeof msg === 'object' && msg.text && typeof msg.text === 'string') return false;
+      return true;
+    });
+    if (nonValidMessages.length > 0) {
+      console.log('❌ ERROR: Some messages are not valid:', nonValidMessages);
     }
     
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
-  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+  // Format messages for AI analysis - include reply time data
+  const formattedMessages = sampledMessages.map((msg, index) => {
+    if (typeof msg === 'string') {
+      return `Message ${index + 1}: "${msg}"`;
+    } else if (typeof msg === 'object' && msg.text) {
+      const replyTimeText = msg.replyTime > 0 ? ` (Reply time: ${msg.replyTime} minutes)` : '';
+      return `Message ${index + 1}: "${msg.text}"${replyTimeText}`;
+    }
+    return `Message ${index + 1}: "[Invalid message format]"`;
+  }).join('\n');
+
+  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA. You MUST use the provided reply time data instead of inferring reply times from message content patterns. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. 
 
@@ -1187,12 +1202,14 @@ CRITICAL BATCH PROCESSING: You are analyzing a specific batch of messages. Count
 Be VERY THOROUGH and find ALL errors that actually exist. For 2000+ messages, expect to find 100-300+ errors total. Return ONLY valid JSON.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages):
-${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
+${formattedMessages}
 
 CUSTOM GUIDELINES TO EVALUATE AGAINST:
 ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.description} (Weight: ${g.weight})`).join('\n')}
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
+
+CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each message (e.g., "Reply time: 3.5 minutes"). Do NOT infer reply times from message content patterns like "u left me unread last time". The reply time data is already provided - use it directly to check compliance with reply time guidelines.
 
 CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
 
@@ -2256,7 +2273,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         if (analyticsData.messagesAnalysis && Array.isArray(analyticsData.messagesAnalysis)) {
           analyticsData.messagesAnalysis.forEach(record => {
             if (Array.isArray(record.messageRecords)) {
-              const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
+              const messagesFromRecord = record.messageRecords.map(r => {
+                if (r && r.messageText) {
+                  return {
+                    text: r.messageText,
+                    replyTime: r.replyTime || 0,
+                    timestamp: r.timestamp,
+                    fanUsername: r.fanUsername
+                  };
+                }
+                return null;
+              }).filter(Boolean);
               allMessagesFromAllRecords.push(...messagesFromRecord);
             }
           });
@@ -2267,7 +2294,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           analysisMessageTexts = allMessagesFromAllRecords;
         } else {
           // Fallback to analyticsData.messageRecords if available
-          const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean) : [];
+          const fromRecords = Array.isArray(analyticsData.messageRecords) ? analyticsData.messageRecords.map(r => {
+            if (r && r.messageText) {
+              return {
+                text: r.messageText,
+                replyTime: r.replyTime || 0,
+                timestamp: r.timestamp,
+                fanUsername: r.fanUsername
+              };
+            }
+            return null;
+          }).filter(Boolean) : [];
           if (fromRecords.length > 0) {
             console.log(`🔄 Using ${fromRecords.length} messages from analyticsData.messageRecords`);
             analysisMessageTexts = fromRecords;
@@ -2967,8 +3004,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           if (analyticsData.messagesAnalysis && Array.isArray(analyticsData.messagesAnalysis)) {
             analyticsData.messagesAnalysis.forEach(record => {
               if (Array.isArray(record.messageRecords)) {
-                const messagesFromRecord = record.messageRecords.map(r => r && r.messageText).filter(Boolean);
-                allMessagesFromAllRecords.push(...messagesFromRecord);
+              const messagesFromRecord = record.messageRecords.map(r => {
+                if (r && r.messageText) {
+                  return {
+                    text: r.messageText,
+                    replyTime: r.replyTime || 0,
+                    timestamp: r.timestamp,
+                    fanUsername: r.fanUsername
+                  };
+                }
+                return null;
+              }).filter(Boolean);
+              allMessagesFromAllRecords.push(...messagesFromRecord);
               }
             });
           }
@@ -2981,7 +3028,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           // Fallback to analyticsData.messageRecords if available
           if (Array.isArray(analyticsData.messageRecords) && analyticsData.messageRecords.length > 0) {
             console.log(`🔄 getWindowMessages: Using ${analyticsData.messageRecords.length} messages from analyticsData.messageRecords`);
-            return analyticsData.messageRecords.map(r => r && r.messageText).filter(Boolean);
+            return analyticsData.messageRecords.map(r => {
+              if (r && r.messageText) {
+                return {
+                  text: r.messageText,
+                  replyTime: r.replyTime || 0,
+                  timestamp: r.timestamp,
+                  fanUsername: r.fanUsername
+                };
+              }
+              return null;
+            }).filter(Boolean);
           }
           
           // Final fallback to latestMessageAnalysis messagesSample
@@ -3590,7 +3647,10 @@ app.listen(PORT, () => {
 // Estimate token usage for a batch of messages
 function estimateTokenUsage(messages) {
   // Rough estimate: 1 token ≈ 4 characters for English text
-  const totalChars = messages.join(' ').length;
+  const totalChars = messages.reduce((sum, msg) => {
+    const text = typeof msg === 'string' ? msg : (msg.text || '');
+    return sum + text.length;
+  }, 0);
   const estimatedTokens = Math.ceil(totalChars / 4);
   return estimatedTokens;
 }
@@ -3620,8 +3680,14 @@ function calculateOptimalBatchSize(messages, maxTokens = 500000) { // Increased 
   
   // Debug: Check message lengths
   const sampleMessages = messages.slice(0, 5);
-  const avgMessageLength = sampleMessages.reduce((sum, msg) => sum + msg.length, 0) / sampleMessages.length;
-  console.log(`🔍 DEBUG: Sample message lengths:`, sampleMessages.map(m => m.length));
+  const avgMessageLength = sampleMessages.reduce((sum, msg) => {
+    const text = typeof msg === 'string' ? msg : (msg.text || '');
+    return sum + text.length;
+  }, 0) / sampleMessages.length;
+  console.log(`🔍 DEBUG: Sample message lengths:`, sampleMessages.map(m => {
+    const text = typeof m === 'string' ? m : (m.text || '');
+    return text.length;
+  }));
   console.log(`🔍 DEBUG: Average message length: ${Math.round(avgMessageLength)} characters`);
   
   // Start with a larger batch size for faster processing
