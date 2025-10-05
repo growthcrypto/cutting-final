@@ -1557,7 +1557,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-                max_tokens: 12000, // Increased to allow complete AI responses
+                max_tokens: 16000, // Increased further to prevent JSON truncation
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -4884,14 +4884,18 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-      max_tokens: 12000 // Increased to prevent text truncation
+      max_tokens: 16000 // Increased further to prevent JSON truncation
     });
 
     const aiResponse = completion.choices[0].message.content;
-    console.log('🔍 AI Response:', aiResponse);
     console.log('🔍 AI Response Length:', aiResponse.length);
-    console.log('🔍 AI Response Preview:', aiResponse.substring(0, 500) + '...');
-    console.log('🔍 AI Response Ends with:', aiResponse.substring(aiResponse.length - 100));
+    console.log('🔍 AI Response Ends With:', aiResponse.slice(-50));
+    
+    // Check if response was truncated
+    if (completion.choices[0].finish_reason === 'length') {
+      console.error('❌ AI response was truncated due to token limit!');
+      throw new Error('AI response truncated - increase max_tokens');
+    }
     
     // Try to extract JSON from the response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
@@ -4922,6 +4926,14 @@ CRITICAL ANALYSIS REQUIREMENTS:
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError.message);
       console.error('❌ Malformed JSON:', jsonMatch[0]);
+      console.error('❌ JSON Length:', jsonMatch[0] ? jsonMatch[0].length : 'No JSON found');
+      
+      // Check if JSON was truncated
+      if (jsonMatch[0] && jsonMatch[0].endsWith('{')) {
+        console.error('❌ JSON appears to be truncated - ends with opening brace');
+        throw new Error('AI response truncated - JSON incomplete');
+      }
+      
       throw new Error('AI response format error - malformed JSON');
     }
   } catch (error) {
