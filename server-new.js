@@ -3642,33 +3642,19 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'spelling') {
-    // Extract spelling errors
-    const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
-    const uniqueSpellingErrors = new Set();
-    spellingMatches.forEach(match => {
-      uniqueSpellingErrors.add(`${match[1]}`);
-    });
-    
-    if (uniqueSpellingErrors.size === 0) {
-      return "No spelling errors found - informal OnlyFans language is correct.";
+    // Return the detailed analysis instead of just a count
+    if (cleanText.length > 0) {
+      return cleanText;
     }
-    
-    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
+    return "No spelling errors found - informal OnlyFans language is correct.";
   }
   
   if (type === 'grammar') {
-    // Extract grammar errors
-    const grammarMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
-    const uniqueGrammarErrors = new Set();
-    grammarMatches.forEach(match => {
-      uniqueGrammarErrors.add(`${match[1]}`);
-    });
-    
-    if (uniqueGrammarErrors.size === 0) {
-      return "No grammar errors found - informal OnlyFans language is correct.";
+    // Return the detailed analysis instead of just a count
+    if (cleanText.length > 0) {
+      return cleanText;
     }
-    
-    return `Found ${uniqueGrammarErrors.size} grammar error${uniqueGrammarErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
+    return "No grammar errors found - informal OnlyFans language is correct.";
   }
   
   if (type === 'punctuation') {
@@ -3774,23 +3760,11 @@ function formatGrammarResults(text, type) {
       examples.push(`${match[1]} → ${match[2]}`);
     });
     
-    console.log(`🔍 DEBUG punctuation examples found:`, examples.slice(0, 10)); // Show first 10 examples
-    
-    // Use the actual count - the issue might be in the regex parsing, not batch processing
-    console.log(`🔍 DEBUG punctuation: Final count=${totalPeriods} periods, ${totalCommas} commas`);
-    
-    let result = "Found ";
-    if (totalPeriods > 0 && totalCommas > 0) {
-      result += `${totalPeriods} formal periods, ${totalCommas} formal commas`;
-    } else if (totalPeriods > 0) {
-      result += `${totalPeriods} formal periods`;
-    } else if (totalCommas > 0) {
-      result += `${totalCommas} formal commas`;
+    // Return the detailed analysis instead of just a count
+    if (cleanText.length > 0) {
+      return cleanText;
     }
-    
-    // Don't add examples - user doesn't want them
-    
-    return result + " across analyzed messages.";
+    return "No punctuation errors found - informal OnlyFans language is correct.";
   }
   
   return cleanText;
