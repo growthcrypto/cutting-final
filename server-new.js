@@ -1276,6 +1276,16 @@ CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each 
 
 IMPORTANT: Only flag reply time violations for messages that actually exceed the time limit (e.g., >5 minutes). Do NOT flag every message as a violation. Most messages will have acceptable reply times - only flag the ones that are actually too slow.
 
+DATA-DRIVEN ANALYSIS: You MUST count violations by examining the actual data provided. For reply time violations, count ONLY messages where the reply time is actually >5 minutes. Do NOT make up numbers or estimates. Count the actual violations from the data provided.
+
+VIOLATION COUNTING METHOD: 
+1. For reply time violations: Count each message where "Reply time: X minutes" and X > 5
+2. For other guidelines: Count each specific violation mentioned in the data
+3. Provide the EXACT count, not estimates or approximations
+4. If you cannot find specific violations in the data, report 0 violations
+
+CATEGORIZATION RULES: Each guideline violation should only appear in ONE category. Do NOT duplicate violations across multiple categories. If a guideline belongs to a specific category, only report it in that category.
+
 CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
 
 GUIDELINES_V2_JSON:
@@ -4857,7 +4867,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-      max_tokens: 8000
+      max_tokens: 12000 // Increased to prevent text truncation
     });
 
     const aiResponse = completion.choices[0].message.content;
