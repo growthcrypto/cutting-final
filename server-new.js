@@ -1125,7 +1125,23 @@ IMPORTANT: Look for actual errors in the messages:
 - Contraction errors (missing apostrophes in don't, can't, won't, etc.)
 - Common typos and misspellings
 
-PUNCTUATION RULES: Flag ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged. FLAG as errors: periods at sentence ends, formal commas. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans. DO NOT flag apostrophes, question marks, exclamation points, multiple punctuation (!!!, ???) as errors - these are perfect for OnlyFans. Examples: 'Hello, how are you.' should be 'hello how are you', 'It's nice!' should be 'It's nice!' (keep apostrophe and exclamation, remove period and comma), 'How are you?' should be 'how are you?' (keep question mark, remove nothing).
+PUNCTUATION RULES: Flag ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged.
+
+🚫 NEVER FLAG THESE AS ERRORS:
+- Question marks (?)
+- Exclamation points (!)
+- Apostrophes (')
+- Multiple punctuation (!!!, ???)
+- Informal language (u, ur, im, dont, cant)
+
+✅ ONLY FLAG THESE AS ERRORS:
+- Periods at sentence ends (.)
+- Formal commas (,)
+
+Examples: 
+- 'Hello, how are you.' → 'hello how are you' (remove period and comma, keep nothing else)
+- 'It's nice!' → 'It's nice!' (keep apostrophe and exclamation, remove nothing)
+- 'How are you?' → 'how are you?' (keep question mark, remove nothing)
 
 CRITICAL BATCH PROCESSING: You are analyzing a specific batch of messages. Count ONLY the errors found in THIS batch. Do NOT duplicate or repeat counts from other batches. Each batch should have its own independent count.
 
@@ -1210,7 +1226,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
            "grammarBreakdown": {
              "spellingErrors": "AGGRESSIVELY FIND ALL spelling mistakes in the messages. Look for typos, wrong words, autocorrect errors, and misspellings. Examples: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'seperate' instead of 'separate', 'thier' instead of 'their', 'alot' instead of 'a lot', 'freetime' instead of 'free time', 'outfit' as 'out fit'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every word in every message. Count and list ALL spelling errors found with specific examples.",
              "grammarIssues": "AGGRESSIVELY FIND ALL grammar mistakes in the messages. Look for wrong verb tenses, subject-verb disagreement, pronoun errors, sentence fragments, run-on sentences, missing words, incorrect word order. Examples: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went', 'there going' instead of 'they're going', 'i can wait' instead of 'i cant wait', 'do he have' instead of 'does he have'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL grammar errors found with specific examples.",
-             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged. Examples: 'Hello, how are you.' should be 'hello how are you', 'It's nice!' should be 'It's nice!' (keep apostrophe and exclamation, remove period and comma), 'How are you?' should be 'how are you?' (keep question mark, remove nothing). FLAG as errors: periods at sentence ends, formal commas. DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are PERFECT for OnlyFans. DO NOT flag apostrophes, question marks, exclamation points, multiple punctuation (!!!, ???) as errors - these are PERFECT for OnlyFans. CRITICAL: Count ONLY the errors in THIS specific batch of messages. Do NOT duplicate counts from other batches. ⚠️ WARNING: If you see the same error pattern multiple times, count each instance only once. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
+             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged. 🚫 NEVER FLAG: Question marks (?), Exclamation points (!), Apostrophes ('), Multiple punctuation (!!!, ???), Informal language (u, ur, im, dont, cant). ✅ ONLY FLAG: Periods at sentence ends (.), Formal commas (,). Examples: 'Hello, how are you.' should be 'hello how are you', 'It's nice!' should be 'It's nice!' (keep apostrophe and exclamation, remove period and comma), 'How are you?' should be 'how are you?' (keep question mark, remove nothing). CRITICAL: Count ONLY the errors in THIS specific batch of messages. Do NOT duplicate counts from other batches. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -3277,11 +3293,7 @@ function formatGrammarResults(text, type) {
       result += `${totalCommas} formal commas`;
     }
     
-    // Add examples to the result if we found any
-    if (examples.length > 0) {
-      const exampleText = examples.slice(0, 5).join(', '); // Show first 5 examples
-      result += `. Examples: ${exampleText}`;
-    }
+    // Don't add examples - user doesn't want them
     
     return result + " across analyzed messages.";
   }
