@@ -1464,7 +1464,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
         }
       ],
       temperature: 0.1, // Low temperature for consistent JSON output
-                max_tokens: 8000, // Reduced to prevent JSON truncation issues
+                max_tokens: 12000, // Increased to allow complete AI responses
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -4748,6 +4748,15 @@ CRITICAL ANALYSIS REQUIREMENTS:
     try {
       const analysis = JSON.parse(jsonMatch[0]);
       console.log('Parsed AI Analysis:', JSON.stringify(analysis, null, 2));
+      
+      // Debug: Check if the required fields are present
+      console.log('🔍 AI Analysis Fields Check:');
+      console.log('  - chattingStyle:', !!analysis.chattingStyle, analysis.chattingStyle ? Object.keys(analysis.chattingStyle) : 'N/A');
+      console.log('  - messagePatterns:', !!analysis.messagePatterns, analysis.messagePatterns ? Object.keys(analysis.messagePatterns) : 'N/A');
+      console.log('  - engagementMetrics:', !!analysis.engagementMetrics, analysis.engagementMetrics ? Object.keys(analysis.engagementMetrics) : 'N/A');
+      console.log('  - grammarBreakdown:', !!analysis.grammarBreakdown, analysis.grammarBreakdown ? Object.keys(analysis.grammarBreakdown) : 'N/A');
+      console.log('  - guidelinesBreakdown:', !!analysis.guidelinesBreakdown, analysis.guidelinesBreakdown ? Object.keys(analysis.guidelinesBreakdown) : 'N/A');
+      
       return analysis;
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError.message);
