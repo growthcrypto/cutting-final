@@ -5565,8 +5565,12 @@ function renderSophisticatedChatterAnalysis(data) {
                             <div class="text-sm text-white">${data.chattingStyle.messageLength || 'N/A'}</div>
                         </div>
                     </div>
+                    <!-- DEBUG: Show raw data -->
+                    <div class="mt-2 p-2 bg-gray-900/50 rounded text-xs text-gray-400">
+                        DEBUG: ${JSON.stringify(data.chattingStyle)}
+                    </div>
                 </div>
-                ` : ''}
+                ` : '<div class="mb-6 text-red-400">DEBUG: No chattingStyle data received</div>'}
                 
                 <!-- Message Patterns -->
                 ${data.messagePatterns ? `
