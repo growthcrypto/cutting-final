@@ -1414,7 +1414,7 @@ CONSISTENCY REQUIREMENTS:
       console.log('🔍 Raw JSON preview (last 500 chars):', jsonText.substring(Math.max(0, jsonText.length - 500)));
       
       // Debug: Show characters around common error positions
-      const errorPositions = [7081, 1087, 1055];
+      const errorPositions = [7081, 1087, 1055, 1102, 1052];
       errorPositions.forEach(pos => {
         if (jsonText.length > pos) {
           const start = Math.max(0, pos - 50);
@@ -1446,7 +1446,11 @@ CONSISTENCY REQUIREMENTS:
         .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":') // Quote unquoted keys
         .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,\}\]])/g, '$1"$2"$3') // Quote unquoted values
         .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote any unquoted strings
-        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)$/g, ': "$1"'); // Quote unquoted strings at end
+        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)$/g, ': "$1"') // Quote unquoted strings at end
+        .replace(/:\s*([a-zA-Z][a-zA-Z0-9\s]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote multi-word unquoted strings
+        .replace(/:\s*([a-zA-Z][a-zA-Z0-9\s]*?)$/g, ': "$1"') // Quote multi-word unquoted strings at end
+        .replace(/([,\{\[])\s*([a-zA-Z][a-zA-Z0-9\s]*?)\s*:/g, '$1"$2":') // Quote multi-word unquoted keys
+        .replace(/([,\{\[])\s*([a-zA-Z][a-zA-Z0-9\s]*?)\s*([,\}\]])/g, '$1"$2"$3'); // Quote multi-word unquoted values
       
       console.log('🔧 Attempting to parse JSON with auto-corrections...');
       const analysisResult = JSON.parse(jsonText);
