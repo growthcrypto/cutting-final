@@ -1172,6 +1172,17 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
 
+OUTPUT REQUIREMENT (STRICT): After your narrative, you MUST output a single JSON block labeled exactly as below. Titles must be the uploaded guideline Titles. Matching must be based on Descriptions. Provide counts per violated guideline and up to 10 example message indices if available.
+
+GUIDELINES_V2_JSON:
+{
+  "generalChatting": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "psychology": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "captions": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] },
+  "sales": { "items": [ { "title": "<Title>", "description": "<Description>", "count": <number>, "examples": [<messageIdx>...] } ] }
+}
+END_GUIDELINES_V2_JSON
+
          ONLYFANS CHATTING RULES - CRITICAL:
          
          FORBIDDEN TO FLAG AS ERRORS (THESE ARE PERFECT FOR ONLYFANS):
@@ -2460,19 +2471,79 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const captionsText = combinedGuidelinesAnalysis.captionQuality || '';
             const salesText = combinedGuidelinesAnalysis.salesEffectiveness || '';
 
-            const guidelinesBreakdownV2 = {
-              generalChatting: formatGuidelinesText(generalText, 'General Chatting', generalPhrases, engagementPhraseToTitle /* psychology/engagement overlap */),
-              psychology: formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases, engagementPhraseToTitle),
-              captions: formatGuidelinesText(captionsText, 'Captions', captionsPhrases, captionPhraseToTitle),
-              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases, salesPhraseToTitle),
-              // Details payload for UI drilldown
-              details: {
-                generalChatting: extractGuidelineViolations(generalText, generalPhrases),
-                psychology: extractGuidelineViolations(psychologyText, psychologyPhrases),
-                captions: extractGuidelineViolations(captionsText, captionsPhrases),
-                sales: extractGuidelineViolations(salesText, salesOnlyPhrases)
+            // Prefer strict JSON block if the model emitted GUIDELINES_V2_JSON
+            const combinedRawGuidelines = [
+              generalText,
+              psychologyText,
+              captionsText,
+              salesText,
+              combinedGuidelinesAnalysis.scoreExplanation || ''
+            ].join(' ');
+
+            function parseGuidelinesV2Json(raw) {
+              try {
+                const startTag = 'GUIDELINES_V2_JSON:';
+                const endTag = 'END_GUIDELINES_V2_JSON';
+                const startIdx = raw.indexOf(startTag);
+                const endIdx = raw.indexOf(endTag);
+                if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return null;
+                const jsonSlice = raw.slice(startIdx + startTag.length, endIdx).trim();
+                const parsed = JSON.parse(jsonSlice);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+              } catch (e) {
+                return null;
               }
-            };
+            }
+
+            const v2Json = parseGuidelinesV2Json(combinedRawGuidelines);
+
+            function summarizeFromItems(items) {
+              const total = Array.isArray(items) ? items.reduce((s, it) => s + (Number(it.count) || 0), 0) : 0;
+              const top = (Array.isArray(items) ? items : [])
+                .slice()
+                .sort((a, b) => (b.count || 0) - (a.count || 0))
+                .slice(0, 3)
+                .map(it => `${it.title || it.description || 'Issue'} (${it.count || 0})`);
+              return { total, topLine: total > 0 ? `Found ${total} violations. Top issues: ${top.join(', ')}.` : 'No specific violations found for this category.' };
+            }
+
+            let guidelinesBreakdownV2;
+            if (v2Json) {
+              const gen = summarizeFromItems(v2Json.generalChatting?.items || []);
+              const psy = summarizeFromItems(v2Json.psychology?.items || []);
+              const cap = summarizeFromItems(v2Json.captions?.items || []);
+              const sal = summarizeFromItems(v2Json.sales?.items || []);
+              guidelinesBreakdownV2 = {
+                generalChatting: gen.topLine,
+                psychology: psy.topLine,
+                captions: cap.topLine,
+                sales: sal.topLine,
+                details: {
+                  generalChatting: { total: gen.total, items: v2Json.generalChatting?.items || [] },
+                  psychology: { total: psy.total, items: v2Json.psychology?.items || [] },
+                  captions: { total: cap.total, items: v2Json.captions?.items || [] },
+                  sales: { total: sal.total, items: v2Json.sales?.items || [] }
+                }
+              };
+              console.log('🧩 Guidelines V2 JSON detected and used.');
+            } else {
+              const fbGen = formatGuidelinesText(generalText, 'General Chatting', generalPhrases, engagementPhraseToTitle /* psychology/engagement overlap */);
+              const fbPsy = formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases, engagementPhraseToTitle);
+              const fbCap = formatGuidelinesText(captionsText, 'Captions', captionsPhrases, captionPhraseToTitle);
+              const fbSal = formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases, salesPhraseToTitle);
+              guidelinesBreakdownV2 = {
+                generalChatting: fbGen,
+                psychology: fbPsy,
+                captions: fbCap,
+                sales: fbSal,
+                details: {
+                  generalChatting: extractGuidelineViolations(generalText, generalPhrases),
+                  psychology: extractGuidelineViolations(psychologyText, psychologyPhrases),
+                  captions: extractGuidelineViolations(captionsText, captionsPhrases),
+                  sales: extractGuidelineViolations(salesText, salesOnlyPhrases)
+                }
+              };
+            }
 
             // DEBUG: Log raw texts and extracted violations for operator visibility
             console.log('🧩 Guidelines V2 RAW - General Chatting:', generalText);
@@ -2499,10 +2570,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               return m ? parseInt(m[1]) || 0 : 0;
             }
             // Compute counts from V2 categories
-            const v2General = extractCount(guidelinesBreakdownV2.generalChatting);
-            const v2Psych = extractCount(guidelinesBreakdownV2.psychology);
-            const v2Captions = extractCount(guidelinesBreakdownV2.captions);
-            const v2Sales = extractCount(guidelinesBreakdownV2.sales);
+            const v2General = guidelinesBreakdownV2.details?.generalChatting?.total ?? extractCount(guidelinesBreakdownV2.generalChatting);
+            const v2Psych = guidelinesBreakdownV2.details?.psychology?.total ?? extractCount(guidelinesBreakdownV2.psychology);
+            const v2Captions = guidelinesBreakdownV2.details?.captions?.total ?? extractCount(guidelinesBreakdownV2.captions);
+            const v2Sales = guidelinesBreakdownV2.details?.sales?.total ?? extractCount(guidelinesBreakdownV2.sales);
             const totalGuidelineViolations = v2General + v2Psych + v2Captions + v2Sales;
 
             // Calculate guidelines score using same rubric as grammar (errors vs total messages)
