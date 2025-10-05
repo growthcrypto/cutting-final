@@ -2159,11 +2159,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         const cleanGrammar = formatGrammarResults(combinedGrammarAnalysis.grammarIssues, 'grammar');
         const cleanPunctuation = formatGrammarResults(combinedGrammarAnalysis.punctuationProblems, 'punctuation');
         
+        // Calculate actual error counts from the formatted results
+        const spellingCount = extractErrorCount(cleanSpelling);
+        const grammarCount = extractErrorCount(cleanGrammar);
+        const punctuationCount = extractErrorCount(cleanPunctuation);
+        const totalErrors = spellingCount + grammarCount + punctuationCount;
+        
+        // Calculate grammar score based on total errors (lower errors = higher score)
+        const calculatedGrammarScore = calculateGrammarScore(totalErrors, analysisMessageTexts.length);
+        
+        // Store the calculated score for use later
+        analyticsData.calculatedGrammarScore = calculatedGrammarScore;
+        
         const formattedGrammarAnalysis = {
           spellingErrors: cleanSpelling && cleanSpelling !== '.' ? cleanSpelling : "No spelling errors found - informal OnlyFans language is correct.",
           grammarIssues: cleanGrammar && cleanGrammar !== '.' ? cleanGrammar : "No grammar errors found - informal OnlyFans language is correct.",
           punctuationProblems: cleanPunctuation && cleanPunctuation !== '.' ? cleanPunctuation : "No punctuation errors found - informal OnlyFans language is correct.",
-          scoreExplanation: formatGrammarText(combinedGrammarAnalysis.scoreExplanation, 'Grammar Analysis')
+          scoreExplanation: `Grammar score: ${calculatedGrammarScore}/100. Main issues: ${getMainIssues(spellingCount, grammarCount, punctuationCount)}. Total errors: ${totalErrors}.`
         };
             
             console.log('🔄 Formatted spellingErrors:', formattedGrammarAnalysis.spellingErrors);
@@ -2238,7 +2250,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
-      aiAnalysis.grammarScore = analyticsData.grammarScore;
+      aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore || analyticsData.grammarScore;
       aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
       aiAnalysis.overallScore = analyticsData.overallMessageScore;
       
@@ -3034,7 +3046,7 @@ function formatGrammarText(text, category) {
     return "No errors found - informal OnlyFans language is correct.";
   }
   
-  // Clean up repetitive score explanations
+  // Clean up repetitive score explanations and calculate proper totals
   if (text.includes('Grammar score:')) {
     // Split by "Grammar score:" to get individual score explanations
     const scoreParts = text.split(/Grammar score:/).filter(part => part.trim());
@@ -3058,8 +3070,77 @@ function formatGrammarText(text, category) {
     }
   }
   
+  // If this is a score explanation, try to extract and calculate proper totals
+  if (text.includes('Total errors:')) {
+    // Extract all error counts from the text
+    const errorMatches = text.match(/Total errors:\s*(\d+)/g);
+    if (errorMatches && errorMatches.length > 0) {
+      // Sum up all the error counts
+      let totalErrors = 0;
+      errorMatches.forEach(match => {
+        const count = parseInt(match.match(/(\d+)/)[1]);
+        totalErrors += count;
+      });
+      
+      // Extract the first score and issues
+      const scoreMatch = text.match(/(\d+\/100)/);
+      const issuesMatch = text.match(/Main issues:\s*([^.]+)/);
+      
+      if (scoreMatch && issuesMatch) {
+        const score = scoreMatch[1];
+        const issues = issuesMatch[1].trim();
+        
+        return `Grammar score: ${score}. Main issues: ${issues}. Total errors: ${totalErrors}.`;
+      }
+    }
+  }
+  
   // Return raw text without formatting
   return text;
+}
+
+// Helper function to extract error count from formatted text
+function extractErrorCount(text) {
+  if (!text || text.includes('No ') && text.includes('found')) {
+    return 0;
+  }
+  
+  const match = text.match(/Found (\d+)/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+// Helper function to calculate grammar score based on error count
+function calculateGrammarScore(totalErrors, totalMessages) {
+  if (totalMessages === 0) return 100;
+  
+  const errorRate = totalErrors / totalMessages;
+  
+  // Score calculation: 100 - (error rate * 100), with minimum of 0
+  let score = Math.max(0, 100 - (errorRate * 100));
+  
+  // Round to nearest integer
+  return Math.round(score);
+}
+
+// Helper function to get main issues based on error counts
+function getMainIssues(spellingCount, grammarCount, punctuationCount) {
+  const issues = [];
+  
+  if (spellingCount > 0) {
+    issues.push(`${spellingCount} spelling error${spellingCount !== 1 ? 's' : ''}`);
+  }
+  if (grammarCount > 0) {
+    issues.push(`${grammarCount} grammar error${grammarCount !== 1 ? 's' : ''}`);
+  }
+  if (punctuationCount > 0) {
+    issues.push(`${punctuationCount} punctuation error${punctuationCount !== 1 ? 's' : ''}`);
+  }
+  
+  if (issues.length === 0) {
+    return 'no significant issues';
+  }
+  
+  return issues.join(', ');
 }
 
 // Helper function to format guidelines text for clean analysis
