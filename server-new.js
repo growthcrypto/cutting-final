@@ -2373,11 +2373,21 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 .map(g => norm(g.description))
                 .filter(Boolean)
             );
+            const salesPhraseToTitle = new Map(
+              customGuidelines
+                .filter(g => /sales|ppv/i.test(g.category || ''))
+                .map(g => [norm(g.description), g.title])
+            );
             const engagementPhrases = new Set(
               customGuidelines
                 .filter(g => /engage|engagement/i.test(g.category || ''))
                 .map(g => norm(g.description))
                 .filter(Boolean)
+            );
+            const engagementPhraseToTitle = new Map(
+              customGuidelines
+                .filter(g => /engage|engagement/i.test(g.category || ''))
+                .map(g => [norm(g.description), g.title])
             );
             const captionPhrases = new Set(
               customGuidelines
@@ -2385,22 +2395,33 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 .map(g => norm(g.description))
                 .filter(Boolean)
             );
+            const captionPhraseToTitle = new Map(
+              customGuidelines
+                .filter(g => /caption|messag/i.test(g.category || ''))
+                .map(g => [norm(g.description), g.title])
+            );
             const flowPhrases = new Set(
               customGuidelines
                 .filter(g => /conversation|flow|professional/i.test(g.category || ''))
                 .map(g => norm(g.description))
                 .filter(Boolean)
             );
+            const flowPhraseToTitle = new Map(
+              customGuidelines
+                .filter(g => /conversation|flow|professional/i.test(g.category || ''))
+                .map(g => [norm(g.description), g.title])
+            );
 
             const formattedGuidelinesAnalysis = {
-              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', salesPhrases),
-              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', engagementPhrases),
-              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', captionPhrases),
-              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', flowPhrases),
+              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', salesPhrases, salesPhraseToTitle),
+              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', engagementPhrases, engagementPhraseToTitle),
+              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', captionPhrases, captionPhraseToTitle),
+              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', flowPhrases, flowPhraseToTitle),
               scoreExplanation: formatGuidelinesText(
                 combinedGuidelinesAnalysis.scoreExplanation,
                 'Overall Guidelines',
-                new Set([...salesPhrases, ...engagementPhrases, ...captionPhrases, ...flowPhrases])
+                new Set([...salesPhrases, ...engagementPhrases, ...captionPhrases, ...flowPhrases]),
+                new Map([...salesPhraseToTitle, ...engagementPhraseToTitle, ...captionPhraseToTitle, ...flowPhraseToTitle])
               )
             };
 
@@ -2440,10 +2461,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const salesText = combinedGuidelinesAnalysis.salesEffectiveness || '';
 
             const guidelinesBreakdownV2 = {
-              generalChatting: formatGuidelinesText(generalText, 'General Chatting', generalPhrases),
-              psychology: formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases),
-              captions: formatGuidelinesText(captionsText, 'Captions', captionsPhrases),
-              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases),
+              generalChatting: formatGuidelinesText(generalText, 'General Chatting', generalPhrases, engagementPhraseToTitle /* psychology/engagement overlap */),
+              psychology: formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases, engagementPhraseToTitle),
+              captions: formatGuidelinesText(captionsText, 'Captions', captionsPhrases, captionPhraseToTitle),
+              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases, salesPhraseToTitle),
               // Details payload for UI drilldown
               details: {
                 generalChatting: extractGuidelineViolations(generalText, generalPhrases),
@@ -3851,7 +3872,7 @@ function getMainIssues(spellingCount, grammarCount, punctuationCount) {
 }
 
 // Helper function to format guidelines text for clean analysis
-function formatGuidelinesText(text, category, allowedPhrases) {
+function formatGuidelinesText(text, category, allowedPhrases, phraseToTitleMap) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
@@ -3881,7 +3902,7 @@ function formatGuidelinesText(text, category, allowedPhrases) {
     while ((m = re.exec(cleanText)) !== null) {
       const count = parseInt(m[1]);
       const labelRaw = (m[2] || '').toString().trim();
-      const label = labelRaw
+      let label = labelRaw
         .replace(/guidelines?/i, '')
         .replace(/section/i, '')
         .trim()
@@ -3893,6 +3914,15 @@ function formatGuidelinesText(text, category, allowedPhrases) {
       if (allowedPhrases && allowedPhrases.size > 0) {
         const isAllowed = Array.from(allowedPhrases).some(p => label.includes(p) || p.includes(label));
         if (!isAllowed) continue;
+      }
+      // Map description phrases to their Title for display if available
+      if (phraseToTitleMap && phraseToTitleMap.size > 0) {
+        for (const [desc, title] of phraseToTitleMap.entries()) {
+          if (label.includes(desc) || desc.includes(label)) {
+            label = title.toLowerCase();
+            break;
+          }
+        }
       }
       if (!label) continue;
       violations.set(label, (violations.get(label) || 0) + (isNaN(count) ? 0 : count));
