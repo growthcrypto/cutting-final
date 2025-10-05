@@ -3261,6 +3261,16 @@ app.put('/api/guidelines/:id', authenticateToken, requireManager, async (req, re
   }
 });
 
+// Admin: wipe all guidelines
+app.delete('/api/guidelines', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const result = await Guideline.deleteMany({});
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Daily Chatter Reports
 app.post('/api/daily-reports', authenticateToken, async (req, res) => {
   try {
