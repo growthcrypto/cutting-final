@@ -2177,9 +2177,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('🔍 DEBUGGING: combinedGrammarAnalysis:', combinedGrammarAnalysis);
         
         // Clean up and format the combined analysis results
+        console.log('🔍 DEBUG: Raw punctuationProblems:', combinedGrammarAnalysis.punctuationProblems);
         const cleanSpelling = formatGrammarResults(combinedGrammarAnalysis.spellingErrors, 'spelling');
         const cleanGrammar = formatGrammarResults(combinedGrammarAnalysis.grammarIssues, 'grammar');
         const cleanPunctuation = formatGrammarResults(combinedGrammarAnalysis.punctuationProblems, 'punctuation');
+        console.log('🔍 DEBUG: Cleaned punctuationProblems:', cleanPunctuation);
         
         // Calculate actual error counts from the formatted results
         const spellingCount = extractErrorCount(cleanSpelling);
@@ -2906,7 +2908,9 @@ function calculateOptimalBatchSize(messages, maxTokens = 500000) { // Increased 
 
 // Format grammar results to be concise with counters
 function formatGrammarResults(text, type) {
+  console.log(`🔍 DEBUG formatGrammarResults: type=${type}, text="${text}"`);
   if (!text || text.trim() === '') {
+    console.log(`🔍 DEBUG: No text for ${type}, returning default message`);
     return `No ${type} errors found - informal OnlyFans language is correct.`;
   }
   
@@ -2951,9 +2955,13 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'punctuation') {
+    console.log(`🔍 DEBUG punctuation: cleanText="${cleanText}"`);
     // Extract punctuation issues and count them properly
     const periodMatches = [...cleanText.matchAll(/(\d+) instances? of (?:periods? at the end of sentences?|missing periods?)/g)];
     const commaMatches = [...cleanText.matchAll(/(\d+) instances? of (?:formal commas?|missing commas?)/g)];
+    
+    console.log(`🔍 DEBUG punctuation: periodMatches=`, periodMatches);
+    console.log(`🔍 DEBUG punctuation: commaMatches=`, commaMatches);
     
     let totalPeriods = 0;
     let totalCommas = 0;
@@ -2966,7 +2974,10 @@ function formatGrammarResults(text, type) {
       totalCommas += parseInt(match[1]);
     });
     
+    console.log(`🔍 DEBUG punctuation: totalPeriods=${totalPeriods}, totalCommas=${totalCommas}`);
+    
     if (totalPeriods === 0 && totalCommas === 0) {
+      console.log(`🔍 DEBUG punctuation: No matches found, returning default message`);
       return "No punctuation errors found - informal OnlyFans language is correct.";
     }
     
