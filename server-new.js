@@ -2395,8 +2395,26 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         analysisMessageTexts = [];
       }
 
-      console.log('🚨 Generating AI analysis for', analysisMessageTexts ? analysisMessageTexts.length : 0, 'messages...');
-      const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
+            console.log('🚨 Generating AI analysis for', analysisMessageTexts ? analysisMessageTexts.length : 0, 'messages...');
+            
+            // Debug: Show sample of data being passed to AI
+            if (analysisMessageTexts && analysisMessageTexts.length > 0) {
+              console.log('🔍 DEBUG: Sample messages being sent to AI:');
+              analysisMessageTexts.slice(0, 3).forEach((msg, index) => {
+                console.log(`  Message ${index + 1}:`, typeof msg === 'string' ? msg : JSON.stringify(msg));
+              });
+              
+              // Count reply time violations in the actual data
+              const replyTimeViolations = analysisMessageTexts.filter(msg => {
+                if (typeof msg === 'object' && msg.replyTime) {
+                  return msg.replyTime > 5;
+                }
+                return false;
+              }).length;
+              console.log(`🔍 DEBUG: Actual reply time violations (>5 min) in data: ${replyTimeViolations}`);
+            }
+            
+            const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
       console.log('✅ AI analysis completed');
       
       // Add raw metrics to response for UI display
