@@ -1278,14 +1278,21 @@ IMPORTANT: Only flag reply time violations for messages that actually exceed the
 
 DATA-DRIVEN ANALYSIS: You MUST count violations by examining the actual data provided. For reply time violations, count ONLY messages where the reply time exceeds the threshold specified in the uploaded guidelines. Do NOT make up numbers or estimates. Count the actual violations from the data provided.
 
-VIOLATION COUNTING METHOD: 
+CRITICAL VIOLATION COUNTING METHOD: 
 1. For reply time violations: Count each message where "Reply time: X minutes" exceeds the guideline threshold specified in the uploaded guidelines
 2. For other guidelines: Count each specific violation mentioned in the data according to the exact criteria in the uploaded guidelines
 3. Provide the EXACT count, not estimates or approximations
 4. If you cannot find specific violations in the data, report 0 violations
 5. Use ONLY the criteria specified in the uploaded guidelines, not assumptions
+6. DO NOT make up different numbers for the same data - if you count 15 reply time violations, report 15, not 92
+7. Be CONSISTENT - the same data should produce the same counts every time
 
-CATEGORIZATION RULES: Each guideline violation should only appear in ONE category. Do NOT duplicate violations across multiple categories. If a guideline belongs to a specific category, only report it in that category.
+CRITICAL CATEGORIZATION RULES: 
+- Each guideline violation must appear in ONLY ONE category
+- Do NOT duplicate the same violation across multiple categories
+- If a guideline belongs to a specific category, report it ONLY in that category
+- Reply time violations should appear in ONLY ONE category (not both General Chatting and Psychology)
+- If you report the same violation in multiple categories, the analysis is WRONG
 
 CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
 
@@ -1557,7 +1564,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-                max_tokens: 16000, // Increased further to prevent JSON truncation
+                max_tokens: 20000, // Increased even further to prevent JSON truncation
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -4884,7 +4891,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-      max_tokens: 16000 // Increased further to prevent JSON truncation
+      max_tokens: 20000 // Increased even further to prevent JSON truncation
     });
 
     const aiResponse = completion.choices[0].message.content;
