@@ -1251,6 +1251,9 @@ CRITICAL: You MUST analyze the messages above and provide specific examples. Do 
 If you find issues, list them specifically with message numbers. If you find no issues, write "No significant issues found" but still provide the breakdown structure.
 
 IMPORTANT: You MUST fill in the actual values for each field based on the message analysis. Do not return empty objects or placeholder values. Analyze the actual messages and provide real values for:
+
+CRITICAL: The chattingStyle, messagePatterns, and engagementMetrics sections are REQUIRED and must contain actual values, not "N/A" or empty strings.
+
 - chattingStyle: directness, friendliness, salesApproach, personality, emojiUsage, messageLength, responsePattern
 - messagePatterns: questionFrequency, exclamationUsage, capitalizationStyle, punctuationStyle, topicDiversity, sexualContent, personalSharing  
 - engagementMetrics: conversationStarter, conversationMaintainer, salesConversation, fanRetention
@@ -1259,6 +1262,30 @@ IMPORTANT: You MUST fill in the actual values for each field based on the messag
 - overallBreakdown: messageClarity, emotionalImpact, conversionPotential, scoreExplanation
 
 CRITICAL BREAKDOWN REQUIREMENTS - BE DIRECT AND ACTIONABLE:
+
+For chattingStyle (REQUIRED - must analyze actual message content):
+- directness: Analyze how direct/straightforward the messages are (e.g., "moderately direct", "very direct", "subtle")
+- friendliness: Analyze the warmth and friendliness in messages (e.g., "very friendly", "warm", "professional")
+- salesApproach: Analyze the sales approach (e.g., "aggressive", "subtle", "relationship-first")
+- personality: Analyze the personality shown (e.g., "flirty", "caring", "playful", "professional")
+- emojiUsage: Analyze emoji frequency and types (e.g., "heavy use of hearts and kisses", "minimal emojis")
+- messageLength: Analyze typical message length (e.g., "short and punchy", "detailed and long", "medium length")
+- responsePattern: Analyze response style (e.g., "quick responses", "thoughtful", "conversational")
+
+For messagePatterns (REQUIRED - must analyze actual message content):
+- questionFrequency: Analyze how often questions are asked (e.g., "asks questions in 60% of messages", "rarely asks questions")
+- exclamationUsage: Analyze exclamation point usage (e.g., "heavy use of exclamations", "minimal exclamations")
+- capitalizationStyle: Analyze capitalization patterns (e.g., "mostly lowercase", "proper capitalization", "mixed style")
+- punctuationStyle: Analyze punctuation patterns (e.g., "minimal punctuation", "proper punctuation", "excessive punctuation")
+- topicDiversity: Analyze topic variety (e.g., "focused on sales", "diverse topics", "personal and business mix")
+- sexualContent: Analyze sexual content level (e.g., "moderate sexual content", "high sexual content", "minimal sexual content")
+- personalSharing: Analyze personal sharing level (e.g., "shares personal details", "keeps it professional", "moderate sharing")
+
+For engagementMetrics (REQUIRED - must analyze actual message content):
+- conversationStarter: Analyze ability to start conversations (e.g., "good at starting conversations", "struggles to initiate")
+- conversationMaintainer: Analyze ability to maintain conversations (e.g., "keeps conversations going", "conversations die quickly")
+- salesConversation: Analyze sales conversation skills (e.g., "natural sales approach", "forced sales attempts")
+- fanRetention: Analyze fan retention approach (e.g., "builds relationships", "focuses on transactions")
 
 For grammarBreakdown:
 - spellingErrors: Find and count ALL spelling mistakes in the messages. Look for typos, misspellings, autocorrect errors. Provide specific examples and counts.
