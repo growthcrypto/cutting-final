@@ -2430,19 +2430,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 .filter(Boolean)
             );
 
-            const allGuidelinesText = [
-              combinedGuidelinesAnalysis.salesEffectiveness,
+            // Use per-category source text to avoid identical outputs across categories
+            const generalText = [
               combinedGuidelinesAnalysis.engagementQuality,
-              combinedGuidelinesAnalysis.captionQuality,
-              combinedGuidelinesAnalysis.conversationFlow,
-              combinedGuidelinesAnalysis.scoreExplanation
+              combinedGuidelinesAnalysis.conversationFlow
             ].filter(Boolean).join(' ');
+            const psychologyText = combinedGuidelinesAnalysis.engagementQuality || '';
+            const captionsText = combinedGuidelinesAnalysis.captionQuality || '';
+            const salesText = combinedGuidelinesAnalysis.salesEffectiveness || '';
 
             const guidelinesBreakdownV2 = {
-              generalChatting: formatGuidelinesText(allGuidelinesText, 'General Chatting', generalPhrases),
-              psychology: formatGuidelinesText(allGuidelinesText, 'Psychology', psychologyPhrases),
-              captions: formatGuidelinesText(allGuidelinesText, 'Captions', captionsPhrases),
-              sales: formatGuidelinesText(allGuidelinesText, 'Sales', salesOnlyPhrases)
+              generalChatting: formatGuidelinesText(generalText, 'General Chatting', generalPhrases),
+              psychology: formatGuidelinesText(psychologyText, 'Psychology', psychologyPhrases),
+              captions: formatGuidelinesText(captionsText, 'Captions', captionsPhrases),
+              sales: formatGuidelinesText(salesText, 'Sales', salesOnlyPhrases)
             };
             
             // Derive violation counts per section from the formatted text
@@ -3955,7 +3956,8 @@ function formatGuidelinesText(text, category, allowedPhrases) {
       const total = quickCounts.reduce((s, n) => s + n, 0);
       return `Found ${total} violations.`;
     }
-    return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
+    // Avoid generic cross-category fallback: if no allowed phrase matched, return concise no-issues string for this category
+    return `No specific violations found for ${category}.`;
   }
   
   return analysis;
