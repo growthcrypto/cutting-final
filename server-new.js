@@ -2219,12 +2219,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             !item.includes('No grammar errors found')
           ).join('.') + '.' : "No grammar errors found - informal OnlyFans language is correct.";
         
+        // More aggressive deduplication for punctuation
         const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems ? 
           combinedGrammarAnalysis.punctuationProblems.split('.').filter((item, index, arr) => 
             arr.indexOf(item) === index && item.trim().length > 0 && 
             !item.includes('No punctuation errors found - informal OnlyFans language is correct') &&
             !item.includes('No punctuation errors found')
-          ).join('.') + '.' : "No punctuation errors found - informal OnlyFans language is correct.";
+          ).map(item => item.trim()).filter(item => item.length > 0)
+          .filter((item, index, arr) => {
+            // Remove items that are too similar to previous items
+            return !arr.slice(0, index).some(prevItem => 
+              prevItem.includes('formal punctuation') && item.includes('formal punctuation') ||
+              prevItem.includes('missing periods') && item.includes('missing periods')
+            );
+          }).join('. ') + '.' : "No punctuation errors found - informal OnlyFans language is correct.";
         
         const formattedGrammarAnalysis = {
           spellingErrors: cleanSpelling && cleanSpelling !== '.' ? cleanSpelling : "No spelling errors found - informal OnlyFans language is correct.",
