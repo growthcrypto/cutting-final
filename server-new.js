@@ -3158,14 +3158,17 @@ function calculateGrammarScore(totalErrors, totalMessages) {
   if (totalMessages === 0) return 100;
   
   const errorRate = totalErrors / totalMessages;
+  const errorPercentage = errorRate * 100;
   
-  // BALANCED scoring: Stricter than before but not too harsh
-  // Formula: 100 - (error rate * 150), with minimum of 0
-  // This means 5% error rate = 25 score, 2.5% error rate = 62.5 score
-  let score = Math.max(0, 100 - (errorRate * 150));
-  
-  // Round to nearest integer
-  return Math.round(score);
+  // New scoring system based on error percentage
+  if (errorPercentage === 0) return 100;        // 0% errors = 100/100 (perfect)
+  if (errorPercentage <= 1) return 85;          // 1% errors = 85/100 (very good)
+  if (errorPercentage <= 2) return 70;          // 2% errors = 70/100 (good)
+  if (errorPercentage <= 3) return 55;          // 3% errors = 55/100 (fair)
+  if (errorPercentage <= 4) return 40;          // 4% errors = 40/100 (poor)
+  if (errorPercentage <= 5) return 25;          // 5% errors = 25/100 (needs improvement)
+  if (errorPercentage <= 6) return 10;          // 6% errors = 10/100 (terrible)
+  return 5;                                     // 6%+ errors = 5/100 (terrible)
 }
 
 // Helper function to get main issues based on error counts
