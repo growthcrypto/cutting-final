@@ -587,6 +587,19 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const totalPPVRevenue = dailyReports.reduce((sum, report) => sum + report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0), 0);
     const totalTipRevenue = dailyReports.reduce((sum, report) => sum + report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0), 0);
     const totalRevenue = totalPPVRevenue + totalTipRevenue;
+    
+    // Daily-average PPV price (average of each day's average), per timeframe
+    const dailyAvgPrices = dailyReports
+      .map(r => {
+        const cnt = (r.ppvSales || []).length;
+        if (!cnt) return null;
+        const sum = r.ppvSales.reduce((s, sale) => s + sale.amount, 0);
+        return sum / cnt;
+      })
+      .filter(v => v != null);
+    const avgPPVPriceDaily = dailyAvgPrices.length > 0 
+      ? Math.round((dailyAvgPrices.reduce((s, v) => s + v, 0) / dailyAvgPrices.length) * 100) / 100
+      : 0;
 
     // Note: daily reports include only unlocked PPVs; 'sent' is tracked in chatter performance
     const totalPPVsSent = 0;
@@ -635,6 +648,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       totalRevenue: Math.round(totalRevenue),
       netRevenue: Math.round(netRevenue),
       ppvRevenue: Math.round(totalPPVRevenue),
+      tipRevenue: Math.round(totalRevenue - totalPPVRevenue),
       recurringRevenue: Math.round(recurringRevenue),
       totalSubs: Math.round(totalSubs),
       newSubs: Math.round(newSubs),
@@ -644,8 +658,8 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       ppvsUnlocked: combinedPPVsUnlocked,
       fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
-      // Average PPV price should be computed from PPV revenue over unlocked (purchased) PPVs
-      avgPPVPrice: combinedPPVsUnlocked > 0 ? Math.round((totalPPVRevenue / combinedPPVsUnlocked) * 100) / 100 : 0,
+      // Average PPV price: average of each day's average PPV price within the timeframe
+      avgPPVPrice: avgPPVPriceDaily,
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
     
