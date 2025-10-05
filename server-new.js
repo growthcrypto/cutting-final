@@ -1270,6 +1270,8 @@ CRITICAL CONVERSATION FLOW ANALYSIS:
 
 CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each message (e.g., "Reply time: 3.5 minutes"). Do NOT infer reply times from message content patterns like "u left me unread last time". The reply time data is already provided - use it directly to check compliance with reply time guidelines.
 
+IMPORTANT: Only flag reply time violations for messages that actually exceed the time limit (e.g., >5 minutes). Do NOT flag every message as a violation. Most messages will have acceptable reply times - only flag the ones that are actually too slow.
+
 CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
 
 GUIDELINES_V2_JSON:
@@ -4213,11 +4215,14 @@ function formatGuidelinesText(text, category, allowedPhrases, phraseToTitleMap) 
   
   // If no structured content, return cleaned text
   if (!analysis.trim()) {
-    // As a last resort, try to extract any counts of violations
+    // As a last resort, try to extract any counts of violations with context
     const quickCounts = [...cleanText.matchAll(/Found\s+(\d+)\s+violations?/gi)].map(m => parseInt(m[1])).filter(n => !isNaN(n));
     if (quickCounts.length > 0) {
       const total = quickCounts.reduce((s, n) => s + n, 0);
-      return `Found ${total} violations.`;
+      // Try to provide some context about what was found
+      const contextMatches = [...cleanText.matchAll(/([^\.]+)\./g)];
+      const context = contextMatches.length > 0 ? contextMatches[0][1].substring(0, 100) : 'various issues';
+      return `Found ${total} violations. Issues include: ${context}...`;
     }
     // Avoid generic cross-category fallback: if no allowed phrase matched, return concise no-issues string for this category
     return `No specific violations found for ${category}.`;
