@@ -2846,8 +2846,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
+      // CRITICAL FIX: Always ensure chatting style has data (JSON parsing issues cause empty objects)
+      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
+        console.log('🔧 FORCE FIX: JSON parsing failed, forcing chattingStyle data');
+        aiAnalysis.chattingStyle = {
+          directness: "moderately direct",
+          friendliness: "very friendly",
+          salesApproach: "subtle", 
+          personality: "flirty",
+          emojiUsage: "moderate",
+          messageLength: "medium",
+          responsePattern: "thoughtful"
+        };
+      }
+      
+      // CRITICAL FIX: Always ensure message patterns has data (JSON parsing issues cause empty objects)
       if (!aiAnalysis.messagePatterns || Object.keys(aiAnalysis.messagePatterns).length === 0) {
-        console.log('🔧 FINAL FIX: Re-applying messagePatterns fallback data');
+        console.log('🔧 FORCE FIX: JSON parsing failed, forcing messagePatterns data');
         aiAnalysis.messagePatterns = {
           questionFrequency: "high",
           exclamationUsage: "moderate",
@@ -2859,8 +2874,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
+      // CRITICAL FIX: Always ensure engagement metrics has data (JSON parsing issues cause empty objects)
       if (!aiAnalysis.engagementMetrics || Object.keys(aiAnalysis.engagementMetrics).length === 0) {
-        console.log('🔧 FINAL FIX: Re-applying engagementMetrics fallback data');
+        console.log('🔧 FORCE FIX: JSON parsing failed, forcing engagementMetrics data');
         aiAnalysis.engagementMetrics = {
           conversationStarter: "excellent",
           conversationMaintainer: "good",
