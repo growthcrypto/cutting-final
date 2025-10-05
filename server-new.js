@@ -1464,7 +1464,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
         }
       ],
       temperature: 0.1, // Low temperature for consistent JSON output
-      max_tokens: 16000, // Increased for Grok-4-fast-reasoning's larger context
+                max_tokens: 8000, // Reduced to prevent JSON truncation issues
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
