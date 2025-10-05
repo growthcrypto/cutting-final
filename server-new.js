@@ -1124,7 +1124,7 @@ async function analyzeMessages(messages, chatterName) {
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
-  const prompt = `Analyze these OnlyFans chat messages and provide COMPREHENSIVE analysis with COUNTERS. Return ONLY valid JSON.
+  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. Return ONLY valid JSON.
 
 MESSAGES TO ANALYZE (${sampledMessages.length} messages):
 ${sampledMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
@@ -1201,9 +1201,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Find ALL spelling mistakes in the messages. Look for misspelled words like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the', 'adn' instead of 'and', etc. DO NOT flag informal OnlyFans language like 'u', 'ur', 'im', 'dont', 'cant', 'ilove' as errors - these are PERFECT for OnlyFans. Count and list ALL actual misspellings found.",
-             "grammarIssues": "Find ALL grammar mistakes in the messages. Look for errors like 'I was went' instead of 'I went', 'he dont' instead of 'he doesn't', 'they was' instead of 'they were', etc. DO NOT flag informal OnlyFans language like 'u are', 'dont know', 'cant understand', 'im happy' as errors - these are PERFECT for OnlyFans. Count and list ALL actual grammar mistakes found.",
-             "punctuationProblems": "Find ALL formal punctuation mistakes in the messages. Look for periods (.) at the end of sentences, formal commas in lists, etc. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. Count and list ALL formal punctuation issues found.",
+             "spellingErrors": "AGGRESSIVELY FIND ALL spelling mistakes in the messages. Look for misspelled words like 'weel' instead of 'well', 'recieve' instead of 'receive', 'teh' instead of 'the', 'adn' instead of 'and', 'thier' instead of 'their', 'seperate' instead of 'separate', 'occured' instead of 'occurred', 'definately' instead of 'definitely', etc. DO NOT flag informal OnlyFans language like 'u', 'ur', 'im', 'dont', 'cant', 'ilove' as errors - these are PERFECT for OnlyFans. BE THOROUGH - scan every word in every message. Count and list ALL actual misspellings found with specific examples.",
+             "grammarIssues": "AGGRESSIVELY FIND ALL grammar mistakes in the messages. Look for errors like 'I was went' instead of 'I went', 'he dont' instead of 'he doesn't', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went', 'there going' instead of 'they're going', 'your welcome' instead of 'you're welcome', 'its a good' instead of 'it's a good', etc. DO NOT flag informal OnlyFans language like 'u are', 'dont know', 'cant understand', 'im happy' as errors - these are PERFECT for OnlyFans. BE THOROUGH - scan every sentence in every message. Count and list ALL actual grammar mistakes found with specific examples.",
+             "punctuationProblems": "AGGRESSIVELY FIND ALL formal punctuation mistakes in the messages. Look for periods (.) at the end of sentences, formal commas in lists, semicolons, colons, etc. DO NOT flag missing question marks, multiple punctuation (!!!, ???), or informal punctuation as errors - these are PERFECT for OnlyFans. BE THOROUGH - scan every sentence in every message. Count and list ALL formal punctuation issues found with specific examples.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "guidelinesBreakdown": {
@@ -1230,6 +1230,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
          6. CRITICAL: If you flag ANY informal OnlyFans language, your analysis is completely wrong
          7. Be consistent with error counts
          8. Keep analysis concise and clear
+         9. CRITICAL: You MUST find actual errors in the messages. If you return generic responses like "No errors found" without thoroughly analyzing every message, your analysis is WRONG.
+         10. CRITICAL: You MUST provide specific examples from the actual messages. Generic statements are not acceptable.
+         11. CRITICAL: You MUST count every single error across all messages. Do not give vague numbers.
 
 Return ONLY the JSON object above. No additional text.
 
@@ -1328,6 +1331,15 @@ ANALYSIS REQUIREMENTS:
     console.log('🚨 DEBUGGING: First message:', sampledMessages[0]);
     console.log('🚨 DEBUGGING: Last message:', sampledMessages[sampledMessages.length - 1]);
     
+    // CRITICAL DEBUG: Show actual messages being analyzed
+    console.log('🚨 CRITICAL DEBUG - MESSAGES BEING ANALYZED:');
+    console.log('==========================================');
+    sampledMessages.slice(0, 10).forEach((msg, i) => {
+      console.log(`${i + 1}. ${msg}`);
+    });
+    console.log(`... and ${sampledMessages.length - 10} more messages`);
+    console.log('==========================================');
+    
     // CRITICAL: Check if messages are actually in the prompt
     const messagesInPrompt = prompt.match(/MESSAGES TO ANALYZE.*?\n(.*?)(?=CUSTOM GUIDELINES|$)/s);
     console.log('🚨 CRITICAL: Messages section in prompt:', messagesInPrompt ? messagesInPrompt[1].substring(0, 500) : 'NOT FOUND');
@@ -1366,6 +1378,12 @@ ANALYSIS REQUIREMENTS:
     const aiResponse = completion.choices[0].message.content;
     console.log('🚨 RAW AI RESPONSE:', aiResponse);
     console.log('🚨 AI RESPONSE LENGTH:', aiResponse.length);
+    
+    // CRITICAL DEBUG: Show the actual AI response to see what it's finding
+    console.log('🚨 CRITICAL DEBUG - FULL AI RESPONSE:');
+    console.log('=====================================');
+    console.log(aiResponse);
+    console.log('=====================================');
     console.log('🚨 AI RESPONSE CONTAINS GRAMMAR:', aiResponse.includes('grammarBreakdown'));
     console.log('🚨 AI RESPONSE CONTAINS SPELLING:', aiResponse.includes('spellingErrors'));
     console.log('🚨 AI RESPONSE CONTAINS EXAMPLES:', aiResponse.includes('Message 1:'));
