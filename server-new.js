@@ -3211,37 +3211,16 @@ function formatGrammarResults(text, type) {
     let totalPeriods = 0;
     let totalCommas = 0;
     
-    // Try all patterns
-    periodMatches1.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches2.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches3.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches4.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches5.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches6.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches7.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches8.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches9.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
-    periodMatches10.forEach(match => {
-      totalPeriods += parseInt(match[1]);
-    });
+    // Use only the first pattern that finds matches to avoid double counting
+    const allPeriodMatches = [
+      ...periodMatches1, ...periodMatches2, ...periodMatches3, ...periodMatches4, ...periodMatches5,
+      ...periodMatches6, ...periodMatches7, ...periodMatches8, ...periodMatches9, ...periodMatches10
+    ];
+    
+    // Only count the first match to avoid duplicates
+    if (allPeriodMatches.length > 0) {
+      totalPeriods = parseInt(allPeriodMatches[0][1]);
+    }
     
     commaMatches.forEach(match => {
       totalCommas += parseInt(match[1]);
