@@ -2243,15 +2243,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const messagesSent = chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
       const fansChatted = chatterData.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
 
+      // Chatting style analysis (from most recent message analysis)
+      const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
+      
       // Aggregate message analysis scores (only if message data exists)
       const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : null;
       const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : null;
       const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : null;
-      // Use the actual count of messages being analyzed, not the sum from multiple records
-      const totalMessages = analysisMessageTexts ? analysisMessageTexts.length : 0;
-      
-      // Chatting style analysis (from most recent message analysis)
-      const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
+      // Use the total messages from the most recent analysis record
+      const totalMessages = latestMessageAnalysis?.totalMessages || 0;
       const chattingStyle = latestMessageAnalysis?.chattingStyle || null;
       const messagePatterns = latestMessageAnalysis?.messagePatterns || null;
       const engagementMetrics = latestMessageAnalysis?.engagementMetrics || null;
