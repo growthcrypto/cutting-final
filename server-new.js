@@ -2885,7 +2885,7 @@ CRITICAL RULES:
 4. For grammar: only flag clear grammar mistakes like 'I was went' instead of 'I went'
 5. For punctuation: only flag excessive formal punctuation (periods, formal commas)
 
-Messages: ${messages.slice(0, 20).join(' ')}
+Messages: ${messages.join(' ')}
 
 Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR list specific actual errors found.`;
 
