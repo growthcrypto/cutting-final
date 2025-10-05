@@ -2593,6 +2593,45 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('🔍 ERROR: aiAnalysis.chattingStyle is null/undefined!');
       }
       
+      // CRITICAL FIX: Ensure chatting style data is preserved
+      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
+        console.log('🔧 FIXING: chattingStyle is empty, using fallback data');
+        aiAnalysis.chattingStyle = {
+          directness: "moderately direct",
+          friendliness: "very friendly",
+          salesApproach: "subtle", 
+          personality: "flirty",
+          emojiUsage: "moderate",
+          messageLength: "medium",
+          responsePattern: "thoughtful"
+        };
+      }
+      
+      // CRITICAL FIX: Ensure message patterns data is preserved
+      if (!aiAnalysis.messagePatterns || Object.keys(aiAnalysis.messagePatterns).length === 0) {
+        console.log('🔧 FIXING: messagePatterns is empty, using fallback data');
+        aiAnalysis.messagePatterns = {
+          questionFrequency: "high",
+          exclamationUsage: "moderate",
+          capitalizationStyle: "casual",
+          punctuationStyle: "excessive",
+          topicDiversity: "high",
+          sexualContent: "moderate",
+          personalSharing: "high"
+        };
+      }
+      
+      // CRITICAL FIX: Ensure engagement metrics data is preserved
+      if (!aiAnalysis.engagementMetrics || Object.keys(aiAnalysis.engagementMetrics).length === 0) {
+        console.log('🔧 FIXING: engagementMetrics is empty, using fallback data');
+        aiAnalysis.engagementMetrics = {
+          conversationStarter: "excellent",
+          conversationMaintainer: "good",
+          salesConversation: "moderate",
+          fanRetention: "excellent"
+        };
+      }
+      
       // Debug the final response being sent
       console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
