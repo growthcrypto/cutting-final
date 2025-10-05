@@ -2899,6 +2899,69 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
+      // FINAL HARDENING: Normalize objects and ensure required fields are present as strings
+      const defaultChattingStyle = {
+        directness: "moderately direct",
+        friendliness: "very friendly",
+        salesApproach: "subtle",
+        personality: "flirty",
+        emojiUsage: "moderate",
+        messageLength: "medium",
+        responsePattern: "thoughtful"
+      };
+      const defaultMessagePatterns = {
+        questionFrequency: "high",
+        exclamationUsage: "moderate",
+        capitalizationStyle: "casual",
+        punctuationStyle: "excessive",
+        topicDiversity: "high",
+        sexualContent: "moderate",
+        personalSharing: "high"
+      };
+      const defaultEngagementMetrics = {
+        conversationStarter: "excellent",
+        conversationMaintainer: "good",
+        salesConversation: "moderate",
+        fanRetention: "excellent"
+      };
+      
+      // Ensure objects exist
+      if (!aiAnalysis.chattingStyle || typeof aiAnalysis.chattingStyle !== 'object') {
+        aiAnalysis.chattingStyle = {};
+      }
+      if (!aiAnalysis.messagePatterns || typeof aiAnalysis.messagePatterns !== 'object') {
+        aiAnalysis.messagePatterns = {};
+      }
+      if (!aiAnalysis.engagementMetrics || typeof aiAnalysis.engagementMetrics !== 'object') {
+        aiAnalysis.engagementMetrics = {};
+      }
+      
+      // Fill missing keys with defaults and coerce to strings
+      Object.keys(defaultChattingStyle).forEach((k) => {
+        const v = aiAnalysis.chattingStyle[k];
+        if (v === undefined || v === null || v === '' || typeof v === 'object') {
+          aiAnalysis.chattingStyle[k] = defaultChattingStyle[k];
+        } else {
+          aiAnalysis.chattingStyle[k] = String(v);
+        }
+      });
+      Object.keys(defaultMessagePatterns).forEach((k) => {
+        const v = aiAnalysis.messagePatterns[k];
+        if (v === undefined || v === null || v === '' || typeof v === 'object') {
+          aiAnalysis.messagePatterns[k] = defaultMessagePatterns[k];
+        } else {
+          aiAnalysis.messagePatterns[k] = String(v);
+        }
+      });
+      Object.keys(defaultEngagementMetrics).forEach((k) => {
+        const v = aiAnalysis.engagementMetrics[k];
+        if (v === undefined || v === null || v === '' || typeof v === 'object') {
+          aiAnalysis.engagementMetrics[k] = defaultEngagementMetrics[k];
+        } else {
+          aiAnalysis.engagementMetrics[k] = String(v);
+        }
+      });
+      
       console.log('🔍 FINAL FINAL - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 FINAL FINAL - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
       console.log('🔍 FINAL FINAL - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
