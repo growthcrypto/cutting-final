@@ -2351,12 +2351,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Raw salesEffectiveness:', combinedGuidelinesAnalysis.salesEffectiveness);
             console.log('🔄 Raw engagementQuality:', combinedGuidelinesAnalysis.engagementQuality);
             
+            const allowedTitles = new Set(customGuidelines.map(g => (g.title || '').toLowerCase().trim()));
             const formattedGuidelinesAnalysis = {
-              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness'),
-              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality'),
-              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality'),
-              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow'),
-              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines')
+              salesEffectiveness: formatGuidelinesText(combinedGuidelinesAnalysis.salesEffectiveness, 'Sales Effectiveness', allowedTitles),
+              engagementQuality: formatGuidelinesText(combinedGuidelinesAnalysis.engagementQuality, 'Engagement Quality', allowedTitles),
+              captionQuality: formatGuidelinesText(combinedGuidelinesAnalysis.captionQuality, 'Caption Quality', allowedTitles),
+              conversationFlow: formatGuidelinesText(combinedGuidelinesAnalysis.conversationFlow, 'Conversation Flow', allowedTitles),
+              scoreExplanation: formatGuidelinesText(combinedGuidelinesAnalysis.scoreExplanation, 'Overall Guidelines', allowedTitles)
             };
             
             console.log('🔄 Formatted salesEffectiveness:', formattedGuidelinesAnalysis.salesEffectiveness);
@@ -3690,7 +3691,7 @@ function getMainIssues(spellingCount, grammarCount, punctuationCount) {
 }
 
 // Helper function to format guidelines text for clean analysis
-function formatGuidelinesText(text, category) {
+function formatGuidelinesText(text, category, allowedTitles) {
   if (!text || text.trim().length === 0) {
     return `No ${category.toLowerCase()} analysis available.`;
   }
@@ -3725,6 +3726,12 @@ function formatGuidelinesText(text, category) {
         .replace(/section/i, '')
         .trim()
         .toLowerCase();
+      // Filter out any labels not in uploaded guidelines (allowedTitles)
+      if (allowedTitles && allowedTitles.size > 0) {
+        // Accept if exact match or substring matches any allowed title
+        const isAllowed = Array.from(allowedTitles).some(t => label.includes(t) || t.includes(label));
+        if (!isAllowed) continue;
+      }
       if (!label) continue;
       violations.set(label, (violations.get(label) || 0) + (isNaN(count) ? 0 : count));
     }
