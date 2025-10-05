@@ -1111,7 +1111,9 @@ async function analyzeMessages(messages, chatterName) {
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
-  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. 
+  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages. You MUST find actual errors in these messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+
+CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. 
 
 IMPORTANT: Look for actual errors in the messages:
 - Spelling mistakes (typos, wrong words, autocorrect errors)
@@ -1334,7 +1336,13 @@ CRITICAL ERROR DETECTION REQUIREMENTS:
 - DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans
 - DO NOT flag apostrophes, question marks, exclamation points as errors - these are perfect for OnlyFans
 - For 2000+ messages, expect to find 100-300+ errors total
-- Report the actual errors found, no more, no less`;
+- Report the actual errors found, no more, no less
+
+CONSISTENCY REQUIREMENTS:
+- Use the SAME error detection criteria for every run
+- Count errors in the SAME systematic way each time
+- Apply the SAME standards for what constitutes an error
+- Provide CONSISTENT results across multiple analyses of the same data`;
     
     console.log('🚀 Making OpenAI API call...');
     
