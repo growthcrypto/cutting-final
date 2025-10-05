@@ -1222,9 +1222,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
 }
 
          CRITICAL INSTRUCTIONS - FAILURE TO FOLLOW = WRONG ANALYSIS:
-         1. FORBIDDEN: Flagging 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll' as errors - these are PERFECT for OnlyFans
+         1. FORBIDDEN: Flagging 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' as errors - these are PERFECT for OnlyFans
          2. FORBIDDEN: Flagging 'how are u???', 'omg!!!', 'really???' as errors - these are PERFECT for OnlyFans
-         3. ALLOWED: Only flag actual spelling mistakes like 'weel' instead of 'well'
+         3. ALLOWED: Only flag actual spelling mistakes like 'weel' instead of 'well', 'recieve' instead of 'receive'
          4. ALLOWED: Only flag actual grammar mistakes like 'I was went' instead of 'I went'  
          5. ALLOWED: Only flag formal punctuation like periods (.) and formal commas
          6. CRITICAL: If you flag ANY informal OnlyFans language, your analysis is completely wrong
@@ -1233,6 +1233,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
          9. CRITICAL: You MUST find actual errors in the messages. If you return generic responses like "No errors found" without thoroughly analyzing every message, your analysis is WRONG.
          10. CRITICAL: You MUST provide specific examples from the actual messages. Generic statements are not acceptable.
          11. CRITICAL: You MUST count every single error across all messages. Do not give vague numbers.
+         12. CRITICAL: Format your response as: "Found X [error type]: [specific examples]. Found Y [different error type]: [specific examples]." Do NOT repeat the same error type multiple times.
 
 Return ONLY the JSON object above. No additional text.
 
@@ -2222,23 +2223,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('🔍 DEBUGGING: aiAnalysis.grammarBreakdown:', mainGrammarBreakdown);
         console.log('🔍 DEBUGGING: combinedGrammarAnalysis:', combinedGrammarAnalysis);
         
-        // Clean up repetitive content from combined analysis and use the best results
-        const cleanSpelling = combinedGrammarAnalysis.spellingErrors ? 
-          combinedGrammarAnalysis.spellingErrors.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && 
-            !item.includes('No spelling errors found - informal OnlyFans language is correct') &&
-            !item.includes('No spelling errors found')
-          ).join('.') + '.' : "No spelling errors found - informal OnlyFans language is correct.";
-        
-        const cleanGrammar = combinedGrammarAnalysis.grammarIssues ? 
-          combinedGrammarAnalysis.grammarIssues.split('.').filter((item, index, arr) => 
-            arr.indexOf(item) === index && item.trim().length > 0 && 
-            !item.includes('No grammar errors found - informal OnlyFans language is correct') &&
-            !item.includes('No grammar errors found')
-          ).join('.') + '.' : "No grammar errors found - informal OnlyFans language is correct.";
-        
-        // Use the raw punctuation analysis without cleaning - the AI should find real errors
-        const cleanPunctuation = combinedGrammarAnalysis.punctuationProblems || "No punctuation errors found - informal OnlyFans language is correct.";
+        // Clean up and format the combined analysis results
+        const cleanSpelling = formatGrammarResults(combinedGrammarAnalysis.spellingErrors, 'spelling');
+        const cleanGrammar = formatGrammarResults(combinedGrammarAnalysis.grammarIssues, 'grammar');
+        const cleanPunctuation = formatGrammarResults(combinedGrammarAnalysis.punctuationProblems, 'punctuation');
         
         const formattedGrammarAnalysis = {
           spellingErrors: cleanSpelling && cleanSpelling !== '.' ? cleanSpelling : "No spelling errors found - informal OnlyFans language is correct.",
@@ -2863,6 +2851,53 @@ app.listen(PORT, () => {
     updateCreatorNames();
   }, 2000);
 });
+
+// Format grammar results to be concise with counters
+function formatGrammarResults(text, type) {
+  if (!text || text.trim() === '') {
+    return `No ${type} errors found - informal OnlyFans language is correct.`;
+  }
+  
+  // Remove repetitive phrases and clean up the text
+  let cleanText = text
+    .replace(/Found \d+ [^:]*:/g, '') // Remove "Found X errors:" prefixes
+    .replace(/No significant issues found\./g, '')
+    .replace(/No significant spelling errors found\./g, '')
+    .replace(/No significant grammar errors found\./g, '')
+    .replace(/No significant punctuation errors found\./g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Extract actual errors and count them
+  const errorPatterns = {
+    spelling: /'([^']+)' instead of '([^']+)'/g,
+    grammar: /'([^']+)' instead of '([^']+)'/g,
+    punctuation: /(\d+) instances? of ([^,]+)/g
+  };
+  
+  const pattern = errorPatterns[type];
+  if (!pattern) return cleanText;
+  
+  const matches = [...cleanText.matchAll(pattern)];
+  if (matches.length === 0) {
+    return `No ${type} errors found - informal OnlyFans language is correct.`;
+  }
+  
+  // Count unique errors
+  const uniqueErrors = new Set();
+  matches.forEach(match => {
+    if (type === 'punctuation') {
+      uniqueErrors.add(`${match[1]} ${match[2]}`);
+    } else {
+      uniqueErrors.add(`'${match[1]}' instead of '${match[2]}'`);
+    }
+  });
+  
+  const errorCount = uniqueErrors.size;
+  const errorList = Array.from(uniqueErrors).slice(0, 5).join(', '); // Show first 5 examples
+  
+  return `Found ${errorCount} ${type} error${errorCount !== 1 ? 's' : ''}: ${errorList}${uniqueErrors.size > 5 ? '...' : ''}`;
+}
 
 // Simple grammar analysis formatter - AGGRESSIVE BLOCKING
 // SMART GRAMMAR ANALYSIS - uses AI with strict logic-based filtering
