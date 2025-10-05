@@ -2449,11 +2449,16 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 // Process the single batch result
                 if (batchResult) {
                   
-                  // Combine grammar analysis - use the latest batch result to avoid inconsistent counts
+                  // Combine grammar analysis from all batches to get complete coverage
                   if (batchResult.grammarBreakdown) {
                     Object.keys(batchResult.grammarBreakdown).forEach(key => {
                       if (batchResult.grammarBreakdown[key]) {
-                        combinedGrammarAnalysis[key] = batchResult.grammarBreakdown[key];
+                        // Append new analysis to existing analysis for complete coverage
+                        if (combinedGrammarAnalysis[key]) {
+                          combinedGrammarAnalysis[key] += ' ' + batchResult.grammarBreakdown[key];
+                        } else {
+                          combinedGrammarAnalysis[key] = batchResult.grammarBreakdown[key];
+                        }
                       }
                     });
                   }
@@ -3853,18 +3858,30 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'punctuation') {
-    // Look for the actual count from AI analysis, not count every period/comma
-    const foundMatches = [...cleanText.matchAll(/Found (\d+) punctuation (?:problems?|issues?|errors?)/gi)];
-    const totalMatches = [...cleanText.matchAll(/total.*?(\d+).*?(?:periods?|commas?|issues?)/gi)];
+    // Count actual punctuation violations mentioned in the AI analysis
+    // Look for specific violations like "Message X has period" or "Message Y has comma"
+    const messageViolations = [...cleanText.matchAll(/Message \d+/g)];
+    const periodViolations = [...cleanText.matchAll(/period(?:s?)/gi)];
+    const commaViolations = [...cleanText.matchAll(/comma(?:s?)/gi)];
+    const formalViolations = [...cleanText.matchAll(/formal (?:period|comma)/gi)];
     
+    // Count unique message violations (each message can have multiple punctuation issues)
+    const uniqueMessageViolations = new Set(messageViolations.map(match => match[0]));
+    const totalMessageViolations = uniqueMessageViolations.size;
+    
+    // Count specific punctuation violations
+    const totalPeriodViolations = periodViolations.length;
+    const totalCommaViolations = commaViolations.length;
+    const totalFormalViolations = formalViolations.length;
+    
+    // Use the most accurate count available
     let totalIssues = 0;
-    
-    if (foundMatches.length > 0) {
-      // Use the "Found X punctuation" pattern
-      totalIssues = parseInt(foundMatches[0][1]);
-    } else if (totalMatches.length > 0) {
-      // Use the "total X periods/commas" pattern
-      totalIssues = parseInt(totalMatches[0][1]);
+    if (totalMessageViolations > 0) {
+      totalIssues = totalMessageViolations;
+    } else if (totalFormalViolations > 0) {
+      totalIssues = totalFormalViolations;
+    } else if (totalPeriodViolations > 0 || totalCommaViolations > 0) {
+      totalIssues = totalPeriodViolations + totalCommaViolations;
     }
     
     if (totalIssues === 0) {
