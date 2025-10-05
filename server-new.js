@@ -3701,28 +3701,33 @@ function formatGuidelinesText(text, category) {
     .replace(/No significant issues found/g, '') // Remove repetitive "no issues"
     .replace(/Found missed opportunities/g, '') // Remove generic phrases
     .replace(/Found ,/g, '') // Remove incomplete phrases
+    .replace(/Examples?:[^\.\n]*[\.\n]?/gi, '') // Remove examples sections
     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
     .trim();
   
   // Extract unique guideline violations with counts
   const violations = new Map();
   
-  // Extract specific guideline violations with counts
-  const guidelineMatches = cleanText.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/g);
-  if (guidelineMatches) {
-    guidelineMatches.forEach(match => {
-      const countMatch = match.match(/(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/);
-      if (countMatch) {
-        const count = parseInt(countMatch[1]);
-        const guideline = countMatch[2];
-        if (violations.has(guideline)) {
-          violations.set(guideline, violations.get(guideline) + count);
-        } else {
-          violations.set(guideline, count);
-        }
-      }
-    });
-  }
+  // Pattern variants we expect from AI outputs
+  const patterns = [
+    /Found\s+(\d+)\s+violations?\s+of\s+'([^']+)'\s+guideline/gi, // with quotes and word 'guideline'
+    /Found\s+(\d+)\s+violations?\s+of\s+([^:]+):/gi,               // without quotes, ends with colon
+    /Found\s+(\d+)\s+violations?\s+in\s+([^:]+):/gi               // "in <area>:"
+  ];
+  patterns.forEach((re) => {
+    let m;
+    while ((m = re.exec(cleanText)) !== null) {
+      const count = parseInt(m[1]);
+      const labelRaw = (m[2] || '').toString().trim();
+      const label = labelRaw
+        .replace(/guidelines?/i, '')
+        .replace(/section/i, '')
+        .trim()
+        .toLowerCase();
+      if (!label) continue;
+      violations.set(label, (violations.get(label) || 0) + (isNaN(count) ? 0 : count));
+    }
+  });
   
   // Extract key violation types (unique only)
   const violationTypes = new Set();
@@ -3754,10 +3759,13 @@ function formatGuidelinesText(text, category) {
   
   // Add guideline violations (unique counts only)
   if (violations.size > 0) {
-    const violationList = Array.from(violations.entries())
-      .map(([guideline, count]) => `${count} violations of '${guideline}' guideline`)
-      .slice(0, 3); // Limit to top 3
-    analysis += `Found ${violationList.join(', ')}. `;
+    const entries = Array.from(violations.entries());
+    const total = entries.reduce((s, [, c]) => s + (c || 0), 0);
+    const top = entries
+      .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+      .slice(0, 3)
+      .map(([name, count]) => `${name} (${count})`);
+    analysis += `Found ${total} violations. Top issues: ${top.join(', ')}. `;
   }
   
   // Add key issues with more detail (unique only)
@@ -3766,21 +3774,16 @@ function formatGuidelinesText(text, category) {
     analysis += `Key issues include: ${issuesList.join(', ')}. `;
   }
   
-  // Add specific examples from the text
-  const exampleMatches = cleanText.match(/in messages like '([^']+)'/g);
-  if (exampleMatches && exampleMatches.length > 0) {
-    const examples = exampleMatches.slice(0, 2).map(match => {
-      const example = match.match(/in messages like '([^']+)'/);
-      return example ? example[1] : null;
-    }).filter(Boolean);
-    
-    if (examples.length > 0) {
-      analysis += `Examples: ${examples.join(', ')}.`;
-    }
-  }
+  // Do not include examples in final output (keep concise per user request)
   
   // If no structured content, return cleaned text
   if (!analysis.trim()) {
+    // As a last resort, try to extract any counts of violations
+    const quickCounts = [...cleanText.matchAll(/Found\s+(\d+)\s+violations?/gi)].map(m => parseInt(m[1])).filter(n => !isNaN(n));
+    if (quickCounts.length > 0) {
+      const total = quickCounts.reduce((s, n) => s + n, 0);
+      return `Found ${total} violations.`;
+    }
     return cleanText.length > 100 ? cleanText.substring(0, 200) + '...' : cleanText;
   }
   
