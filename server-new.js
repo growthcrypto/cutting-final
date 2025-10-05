@@ -1152,7 +1152,45 @@ async function analyzeMessages(messages, chatterName) {
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
-  // Format messages for AI analysis - include reply time data
+  // Reconstruct conversation flows by grouping messages by fan username
+  const conversationFlows = {};
+  sampledMessages.forEach((msg, index) => {
+    if (typeof msg === 'object' && msg.text && msg.fanUsername) {
+      const fanUsername = msg.fanUsername;
+      if (!conversationFlows[fanUsername]) {
+        conversationFlows[fanUsername] = [];
+      }
+      conversationFlows[fanUsername].push({
+        index: index + 1,
+        text: msg.text,
+        replyTime: msg.replyTime || 0,
+        timestamp: msg.timestamp
+      });
+    }
+  });
+
+  // Sort conversations by timestamp to maintain chronological order
+  Object.keys(conversationFlows).forEach(fanUsername => {
+    conversationFlows[fanUsername].sort((a, b) => {
+      if (a.timestamp && b.timestamp) {
+        return new Date(a.timestamp) - new Date(b.timestamp);
+      }
+      return a.index - b.index;
+    });
+  });
+
+  // Format conversation flows for AI analysis
+  const formattedConversations = Object.keys(conversationFlows).map(fanUsername => {
+    const messages = conversationFlows[fanUsername];
+    const conversationText = messages.map(msg => {
+      const replyTimeText = msg.replyTime > 0 ? ` (Reply time: ${msg.replyTime} minutes)` : '';
+      return `  Message ${msg.index}: "${msg.text}"${replyTimeText}`;
+    }).join('\n');
+    
+    return `CONVERSATION WITH ${fanUsername} (${messages.length} messages):\n${conversationText}`;
+  }).join('\n\n');
+
+  // Also provide a simple message list for backward compatibility
   const formattedMessages = sampledMessages.map((msg, index) => {
     if (typeof msg === 'string') {
       return `Message ${index + 1}: "${msg}"`;
@@ -1163,7 +1201,12 @@ async function analyzeMessages(messages, chatterName) {
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
 
-  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA. You MUST use the provided reply time data instead of inferring reply times from message content patterns. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+  const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+
+CONVERSATION FLOW ANALYSIS: The messages are organized by conversation with each fan. When analyzing guidelines like "Information Gathering" or "Follow-up Questions", you MUST consider the ENTIRE conversation flow with each fan, not just individual messages. For example:
+- If a chatter asks "how old are u?" in message 65, and then asks follow-up questions about age-related topics in later messages in the SAME conversation, this shows proper information gathering
+- If a chatter asks "where are u from?" in message 106, and then asks about local interests, hobbies, or culture in the SAME conversation, this shows proper follow-up
+- Only flag violations if the chatter asks a question but NEVER follows up on that topic in the SAME conversation flow
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. 
 
@@ -1201,13 +1244,24 @@ CRITICAL BATCH PROCESSING: You are analyzing a specific batch of messages. Count
 
 Be VERY THOROUGH and find ALL errors that actually exist. For 2000+ messages, expect to find 100-300+ errors total. Return ONLY valid JSON.
 
-MESSAGES TO ANALYZE (${sampledMessages.length} messages):
+CONVERSATION FLOWS TO ANALYZE (${Object.keys(conversationFlows).length} conversations, ${sampledMessages.length} total messages):
+${formattedConversations}
+
+INDIVIDUAL MESSAGES LIST (for reference):
 ${formattedMessages}
 
 CUSTOM GUIDELINES TO EVALUATE AGAINST:
 ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.description} (Weight: ${g.weight})`).join('\n')}
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
+
+CRITICAL CONVERSATION FLOW ANALYSIS: 
+- Use the CONVERSATION FLOWS section above to understand the complete context of each conversation
+- For "Information Gathering" guidelines: Check if the chatter asks questions AND follows up on the answers within the SAME conversation
+- For "Follow-up Questions" guidelines: Look for question-answer-follow-up patterns within each conversation flow
+- For "Relationship Building" guidelines: Analyze the progression of intimacy and connection within each conversation
+- Do NOT flag violations for isolated questions - only flag if the chatter fails to follow up within the SAME conversation flow
+- Example: If chatter asks "how old are u?" and later asks about age-related interests in the SAME conversation, this is GOOD information gathering
 
 CRITICAL REPLY TIME ANALYSIS: Use the ACTUAL reply time data provided with each message (e.g., "Reply time: 3.5 minutes"). Do NOT infer reply times from message content patterns like "u left me unread last time". The reply time data is already provided - use it directly to check compliance with reply time guidelines.
 
