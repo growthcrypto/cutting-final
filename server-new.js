@@ -3455,6 +3455,22 @@ app.delete('/api/guidelines', authenticateToken, requireManager, async (req, res
   }
 });
 
+// Delete individual guideline
+app.delete('/api/guidelines/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await Guideline.findByIdAndDelete(id);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Guideline not found' });
+    }
+    
+    res.json({ success: true, message: 'Guideline deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Daily Chatter Reports
 app.post('/api/daily-reports', authenticateToken, async (req, res) => {
   try {

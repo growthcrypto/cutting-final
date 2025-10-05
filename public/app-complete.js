@@ -4486,9 +4486,43 @@ function updateGuidelinesList(guidelines) {
                     <h4 class="font-semibold text-white mb-1">${guideline.title}</h4>
                     <p class="text-sm text-gray-300">${guideline.description}</p>
                 </div>
+                <button 
+                    onclick="deleteGuideline('${guideline._id}')" 
+                    class="ml-4 p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Delete guideline"
+                >
+                    <i class="fas fa-trash text-sm"></i>
+                </button>
             </div>
         </div>
     `).join('');
+}
+
+// Delete individual guideline
+async function deleteGuideline(guidelineId) {
+    if (!confirm('Are you sure you want to delete this guideline? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/guidelines/${guidelineId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            showNotification('Guideline deleted successfully!', 'success');
+            loadGuidelines(); // Reload the guidelines list
+        } else {
+            const result = await response.json();
+            showError(result.error || 'Failed to delete guideline');
+        }
+    } catch (error) {
+        console.error('Error deleting guideline:', error);
+        showError('Failed to delete guideline');
+    }
 }
 
 
