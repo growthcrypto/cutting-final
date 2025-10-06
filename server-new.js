@@ -2756,7 +2756,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
               
               const category = guideline.category.toLowerCase().replace(' ', '');
-              if (!reliableGuidelinesAnalysis[category]) return;
+              console.log(`🔍 DEBUG: Guideline "${guideline.title}" has category "${guideline.category}" -> "${category}"`);
+              console.log(`🔍 DEBUG: Available categories:`, Object.keys(reliableGuidelinesAnalysis));
+              if (!reliableGuidelinesAnalysis[category]) {
+                console.log(`❌ Category "${category}" not found in reliableGuidelinesAnalysis`);
+                return;
+              }
               
               console.log(`🤖 ${guideline.title} will be analyzed by AI`);
               
