@@ -2419,6 +2419,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             
             // Define totalMessages in this scope for AI analysis
             const totalMessages = analysisMessageTexts ? analysisMessageTexts.length : 0;
+            console.log('🔍 DEBUG: totalMessages for AI analysis:', totalMessages);
+            console.log('🔍 DEBUG: analyticsData.messagesSent:', analyticsData.messagesSent);
             
             // ACTUAL DATA COUNTING - Do the simple counting ourselves instead of relying on unreliable AI
             let actualReplyTimeViolations = 0;
@@ -2838,24 +2840,31 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             }
 
             // USE OUR RELIABLE ANALYSIS INSTEAD OF AI'S UNRELIABLE ONE
+            const reliableAnalysis = aiAnalysis.reliableGuidelinesAnalysis || {
+              generalChatting: { violations: 0, details: [] },
+              psychology: { violations: 0, details: [] },
+              captions: { violations: 0, details: [] },
+              sales: { violations: 0, details: [] }
+            };
+            
             const guidelinesBreakdownV2 = {
-              generalChatting: aiAnalysis.reliableGuidelinesAnalysis.generalChatting.violations > 0 ? 
-                `Found ${aiAnalysis.reliableGuidelinesAnalysis.generalChatting.violations} violations. Top issues: ${aiAnalysis.reliableGuidelinesAnalysis.generalChatting.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
+              generalChatting: reliableAnalysis.generalChatting.violations > 0 ? 
+                `Found ${reliableAnalysis.generalChatting.violations} violations. Top issues: ${reliableAnalysis.generalChatting.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
                 'No violations found for General Chatting guidelines.',
-              psychology: aiAnalysis.reliableGuidelinesAnalysis.psychology.violations > 0 ? 
-                `Found ${aiAnalysis.reliableGuidelinesAnalysis.psychology.violations} violations. Top issues: ${aiAnalysis.reliableGuidelinesAnalysis.psychology.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
+              psychology: reliableAnalysis.psychology.violations > 0 ? 
+                `Found ${reliableAnalysis.psychology.violations} violations. Top issues: ${reliableAnalysis.psychology.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
                 'No violations found for Psychology guidelines.',
-              captions: aiAnalysis.reliableGuidelinesAnalysis.captions.violations > 0 ? 
-                `Found ${aiAnalysis.reliableGuidelinesAnalysis.captions.violations} violations. Top issues: ${aiAnalysis.reliableGuidelinesAnalysis.captions.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
+              captions: reliableAnalysis.captions.violations > 0 ? 
+                `Found ${reliableAnalysis.captions.violations} violations. Top issues: ${reliableAnalysis.captions.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
                 'No violations found for Captions guidelines.',
-              sales: aiAnalysis.reliableGuidelinesAnalysis.sales.violations > 0 ? 
-                `Found ${aiAnalysis.reliableGuidelinesAnalysis.sales.violations} violations. Top issues: ${aiAnalysis.reliableGuidelinesAnalysis.sales.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
+              sales: reliableAnalysis.sales.violations > 0 ? 
+                `Found ${reliableAnalysis.sales.violations} violations. Top issues: ${reliableAnalysis.sales.details.map(d => `${d.title} (${d.count})`).join(', ')}.` :
                 'No violations found for Sales guidelines.',
               details: {
-                generalChatting: { total: aiAnalysis.reliableGuidelinesAnalysis.generalChatting.violations, items: aiAnalysis.reliableGuidelinesAnalysis.generalChatting.details },
-                psychology: { total: aiAnalysis.reliableGuidelinesAnalysis.psychology.violations, items: aiAnalysis.reliableGuidelinesAnalysis.psychology.details },
-                captions: { total: aiAnalysis.reliableGuidelinesAnalysis.captions.violations, items: aiAnalysis.reliableGuidelinesAnalysis.captions.details },
-                sales: { total: aiAnalysis.reliableGuidelinesAnalysis.sales.violations, items: aiAnalysis.reliableGuidelinesAnalysis.sales.details }
+                generalChatting: { total: reliableAnalysis.generalChatting.violations, items: reliableAnalysis.generalChatting.details },
+                psychology: { total: reliableAnalysis.psychology.violations, items: reliableAnalysis.psychology.details },
+                captions: { total: reliableAnalysis.captions.violations, items: reliableAnalysis.captions.details },
+                sales: { total: reliableAnalysis.sales.violations, items: reliableAnalysis.sales.details }
               }
             };
             console.log('✅ Using reliable server-side guidelines analysis instead of AI');
