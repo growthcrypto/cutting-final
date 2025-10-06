@@ -1204,7 +1204,11 @@ async function analyzeMessages(messages, chatterName) {
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
 
-            const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. Do NOT return generic responses like "No errors found" - you must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+            const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. 
+
+🚨 CRITICAL: DO NOT MAKE UP NUMBERS. You MUST actually analyze each message and count real violations. If you cannot find specific violations, report 0. Do NOT generate random numbers.
+
+You must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. Do NOT vary your analysis criteria between runs.
 
@@ -1286,6 +1290,11 @@ CRITICAL VIOLATION COUNTING METHOD:
 5. Use ONLY the criteria specified in the uploaded guidelines, not assumptions
 6. DO NOT make up different numbers for the same data - if you count 15 reply time violations, report 15, not 92
 7. Be CONSISTENT - the same data should produce the same counts every time
+
+🚨 CRITICAL: YOU MUST ACTUALLY READ AND ANALYZE EACH MESSAGE. DO NOT GENERATE RANDOM NUMBERS. 
+🚨 IF YOU CANNOT FIND SPECIFIC VIOLATIONS, REPORT 0. 
+🚨 DO NOT MAKE UP NUMBERS LIKE 144, 227, 43, 46 - THESE ARE FAKE.
+🚨 YOU MUST ACTUALLY COUNT REAL VIOLATIONS FROM THE MESSAGES PROVIDED.
 
 CRITICAL CATEGORIZATION RULES: 
 - Each guideline violation must appear in ONLY ONE category
