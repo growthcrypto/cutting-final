@@ -2778,6 +2778,68 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             aiAnalysis.reliableGuidelinesAnalysis = reliableGuidelinesAnalysis;
             console.log('✅ Built reliable guidelines analysis:', reliableGuidelinesAnalysis);
             
+            // Function to parse AI analysis results
+            function parseAIResults(combinedGuidelinesAnalysis, customGuidelines) {
+              const results = {
+                generalChatting: { violations: 0, details: [] },
+                psychology: { violations: 0, details: [] },
+                captions: { violations: 0, details: [] },
+                sales: { violations: 0, details: [] }
+              };
+              
+              // Parse each category from AI analysis
+              Object.keys(combinedGuidelinesAnalysis).forEach(key => {
+                const text = combinedGuidelinesAnalysis[key];
+                if (!text || text.includes('AI ANALYSIS FAILED')) return;
+                
+                // Extract violation counts from AI text
+                const violationMatches = text.match(/(\d+)\s+violations?/gi);
+                if (violationMatches) {
+                  const totalViolations = violationMatches.reduce((sum, match) => {
+                    const count = parseInt(match.match(/\d+/)[0]);
+                    return sum + count;
+                  }, 0);
+                  
+                  // Map to appropriate category
+                  let category = 'generalChatting';
+                  if (key.includes('sales') || key.includes('effectiveness')) category = 'sales';
+                  else if (key.includes('engagement') || key.includes('quality')) category = 'psychology';
+                  else if (key.includes('caption') || key.includes('messaging')) category = 'captions';
+                  
+                  results[category].violations += totalViolations;
+                  results[category].details.push({
+                    title: key,
+                    count: totalViolations,
+                    description: `Found ${totalViolations} violations from AI analysis`,
+                    needsAI: false
+                  });
+                }
+              });
+              
+              return results;
+            }
+            
+            // CRITICAL FIX: Integrate AI analysis results into reliableGuidelinesAnalysis
+            if (combinedGuidelinesAnalysis && Object.keys(combinedGuidelinesAnalysis).length > 0) {
+              console.log('🔄 Integrating AI analysis results into reliableGuidelinesAnalysis...');
+              
+              // Parse AI analysis results and update reliableGuidelinesAnalysis
+              const aiResults = parseAIResults(combinedGuidelinesAnalysis, customGuidelines);
+              
+              // Update each category with AI results
+              Object.keys(aiResults).forEach(category => {
+                if (reliableGuidelinesAnalysis[category]) {
+                  reliableGuidelinesAnalysis[category].violations = aiResults[category].violations;
+                  reliableGuidelinesAnalysis[category].details = aiResults[category].details;
+                  console.log(`✅ Updated ${category} with AI results: ${aiResults[category].violations} violations`);
+                }
+              });
+              
+              console.log('✅ AI analysis results integrated successfully');
+            } else {
+              console.log('⚠️ No AI analysis results to integrate');
+            }
+            
             // MERGE AI's complex analysis with our reliable simple analysis
             if (v2Json) {
               console.log('🔧 MERGING: Combining AI complex analysis with reliable simple analysis...');
