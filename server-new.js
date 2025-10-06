@@ -2426,6 +2426,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               actualReplyTimeViolations = replyTimeData.filter(msg => msg.replyTime > actualReplyTimeThreshold).length;
               console.log(`✅ ACTUAL REPLY TIME VIOLATIONS (>${actualReplyTimeThreshold} min): ${actualReplyTimeViolations}`);
               console.log(`❌ AI will probably make up a different number, but the REAL count is: ${actualReplyTimeViolations}`);
+              
             }
             
             const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
@@ -2753,6 +2754,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   }
                 }
               }
+              
+              // Store actual reply time violations for validation
+              aiAnalysis.actualReplyTimeViolations = actualReplyTimeViolations;
             }
             if (v2Json) {
               console.log('  - General Chatting Items:', v2Json.generalChatting?.items?.length || 0);
@@ -2906,9 +2910,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         
         // Clean up and format the combined analysis results
         console.log('🔍 DEBUG: Raw punctuationProblems:', combinedGrammarAnalysis.punctuationProblems);
+        // Use AI's detection but validate the counts
         const cleanSpelling = formatGrammarResults(combinedGrammarAnalysis.spellingErrors, 'spelling');
         const cleanGrammar = formatGrammarResults(combinedGrammarAnalysis.grammarIssues, 'grammar');
         const cleanPunctuation = formatGrammarResults(combinedGrammarAnalysis.punctuationProblems, 'punctuation');
+        
+        // Log AI's counts for validation
+        console.log(`🔍 AI DETECTED - Spelling: ${cleanSpelling}`);
+        console.log(`🔍 AI DETECTED - Grammar: ${cleanGrammar}`);
+        console.log(`🔍 AI DETECTED - Punctuation: ${cleanPunctuation}`);
         console.log('🔍 DEBUG: Cleaned punctuationProblems:', cleanPunctuation);
         
         // Calculate actual error counts from the formatted results
