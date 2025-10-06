@@ -2763,58 +2763,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 return;
               }
               
+              // HYBRID APPROACH: Use AI for complex analysis, not fake counting
               console.log(`🤖 ${guideline.title} will be analyzed by AI`);
-              
-              // ACTUALLY COUNT VIOLATIONS from the messages
-              let actualViolations = 0;
-              const description = guideline.description.toLowerCase();
-              const title = guideline.title.toLowerCase();
-              
-              // Count actual violations by analyzing message content
-              analysisMessageTexts.forEach(msg => {
-                const text = typeof msg === 'string' ? msg : (msg.text || '');
-                const lowerText = text.toLowerCase();
-                
-                // Count violations based on guideline criteria
-                if (description.includes('hook') || title.includes('hook')) {
-                  // Count messages that might be missing hooks (vague messages)
-                  if (lowerText.length < 10 || lowerText.includes('?') || lowerText.includes('what') || lowerText.includes('how')) {
-                    actualViolations++;
-                  }
-                } else if (description.includes('fetish') || title.includes('fetish')) {
-                  // Count messages that might be missing fetish content
-                  if (!lowerText.includes('sexy') && !lowerText.includes('hot') && !lowerText.includes('naughty') && 
-                      !lowerText.includes('dirty') && !lowerText.includes('kinky') && lowerText.length > 20) {
-                    actualViolations++;
-                  }
-                } else if (description.includes('ppv') || title.includes('ppv') || description.includes('price')) {
-                  // Count messages that might be missing PPV promotion
-                  if (lowerText.length > 30 && !lowerText.includes('$') && !lowerText.includes('buy') && 
-                      !lowerText.includes('purchase') && !lowerText.includes('unlock')) {
-                    actualViolations++;
-                  }
-                } else if (description.includes('reply time') || title.includes('reply time')) {
-                  // Already handled above with actual data
-                  return;
-                } else {
-                  // For other guidelines, count based on general patterns
-                  if (lowerText.length > 50 && !lowerText.includes('?') && !lowerText.includes('!')) {
-                    actualViolations++;
-                  }
-                }
-              });
-              
-              console.log(`🔍 ACTUAL COUNT: Found ${actualViolations} violations for "${guideline.title}"`);
-              
-              reliableGuidelinesAnalysis[category].violations += actualViolations;
+              // Set placeholder that will be overridden by AI analysis
               reliableGuidelinesAnalysis[category].details.push({
                 title: guideline.title,
-                count: actualViolations,
-                description: `Found ${actualViolations} violations of ${guideline.title} guideline`,
+                count: 0, // Will be overridden by AI
+                description: `AI will analyze: ${guideline.title}`,
                 needsAI: true
               });
-              
-              console.log(`✅ Added ${actualViolations} actual violations for ${guideline.title} in ${category}`);
             });
             
             // Store the reliable analysis
