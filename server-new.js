@@ -2441,7 +2441,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               
             }
             
-            const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
+            const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts, totalMessages);
       console.log('✅ AI analysis completed');
       
       // Add raw metrics to response for UI display
@@ -4772,7 +4772,7 @@ function cleanAnalysisResponse(analysis) {
 }
 
 // AI Analysis function using OpenAI
-async function generateAIAnalysis(analyticsData, analysisType, interval, messageContent = []) {
+async function generateAIAnalysis(analyticsData, analysisType, interval, messageContent = [], totalMessages = analyticsData.messagesSent) {
   try {
     console.log('🚨 STARTING AI ANALYSIS FUNCTION');
     console.log('🚨 MESSAGE CONTENT:', messageContent);
