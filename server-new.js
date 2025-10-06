@@ -2765,35 +2765,56 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               
               console.log(`🤖 ${guideline.title} will be analyzed by AI`);
               
-              // TEMPORARY: Set realistic violations so we can see the system working
-              // This will be overridden by AI analysis later
-              let tempViolations = 0;
+              // ACTUALLY COUNT VIOLATIONS from the messages
+              let actualViolations = 0;
               const description = guideline.description.toLowerCase();
+              const title = guideline.title.toLowerCase();
               
-              if (description.includes('hook') || description.includes('caption')) {
-                tempViolations = Math.floor(analysisMessageTexts.length * 0.01); // 1% of messages
-              } else if (description.includes('fetish') || description.includes('kink')) {
-                tempViolations = Math.floor(analysisMessageTexts.length * 0.005); // 0.5% of messages
-              } else if (description.includes('ppv') || description.includes('price')) {
-                tempViolations = Math.floor(analysisMessageTexts.length * 0.008); // 0.8% of messages
-              } else {
-                tempViolations = Math.floor(analysisMessageTexts.length * 0.003); // 0.3% of messages
-              }
+              // Count actual violations by analyzing message content
+              analysisMessageTexts.forEach(msg => {
+                const text = typeof msg === 'string' ? msg : (msg.text || '');
+                const lowerText = text.toLowerCase();
+                
+                // Count violations based on guideline criteria
+                if (description.includes('hook') || title.includes('hook')) {
+                  // Count messages that might be missing hooks (vague messages)
+                  if (lowerText.length < 10 || lowerText.includes('?') || lowerText.includes('what') || lowerText.includes('how')) {
+                    actualViolations++;
+                  }
+                } else if (description.includes('fetish') || title.includes('fetish')) {
+                  // Count messages that might be missing fetish content
+                  if (!lowerText.includes('sexy') && !lowerText.includes('hot') && !lowerText.includes('naughty') && 
+                      !lowerText.includes('dirty') && !lowerText.includes('kinky') && lowerText.length > 20) {
+                    actualViolations++;
+                  }
+                } else if (description.includes('ppv') || title.includes('ppv') || description.includes('price')) {
+                  // Count messages that might be missing PPV promotion
+                  if (lowerText.length > 30 && !lowerText.includes('$') && !lowerText.includes('buy') && 
+                      !lowerText.includes('purchase') && !lowerText.includes('unlock')) {
+                    actualViolations++;
+                  }
+                } else if (description.includes('reply time') || title.includes('reply time')) {
+                  // Already handled above with actual data
+                  return;
+                } else {
+                  // For other guidelines, count based on general patterns
+                  if (lowerText.length > 50 && !lowerText.includes('?') && !lowerText.includes('!')) {
+                    actualViolations++;
+                  }
+                }
+              });
               
-              // Ensure minimum of 1 violation if there are messages
-              if (tempViolations === 0 && analysisMessageTexts.length > 0) {
-                tempViolations = 1;
-              }
+              console.log(`🔍 ACTUAL COUNT: Found ${actualViolations} violations for "${guideline.title}"`);
               
-              reliableGuidelinesAnalysis[category].violations += tempViolations;
+              reliableGuidelinesAnalysis[category].violations += actualViolations;
               reliableGuidelinesAnalysis[category].details.push({
                 title: guideline.title,
-                count: tempViolations,
-                description: `Found ${tempViolations} violations of ${guideline.title} guideline`,
+                count: actualViolations,
+                description: `Found ${actualViolations} violations of ${guideline.title} guideline`,
                 needsAI: true
               });
               
-              console.log(`✅ Added ${tempViolations} temporary violations for ${guideline.title} in ${category}`);
+              console.log(`✅ Added ${actualViolations} actual violations for ${guideline.title} in ${category}`);
             });
             
             // Store the reliable analysis
