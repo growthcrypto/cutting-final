@@ -2886,7 +2886,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const v2Psych = guidelinesBreakdownV2.details?.psychology?.total ?? extractCount(guidelinesBreakdownV2.psychology);
             const v2Captions = guidelinesBreakdownV2.details?.captions?.total ?? extractCount(guidelinesBreakdownV2.captions);
             const v2Sales = guidelinesBreakdownV2.details?.sales?.total ?? extractCount(guidelinesBreakdownV2.sales);
-            const totalGuidelineViolations = v2General + v2Psych + v2Captions + v2Sales;
+            // Calculate total violations from our reliable analysis instead of AI's unreliable data
+            const totalGuidelineViolations = (aiAnalysis.reliableGuidelinesAnalysis?.generalChatting?.violations || 0) +
+                                           (aiAnalysis.reliableGuidelinesAnalysis?.psychology?.violations || 0) +
+                                           (aiAnalysis.reliableGuidelinesAnalysis?.captions?.violations || 0) +
+                                           (aiAnalysis.reliableGuidelinesAnalysis?.sales?.violations || 0);
+            console.log('🔍 Total guideline violations from reliable analysis:', totalGuidelineViolations);
 
             // Calculate guidelines score using same rubric as grammar (errors vs total messages)
             const calculatedGuidelinesScore = calculateGrammarScore(totalGuidelineViolations, analysisMessageTexts.length || 1);
