@@ -2405,19 +2405,27 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
             console.log('🚨 Generating AI analysis for', analysisMessageTexts ? analysisMessageTexts.length : 0, 'messages...');
             
-            // Debug: Show sample of data being passed to AI
+            // ACTUAL DATA COUNTING - Do the simple counting ourselves instead of relying on unreliable AI
+            let actualReplyTimeViolations = 0;
+            let actualReplyTimeThreshold = 5; // Default threshold, should be from guidelines
+            
             if (analysisMessageTexts && analysisMessageTexts.length > 0) {
               console.log('🔍 DEBUG: Sample messages being sent to AI:');
               analysisMessageTexts.slice(0, 3).forEach((msg, index) => {
                 console.log(`  Message ${index + 1}:`, typeof msg === 'string' ? msg : JSON.stringify(msg));
               });
               
-              // Count reply time violations in the actual data (need to know the actual threshold)
+              // Count reply time violations in the actual data
               const replyTimeData = analysisMessageTexts.filter(msg => {
                 return typeof msg === 'object' && msg.replyTime && msg.replyTime > 0;
               });
               console.log(`🔍 DEBUG: Messages with reply time data: ${replyTimeData.length}`);
               console.log(`🔍 DEBUG: Reply time range: ${Math.min(...replyTimeData.map(m => m.replyTime))} - ${Math.max(...replyTimeData.map(m => m.replyTime))} minutes`);
+              
+              // ACTUAL COUNTING - This is what the AI should be doing but isn't
+              actualReplyTimeViolations = replyTimeData.filter(msg => msg.replyTime > actualReplyTimeThreshold).length;
+              console.log(`✅ ACTUAL REPLY TIME VIOLATIONS (>${actualReplyTimeThreshold} min): ${actualReplyTimeViolations}`);
+              console.log(`❌ AI will probably make up a different number, but the REAL count is: ${actualReplyTimeViolations}`);
             }
             
             const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts);
@@ -2727,6 +2735,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               if (generalReplyTime && psychologyReplyTime && generalReplyTime.count !== psychologyReplyTime.count) {
                 console.log(`❌ AI ERROR: Inconsistent reply time counts - General: ${generalReplyTime.count}, Psychology: ${psychologyReplyTime.count}`);
                 console.log('✅ Using General Chatting count as authoritative');
+              }
+              
+              // OVERRIDE AI'S MADE-UP NUMBERS WITH ACTUAL COUNTS
+              if (actualReplyTimeViolations > 0) {
+                console.log(`🔧 OVERRIDING AI: Replacing AI's made-up reply time count with actual count: ${actualReplyTimeViolations}`);
+                
+                // Find and update reply time violations in general chatting
+                if (v2Json.generalChatting?.items) {
+                  const replyTimeItem = v2Json.generalChatting.items.find(item => 
+                    item.title?.toLowerCase().includes('reply time') || 
+                    item.description?.toLowerCase().includes('reply time')
+                  );
+                  if (replyTimeItem) {
+                    console.log(`  - AI said: ${replyTimeItem.count}, ACTUAL: ${actualReplyTimeViolations}`);
+                    replyTimeItem.count = actualReplyTimeViolations;
+                  }
+                }
               }
             }
             if (v2Json) {
