@@ -1294,7 +1294,16 @@ CRITICAL CATEGORIZATION RULES:
 - Reply time violations should appear in ONLY ONE category (not both General Chatting and Psychology)
 - If you report the same violation in multiple categories, the analysis is WRONG
 
-CRITICAL OUTPUT REQUIREMENT: You MUST end your response with EXACTLY this JSON structure. Do NOT use generic terms like "engagement quality" or "sales effectiveness". Use the EXACT titles from the uploaded guidelines above.
+🚨 CRITICAL: YOU MUST PROVIDE THE EXACT JSON FORMAT BELOW. NO EXCEPTIONS. NO ALTERNATIVES. NO MODIFICATIONS.
+
+FOR EVERY GUIDELINE YOU ANALYZE, YOU MUST:
+1. Use the EXACT title from the uploaded guidelines above
+2. Use the EXACT description from the uploaded guidelines above  
+3. Count actual violations (not estimates)
+4. Provide specific message examples
+5. Put each guideline in the correct category
+
+🚨 MANDATORY JSON FORMAT - COPY THIS EXACTLY:
 
 GUIDELINES_V2_JSON:
 {
@@ -1305,7 +1314,10 @@ GUIDELINES_V2_JSON:
 }
 END_GUIDELINES_V2_JSON
 
-FAILURE TO PROVIDE THIS EXACT JSON FORMAT WILL RESULT IN ANALYSIS FAILURE.
+🚨 IF YOU DO NOT PROVIDE THIS EXACT FORMAT, THE ANALYSIS WILL FAIL COMPLETELY.
+🚨 DO NOT ADD ANYTHING BEFORE OR AFTER THE JSON.
+🚨 DO NOT MODIFY THE STRUCTURE IN ANY WAY.
+🚨 THIS IS YOUR ONLY CHANCE TO GET IT RIGHT.
 
          ONLYFANS CHATTING RULES - CRITICAL:
          
@@ -2732,56 +2744,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               }
             }
             
-            // For other guidelines, determine if we need AI analysis or simple counting
+            // For all other guidelines, use AI analysis (except reply time which we already handled)
             guidelines.forEach(guideline => {
               if (guideline.description.toLowerCase().includes('reply time')) {
-                return; // Already handled above
+                return; // Already handled above with actual data
               }
               
               const category = guideline.category.toLowerCase().replace(' ', '');
               if (!reliableGuidelinesAnalysis[category]) return;
               
-              const description = guideline.description.toLowerCase();
-              
-              // Complex guidelines that need AI analysis
-              const needsAIAnalysis = description.includes('ppv price progression') ||
-                                    description.includes('information gathering') ||
-                                    description.includes('follow-up questions') ||
-                                    description.includes('relationship building') ||
-                                    description.includes('conversation flow');
-              
-              if (needsAIAnalysis) {
-                console.log(`🤖 ${guideline.title} needs AI analysis for complex patterns`);
-                // We'll use the AI's analysis for these complex guidelines
-                // For now, set a placeholder that will be overridden by AI analysis
-                reliableGuidelinesAnalysis[category].details.push({
-                  title: guideline.title,
-                  count: 0, // Will be overridden by AI
-                  description: `Complex guideline requiring AI analysis: ${guideline.title}`,
-                  needsAI: true
-                });
-              } else {
-                // Simple guidelines that can use pattern matching
-                let violations = 0;
-                
-                if (description.includes('hook') || description.includes('caption')) {
-                  violations = Math.floor(analysisMessageTexts.length * 0.1); // 10% of messages
-                } else if (description.includes('fetish') || description.includes('kink')) {
-                  violations = Math.floor(analysisMessageTexts.length * 0.05); // 5% of messages
-                } else {
-                  violations = Math.floor(analysisMessageTexts.length * 0.02); // 2% of messages
-                }
-                
-                if (violations > 0) {
-                  reliableGuidelinesAnalysis[category].violations += violations;
-                  reliableGuidelinesAnalysis[category].details.push({
-                    title: guideline.title,
-                    count: violations,
-                    description: `Found ${violations} violations of ${guideline.title} guideline`
-                  });
-                  console.log(`✅ Added ${violations} violations for ${guideline.title} in ${category}`);
-                }
-              }
+              console.log(`🤖 ${guideline.title} will be analyzed by AI`);
+              // Set placeholder that will be overridden by AI analysis
+              reliableGuidelinesAnalysis[category].details.push({
+                title: guideline.title,
+                count: 0, // Will be overridden by AI
+                description: `AI will analyze: ${guideline.title}`,
+                needsAI: true
+              });
             });
             
             // Store the reliable analysis
