@@ -4500,7 +4500,7 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval) {
     // Add advanced metrics for fallback analysis
     advancedMetrics: {
       efficiencyRatios: {
-        messagesPerPPV: analyticsData.ppvsSent > 0 ? `${(analyticsData.messagesSent / analyticsData.ppvsSent).toFixed(1)} messages per PPV - ${analyticsData.messagesSent / analyticsData.ppvsSent > 50 ? 'Excellent relationship building' : analyticsData.messagesSent / analyticsData.ppvsSent > 20 ? 'Good engagement strategy' : 'Direct sales approach'}` : 'No PPV data available',
+        messagesPerPPV: analyticsData.ppvsSent > 0 ? `${(totalMessages / analyticsData.ppvsSent).toFixed(1)} messages per PPV - ${totalMessages / analyticsData.ppvsSent > 50 ? 'Excellent relationship building' : totalMessages / analyticsData.ppvsSent > 20 ? 'Good engagement strategy' : 'Direct sales approach'}` : 'No PPV data available',
         responseEfficiency: analyticsData.avgResponseTime ? `${analyticsData.avgResponseTime.toFixed(1)}m average - ${analyticsData.avgResponseTime <= 2 ? 'Excellent response time' : analyticsData.avgResponseTime <= 3 ? 'Good response time' : 'Needs improvement'}` : 'No response time data available',
         messageQualityImpact: analyticsData.grammarScore && analyticsData.guidelinesScore ? `Grammar: ${analyticsData.grammarScore}/100, Guidelines: ${analyticsData.guidelinesScore}/100 - ${(analyticsData.grammarScore + analyticsData.guidelinesScore) / 2 >= 70 ? 'Good message quality' : 'Message quality needs improvement'}` : 'Analysis requires more data as message quality score is not available'
       }
@@ -4851,10 +4851,10 @@ CHATTER DATA (REAL):
 
 DERIVED METRICS (you must compute and mention):
 - PPV Unlock Rate (%): ${analyticsData.ppvsSent > 0 ? ((analyticsData.ppvsUnlocked/analyticsData.ppvsSent)*100).toFixed(1) : 0}
-- Messages per PPV: ${analyticsData.ppvsSent > 0 ? (analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1) : 0}
-- Messages per Fan: ${analyticsData.fansChatted > 0 ? (analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1) : 0}
+- Messages per PPV: ${analyticsData.ppvsSent > 0 ? (totalMessages/analyticsData.ppvsSent).toFixed(1) : 0}
+- Messages per Fan: ${analyticsData.fansChatted > 0 ? (totalMessages/analyticsData.fansChatted).toFixed(1) : 0}
 - Revenue per PPV: $${analyticsData.ppvsSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.ppvsSent).toFixed(2) : 0}
-- Revenue per Message: $${analyticsData.messagesSent > 0 ? ((analyticsData.netSales || 0)/analyticsData.messagesSent).toFixed(2) : 0}
+- Revenue per Message: $${totalMessages > 0 ? ((analyticsData.netSales || 0)/totalMessages).toFixed(2) : 0}
 - Response Efficiency: ${analyticsData.avgResponseTime > 0 ? (analyticsData.avgResponseTime <= 3 ? 'Fast' : analyticsData.avgResponseTime <= 5 ? 'Moderate' : 'Slow') : 'No Response Time Data Available'}
 
 ANALYSIS GUIDELINES (use actual data, no fake benchmarks):
