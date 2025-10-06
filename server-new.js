@@ -2417,6 +2417,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
 
             console.log('🚨 Generating AI analysis for', analysisMessageTexts ? analysisMessageTexts.length : 0, 'messages...');
             
+            // Define totalMessages in this scope for AI analysis
+            const totalMessages = analysisMessageTexts ? analysisMessageTexts.length : 0;
+            
             // ACTUAL DATA COUNTING - Do the simple counting ourselves instead of relying on unreliable AI
             let actualReplyTimeViolations = 0;
             let actualReplyTimeThreshold = 5; // Default threshold, should be from guidelines
