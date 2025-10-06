@@ -2686,6 +2686,49 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔍 RAW GUIDELINES ANALYSIS:');
             console.log('  - Combined Raw Length:', combinedRawGuidelines.length);
             console.log('  - V2 JSON Parsed:', !!v2Json);
+            
+            // SERVER-SIDE VALIDATION: Fix AI categorization errors
+            if (v2Json) {
+              console.log('🔧 SERVER-SIDE VALIDATION: Checking for duplicate violations...');
+              
+              // Check for reply time violations in multiple categories
+              const replyTimeInGeneral = v2Json.generalChatting?.items?.some(item => 
+                item.title?.toLowerCase().includes('reply time') || 
+                item.description?.toLowerCase().includes('reply time')
+              );
+              const replyTimeInPsychology = v2Json.psychology?.items?.some(item => 
+                item.title?.toLowerCase().includes('reply time') || 
+                item.description?.toLowerCase().includes('reply time')
+              );
+              
+              if (replyTimeInGeneral && replyTimeInPsychology) {
+                console.log('❌ AI ERROR: Reply time violations found in multiple categories - fixing...');
+                
+                // Remove reply time from psychology (keep in general chatting)
+                if (v2Json.psychology?.items) {
+                  v2Json.psychology.items = v2Json.psychology.items.filter(item => 
+                    !item.title?.toLowerCase().includes('reply time') && 
+                    !item.description?.toLowerCase().includes('reply time')
+                  );
+                  console.log('✅ Fixed: Removed reply time violations from psychology category');
+                }
+              }
+              
+              // Check for inconsistent reply time counts
+              const generalReplyTime = v2Json.generalChatting?.items?.find(item => 
+                item.title?.toLowerCase().includes('reply time') || 
+                item.description?.toLowerCase().includes('reply time')
+              );
+              const psychologyReplyTime = v2Json.psychology?.items?.find(item => 
+                item.title?.toLowerCase().includes('reply time') || 
+                item.description?.toLowerCase().includes('reply time')
+              );
+              
+              if (generalReplyTime && psychologyReplyTime && generalReplyTime.count !== psychologyReplyTime.count) {
+                console.log(`❌ AI ERROR: Inconsistent reply time counts - General: ${generalReplyTime.count}, Psychology: ${psychologyReplyTime.count}`);
+                console.log('✅ Using General Chatting count as authoritative');
+              }
+            }
             if (v2Json) {
               console.log('  - General Chatting Items:', v2Json.generalChatting?.items?.length || 0);
               console.log('  - Psychology Items:', v2Json.psychology?.items?.length || 0);
