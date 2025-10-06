@@ -3559,7 +3559,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Fallback to basic analysis if AI fails
       try {
         if (analysisType === 'individual') {
-          const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval);
+          const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval, totalMessages);
           // Add raw metrics
           deterministic.ppvsSent = analyticsData.ppvsSent;
           deterministic.ppvsUnlocked = analyticsData.ppvsUnlocked;
@@ -4437,20 +4437,20 @@ function extractGuidelineViolations(text, allowedPhrases) {
 }
 
 // Deterministic analysis for individual chatter (no AI, data-only)
-function generateDeterministicIndividualAnalysis(analyticsData, interval) {
+function generateDeterministicIndividualAnalysis(analyticsData, interval, totalMessages = analyticsData.messagesSent) {
   const ppvUnlockRate = analyticsData.ppvsSent > 0
     ? Math.round((analyticsData.ppvsUnlocked / analyticsData.ppvsSent) * 1000) / 10
     : 0;
   const messagesPerPPV = analyticsData.ppvsSent > 0
-    ? Math.round((analyticsData.messagesSent / analyticsData.ppvsSent) * 10) / 10
+    ? Math.round((totalMessages / analyticsData.ppvsSent) * 10) / 10
     : 0;
   const messagesPerFan = analyticsData.fansChatted > 0
-    ? Math.round((analyticsData.messagesSent / analyticsData.fansChatted) * 10) / 10
+    ? Math.round((totalMessages / analyticsData.fansChatted) * 10) / 10
     : 0;
 
   const insights = [];
-  if (analyticsData.messagesSent > 0) {
-    insights.push(`Sent ${analyticsData.messagesSent.toLocaleString()} messages this ${interval} period`);
+  if (totalMessages > 0) {
+    insights.push(`Analyzed ${totalMessages.toLocaleString()} messages this ${interval} period`);
   }
   if (analyticsData.ppvsSent > 0) {
     insights.push(`PPVs sent: ${analyticsData.ppvsSent} with ${analyticsData.ppvsUnlocked} unlocks (${ppvUnlockRate}% unlock rate)`);
