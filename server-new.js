@@ -3601,7 +3601,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       // Guidelines breakdown - use AI data if available, otherwise use analyticsData, otherwise fallback
       if (aiAnalysis.guidelinesBreakdown && Object.keys(aiAnalysis.guidelinesBreakdown).length > 0 && 
-          Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0)) {
+          Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && (typeof value === 'object' || (typeof value === 'string' && value.trim().length > 0)))) {
         console.log('✅ Using AI guidelinesBreakdown data');
         // Keep the AI data - don't overwrite it
       } else if (analyticsData.guidelinesBreakdown && Object.keys(analyticsData.guidelinesBreakdown).length > 0) {
@@ -3865,7 +3865,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       const hasGuidelinesContent = aiAnalysis.guidelinesBreakdown && 
         Object.keys(aiAnalysis.guidelinesBreakdown).length > 0 && 
-        Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && value.trim().length > 0);
+        Object.values(aiAnalysis.guidelinesBreakdown).some(value => value && (typeof value === 'object' || (typeof value === 'string' && value.trim().length > 0)));
       
       if (!hasGuidelinesContent) {
         console.log('🔍 No AI guidelinesBreakdown content, using deterministic examples');
