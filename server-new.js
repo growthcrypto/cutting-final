@@ -1611,31 +1611,9 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       });
       
       // Auto-fix common JSON issues
+      // Apply MINIMAL automatic fixes - DO NOT corrupt already-valid JSON!
       jsonText = jsonText
-        .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-        .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // Fix unescaped backslashes
-        .replace(/(\w+):/g, '"$1":') // Quote unquoted keys
-        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote unquoted string values
-        .replace(/\[\s*\]/g, '[]') // Fix empty arrays with spaces
-        .replace(/\{\s*\}/g, '{}') // Fix empty objects with spaces
-        .replace(/\[\s*,/g, '[') // Remove leading commas in arrays
-        .replace(/,\s*\]/g, ']') // Remove trailing commas in arrays
-        .replace(/\{\s*,/g, '{') // Remove leading commas in objects
-        .replace(/,\s*\}/g, '}') // Remove trailing commas in objects
-        .replace(/\]\s*\[/g, '], [') // Fix missing commas between arrays
-        .replace(/\}\s*\{/g, '}, {') // Fix missing commas between objects
-        .replace(/\]\s*\{/g, '], {') // Fix missing commas between array and object
-        .replace(/\}\s*\[/g, '}, [') // Fix missing commas between object and array
-        .replace(/:\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,\}\]])/g, ': "$1"$2') // Quote unquoted identifiers
-        .replace(/:\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*$/g, ': "$1"') // Quote unquoted identifiers at end
-        .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":') // Quote unquoted keys
-        .replace(/([,\{\[])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,\}\]])/g, '$1"$2"$3') // Quote unquoted values
-        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote any unquoted strings
-        .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)$/g, ': "$1"') // Quote unquoted strings at end
-        .replace(/:\s*([a-zA-Z][a-zA-Z0-9\s]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote multi-word unquoted strings
-        .replace(/:\s*([a-zA-Z][a-zA-Z0-9\s]*?)$/g, ': "$1"') // Quote multi-word unquoted strings at end
-        .replace(/([,\{\[])\s*([a-zA-Z][a-zA-Z0-9\s]*?)\s*:/g, '$1"$2":') // Quote multi-word unquoted keys
-        .replace(/([,\{\[])\s*([a-zA-Z][a-zA-Z0-9\s]*?)\s*([,\}\]])/g, '$1"$2"$3'); // Quote multi-word unquoted values
+        .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas ONLY
       
       console.log('🔧 Attempting to parse JSON with auto-corrections...');
       const analysisResult = JSON.parse(jsonText);
@@ -1661,24 +1639,17 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       console.error('❌ Malformed JSON:', jsonMatch[0]);
       console.error('❌ Parse Error Details:', parseError);
       
-      // Try one more time with more aggressive fixes
+      // Try one more time with MINIMAL fixes (trailing commas only)
       try {
-        console.log('🔧 Attempting aggressive JSON fixes...');
-        let aggressiveJson = jsonMatch[0]
-          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-          .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // Fix unescaped backslashes
-          .replace(/(\w+):/g, '"$1":') // Quote unquoted keys
-          .replace(/:\s*([^",{\[\]}\s][^",{\[\]}]*?)(\s*[,\}\]])/g, ': "$1"$2') // Quote unquoted string values
-          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
-          .replace(/\n/g, '\\n') // Escape newlines
-          .replace(/\r/g, '\\r') // Escape carriage returns
-          .replace(/\t/g, '\\t'); // Escape tabs
+        console.log('🔧 Attempting minimal JSON fixes...');
+        let minimalJson = jsonMatch[0]
+          .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas ONLY
         
-        const aggressiveResult = JSON.parse(aggressiveJson);
-        console.log('✅ Aggressive JSON fixes succeeded!');
-        return aggressiveResult;
-      } catch (aggressiveError) {
-        console.error('❌ Aggressive JSON fixes also failed:', aggressiveError.message);
+        const minimalResult = JSON.parse(minimalJson);
+        console.log('✅ Minimal JSON fixes succeeded!');
+        return minimalResult;
+      } catch (minimalError) {
+        console.error('❌ Minimal JSON fixes also failed:', minimalError.message);
         console.log('🔄 Attempting to extract partial JSON structure...');
         
         // Try to extract just the essential parts from the malformed JSON
