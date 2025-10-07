@@ -1210,7 +1210,8 @@ async function analyzeMessages(messages, chatterName) {
       return `Message ${index + 1}: "${msg}"`;
     } else if (typeof msg === 'object' && msg.text) {
       const replyTimeText = msg.replyTime > 0 ? ` (Reply time: ${msg.replyTime} minutes)` : '';
-      return `Message ${index + 1}: "${msg.text}"${replyTimeText}`;
+      const ppvText = msg.isPPV && msg.ppvRevenue > 0 ? ` [PPV CAPTION - Price: $${msg.ppvRevenue}]` : '';
+      return `Message ${index + 1}: "${msg.text}"${replyTimeText}${ppvText}`;
     }
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
@@ -1274,6 +1275,34 @@ ${formattedMessages}
 
 CUSTOM GUIDELINES TO EVALUATE AGAINST:
 ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.description} (Weight: ${g.weight})`).join('\n')}
+
+🚨 CRITICAL GUIDELINE UNDERSTANDING - READ CAREFULLY:
+
+1. **CAPTION GUIDELINES** (Describe Captions, Hook):
+   - ONLY apply to messages marked [PPV CAPTION - Price: $X]
+   - Regular messages are NOT captions
+   - If a message doesn't have [PPV CAPTION], DO NOT flag it for caption guidelines
+   - VIOLATION EXAMPLE: "here is something special [PPV CAPTION - Price: $15]" ← No description of what's in the PPV
+   - CORRECT EXAMPLE: "check out this steamy shower video baby [PPV CAPTION - Price: $15]" ← Has description
+
+2. **INFORMALITY GUIDELINE**:
+   - Look for messages that are TOO FORMAL (using full sentences, proper grammar, periods, commas)
+   - VIOLATION EXAMPLE: "Thank you for your message. I appreciate your interest." ← Too formal, has periods
+   - CORRECT EXAMPLE: "thanks babe" ← Informal, no periods, shortened words
+
+3. **NON-TRANSACTION GUIDELINE**:
+   - Look for messages immediately AFTER a fan purchases a PPV that feel cold/transactional
+   - VIOLATION EXAMPLE: Fan buys PPV → Creator says "thanks for the purchase" ← Feels like a transaction
+   - CORRECT EXAMPLE: Fan buys PPV → Creator says "omg im so happy u liked it baby" ← Feels personal, not transactional
+
+4. **FAN PRIORIZATION GUIDELINE**:
+   - Look for messages that make the fan feel like they're NOT special or the only one
+   - VIOLATION EXAMPLE: "i send this to all my fans" ← Makes fan feel not special
+   - CORRECT EXAMPLE: "i made this just for u baby" ← Makes fan feel special and prioritized
+
+5. **REPLY TIME GUIDELINE**:
+   - Already calculated server-side - use the provided (Reply time: X minutes) data
+   - If guideline says "Maximum 5 minute reply time", flag messages with "Reply time: 6+ minutes"
 
 CRITICAL: Do NOT just list these guidelines. Instead, ANALYZE ALL messages for compliance with these guidelines. Be STRICT - find violations. For each violation, specify WHICH specific guideline was violated by name. Count violations and successes. Provide specific examples from the messages where guidelines are followed or violated. Look for patterns of non-compliance across ALL messages.
 
