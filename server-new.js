@@ -3562,19 +3562,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         aiAnalysis.overallScore = analyticsData.overallMessageScore;
       }
       
-      // Add message analysis data for detailed breakdown - only if analyticsData has content
-      if (analyticsData.chattingStyle && Object.keys(analyticsData.chattingStyle).length > 0) {
-        aiAnalysis.chattingStyle = analyticsData.chattingStyle;
-      }
-      if (analyticsData.messagePatterns && Object.keys(analyticsData.messagePatterns).length > 0) {
-        aiAnalysis.messagePatterns = analyticsData.messagePatterns;
-      }
-      if (analyticsData.engagementMetrics && Object.keys(analyticsData.engagementMetrics).length > 0) {
-        aiAnalysis.engagementMetrics = analyticsData.engagementMetrics;
-      }
-      aiAnalysis.strengths = analyticsData.strengths;
-      aiAnalysis.weaknesses = analyticsData.weaknesses;
-      aiAnalysis.recommendations = analyticsData.recommendations;
+      // REMOVED: Old code that copied chattingStyle/messagePatterns/engagementMetrics from analyticsData
+      // These fields are no longer used - we use executiveSummary instead
+      console.log('✅ SKIPPED copying chattingStyle/messagePatterns/engagementMetrics from analyticsData');
+      
+      // Don't copy these old fields anymore
+      // aiAnalysis.strengths = analyticsData.strengths;
+      // aiAnalysis.weaknesses = analyticsData.weaknesses;
+      // aiAnalysis.recommendations = analyticsData.recommendations;
       // ALWAYS set breakdown data - use AI data if available, otherwise use fallback
       console.log('🔍 Checking breakdown data from analyticsData:', {
         hasGrammarBreakdown: !!analyticsData.grammarBreakdown,
@@ -3903,48 +3898,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 FINAL RESPONSE - guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 FINAL RESPONSE - overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
       
-      // CRITICAL FIX: Re-apply fallback data right before sending to ensure it's not lost
-      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
-        console.log('🔧 FINAL FIX: Re-applying chattingStyle fallback data');
-        aiAnalysis.chattingStyle = {
-          directness: "moderately direct",
-          friendliness: "very friendly",
-          salesApproach: "subtle", 
-          personality: "flirty",
-          emojiUsage: "moderate",
-          messageLength: "medium",
-          responsePattern: "thoughtful"
-        };
-      }
+      // REMOVED ALL OLD FALLBACK CODE - these fields are no longer used
+      console.log('✅ SKIPPED ALL fallback blocks - not needed anymore');
       
-      // CRITICAL FIX: Always ensure chatting style has data (JSON parsing issues cause empty objects)
-      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
-        console.log('🔧 FORCE FIX: JSON parsing failed, forcing chattingStyle data');
-        aiAnalysis.chattingStyle = {
-          directness: "moderately direct",
-          friendliness: "very friendly",
-          salesApproach: "subtle", 
-          personality: "flirty",
-          emojiUsage: "moderate",
-          messageLength: "medium",
-          responsePattern: "thoughtful"
-        };
-      }
-      
-      // REMOVED: Another duplicate block that forced fake data into chattingStyle/messagePatterns/engagementMetrics
-      // These fields are no longer used - we use executiveSummary instead
-      console.log('✅ SKIPPED second fallback block - not needed anymore');
-      
-      // FINAL HARDENING: Normalize objects and ensure required fields are present as strings
-      const defaultChattingStyle = {
-        directness: "moderately direct",
-        friendliness: "very friendly",
-        salesApproach: "subtle",
-        personality: "flirty",
-        emojiUsage: "moderate",
-        messageLength: "medium",
-        responsePattern: "thoughtful"
-      };
+      // Skip all default object creation - we don't use these fields anymore
+      const skipDefaultObjects = true;
       const defaultMessagePatterns = {
         questionFrequency: "high",
         exclamationUsage: "moderate",
