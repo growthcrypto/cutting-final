@@ -2919,7 +2919,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                         aiItem.examples.slice(0, 5).forEach(msgIdx => {
                           const msg = analysisMessageTexts[msgIdx];
                           if (msg) {
-                            console.log(`   Message ${msgIdx}: "${msg.substring(0, 150)}${msg.length > 150 ? '...' : ''}"`);
+                            const msgText = msg.text || JSON.stringify(msg);
+                            console.log(`   Message ${msgIdx}: "${msgText.substring(0, 150)}${msgText.length > 150 ? '...' : ''}"`);
                           }
                         });
                         if (aiItem.examples.length > 5) {
