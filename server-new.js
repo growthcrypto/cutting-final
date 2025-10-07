@@ -4436,15 +4436,18 @@ function calculateGrammarScore(totalErrors, totalMessages) {
   const errorRate = totalErrors / totalMessages;
   const errorPercentage = errorRate * 100;
   
-  // New scoring system based on error percentage
+  // More granular scoring system based on error percentage
   if (errorPercentage === 0) return 100;        // 0% errors = 100/100 (perfect)
-  if (errorPercentage <= 1) return 85;          // 1% errors = 85/100 (very good)
-  if (errorPercentage <= 2) return 70;          // 2% errors = 70/100 (good)
-  if (errorPercentage <= 3) return 55;          // 3% errors = 55/100 (fair)
-  if (errorPercentage <= 4) return 40;          // 4% errors = 40/100 (poor)
-  if (errorPercentage <= 5) return 25;          // 5% errors = 25/100 (needs improvement)
+  if (errorPercentage <= 0.5) return 95;        // 0.5% errors = 95/100 (excellent)
+  if (errorPercentage <= 1) return 88;          // 1% errors = 88/100 (very good)
+  if (errorPercentage <= 1.5) return 78;        // 1.5% errors = 78/100 (good)
+  if (errorPercentage <= 2) return 68;          // 2% errors = 68/100 (good)
+  if (errorPercentage <= 2.5) return 58;        // 2.5% errors = 58/100 (fair)
+  if (errorPercentage <= 3) return 48;          // 3% errors = 48/100 (fair)
+  if (errorPercentage <= 4) return 35;          // 4% errors = 35/100 (poor)
+  if (errorPercentage <= 5) return 22;          // 5% errors = 22/100 (needs improvement)
   if (errorPercentage <= 6) return 10;          // 6% errors = 10/100 (terrible)
-  return 5;                                     // 6%+ errors = 5/100 (terrible)
+  return Math.max(5, Math.round(100 - (errorPercentage * 15))); // 6%+ errors = decreasing score
 }
 
 // Helper function to get main issues based on error counts
@@ -5187,7 +5190,7 @@ Respond in STRICT JSON with this exact shape:
     "efficiencyRatios": {
       "messagesPerPPV": "DETAILED analysis using ACTUAL data: ${analyticsData.messagesSent} messages ÷ ${analyticsData.ppvsSent} PPVs sent = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} messages per PPV. Provide specific benchmarks and actionable insights.",
       "revenueEfficiency": "DETAILED analysis using ACTUAL data: $${analyticsData.ppvRevenue || analyticsData.netSales} revenue ÷ ${analyticsData.ppvsUnlocked} PPVs PURCHASED = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.ppvsUnlocked || 1)).toFixed(2)} per PPV purchased. Also: $${(analyticsData.ppvRevenue || analyticsData.netSales)} ÷ ${analyticsData.messagesSent} messages = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.messagesSent || 1)).toFixed(2)} per message. Provide pricing recommendations. DO NOT confuse PPVs sent (${analyticsData.ppvsSent}) with PPVs purchased (${analyticsData.ppvsUnlocked}).",
-      "messageQualityImpact": "DETAILED analysis using ACTUAL scores (NOT mock scores): Grammar score is ${analyticsData.grammarScore}/100 and Guidelines score is ${analyticsData.guidelinesScore}/100. Analyze correlation with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate. DO NOT use fake scores like 70/100 or 80/100. DO NOT make up projections like 'could increase to 60%' unless backed by specific data."
+      "messageQualityImpact": "YOU MUST START WITH: 'Grammar score: ${analyticsData.grammarScore}/100, Guidelines score: ${analyticsData.guidelinesScore}/100, Unlock rate: ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}%.' Then analyze the correlation. USE THESE EXACT NUMBERS. DO NOT write generic text like 'Grammar score is 70/100' - that is WRONG. The ACTUAL grammar score is ${analyticsData.grammarScore}/100 and you MUST use it."
     },
     "behavioralPatterns": {
       "messageVolumeAnalysis": "DETAILED analysis of ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan with engagement optimization",
