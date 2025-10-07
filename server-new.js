@@ -1395,9 +1395,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "AGGRESSIVELY FIND ALL spelling mistakes in the messages. Look for typos, wrong words, autocorrect errors, and misspellings. Examples: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'seperate' instead of 'separate', 'thier' instead of 'their', 'alot' instead of 'a lot', 'freetime' instead of 'free time', 'outfit' as 'out fit'. NEVER flag 'u', 'ur', 'im', 'dont', 'cant', 'ilove', 'u're', 'u'll', 'hows', 'thats' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every word in every message. Count and list ALL spelling errors found with specific examples.",
-             "grammarIssues": "AGGRESSIVELY FIND ALL grammar mistakes in the messages. Look for wrong verb tenses, subject-verb disagreement, pronoun errors, sentence fragments, run-on sentences, missing words, incorrect word order. Examples: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'me and him went' instead of 'he and I went', 'there going' instead of 'they're going', 'i can wait' instead of 'i cant wait', 'do he have' instead of 'does he have'. NEVER flag 'u are', 'dont know', 'cant understand', 'im happy', 'he dont' - these are PERFECT OnlyFans language. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL grammar errors found with specific examples.",
-             "punctuationProblems": "AGGRESSIVELY FIND ALL punctuation mistakes in the messages. Look for ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged. 🚫 NEVER FLAG: Question marks (?), Exclamation points (!), Apostrophes ('), Multiple punctuation (!!!, ???), Informal language (u, ur, im, dont, cant). ✅ ONLY FLAG: Periods at sentence ends (.), Formal commas (,). Examples: 'Hello, how are you.' should be 'hello how are you', 'It's nice!' should be 'It's nice!' (keep apostrophe and exclamation, remove period and comma), 'How are you?' should be 'how are you?' (keep question mark, remove nothing). CRITICAL: Count ONLY the errors in THIS specific batch of messages. Do NOT duplicate counts from other batches. BE VERY THOROUGH - scan every sentence in every message. Count and list ALL punctuation issues found with specific examples.",
+             "spellingErrors": "Find ONLY actual spelling mistakes like typos and misspellings. Examples of REAL errors: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'weel' instead of 'well', 'seperate' instead of 'separate'. DO NOT flag these (they are correct OnlyFans language): 'u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll'. Count only REAL misspellings.",
+             "grammarIssues": "Find ONLY actual grammar mistakes like verb tense errors and subject-verb disagreement. Examples of REAL errors: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'do he have' instead of 'does he have'. DO NOT flag these (they are correct OnlyFans language): 'u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'u're', 'i can', 'how u deal'. Count only REAL grammar mistakes.",
+             "punctuationProblems": "OnlyFans messages do NOT need periods or formal punctuation. DO NOT flag missing periods as errors. ONLY flag MISUSED formal punctuation (like random commas in wrong places). Most messages will have NO punctuation errors. Examples: 'how are u' is PERFECT (no error). 'what, are u doing' has a misused comma (error). Count only ACTUAL punctuation mistakes, NOT missing periods.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "overallBreakdown": {
@@ -1442,7 +1442,6 @@ CRITICAL: The chattingStyle, messagePatterns, and engagementMetrics sections are
 - messagePatterns: questionFrequency, exclamationUsage, capitalizationStyle, punctuationStyle, topicDiversity, sexualContent, personalSharing  
 - engagementMetrics: conversationStarter, conversationMaintainer, salesConversation, fanRetention
 - grammarBreakdown: spellingErrors, grammarIssues, punctuationProblems, informalLanguage, scoreExplanation
-- guidelinesBreakdown: salesEffectiveness, engagementQuality, captionQuality, conversationFlow, scoreExplanation
 - overallBreakdown: messageClarity, emotionalImpact, conversionPotential, scoreExplanation
 
 CRITICAL BREAKDOWN REQUIREMENTS - BE DIRECT AND ACTIONABLE:
@@ -1478,12 +1477,7 @@ For grammarBreakdown:
 - informalLanguage: Note specific informal patterns (e.g., "Excessive use of 'lol' and 'haha' in 12 out of 20 messages")
 - scoreExplanation: Explain the score with specific examples and total error counts
 
-For guidelinesBreakdown:
-- salesEffectiveness: Point out actual sales mistakes (e.g., "PPV sent without building rapport first in message 15")
-- engagementQuality: Identify real engagement issues (e.g., "Not asking follow-up questions in 8 out of 10 conversations")
-- captionQuality: Critique actual PPV captions (e.g., "Caption 'check this out' is too vague, should be more descriptive")
-- conversationFlow: Note real conversation problems (e.g., "Jumping to sexual topics too quickly without context")
-- scoreExplanation: Explain with specific guideline violations
+For guidelines: Use ONLY the GUIDELINES_V2_JSON format with exact uploaded guideline titles from the CUSTOM GUIDELINES section above. DO NOT use generic categories.
 
 For overallBreakdown:
 - messageClarity: Point out unclear messages (e.g., "Message 7 is confusing due to run-on sentences")
