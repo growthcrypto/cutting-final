@@ -2654,19 +2654,73 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               try {
                 const startTag = 'GUIDELINES_V2_JSON:';
                 const endTag = 'END_GUIDELINES_V2_JSON';
-                const startIdx = raw.indexOf(startTag);
-                const endIdx = raw.indexOf(endTag);
-                console.log('🔍 JSON Parser: startIdx=', startIdx, 'endIdx=', endIdx);
-                if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-                  console.log('❌ JSON Parser: Missing start/end tags');
+                let startIdx = raw.indexOf(startTag);
+                let endIdx = raw.indexOf(endTag);
+                console.log('🔍 JSON Parser: Looking for tags - startIdx=', startIdx, 'endIdx=', endIdx);
+                
+                let jsonSlice;
+                
+                if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+                  // Tagged format found
+                  jsonSlice = raw.slice(startIdx + startTag.length, endIdx).trim();
+                  console.log('✅ JSON Parser: Found tagged format');
+                } else {
+                  // No tags - try to extract JSON directly from the raw text
+                  console.log('⚠️ JSON Parser: No tags found, attempting direct extraction');
+                  
+                  // Look for the 4-category structure
+                  const categoryPattern = /"(generalChatting|psychology|captions|sales)":\s*\{/g;
+                  const matches = [...raw.matchAll(categoryPattern)];
+                  
+                  if (matches.length >= 4) {
+                    // Found all 4 categories - extract the full JSON object
+                    const firstMatch = matches[0].index;
+                    const lastMatch = matches[matches.length - 1].index;
+                    
+                    // Find the opening brace before the first category
+                    let openBraceIdx = raw.lastIndexOf('{', firstMatch);
+                    if (openBraceIdx === -1) {
+                      console.log('❌ JSON Parser: Could not find opening brace');
+                      return null;
+                    }
+                    
+                    // Find the closing brace after the last category (count braces to find matching one)
+                    let braceCount = 1;
+                    let closeBraceIdx = openBraceIdx + 1;
+                    while (closeBraceIdx < raw.length && braceCount > 0) {
+                      if (raw[closeBraceIdx] === '{') braceCount++;
+                      else if (raw[closeBraceIdx] === '}') braceCount--;
+                      if (braceCount === 0) break;
+                      closeBraceIdx++;
+                    }
+                    
+                    if (braceCount !== 0) {
+                      console.log('❌ JSON Parser: Could not find matching closing brace');
+                      return null;
+                    }
+                    
+                    jsonSlice = raw.slice(openBraceIdx, closeBraceIdx + 1).trim();
+                    console.log('✅ JSON Parser: Extracted untagged 4-category JSON');
+                  } else {
+                    console.log(`❌ JSON Parser: Only found ${matches.length} categories, need 4`);
+                    return null;
+                  }
+                }
+                
+                console.log('🔍 JSON Parser: jsonSlice length=', jsonSlice.length);
+                console.log('🔍 JSON Parser: jsonSlice preview=', jsonSlice.substring(0, 300));
+                
+                const parsed = JSON.parse(jsonSlice);
+                console.log('✅ JSON Parser: Successfully parsed JSON with categories:', Object.keys(parsed));
+                
+                // Validate that it has the expected structure
+                if (parsed.generalChatting && parsed.psychology && parsed.captions && parsed.sales) {
+                  console.log('✅ JSON Parser: All 4 categories present');
+                  return parsed;
+                } else {
+                  console.log('❌ JSON Parser: Missing required categories');
                   return null;
                 }
-                const jsonSlice = raw.slice(startIdx + startTag.length, endIdx).trim();
-                console.log('🔍 JSON Parser: jsonSlice length=', jsonSlice.length);
-                console.log('🔍 JSON Parser: jsonSlice preview=', jsonSlice.substring(0, 200));
-                const parsed = JSON.parse(jsonSlice);
-                console.log('✅ JSON Parser: Successfully parsed JSON');
-                return parsed && typeof parsed === 'object' ? parsed : null;
               } catch (e) {
                 console.log('❌ JSON Parser: Parse error:', e.message);
                 return null;
