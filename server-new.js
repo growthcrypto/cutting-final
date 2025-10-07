@@ -5112,9 +5112,9 @@ ANALYSIS GUIDELINES (use actual data, no fake benchmarks):
 
 CRITICAL ANALYSIS AREAS (analyze ALL with specific data):
 1. MESSAGE VOLUME ANALYSIS: ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan. Is this optimal?
-2. MESSAGE QUALITY IMPACT: ${analyticsData.grammarScore}/100 grammar + ${analyticsData.guidelinesScore}/100 guidelines = ${analyticsData.overallScore}/100 overall. ONLY analyze the correlation with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion if you have specific data showing this relationship. Do NOT make assumptions about "generally known" relationships.
+2. MESSAGE QUALITY IMPACT: ${analyticsData.grammarScore}/100 grammar + ${analyticsData.guidelinesScore}/100 guidelines = ${analyticsData.overallScore}/100 overall. THESE ARE THE ACTUAL SCORES - DO NOT use mock scores like "70/100" or "80/100". ONLY analyze the correlation with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% conversion if you have specific data showing this relationship. Do NOT make assumptions about "generally known" relationships or make up random projections like "could increase to 60%".
 3. PPV EFFICIENCY ANALYSIS: ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} unlocked = ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate. What's driving this performance?
-4. REVENUE OPTIMIZATION: $${analyticsData.netSales} total revenue = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV, $${(analyticsData.netSales/analyticsData.messagesSent).toFixed(2)} per message. How can this be improved?
+4. REVENUE OPTIMIZATION: $${analyticsData.netSales} total revenue = $${(analyticsData.netSales/analyticsData.ppvsSent).toFixed(2)} per PPV SENT (not purchased!). CRITICAL: To calculate revenue per PPV PURCHASED, use: $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} PPVs purchased = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} per PPV purchased. DO NOT confuse PPVs sent vs PPVs purchased!
 5. MESSAGE-TO-CONVERSION ANALYSIS: ${analyticsData.messagesSent} messages generated ${analyticsData.ppvsUnlocked} PPV unlocks. What's the message effectiveness?
 6. FAN MONETIZATION: $${analyticsData.netSales} from ${analyticsData.fansChatted} fans = $${(analyticsData.netSales/analyticsData.fansChatted).toFixed(2)} per fan. How can this be optimized?
 7. CHATTING STYLE ANALYSIS: Analyze the chatter's communication style and personality traits. How do directness, friendliness, sales approach, and personality impact conversion rates?
@@ -5144,6 +5144,23 @@ CRITICAL: Do NOT simply repeat the uploaded numbers. The user already knows thes
 
 CRITICAL: Do NOT make assumptions about missing data or relationships. If a metric is null/undefined, do not mention it. Do NOT make statements like "higher quality messages can lead to higher conversion rates" unless you have specific data proving this relationship. Only analyze what the actual data shows. If you cannot determine a relationship from the data, state "Analysis requires more data" instead of making theoretical assumptions.
 
+CRITICAL - PPVs SENT vs PPVs PURCHASED:
+- PPVs SENT = ${analyticsData.ppvsSent} (total PPVs sent to fans)
+- PPVs PURCHASED/UNLOCKED = ${analyticsData.ppvsUnlocked} (PPVs that fans actually bought)
+- Revenue per PPV PURCHASED = $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)}
+- DO NOT say "revenue divided by PPVs sent" when you mean "PPVs purchased"!
+
+CRITICAL - USE ACTUAL SCORES, NOT MOCK SCORES:
+- ACTUAL Grammar Score: ${analyticsData.grammarScore}/100 (use THIS exact number)
+- ACTUAL Guidelines Score: ${analyticsData.guidelinesScore}/100 (use THIS exact number) 
+- ACTUAL Overall Score: ${analyticsData.overallScore}/100 (use THIS exact number)
+- DO NOT use fake/mock scores like "70/100" or "80/100" in your analysis!
+
+CRITICAL - DO NOT MAKE UP RANDOM PROJECTIONS:
+- DO NOT say things like "could increase to 60%" or "add $34.40 in revenue" unless you have SPECIFIC data supporting this
+- If you want to project improvements, base them on ACTUAL data patterns, not random numbers
+- BE SPECIFIC or say "Analysis requires more data to project improvements"
+
 CRITICAL: You MUST return ALL sections in the JSON response. Do not omit any sections.
 
 For each metric, either provide a real calculation/analysis OR provide a meaningful message about the data.
@@ -5168,9 +5185,9 @@ Respond in STRICT JSON with this exact shape:
   },
   "advancedMetrics": {
     "efficiencyRatios": {
-      "messagesPerPPV": "DETAILED analysis of the ${analyticsData.messagesSent}/${analyticsData.ppvsSent} = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} ratio with specific benchmarks and actionable insights",
-      "revenueEfficiency": "DETAILED analysis of $${analyticsData.ppvRevenue || analyticsData.netSales}/${analyticsData.ppvsUnlocked} = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.ppvsUnlocked || 1)).toFixed(2)} per PPV (purchased) and $${(analyticsData.ppvRevenue || analyticsData.netSales)}/${analyticsData.messagesSent} = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.messagesSent || 1)).toFixed(2)} per message with pricing recommendations",
-      "messageQualityImpact": "DETAILED analysis of how the ${analyticsData.grammarScore}/100 grammar and ${analyticsData.guidelinesScore}/100 guidelines scores correlate with the ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate"
+      "messagesPerPPV": "DETAILED analysis using ACTUAL data: ${analyticsData.messagesSent} messages ÷ ${analyticsData.ppvsSent} PPVs sent = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} messages per PPV. Provide specific benchmarks and actionable insights.",
+      "revenueEfficiency": "DETAILED analysis using ACTUAL data: $${analyticsData.ppvRevenue || analyticsData.netSales} revenue ÷ ${analyticsData.ppvsUnlocked} PPVs PURCHASED = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.ppvsUnlocked || 1)).toFixed(2)} per PPV purchased. Also: $${(analyticsData.ppvRevenue || analyticsData.netSales)} ÷ ${analyticsData.messagesSent} messages = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.messagesSent || 1)).toFixed(2)} per message. Provide pricing recommendations. DO NOT confuse PPVs sent (${analyticsData.ppvsSent}) with PPVs purchased (${analyticsData.ppvsUnlocked}).",
+      "messageQualityImpact": "DETAILED analysis using ACTUAL scores (NOT mock scores): Grammar score is ${analyticsData.grammarScore}/100 and Guidelines score is ${analyticsData.guidelinesScore}/100. Analyze correlation with ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate. DO NOT use fake scores like 70/100 or 80/100. DO NOT make up projections like 'could increase to 60%' unless backed by specific data."
     },
     "behavioralPatterns": {
       "messageVolumeAnalysis": "DETAILED analysis of ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan with engagement optimization",
