@@ -4054,7 +4054,7 @@ function formatGrammarResults(text, type) {
       return "No spelling errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''}: ${Array.from(uniqueSpellingErrors).slice(0, 5).join(', ')}${uniqueSpellingErrors.size > 5 ? ', ...' : ''}.`;
+    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'grammar') {
@@ -4081,7 +4081,7 @@ function formatGrammarResults(text, type) {
       return "No grammar errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${realErrors.length} grammar error${realErrors.length !== 1 ? 's' : ''}: ${realErrors.slice(0, 3).join(', ')}${realErrors.length > 3 ? ', ...' : ''}.`;
+    return `Found ${realErrors.length} grammar error${realErrors.length !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'punctuation') {

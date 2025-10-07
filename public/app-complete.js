@@ -5117,13 +5117,13 @@ function renderChangeIndicator(change, reverseColors = false) {
 
 // Helper function to format breakdown content with proper line breaks and bullet points
 function formatBreakdownContent(content) {
-    // Removed console.log - debugging moved to backend
+    // v2.0 - Fixed to properly display "No violations found" messages
     
     if (!content || content === 'No significant issues found') {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
     }
     
-    // Handle "No violations found" messages
+    // Handle "No violations found" messages - ALWAYS show these with green checkmark
     if (content.includes('No violations found')) {
         return `<span class="text-green-400">✓ ${content}</span>`;
     }
