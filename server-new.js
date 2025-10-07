@@ -3882,7 +3882,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       const hasOverallContent = aiAnalysis.overallBreakdown && 
         Object.keys(aiAnalysis.overallBreakdown).length > 0 && 
-        Object.values(aiAnalysis.overallBreakdown).some(value => value && value.trim().length > 0);
+        Object.values(aiAnalysis.overallBreakdown).some(value => value && (typeof value === 'object' || (typeof value === 'string' && value.trim().length > 0)));
       
       if (!hasOverallContent) {
         console.log('🔍 No AI overallBreakdown content, using deterministic examples');
