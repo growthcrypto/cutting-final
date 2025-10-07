@@ -2094,6 +2094,34 @@ app.delete('/api/debug/wipe-messages', checkDatabaseConnection, async (req, res)
   }
 });
 
+// Debug endpoint to wipe a specific chatter's messages
+app.delete('/api/debug/wipe-chatter/:chatterName', checkDatabaseConnection, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    
+    // Delete all message analysis records for this chatter
+    const messageResult = await MessageAnalysis.deleteMany({
+      chatterName: { $regex: new RegExp(`^${chatterName}$`, 'i') } // Case-insensitive
+    });
+    
+    // Delete all AI analysis records for this chatter
+    const aiResult = await AIAnalysis.deleteMany({
+      chatterName: { $regex: new RegExp(`^${chatterName}$`, 'i') }
+    });
+    
+    res.json({
+      message: `All data for chatter '${chatterName}' wiped successfully`,
+      deletedCounts: {
+        messageAnalysis: messageResult.deletedCount,
+        aiAnalysis: aiResult.deletedCount
+      }
+    });
+  } catch (error) {
+    console.error(`Error wiping chatter data for ${req.params.chatterName}:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to clean up duplicate gypsy records
 app.delete('/api/debug/cleanup-gypsy', checkDatabaseConnection, async (req, res) => {
   try {
