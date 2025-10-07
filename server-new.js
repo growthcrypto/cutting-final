@@ -5160,9 +5160,15 @@ CRITICAL - USE ACTUAL SCORES, NOT MOCK SCORES:
 - DO NOT use fake/mock scores like "70/100" or "80/100" in your analysis!
 
 CRITICAL - DO NOT MAKE UP RANDOM PROJECTIONS:
-- DO NOT say things like "could increase to 60%" or "add $34.40 in revenue" unless you have SPECIFIC data supporting this
+- DO NOT say things like "could increase to 60%" or "add $34.40 in revenue" or "5% increase = $17.20" unless you have SPECIFIC data supporting this
 - If you want to project improvements, base them on ACTUAL data patterns, not random numbers
 - BE SPECIFIC or say "Analysis requires more data to project improvements"
+
+CRITICAL - ONLYFANS IS INFORMAL, NOT PROFESSIONAL:
+- DO NOT suggest "enhancing professionalism" or "formal improvements" - OnlyFans requires INFORMAL communication
+- Grammar improvements should focus on CLARITY and READABILITY, NOT formality
+- Correct recommendations: "reduce typos", "improve sentence clarity", "fix awkward phrasing"
+- WRONG recommendations: "enhance professionalism", "use formal language", "improve formality"
 
 CRITICAL: You MUST return ALL sections in the JSON response. Do not omit any sections.
 
@@ -5190,7 +5196,7 @@ Respond in STRICT JSON with this exact shape:
     "efficiencyRatios": {
       "messagesPerPPV": "DETAILED analysis using ACTUAL data: ${analyticsData.messagesSent} messages ÷ ${analyticsData.ppvsSent} PPVs sent = ${(analyticsData.messagesSent/analyticsData.ppvsSent).toFixed(1)} messages per PPV. Provide specific benchmarks and actionable insights.",
       "revenueEfficiency": "DETAILED analysis using ACTUAL data: $${analyticsData.ppvRevenue || analyticsData.netSales} revenue ÷ ${analyticsData.ppvsUnlocked} PPVs PURCHASED = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.ppvsUnlocked || 1)).toFixed(2)} per PPV purchased. Also: $${(analyticsData.ppvRevenue || analyticsData.netSales)} ÷ ${analyticsData.messagesSent} messages = $${((analyticsData.ppvRevenue || analyticsData.netSales)/(analyticsData.messagesSent || 1)).toFixed(2)} per message. Provide pricing recommendations. DO NOT confuse PPVs sent (${analyticsData.ppvsSent}) with PPVs purchased (${analyticsData.ppvsUnlocked}).",
-      "messageQualityImpact": "YOU MUST START WITH: 'Grammar score: ${analyticsData.grammarScore}/100, Guidelines score: ${analyticsData.guidelinesScore}/100, Unlock rate: ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}%.' Then analyze the correlation. USE THESE EXACT NUMBERS. DO NOT write generic text like 'Grammar score is 70/100' - that is WRONG. The ACTUAL grammar score is ${analyticsData.grammarScore}/100 and you MUST use it."
+      "messageQualityImpact": "START YOUR RESPONSE WITH EXACTLY THIS TEXT, WORD FOR WORD, NO CHANGES: 'Grammar: ${analyticsData.grammarScore}/100. Guidelines: ${analyticsData.guidelinesScore}/100. Unlock rate: ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}%.' THEN continue with your analysis. WARNING: If you write 'Grammar score: 70/100' or 'Guidelines score: 80/100' you have FAILED - these are mock scores. The REAL scores are Grammar: ${analyticsData.grammarScore}/100 and Guidelines: ${analyticsData.guidelinesScore}/100. CRITICAL: OnlyFans is INFORMAL - do NOT suggest 'professionalism' or 'formal improvements'. DO NOT make up projections like '5% increase' or '$17.20' unless you have SPECIFIC data backing this."
     },
     "behavioralPatterns": {
       "messageVolumeAnalysis": "DETAILED analysis of ${analyticsData.messagesSent} messages to ${analyticsData.fansChatted} fans = ${(analyticsData.messagesSent/analyticsData.fansChatted).toFixed(1)} messages per fan with engagement optimization",
