@@ -2825,12 +2825,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               // Parse AI analysis results and update reliableGuidelinesAnalysis
               const aiResults = parseAIResults(combinedGuidelinesAnalysis, customGuidelines);
               
-              // Update each category with AI results
+              // Update each category with AI results (ONLY if AI found violations)
               Object.keys(aiResults).forEach(category => {
                 if (reliableGuidelinesAnalysis[category]) {
-                  reliableGuidelinesAnalysis[category].violations = aiResults[category].violations;
-                  reliableGuidelinesAnalysis[category].details = aiResults[category].details;
-                  console.log(`✅ Updated ${category} with AI results: ${aiResults[category].violations} violations`);
+                  // CRITICAL: Only override server-side data if AI actually found violations
+                  // This preserves server-side reply time violations (154) when AI returns 0
+                  if (aiResults[category].violations > 0) {
+                    reliableGuidelinesAnalysis[category].violations += aiResults[category].violations;
+                    reliableGuidelinesAnalysis[category].details.push(...aiResults[category].details);
+                    console.log(`✅ Updated ${category} with AI results: +${aiResults[category].violations} violations (total: ${reliableGuidelinesAnalysis[category].violations})`);
+                  } else {
+                    console.log(`⏭️ Skipped ${category} AI update: 0 violations (keeping server-side data: ${reliableGuidelinesAnalysis[category].violations} violations)`);
+                  }
                 }
               });
               
