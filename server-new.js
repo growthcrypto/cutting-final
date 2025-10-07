@@ -2322,10 +2322,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Chatting style analysis (from most recent message analysis)
       const latestMessageAnalysis = messagesAnalysis.length > 0 ? messagesAnalysis[0] : null;
       
-      // Aggregate message analysis scores (only if message data exists)
-      const grammarScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.grammarScore || 0), 0) / messagesAnalysis.length) : null;
-      const guidelinesScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.guidelinesScore || 0), 0) / messagesAnalysis.length) : null;
-      const overallMessageScore = messagesAnalysis.length > 0 ? Math.round(messagesAnalysis.reduce((s,m)=> s + (m.overallScore || 0), 0) / messagesAnalysis.length) : null;
+      // CRITICAL: Use FRESH scores from current analysis, NOT old database averages
+      // The fresh scores will be set later in the analysis flow
+      let grammarScore = null;
+      let guidelinesScore = null;
+      let overallMessageScore = null;
+      
+      console.log('⏸️ Grammar/Guidelines scores will be set from FRESH analysis (not old database data)');
       // Use the total messages from the most recent analysis record
       const totalMessages = latestMessageAnalysis?.totalMessages || 0;
       const chattingStyle = latestMessageAnalysis?.chattingStyle || null;
@@ -2491,6 +2494,26 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               console.log(`❌ AI will probably make up a different number, but the REAL count is: ${actualReplyTimeViolations}`);
               
             }
+            
+            // CRITICAL: Update analyticsData with FRESH scores before passing to AI
+            // The fresh scores are calculated in the batch analysis above
+            if (analyticsData.calculatedGrammarScore != null) {
+              analyticsData.grammarScore = analyticsData.calculatedGrammarScore;
+              console.log(`✅ Updated analyticsData.grammarScore with FRESH score: ${analyticsData.grammarScore}/100`);
+            }
+            if (analyticsData.guidelinesScore != null) {
+              console.log(`✅ Using analyticsData.guidelinesScore: ${analyticsData.guidelinesScore}/100`);
+            }
+            if (analyticsData.grammarScore != null && analyticsData.guidelinesScore != null) {
+              analyticsData.overallMessageScore = Math.round((analyticsData.grammarScore + analyticsData.guidelinesScore) / 2);
+              console.log(`✅ Calculated analyticsData.overallMessageScore: ${analyticsData.overallMessageScore}/100`);
+            }
+            
+            console.log(`🚨 FINAL SCORES BEING SENT TO AI:`, {
+              grammarScore: analyticsData.grammarScore,
+              guidelinesScore: analyticsData.guidelinesScore,
+              overallMessageScore: analyticsData.overallMessageScore
+            });
             
             const aiAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts, totalMessages);
       console.log('✅ AI analysis completed');
@@ -3252,6 +3275,48 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       } else {
         console.log('🔄 No analysisMessageTexts available for re-analysis');
       }
+      
+      // CRITICAL FIX: Update analyticsData with FRESH calculated scores
+      // This fixes the issue where generateAIAnalysis was called with old/null scores
+      if (analyticsData.calculatedGrammarScore != null) {
+        analyticsData.grammarScore = analyticsData.calculatedGrammarScore;
+        console.log(`✅ UPDATED analyticsData.grammarScore with FRESH score: ${analyticsData.grammarScore}/100`);
+      }
+      if (analyticsData.grammarScore != null && analyticsData.guidelinesScore != null) {
+        analyticsData.overallMessageScore = Math.round((analyticsData.grammarScore + analyticsData.guidelinesScore) / 2);
+        console.log(`✅ CALCULATED analyticsData.overallMessageScore: ${analyticsData.overallMessageScore}/100`);
+      }
+      console.log(`🚨 FRESH SCORES NOW IN analyticsData:`, {
+        grammarScore: analyticsData.grammarScore,
+        guidelinesScore: analyticsData.guidelinesScore,
+        overallMessageScore: analyticsData.overallMessageScore
+      });
+      
+      // CRITICAL: Regenerate AI executive analysis with FRESH scores
+      console.log('🔄 REGENERATING executive analysis with FRESH scores...');
+      try {
+        const freshAIAnalysis = await generateAIAnalysis(analyticsData, analysisType, interval, analysisMessageTexts, totalMessages);
+        // Update the executive summary sections with FRESH data
+        if (freshAIAnalysis.executiveSummary) {
+          aiAnalysis.executiveSummary = freshAIAnalysis.executiveSummary;
+          console.log('✅ Updated executiveSummary with FRESH scores');
+        }
+        if (freshAIAnalysis.advancedMetrics) {
+          aiAnalysis.advancedMetrics = freshAIAnalysis.advancedMetrics;
+          console.log('✅ Updated advancedMetrics with FRESH scores');
+        }
+        if (freshAIAnalysis.strategicInsights) {
+          aiAnalysis.strategicInsights = freshAIAnalysis.strategicInsights;
+          console.log('✅ Updated strategicInsights with FRESH scores');
+        }
+        if (freshAIAnalysis.actionPlan) {
+          aiAnalysis.actionPlan = freshAIAnalysis.actionPlan;
+          console.log('✅ Updated actionPlan with FRESH scores');
+        }
+      } catch (error) {
+        console.log('❌ Failed to regenerate executive analysis:', error.message);
+      }
+      
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
       aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore || analyticsData.grammarScore;
