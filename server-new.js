@@ -4223,7 +4223,7 @@ function formatGrammarResults(text, type) {
       // Skip message references, explanations, and apostrophe mentions
       if (phrase.startsWith('message ') || phrase.includes('instead of') || phrase.includes('lacks') || 
           phrase.includes('missing apostrophe') || phrase.includes('incorrect punctuation') || 
-          phrase.includes('awkward phrasing') || phrase.includes('missing \'i have\'')) return;
+          phrase.includes('missing \'i have\'')) return;
       // Skip if it's an informal phrase or word
       const isInformalPhrase = informalPhrases.some(informal => phrase.includes(informal));
       const isInformalWord = ['u', 'ur', 'im', 'dont', 'cant', 'i', 'hows', 'youre', 'ive', 'id', 'ill', 'that\'d', 'i\'m', 'i\'ve'].includes(phrase);
