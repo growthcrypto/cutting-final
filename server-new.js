@@ -96,7 +96,7 @@ if (process.env.OPENAI_API_KEY) {
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/onlyfans_analytics';
 console.log('🔌 Attempting to connect to MongoDB...');
 console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
-console.log('🔥 SERVER STARTED WITH UPDATED CODE - XAI ENV VAR FINAL TEST!');
+console.log('🔥 SERVER STARTED WITH UPDATED CODE - OPENAI GPT-4O-MINI!');
 
 // Connect to MongoDB and wait for connection
 async function connectToMongoDB() {
@@ -1564,12 +1564,12 @@ CONSISTENCY REQUIREMENTS:
     
 console.log('🚀 Making API call...');
 console.log('🔍 API Client Info:');
-console.log('  Using xAI:', !!process.env.XAI_API_KEY);
+console.log('  Using OpenAI:', !!process.env.OPENAI_API_KEY);
 console.log('  Base URL:', openai.baseURL || 'https://api.openai.com/v1 (default)');
 console.log('  Model:', 'gpt-4o-mini');
 console.log('  API Key starts with:', openai.apiKey ? openai.apiKey.substring(0, 10) : 'NO KEY');
 console.log('  API Key length:', openai.apiKey ? openai.apiKey.length : 0);
-console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
+console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
     
     try {
       const completion = await openai.chat.completions.create({
