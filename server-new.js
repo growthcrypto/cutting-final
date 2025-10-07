@@ -4208,10 +4208,13 @@ function formatGrammarResults(text, type) {
     
     // First check: If AI says "Missing periods" or "lack of periods", that's GOOD (not an error)
     // Because OnlyFans messages SHOULD be informal (no periods)
-    if (cleanText.toLowerCase().includes('missing period') || 
-        cleanText.toLowerCase().includes('lack of period') ||
-        cleanText.toLowerCase().includes('periods at the end') ||
-        cleanText.toLowerCase().includes('no period')) {
+    // BUT if it says "messages with periods" or "contain periods", that's BAD (an error)!
+    if ((cleanText.toLowerCase().includes('missing period') || 
+         cleanText.toLowerCase().includes('lack of period') ||
+         cleanText.toLowerCase().includes('no period')) &&
+        !cleanText.toLowerCase().includes('messages with period') &&
+        !cleanText.toLowerCase().includes('contain period') &&
+        !cleanText.toLowerCase().includes('have period')) {
       console.log(`🔍 PUNCTUATION FILTER: Detected 'missing periods' language - this is NOT an error (informal is correct)`);
       return "No punctuation errors found - informal OnlyFans language is correct.";
     }
