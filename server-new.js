@@ -34,7 +34,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// AI Configuration (xAI Grok-4-fast-reasoning)
+// AI Configuration (OpenAI GPT-4o-mini)
 console.log('🔍 Environment check:');
 console.log('  XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
 console.log('  XAI_API_KEY length:', process.env.XAI_API_KEY ? process.env.XAI_API_KEY.length : 0);
@@ -50,19 +50,19 @@ console.log('  NODE_ENV:', process.env.NODE_ENV);
 console.log('  RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
 
 let openai;
-if (process.env.XAI_API_KEY) {
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+  console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '...');
+  console.log('✅ Using OpenAI baseURL (default)');
+} else if (process.env.XAI_API_KEY) {
   openai = new OpenAI({
     apiKey: process.env.XAI_API_KEY,
     baseURL: 'https://api.x.ai/v1'
   });
-  console.log('✅ xAI Grok-4-fast-reasoning-latest configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '...');
-  console.log('✅ Using xAI baseURL: https://api.x.ai/v1');
-} else if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
-  console.log('✅ OpenAI configured with key:', process.env.OPENAI_API_KEY.substring(0, 10) + '... (fallback)');
-  console.log('⚠️  Using OpenAI baseURL (default)');
+  console.log('✅ xAI configured with key:', process.env.XAI_API_KEY.substring(0, 10) + '... (fallback)');
+  console.log('⚠️  Using xAI baseURL: https://api.x.ai/v1');
 } else {
   console.warn('⚠️  XAI_API_KEY not set - AI analysis will be limited');
   console.log('Environment check - XAI_API_KEY exists:', !!process.env.XAI_API_KEY);
@@ -1566,14 +1566,14 @@ console.log('🚀 Making API call...');
 console.log('🔍 API Client Info:');
 console.log('  Using xAI:', !!process.env.XAI_API_KEY);
 console.log('  Base URL:', openai.baseURL || 'https://api.openai.com/v1 (default)');
-console.log('  Model:', 'grok-4-fast-reasoning-latest');
+console.log('  Model:', 'gpt-4o-mini');
 console.log('  API Key starts with:', openai.apiKey ? openai.apiKey.substring(0, 10) : 'NO KEY');
 console.log('  API Key length:', openai.apiKey ? openai.apiKey.length : 0);
 console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
     
     try {
       const completion = await openai.chat.completions.create({
-      model: 'grok-4-fast-reasoning-latest',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -4161,7 +4161,7 @@ Messages: ${messages.join(' ')}
 Return ONLY: "No ${category} found - informal OnlyFans language is correct." OR list specific actual errors found.`;
 
     const response = await openai.chat.completions.create({
-      model: 'grok-4-fast-reasoning-latest',
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.0
@@ -5079,7 +5079,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
     }
 
     const completion = await openai.chat.completions.create({
-      model: "grok-4-fast-reasoning-latest",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
