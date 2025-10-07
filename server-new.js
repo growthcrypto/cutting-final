@@ -3679,57 +3679,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('🔍 ERROR: aiAnalysis.chattingStyle is null/undefined!');
       }
       
-      // CRITICAL FIX: Ensure chatting style data is preserved
-      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
-        console.log('🔧 FIXING: chattingStyle is empty, using fallback data');
-        aiAnalysis.chattingStyle = {
-          directness: "moderately direct",
-          friendliness: "very friendly",
-          salesApproach: "subtle", 
-          personality: "flirty",
-          emojiUsage: "moderate",
-          messageLength: "medium",
-          responsePattern: "thoughtful"
-        };
-      }
+      // REMOVED: Old fallback code that filled chattingStyle/messagePatterns with fake data
+      // These fields are no longer used - we use executiveSummary instead
+      console.log('✅ SKIPPED old chattingStyle/messagePatterns fallback - not needed anymore');
       
-      // CRITICAL FIX: Ensure message patterns data is preserved
-      if (!aiAnalysis.messagePatterns || Object.keys(aiAnalysis.messagePatterns).length === 0) {
-        console.log('🔧 FIXING: messagePatterns is empty, using fallback data');
-        aiAnalysis.messagePatterns = {
-          questionFrequency: "high",
-          exclamationUsage: "moderate",
-          capitalizationStyle: "casual",
-          punctuationStyle: "excessive",
-          topicDiversity: "high",
-          sexualContent: "moderate",
-          personalSharing: "high"
-        };
-      }
-      
-      // CRITICAL FIX: Ensure engagement metrics data is preserved
-      if (!aiAnalysis.engagementMetrics || Object.keys(aiAnalysis.engagementMetrics).length === 0) {
-        console.log('🔧 FIXING: engagementMetrics is empty, using fallback data');
-        aiAnalysis.engagementMetrics = {
-          conversationStarter: "excellent",
-          conversationMaintainer: "good",
-          salesConversation: "moderate",
-          fanRetention: "excellent"
-        };
-      }
+      // REMOVED: Old fallback code that filled engagementMetrics with fake data
+      // This field is no longer used - we use executiveSummary instead
+      console.log('✅ SKIPPED old engagementMetrics fallback - not needed anymore');
       
       // Debug the final response being sent
   console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
   console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
   console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
   
-  // CRITICAL FIX: Delete empty objects so frontend condition works
-  if (Object.keys(aiAnalysis.chattingStyle || {}).length === 0) delete aiAnalysis.chattingStyle;
-  if (Object.keys(aiAnalysis.messagePatterns || {}).length === 0) delete aiAnalysis.messagePatterns;
-  if (Object.keys(aiAnalysis.engagementMetrics || {}).length === 0) delete aiAnalysis.engagementMetrics;
-  console.log('🔥 DELETED EMPTY FIELDS - chattingStyle exists:', !!aiAnalysis.chattingStyle);
-  console.log('🔥 DELETED EMPTY FIELDS - messagePatterns exists:', !!aiAnalysis.messagePatterns);
-  console.log('🔥 DELETED EMPTY FIELDS - engagementMetrics exists:', !!aiAnalysis.engagementMetrics);
+  // MOVED deletion to right before res.json() - see line 3972
       
       // CRITICAL DEBUG: Check what's actually being sent in the response
       console.log('🔍 RESPONSE OBJECT KEYS:', Object.keys(aiAnalysis));
@@ -3968,44 +3931,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
-      // CRITICAL FIX: Always force the data to be present (JSON parsing issues cause empty objects)
-      if (!aiAnalysis.chattingStyle || Object.keys(aiAnalysis.chattingStyle).length === 0) {
-        console.log('🔧 ALWAYS FORCE: Ensuring chattingStyle data is present');
-        aiAnalysis.chattingStyle = {
-          directness: "moderately direct",
-          friendliness: "very friendly",
-          salesApproach: "subtle", 
-          personality: "flirty",
-          emojiUsage: "moderate",
-          messageLength: "medium",
-          responsePattern: "thoughtful"
-        };
-      }
-      
-      // CRITICAL FIX: Always force message patterns data to be present
-      if (!aiAnalysis.messagePatterns || Object.keys(aiAnalysis.messagePatterns).length === 0) {
-        console.log('🔧 ALWAYS FORCE: Ensuring messagePatterns data is present');
-        aiAnalysis.messagePatterns = {
-          questionFrequency: "high",
-          exclamationUsage: "moderate",
-          capitalizationStyle: "casual",
-          punctuationStyle: "excessive",
-          topicDiversity: "high",
-          sexualContent: "moderate",
-          personalSharing: "high"
-        };
-      }
-      
-      // CRITICAL FIX: Always force engagement metrics data to be present
-      if (!aiAnalysis.engagementMetrics || Object.keys(aiAnalysis.engagementMetrics).length === 0) {
-        console.log('🔧 ALWAYS FORCE: Ensuring engagementMetrics data is present');
-        aiAnalysis.engagementMetrics = {
-          conversationStarter: "excellent",
-          conversationMaintainer: "good",
-          salesConversation: "moderate",
-          fanRetention: "excellent"
-        };
-      }
+      // REMOVED: Another duplicate block that forced fake data into chattingStyle/messagePatterns/engagementMetrics
+      // These fields are no longer used - we use executiveSummary instead
+      console.log('✅ SKIPPED second fallback block - not needed anymore');
       
       // FINAL HARDENING: Normalize objects and ensure required fields are present as strings
       const defaultChattingStyle = {
@@ -4036,6 +3964,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // REMOVED: Old code that re-created empty chattingStyle/messagePatterns/engagementMetrics
       // These fields are no longer used - we now use executiveSummary instead
       console.log('✅ SKIPPED old chattingStyle/messagePatterns/engagementMetrics filling - using executiveSummary instead');
+      
+      // CRITICAL FIX: Delete empty/fake objects RIGHT BEFORE sending response
+      console.log('🔍 BEFORE DELETION - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
+      console.log('🔍 BEFORE DELETION - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
+      console.log('🔍 BEFORE DELETION - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+      
+      // Delete if empty OR if they contain only the fake default values
+      delete aiAnalysis.chattingStyle;
+      delete aiAnalysis.messagePatterns;
+      delete aiAnalysis.engagementMetrics;
+      
+      console.log('🔥 AFTER DELETION - chattingStyle exists:', !!aiAnalysis.chattingStyle);
+      console.log('🔥 AFTER DELETION - messagePatterns exists:', !!aiAnalysis.messagePatterns);
+      console.log('🔥 AFTER DELETION - engagementMetrics exists:', !!aiAnalysis.engagementMetrics);
       
       res.json(aiAnalysis);
     } catch (aiError) {
