@@ -3719,9 +3719,17 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }
       
       // Debug the final response being sent
-      console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
-      console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
-      console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+  console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
+  console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
+  console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+  
+  // CRITICAL FIX: Delete empty objects so frontend condition works
+  if (Object.keys(aiAnalysis.chattingStyle || {}).length === 0) delete aiAnalysis.chattingStyle;
+  if (Object.keys(aiAnalysis.messagePatterns || {}).length === 0) delete aiAnalysis.messagePatterns;
+  if (Object.keys(aiAnalysis.engagementMetrics || {}).length === 0) delete aiAnalysis.engagementMetrics;
+  console.log('🔥 DELETED EMPTY FIELDS - chattingStyle exists:', !!aiAnalysis.chattingStyle);
+  console.log('🔥 DELETED EMPTY FIELDS - messagePatterns exists:', !!aiAnalysis.messagePatterns);
+  console.log('🔥 DELETED EMPTY FIELDS - engagementMetrics exists:', !!aiAnalysis.engagementMetrics);
       
       // CRITICAL DEBUG: Check what's actually being sent in the response
       console.log('🔍 RESPONSE OBJECT KEYS:', Object.keys(aiAnalysis));
