@@ -3618,21 +3618,29 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         };
       }
       
-      // Overall breakdown - use AI data if available, otherwise use analyticsData, otherwise fallback
-      if (aiAnalysis.overallBreakdown && Object.keys(aiAnalysis.overallBreakdown).length > 0 && 
-          Object.values(aiAnalysis.overallBreakdown).some(value => value && typeof value === 'string' && value.trim().length > 0)) {
-        console.log('✅ Using AI overallBreakdown data');
+      // Overall breakdown - ONLY use the fresh reAnalysis data, NEVER from analyticsData (old structure)
+      if (aiAnalysis.overallBreakdown && Object.keys(aiAnalysis.overallBreakdown).length > 0) {
+        console.log('✅ Using FRESH overallBreakdown data from reAnalysis (has grammarSummary/guidelinesSummary)');
         // Keep the AI data - don't overwrite it
-      } else if (analyticsData.overallBreakdown && Object.keys(analyticsData.overallBreakdown).length > 0) {
-        aiAnalysis.overallBreakdown = analyticsData.overallBreakdown;
-        console.log('✅ Set overallBreakdown from analyticsData');
       } else {
-        console.log('❌ No overallBreakdown in AI or analyticsData, using fallback');
+        console.log('❌ No overallBreakdown in reAnalysis, creating fallback');
         aiAnalysis.overallBreakdown = {
-          "messageClarity": `Overall message quality score of ${analyticsData.overallMessageScore || 0}/100 indicates good foundation with room for improvement.`,
-          "emotionalImpact": `Message patterns show good engagement but could benefit from more strategic conversation management.`,
-          "conversionPotential": `PPV conversion rates could be improved with better timing and more compelling content descriptions.`,
-          "scoreExplanation": `Relationship building is strong, focus on maintaining engagement between PPVs.`
+          "grammarSummary": {
+            "spelling": "No data",
+            "grammar": "No data",
+            "punctuation": "No data",
+            "total": "No data",
+            "errorRate": "No data"
+          },
+          "guidelinesSummary": {
+            "generalChatting": "No data",
+            "psychology": "No data",
+            "captions": "No data",
+            "sales": "No data",
+            "total": "No data",
+            "violationRate": "No data"
+          },
+          "scoreExplanation": `Overall score: ${analyticsData.overallMessageScore || 0}/100.`
         };
       }
       
