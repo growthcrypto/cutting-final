@@ -1152,6 +1152,17 @@ async function analyzeMessages(messages, chatterName) {
     // Get custom guidelines for the prompt
   const customGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
   
+  // 🚨 VERBOSE: Show AI what guidelines it will be analyzing
+  console.log('\n🚨🚨🚨 GUIDELINES THAT AI WILL ANALYZE 🚨🚨🚨');
+  console.log(`📋 Total Guidelines: ${customGuidelines.length}`);
+  customGuidelines.forEach((g, idx) => {
+    console.log(`\n${idx + 1}. [${g.category.toUpperCase()}] "${g.title}"`);
+    console.log(`   Description: ${g.description}`);
+    console.log(`   Weight: ${g.weight}`);
+    console.log(`   NeedsAI: ${g.needsAI || 'Not specified'}`);
+  });
+  console.log('🚨🚨🚨 END OF GUIDELINES 🚨🚨🚨\n');
+  
   // Reconstruct conversation flows by grouping messages by fan username
   const conversationFlows = {};
   sampledMessages.forEach((msg, index) => {
@@ -2890,8 +2901,23 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                     if (aiItem) {
                       detail.count = aiItem.count || 0;
                       detail.description = `Found ${aiItem.count || 0} violations of ${detail.title} guideline`;
+                      detail.examples = aiItem.examples || [];
                       detail.needsAI = false;
                       console.log(`✅ Merged AI analysis for ${detail.title}: ${aiItem.count} violations`);
+                      
+                      // VERBOSE: Show the actual messages where violations were found
+                      if (aiItem.examples && aiItem.examples.length > 0) {
+                        console.log(`📋 VIOLATION EXAMPLES FOR "${detail.title}":`);
+                        aiItem.examples.slice(0, 5).forEach(msgIdx => {
+                          const msg = analysisMessageTexts[msgIdx];
+                          if (msg) {
+                            console.log(`   Message ${msgIdx}: "${msg.substring(0, 150)}${msg.length > 150 ? '...' : ''}"`);
+                          }
+                        });
+                        if (aiItem.examples.length > 5) {
+                          console.log(`   ... and ${aiItem.examples.length - 5} more violations`);
+                        }
+                      }
                     }
                   }
                 });
