@@ -4050,11 +4050,18 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'spelling') {
+    // CRITICAL: Filter out informal OnlyFans language that AI incorrectly flags as errors
+    const informalWords = ['u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u\'re', 'u\'ll', 'i', 'ive', 'id', 'ill', 'youre', 'theyre', 'hes', 'shes', 'whos', 'youll', 'youd'];
+    
     // Extract spelling errors and return count with summary
     const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
     const uniqueSpellingErrors = new Set();
     spellingMatches.forEach(match => {
-      uniqueSpellingErrors.add(`${match[1]}`);
+      const word = match[1].toLowerCase();
+      // ONLY add if it's NOT in the informal words list
+      if (!informalWords.includes(word)) {
+        uniqueSpellingErrors.add(`${match[1]}`);
+      }
     });
     
     if (uniqueSpellingErrors.size === 0) {
@@ -4065,55 +4072,44 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'grammar') {
-    // Extract grammar errors and return count with summary
-    // Look for patterns like "Found X grammar" or count message references
-    const foundMatches = [...cleanText.matchAll(/Found (\d+) grammar/gi)];
-    const messageMatches = [...cleanText.matchAll(/Message \d+/g)];
+    // CRITICAL: Filter out informal OnlyFans phrases that AI incorrectly flags as errors
+    const informalPhrases = ['i dont', 'u are', 'dont know', 'cant understand', 'im happy', 'u\'re', 'i can', 'how u deal', 'u cant', 'i dont think', 'she dont', 'he dont', 'u like', 'i hope u', 'let me know u'];
     
-    let totalErrors = 0;
+    // Extract grammar errors and filter out informal language
+    const grammarMatches = [...cleanText.matchAll(/'([^']+)'/g)];
+    const realErrors = [];
     
-    if (foundMatches.length > 0) {
-      // Use the "Found X grammar" pattern
-      totalErrors = parseInt(foundMatches[0][1]);
-    } else if (messageMatches.length > 0) {
-      // Count unique message references
-      const uniqueMessages = new Set(messageMatches.map(match => match[0]));
-      totalErrors = uniqueMessages.size;
-    }
+    grammarMatches.forEach(match => {
+      const phrase = match[1].toLowerCase();
+      // ONLY add if it's NOT in the informal phrases list
+      if (!informalPhrases.some(informal => phrase.includes(informal))) {
+        realErrors.push(match[1]);
+      }
+    });
     
-    if (totalErrors === 0) {
+    if (realErrors.length === 0) {
       return "No grammar errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${totalErrors} grammar error${totalErrors !== 1 ? 's' : ''} across analyzed messages.`;
+    return `Found ${realErrors.length} grammar error${realErrors.length !== 1 ? 's' : ''} across analyzed messages.`;
   }
   
   if (type === 'punctuation') {
-    // Count actual punctuation violations mentioned in the AI analysis
-    // Look for specific violations like "Message X has period" or "Message Y has comma"
-    const messageViolations = [...cleanText.matchAll(/Message \d+/g)];
-    const periodViolations = [...cleanText.matchAll(/period(?:s?)/gi)];
-    const commaViolations = [...cleanText.matchAll(/comma(?:s?)/gi)];
-    const formalViolations = [...cleanText.matchAll(/formal (?:period|comma)/gi)];
+    // CRITICAL: Filter out "missing periods" as those are NOT errors in OnlyFans
+    // ONLY count MISUSED formal punctuation (like random commas in wrong places)
     
-    // Count unique message violations (each message can have multiple punctuation issues)
-    const uniqueMessageViolations = new Set(messageViolations.map(match => match[0]));
-    const totalMessageViolations = uniqueMessageViolations.size;
-    
-    // Count specific punctuation violations
-    const totalPeriodViolations = periodViolations.length;
-    const totalCommaViolations = commaViolations.length;
-    const totalFormalViolations = formalViolations.length;
-    
-    // Use the most accurate count available
-    let totalIssues = 0;
-    if (totalMessageViolations > 0) {
-      totalIssues = totalMessageViolations;
-    } else if (totalFormalViolations > 0) {
-      totalIssues = totalFormalViolations;
-    } else if (totalPeriodViolations > 0 || totalCommaViolations > 0) {
-      totalIssues = totalPeriodViolations + totalCommaViolations;
+    // If the text mentions "missing periods" or "missing periods at the end", it's NOT an error
+    if (cleanText.toLowerCase().includes('missing period') || 
+        cleanText.toLowerCase().includes('missing periods') ||
+        cleanText.toLowerCase().includes('periods at the end')) {
+      return "No punctuation errors found - informal OnlyFans language is correct.";
     }
+    
+    // Look for actual punctuation MISUSE (not missing punctuation)
+    const misusedCommaMatches = [...cleanText.matchAll(/misused comma|random comma|wrong comma|incorrect comma/gi)];
+    const misusedformalMatches = [...cleanText.matchAll(/formal (?:period|comma)|wrong (?:period|comma)/gi)];
+    
+    const totalIssues = misusedCommaMatches.length + misusedformalMatches.length;
     
     if (totalIssues === 0) {
       return "No punctuation errors found - informal OnlyFans language is correct.";
