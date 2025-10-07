@@ -5755,6 +5755,15 @@ function renderSophisticatedChatterAnalysis(data) {
     console.log('🔍 Guidelines breakdown content:', JSON.stringify(data.guidelinesBreakdown));
     console.log('🔍 Overall breakdown content:', JSON.stringify(data.overallBreakdown));
     
+    // CRITICAL DEBUG: Test the exact condition used in the template
+    const showAnalysisSection = data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown;
+    console.log('🚨 WILL SHOW ANALYSIS SECTION?', showAnalysisSection);
+    console.log('🚨 grammarBreakdown truthy?', !!data.grammarBreakdown);
+    console.log('🚨 guidelinesBreakdown truthy?', !!data.guidelinesBreakdown);
+    console.log('🚨 overallBreakdown truthy?', !!data.overallBreakdown);
+    
+    alert(`ANALYSIS SECTION WILL ${showAnalysisSection ? 'SHOW' : 'NOT SHOW'}!\n\ngrammarBreakdown: ${!!data.grammarBreakdown}\nguidelinesBreakdown: ${!!data.guidelinesBreakdown}\noverallBreakdown: ${!!data.overallBreakdown}`);
+    
     
     // Calculate derived metrics
     const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
