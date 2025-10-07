@@ -4034,16 +4034,19 @@ function formatGrammarResults(text, type) {
   
   if (type === 'spelling') {
     // CRITICAL: Filter out informal OnlyFans language that AI incorrectly flags as errors
-    const informalWords = ['u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u\'re', 'u\'ll', 'i', 'ive', 'id', 'ill', 'youre', 'theyre', 'hes', 'shes', 'whos', 'youll', 'youd'];
+    const informalWords = ['u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u\'re', 'u\'ll', 'i', 'ive', 'id', 'ill', 'youre', 'theyre', 'hes', 'shes', 'whos', 'youll', 'youd', 'its'];
     
-    // Extract spelling errors and return count with summary
-    const spellingMatches = [...cleanText.matchAll(/'([^']+)' instead of '([^']+)'/g)];
+    // Extract ALL words in single quotes (handles multiple formats: 'word' instead of 'word', 'word' in Message X, etc.)
+    const allQuotedWords = [...cleanText.matchAll(/'([^']+)'/g)];
     const uniqueSpellingErrors = new Set();
-    spellingMatches.forEach(match => {
-      const word = match[1].toLowerCase();
+    
+    allQuotedWords.forEach(match => {
+      const word = match[1].toLowerCase().trim();
+      // Skip if it's a full sentence or message reference
+      if (word.includes(' ') || word.length > 20) return;
       // ONLY add if it's NOT in the informal words list
       if (!informalWords.includes(word)) {
-        uniqueSpellingErrors.add(`${match[1]}`);
+        uniqueSpellingErrors.add(match[1]);
       }
     });
     
@@ -4051,21 +4054,25 @@ function formatGrammarResults(text, type) {
       return "No spelling errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''} across analyzed messages.`;
+    return `Found ${uniqueSpellingErrors.size} spelling error${uniqueSpellingErrors.size !== 1 ? 's' : ''}: ${Array.from(uniqueSpellingErrors).slice(0, 5).join(', ')}${uniqueSpellingErrors.size > 5 ? ', ...' : ''}.`;
   }
   
   if (type === 'grammar') {
     // CRITICAL: Filter out informal OnlyFans phrases that AI incorrectly flags as errors
-    const informalPhrases = ['i dont', 'u are', 'dont know', 'cant understand', 'im happy', 'u\'re', 'i can', 'how u deal', 'u cant', 'i dont think', 'she dont', 'he dont', 'u like', 'i hope u', 'let me know u'];
+    const informalPhrases = ['i dont', 'u are', 'dont know', 'cant understand', 'im happy', 'u\'re', 'i can', 'how u deal', 'u cant', 'i dont think', 'she dont', 'he dont', 'u like', 'i hope u', 'let me know u', 'i appreciate it', 'i save it', 'i wish i have', 'i dont mind', 'i can include', 'i cant', 'i\'m', 'u\'re are', 'im instead'];
     
-    // Extract grammar errors and filter out informal language
+    // Extract ALL phrases in single quotes
     const grammarMatches = [...cleanText.matchAll(/'([^']+)'/g)];
     const realErrors = [];
     
     grammarMatches.forEach(match => {
-      const phrase = match[1].toLowerCase();
-      // ONLY add if it's NOT in the informal phrases list
-      if (!informalPhrases.some(informal => phrase.includes(informal))) {
+      const phrase = match[1].toLowerCase().trim();
+      // Skip message references
+      if (phrase.startsWith('message ') || phrase.includes('instead of') || phrase.includes('lacks')) return;
+      // ONLY add if it's NOT in the informal phrases list AND not a single informal word
+      const isInformalPhrase = informalPhrases.some(informal => phrase.includes(informal));
+      const isInformalWord = ['u', 'ur', 'im', 'dont', 'cant', 'i', 'hows'].includes(phrase);
+      if (!isInformalPhrase && !isInformalWord) {
         realErrors.push(match[1]);
       }
     });
@@ -4074,7 +4081,7 @@ function formatGrammarResults(text, type) {
       return "No grammar errors found - informal OnlyFans language is correct.";
     }
     
-    return `Found ${realErrors.length} grammar error${realErrors.length !== 1 ? 's' : ''} across analyzed messages.`;
+    return `Found ${realErrors.length} grammar error${realErrors.length !== 1 ? 's' : ''}: ${realErrors.slice(0, 3).join(', ')}${realErrors.length > 3 ? ', ...' : ''}.`;
   }
   
   if (type === 'punctuation') {
