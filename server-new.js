@@ -1286,9 +1286,14 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
    - CORRECT EXAMPLE: "check out this steamy shower video baby [PPV CAPTION - Price: $15]" ← Has description
 
 2. **INFORMALITY GUIDELINE**:
-   - Look for messages that are TOO FORMAL (using full sentences, proper grammar, periods, commas)
-   - VIOLATION EXAMPLE: "Thank you for your message. I appreciate your interest." ← Too formal, has periods
-   - CORRECT EXAMPLE: "thanks babe" ← Informal, no periods, shortened words
+   - ONLY flag messages that are TOO FORMAL (proper capitalization, formal language, periods at end, commas)
+   - DO NOT flag informal messages - 'u', 'ur', 'im', 'dont', 'i' (lowercase), no periods = CORRECT
+   - VIOLATION EXAMPLE: "Thank you for your message. I appreciate your interest." ← Formal, periods, proper caps
+   - VIOLATION EXAMPLE: "I understand. That sounds great." ← Formal, periods, proper punctuation
+   - CORRECT EXAMPLE: "thanks babe" ← Informal, no periods
+   - CORRECT EXAMPLE: "when will it be?" ← Informal, lowercase 'i', question mark is OK
+   - CORRECT EXAMPLE: "i feel special" ← Informal, lowercase 'i', no period
+   - CORRECT EXAMPLE: "u love clubbing?" ← Informal, uses 'u', question mark is OK
 
 3. **NON-TRANSACTION GUIDELINE**:
    - Look for messages immediately AFTER a fan purchases a PPV that feel cold/transactional
