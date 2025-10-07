@@ -1585,7 +1585,7 @@ console.log('  Is xAI client?', openai.baseURL === 'https://api.x.ai/v1');
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-                max_tokens: 20000, // Increased even further to prevent JSON truncation
+                max_tokens: 16000, // Fixed limit for gpt-4o-mini (max is 16384)
       stream: false // Ensure no streaming for faster completion
     });
     console.log('✅ OpenAI API call completed');
@@ -5091,7 +5091,7 @@ CRITICAL ANALYSIS REQUIREMENTS:
         }
       ],
       temperature: 0.0, // Zero temperature for maximum consistency
-      max_tokens: 20000 // Increased even further to prevent JSON truncation
+      max_tokens: 16000 // Fixed limit for gpt-4o-mini (max is 16384)
     });
 
     const aiResponse = completion.choices[0].message.content;
