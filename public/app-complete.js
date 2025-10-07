@@ -4182,32 +4182,79 @@ function createSettingsSection() {
 }
 
 function createChatterDashboardSection() {
+    // Load team dashboard data on mount
+    setTimeout(() => loadTeamDashboard(), 100);
+    
     return `
         <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">My Dashboard</h2>
-            <p class="text-gray-400">Your personal performance overview</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="glass-card rounded-xl p-6 metric-card">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                        <i class="fas fa-comments text-xl text-white"></i>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-bold" id="chatterMessages">156</div>
-                        <div class="text-xs text-gray-400">Messages Sent</div>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h2 class="text-4xl font-black mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                        Team Performance Dashboard
+                    </h2>
+                    <p class="text-gray-400">Combined analytics across all chatters</p>
+                </div>
+                
+                <!-- Date Selector for Team Metrics -->
+                <div class="flex items-center space-x-2 mt-4 lg:mt-0">
+                    <span class="text-sm text-gray-400 mr-3">Team Period:</span>
+                    <button onclick="setTeamInterval('24h')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="24h">24h</button>
+                    <button onclick="setTeamInterval('7d')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white" data-interval="7d">7d</button>
+                    <button onclick="setTeamInterval('30d')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="30d">30d</button>
+                    <div class="relative">
+                        <button onclick="toggleTeamCustomDatePicker()" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
+                            <i class="fas fa-calendar mr-1"></i>Custom
+                        </button>
+                        <div id="teamCustomDatePicker" class="hidden absolute right-0 mt-2 p-4 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 w-72">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Start Date</label>
+                                    <input type="date" id="teamCustomStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">End Date</label>
+                                    <input type="date" id="teamCustomEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                </div>
+                                <button onclick="applyTeamCustomDateRange()" class="w-full premium-button text-white py-2 px-4 rounded-lg">
+                                    Apply Range
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="glass-card rounded-xl p-6 metric-card">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 rounded-xl gradient-success flex items-center justify-center">
-                        <i class="fas fa-dollar-sign text-xl text-white"></i>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-bold" id="chatterRevenue">$1,234</div>
-                        <div class="text-xs text-gray-400">Revenue Generated</div>
-                    </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="teamDashboardLoading" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <i class="fas fa-spinner fa-spin text-4xl text-purple-400 mb-4"></i>
+                <div class="text-gray-400">Loading team performance...</div>
+            </div>
+        </div>
+        
+        <!-- Team Dashboard Content -->
+        <div id="teamDashboardContent" class="hidden">
+            <!-- Team Metrics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" id="teamMetricsGrid">
+                <!-- Metrics will be dynamically inserted here -->
+            </div>
+            
+            <!-- Individual Chatter Tabs -->
+            <div class="glass-card rounded-xl p-6 border border-purple-500/20">
+                <h3 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-users text-purple-400 mr-3"></i>
+                    Individual Performance
+                </h3>
+                
+                <!-- Chatter Tabs -->
+                <div class="flex overflow-x-auto space-x-2 mb-6 pb-2" id="chatterTabsContainer">
+                    <!-- Tabs will be dynamically inserted here -->
+                </div>
+                
+                <!-- Chatter Content -->
+                <div id="chatterContentContainer">
+                    <!-- Individual chatter data will be displayed here -->
                 </div>
             </div>
         </div>
@@ -4334,6 +4381,493 @@ function createTeamComparisonSection() {
         </div>
     `;
 }
+
+// ==================== TEAM DASHBOARD FUNCTIONS ====================
+
+let currentTeamInterval = '7d';
+let currentTeamDateRange = null;
+let currentChatterTab = null;
+
+// Load team dashboard data
+async function loadTeamDashboard() {
+    const loading = document.getElementById('teamDashboardLoading');
+    const content = document.getElementById('teamDashboardContent');
+    
+    if (loading) loading.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
+    
+    try {
+        let url = `/api/analytics/team-dashboard?interval=${currentTeamInterval}`;
+        if (currentTeamDateRange) {
+            url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load team dashboard');
+        
+        const data = await response.json();
+        console.log('Team dashboard data:', data);
+        
+        renderTeamMetrics(data.teamMetrics);
+        renderChatterTabs(data.chatters);
+        
+        if (loading) loading.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('Error loading team dashboard:', error);
+        showError('Failed to load team dashboard');
+        if (loading) loading.classList.add('hidden');
+    }
+}
+
+// Render team-wide metrics
+function renderTeamMetrics(metrics) {
+    const grid = document.getElementById('teamMetricsGrid');
+    if (!grid) return;
+    
+    const getScoreColor = (score) => {
+        if (score >= 80) return 'text-green-400';
+        if (score >= 60) return 'text-yellow-400';
+        return 'text-red-400';
+    };
+    
+    const getScoreBg = (score) => {
+        if (score >= 80) return 'from-green-500/20 to-emerald-500/20 border-green-500/30';
+        if (score >= 60) return 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30';
+        return 'from-red-500/20 to-pink-500/20 border-red-500/30';
+    };
+    
+    const metricsHTML = `
+        <!-- Total Revenue -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Team Total</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">$${metrics.totalRevenue.toLocaleString()}</div>
+            <div class="text-xs text-gray-400">Total Revenue</div>
+        </div>
+        
+        <!-- PPV Unlock Rate -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <i class="fas fa-unlock text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">${metrics.ppvsUnlocked}/${metrics.ppvsSent}</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">${metrics.unlockRate}%</div>
+            <div class="text-xs text-gray-400">Unlock Rate</div>
+        </div>
+        
+        <!-- Avg Response Time -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                    <i class="fas fa-clock text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Team Avg</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">${metrics.avgResponseTime}m</div>
+            <div class="text-xs text-gray-400">Response Time</div>
+        </div>
+        
+        <!-- Avg Grammar Score -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgGrammarScore)}">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                    <i class="fas fa-spell-check text-white"></i>
+                </div>
+                <div class="text-xs ${getScoreColor(metrics.avgGrammarScore)}">${metrics.avgGrammarScore >= 80 ? '🟢' : metrics.avgGrammarScore >= 60 ? '🟡' : '🔴'}</div>
+            </div>
+            <div class="text-2xl font-black ${getScoreColor(metrics.avgGrammarScore)} mb-1">${metrics.avgGrammarScore}/100</div>
+            <div class="text-xs text-gray-400">Grammar Score</div>
+        </div>
+        
+        <!-- Avg Guidelines Score -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgGuidelinesScore)}">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <div class="text-xs ${getScoreColor(metrics.avgGuidelinesScore)}">${metrics.avgGuidelinesScore >= 80 ? '🟢' : metrics.avgGuidelinesScore >= 60 ? '🟡' : '🔴'}</div>
+            </div>
+            <div class="text-2xl font-black ${getScoreColor(metrics.avgGuidelinesScore)} mb-1">${metrics.avgGuidelinesScore}/100</div>
+            <div class="text-xs text-gray-400">Guidelines Score</div>
+        </div>
+        
+        <!-- Overall Score -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgOverallScore)}">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                    <i class="fas fa-star text-white"></i>
+                </div>
+                <div class="text-xs ${getScoreColor(metrics.avgOverallScore)}">${metrics.avgOverallScore >= 80 ? '🟢' : metrics.avgOverallScore >= 60 ? '🟡' : '🔴'}</div>
+            </div>
+            <div class="text-2xl font-black ${getScoreColor(metrics.avgOverallScore)} mb-1">${metrics.avgOverallScore}/100</div>
+            <div class="text-xs text-gray-400">Overall Score</div>
+        </div>
+        
+        <!-- Avg PPV Price -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                    <i class="fas fa-tag text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Per PPV</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">$${metrics.avgPPVPrice}</div>
+            <div class="text-xs text-gray-400">Avg PPV Price</div>
+        </div>
+        
+        <!-- Revenue Per Message -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-cyan-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                    <i class="fas fa-comment-dollar text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Per Message</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">$${metrics.revenuePerMessage}</div>
+            <div class="text-xs text-gray-400">Revenue/Message</div>
+        </div>
+        
+        <!-- Messages Sent -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-gray-500/30 bg-gradient-to-br from-gray-500/10 to-slate-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500 to-slate-500 flex items-center justify-center">
+                    <i class="fas fa-comments text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Team Total</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">${metrics.messagesSent.toLocaleString()}</div>
+            <div class="text-xs text-gray-400">Messages Sent</div>
+        </div>
+        
+        <!-- Fans Chatted -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-rose-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                    <i class="fas fa-users text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Team Total</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">${metrics.fansChatted.toLocaleString()}</div>
+            <div class="text-xs text-gray-400">Fans Chatted</div>
+        </div>
+        
+        <!-- Top Performer -->
+        ${metrics.topPerformer ? `
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-amber-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center">
+                    <i class="fas fa-trophy text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">🏆</div>
+            </div>
+            <div class="text-lg font-black text-yellow-400 mb-1">${metrics.topPerformer.name}</div>
+            <div class="text-xs text-gray-400">$${metrics.topPerformer.revenue.toLocaleString()} • Top Performer</div>
+        </div>
+        ` : ''}
+        
+        <!-- Team Size -->
+        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                    <i class="fas fa-user-friends text-white"></i>
+                </div>
+                <div class="text-xs text-gray-400">Active</div>
+            </div>
+            <div class="text-2xl font-black text-white mb-1">${metrics.chatterCount}</div>
+            <div class="text-xs text-gray-400">Team Members</div>
+        </div>
+    `;
+    
+    grid.innerHTML = metricsHTML;
+}
+
+// Render chatter tabs
+function renderChatterTabs(chatters) {
+    const tabsContainer = document.getElementById('chatterTabsContainer');
+    const contentContainer = document.getElementById('chatterContentContainer');
+    
+    if (!tabsContainer || !contentContainer) return;
+    
+    // Create tabs
+    const tabsHTML = chatters.map((chatter, index) => {
+        const isActive = index === 0;
+        return `
+            <button 
+                onclick="switchChatterTab('${chatter.chatterName}')" 
+                class="chatter-tab px-4 py-2 rounded-lg font-medium transition-all ${isActive ? 'bg-purple-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+                data-chatter="${chatter.chatterName}">
+                ${chatter.chatterName}
+            </button>
+        `;
+    }).join('');
+    
+    tabsContainer.innerHTML = tabsHTML;
+    
+    // Show first chatter by default
+    if (chatters.length > 0) {
+        currentChatterTab = chatters[0].chatterName;
+        renderChatterContent(chatters[0]);
+    }
+}
+
+// Switch chatter tab
+function switchChatterTab(chatterName) {
+    currentChatterTab = chatterName;
+    
+    // Update tab styles
+    document.querySelectorAll('.chatter-tab').forEach(tab => {
+        if (tab.dataset.chatter === chatterName) {
+            tab.classList.remove('bg-gray-700', 'text-gray-300');
+            tab.classList.add('bg-purple-500', 'text-white');
+        } else {
+            tab.classList.remove('bg-purple-500', 'text-white');
+            tab.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    // Find and render chatter data
+    // This will be called again when tab is clicked, so we need to fetch the data
+    loadChatterData(chatterName);
+}
+
+// Load individual chatter data
+async function loadChatterData(chatterName) {
+    try {
+        let url = `/api/analytics/team-dashboard?interval=${currentTeamInterval}`;
+        if (currentTeamDateRange) {
+            url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load chatter data');
+        
+        const data = await response.json();
+        const chatter = data.chatters.find(c => c.chatterName === chatterName);
+        
+        if (chatter) {
+            renderChatterContent(chatter);
+        }
+    } catch (error) {
+        console.error('Error loading chatter data:', error);
+    }
+}
+
+// Render individual chatter content
+function renderChatterContent(chatter) {
+    const container = document.getElementById('chatterContentContainer');
+    if (!container) return;
+    
+    const getScoreColor = (score) => {
+        if (!score) return 'text-gray-400';
+        if (score >= 80) return 'text-green-400';
+        if (score >= 60) return 'text-yellow-400';
+        return 'text-red-400';
+    };
+    
+    const getScoreBadge = (score) => {
+        if (!score) return '⚪';
+        if (score >= 80) return '🟢';
+        if (score >= 60) return '🟡';
+        return '🔴';
+    };
+    
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'Never';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    };
+    
+    const contentHTML = `
+        <!-- Chatter Analytics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="text-xs text-gray-400 mb-1">Revenue</div>
+                <div class="text-xl font-bold text-white">$${chatter.revenue.toLocaleString()}</div>
+            </div>
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="text-xs text-gray-400 mb-1">Unlock Rate</div>
+                <div class="text-xl font-bold text-white">${chatter.unlockRate}%</div>
+            </div>
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="text-xs text-gray-400 mb-1">Messages</div>
+                <div class="text-xl font-bold text-white">${chatter.messagesSent.toLocaleString()}</div>
+            </div>
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="text-xs text-gray-400 mb-1">Response Time</div>
+                <div class="text-xl font-bold text-white">${chatter.avgResponseTime}m</div>
+            </div>
+        </div>
+        
+        <!-- Scores -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-sm text-gray-400">Grammar</div>
+                    <div class="text-lg">${getScoreBadge(chatter.grammarScore)}</div>
+                </div>
+                <div class="text-2xl font-bold ${getScoreColor(chatter.grammarScore)}">${chatter.grammarScore || 'N/A'}</div>
+            </div>
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-sm text-gray-400">Guidelines</div>
+                    <div class="text-lg">${getScoreBadge(chatter.guidelinesScore)}</div>
+                </div>
+                <div class="text-2xl font-bold ${getScoreColor(chatter.guidelinesScore)}">${chatter.guidelinesScore || 'N/A'}</div>
+            </div>
+            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-sm text-gray-400">Overall</div>
+                    <div class="text-lg">${getScoreBadge(chatter.overallScore)}</div>
+                </div>
+                <div class="text-2xl font-bold ${getScoreColor(chatter.overallScore)}">${chatter.overallScore || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <!-- Last Analysis Report -->
+        ${chatter.lastAnalysis ? `
+        <div class="p-4 bg-gray-800/30 rounded-lg border border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-white flex items-center">
+                    <i class="fas fa-file-alt text-purple-400 mr-2"></i>
+                    Last Analysis Report
+                </h4>
+                <div class="text-xs text-gray-400">${formatDate(chatter.lastAnalysis.timestamp)}</div>
+            </div>
+            
+            <!-- Overall Breakdown -->
+            ${chatter.lastAnalysis.overallBreakdown ? `
+            <div class="mb-4">
+                <h5 class="text-sm font-semibold text-gray-300 mb-2">Overall Summary</h5>
+                <div class="text-sm text-gray-400">
+                    ${chatter.lastAnalysis.overallBreakdown.scoreExplanation || 'No data available'}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Grammar Breakdown -->
+            ${chatter.lastAnalysis.grammarBreakdown ? `
+            <div class="mb-4">
+                <h5 class="text-sm font-semibold text-gray-300 mb-2">Grammar Analysis</h5>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Spelling</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.grammarBreakdown.spellingErrors || 'N/A'}</div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Grammar</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.grammarBreakdown.grammarIssues || 'N/A'}</div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Punctuation</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.grammarBreakdown.punctuationProblems || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Guidelines Breakdown -->
+            ${chatter.lastAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2 ? `
+            <div>
+                <h5 class="text-sm font-semibold text-gray-300 mb-2">Guidelines Analysis</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">General Chatting</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.guidelinesBreakdown.guidelinesBreakdownV2.generalChatting || 'N/A'}</div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Psychology</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.guidelinesBreakdown.guidelinesBreakdownV2.psychology || 'N/A'}</div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Captions</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.guidelinesBreakdown.guidelinesBreakdownV2.captions || 'N/A'}</div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded">
+                        <div class="text-xs text-gray-400 mb-1">Sales</div>
+                        <div class="text-sm text-gray-300">${chatter.lastAnalysis.guidelinesBreakdown.guidelinesBreakdownV2.sales || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+        </div>
+        ` : `
+        <div class="p-8 bg-gray-800/30 rounded-lg border border-gray-700 text-center">
+            <i class="fas fa-inbox text-4xl text-gray-600 mb-3"></i>
+            <div class="text-gray-400">No analysis report available for this chatter yet.</div>
+        </div>
+        `}
+    `;
+    
+    container.innerHTML = contentHTML;
+}
+
+// Team date selector functions
+function setTeamInterval(interval) {
+    currentTeamInterval = interval;
+    currentTeamDateRange = null;
+    
+    document.querySelectorAll('.team-time-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    
+    document.querySelector(`.team-time-btn[data-interval="${interval}"]`).classList.remove('bg-gray-700', 'text-gray-300');
+    document.querySelector(`.team-time-btn[data-interval="${interval}"]`).classList.add('bg-blue-600', 'text-white');
+    
+    loadTeamDashboard();
+}
+
+function toggleTeamCustomDatePicker() {
+    const picker = document.getElementById('teamCustomDatePicker');
+    if (picker) {
+        picker.classList.toggle('hidden');
+    }
+}
+
+function applyTeamCustomDateRange() {
+    const startDate = document.getElementById('teamCustomStartDate').value;
+    const endDate = document.getElementById('teamCustomEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+    
+    currentTeamDateRange = { start: startDate, end: endDate };
+    currentTeamInterval = 'custom';
+    
+    document.querySelectorAll('.team-time-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    
+    document.querySelector('.team-time-btn[data-interval="custom"]').classList.remove('bg-gray-700', 'text-gray-300');
+    document.querySelector('.team-time-btn[data-interval="custom"]').classList.add('bg-blue-600', 'text-white');
+    
+    document.getElementById('teamCustomDatePicker').classList.add('hidden');
+    
+    loadTeamDashboard();
+}
+
+// ==================== END TEAM DASHBOARD FUNCTIONS ====================
 
 // Form handlers
 async function handleCreateUser(event) {

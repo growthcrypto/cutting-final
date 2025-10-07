@@ -760,6 +760,215 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
   }
 });
 
+// Team Dashboard API - Get combined team performance + individual chatter data
+app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { interval = '7d', startDate, endDate } = req.query;
+
+    // Define start and end dates
+    let start, end;
+    if (startDate && endDate) {
+      start = new Date(startDate);
+      end = new Date(endDate);
+    } else {
+      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - days);
+    }
+
+    // Get all chatters
+    const allChatters = await User.find({ role: 'chatter' });
+    const chatterNames = allChatters.map(c => c.chatterName || c.username);
+
+    // Query for chatter performance data
+    let chatterPerformanceQuery = {
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start }
+    };
+    const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
+
+    // Get latest AI analysis for each chatter
+    const aiAnalysisPromises = chatterNames.map(async (name) => {
+      const latestAnalysis = await AIAnalysis.findOne({ chatterName: name })
+        .sort({ timestamp: -1 })
+        .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp');
+      return { chatterName: name, analysis: latestAnalysis };
+    });
+    const chatterAnalyses = await Promise.all(aiAnalysisPromises);
+
+    // Calculate team-wide metrics
+    let teamMetrics = {
+      totalRevenue: 0,
+      ppvsSent: 0,
+      ppvsUnlocked: 0,
+      messagesSent: 0,
+      fansChatted: 0,
+      totalGrammarScore: 0,
+      totalGuidelinesScore: 0,
+      totalOverallScore: 0,
+      responseTimesSum: 0,
+      chatterCount: 0,
+      responseTimeCount: 0,
+      scoreCount: 0
+    };
+
+    // Aggregate chatter performance
+    chatterPerformance.forEach(data => {
+      teamMetrics.totalRevenue += (data.ppvRevenue || 0) + (data.tipRevenue || 0);
+      teamMetrics.ppvsSent += data.ppvsSent || 0;
+      teamMetrics.ppvsUnlocked += data.ppvsUnlocked || 0;
+      teamMetrics.messagesSent += data.messagesSent || 0;
+      teamMetrics.fansChatted += data.fansChattedWith || 0;
+      
+      if (data.avgResponseTime && data.avgResponseTime > 0) {
+        teamMetrics.responseTimesSum += data.avgResponseTime;
+        teamMetrics.responseTimeCount++;
+      }
+    });
+
+    // Aggregate scores from AI analyses
+    chatterAnalyses.forEach(({ analysis }) => {
+      if (analysis) {
+        if (analysis.grammarScore != null) {
+          teamMetrics.totalGrammarScore += analysis.grammarScore;
+          teamMetrics.scoreCount++;
+        }
+        if (analysis.guidelinesScore != null) {
+          teamMetrics.totalGuidelinesScore += analysis.guidelinesScore;
+        }
+        if (analysis.overallScore != null) {
+          teamMetrics.totalOverallScore += analysis.overallScore;
+        }
+      }
+    });
+
+    // Calculate averages
+    const unlockRate = teamMetrics.ppvsSent > 0 
+      ? Math.round((teamMetrics.ppvsUnlocked / teamMetrics.ppvsSent) * 100 * 10) / 10
+      : 0;
+    
+    const avgResponseTime = teamMetrics.responseTimeCount > 0
+      ? Math.round((teamMetrics.responseTimesSum / teamMetrics.responseTimeCount) * 10) / 10
+      : 0;
+    
+    const avgGrammarScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalGrammarScore / teamMetrics.scoreCount)
+      : 0;
+    
+    const avgGuidelinesScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalGuidelinesScore / teamMetrics.scoreCount)
+      : 0;
+    
+    const avgOverallScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalOverallScore / teamMetrics.scoreCount)
+      : 0;
+    
+    const avgPPVPrice = teamMetrics.ppvsUnlocked > 0
+      ? Math.round((teamMetrics.totalRevenue / teamMetrics.ppvsUnlocked) * 100) / 100
+      : 0;
+    
+    const revenuePerMessage = teamMetrics.messagesSent > 0
+      ? Math.round((teamMetrics.totalRevenue / teamMetrics.messagesSent) * 100) / 100
+      : 0;
+
+    // Find top performer
+    const chatterRevenues = chatterPerformance.reduce((acc, data) => {
+      const revenue = (data.ppvRevenue || 0) + (data.tipRevenue || 0);
+      if (!acc[data.chatterName] || acc[data.chatterName] < revenue) {
+        acc[data.chatterName] = revenue;
+      }
+      return acc;
+    }, {});
+    
+    const topPerformer = Object.entries(chatterRevenues).sort((a, b) => b[1] - a[1])[0];
+
+    // Build individual chatter data
+    const chatterData = chatterNames.map(name => {
+      const perfData = chatterPerformance.filter(p => p.chatterName === name);
+      const analysisData = chatterAnalyses.find(a => a.chatterName === name)?.analysis;
+      
+      const chatterRevenue = perfData.reduce((sum, p) => sum + (p.ppvRevenue || 0) + (p.tipRevenue || 0), 0);
+      const chatterPPVsSent = perfData.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+      const chatterPPVsUnlocked = perfData.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
+      const chatterMessages = perfData.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+      const chatterFans = perfData.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+      
+      const responseTimes = perfData.filter(p => p.avgResponseTime && p.avgResponseTime > 0).map(p => p.avgResponseTime);
+      const chatterAvgResponseTime = responseTimes.length > 0
+        ? Math.round((responseTimes.reduce((sum, rt) => sum + rt, 0) / responseTimes.length) * 10) / 10
+        : 0;
+      
+      const chatterUnlockRate = chatterPPVsSent > 0
+        ? Math.round((chatterPPVsUnlocked / chatterPPVsSent) * 100 * 10) / 10
+        : 0;
+      
+      const chatterRevenuePerMessage = chatterMessages > 0
+        ? Math.round((chatterRevenue / chatterMessages) * 100) / 100
+        : 0;
+
+      return {
+        chatterName: name,
+        revenue: Math.round(chatterRevenue),
+        ppvsSent: chatterPPVsSent,
+        ppvsUnlocked: chatterPPVsUnlocked,
+        unlockRate: chatterUnlockRate,
+        messagesSent: chatterMessages,
+        fansChatted: chatterFans,
+        avgResponseTime: chatterAvgResponseTime,
+        revenuePerMessage: chatterRevenuePerMessage,
+        grammarScore: analysisData?.grammarScore || null,
+        guidelinesScore: analysisData?.guidelinesScore || null,
+        overallScore: analysisData?.overallScore || null,
+        lastAnalysis: analysisData ? {
+          timestamp: analysisData.timestamp,
+          grammarBreakdown: analysisData.grammarBreakdown || null,
+          guidelinesBreakdown: analysisData.guidelinesBreakdown || null,
+          overallBreakdown: analysisData.overallBreakdown || null
+        } : null
+      };
+    }).sort((a, b) => b.revenue - a.revenue); // Sort by revenue descending
+
+    const response = {
+      teamMetrics: {
+        totalRevenue: Math.round(teamMetrics.totalRevenue),
+        ppvsSent: teamMetrics.ppvsSent,
+        ppvsUnlocked: teamMetrics.ppvsUnlocked,
+        unlockRate,
+        messagesSent: teamMetrics.messagesSent,
+        fansChatted: teamMetrics.fansChatted,
+        avgResponseTime,
+        avgGrammarScore,
+        avgGuidelinesScore,
+        avgOverallScore,
+        avgPPVPrice,
+        revenuePerMessage,
+        topPerformer: topPerformer ? {
+          name: topPerformer[0],
+          revenue: Math.round(topPerformer[1])
+        } : null,
+        chatterCount: chatterNames.length
+      },
+      chatters: chatterData,
+      dateRange: {
+        start,
+        end,
+        interval
+      }
+    };
+
+    console.log('Team dashboard response:', {
+      teamMetrics: response.teamMetrics,
+      chatterCount: response.chatters.length
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('Team dashboard error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Submit OF Account data
 app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
