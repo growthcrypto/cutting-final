@@ -1285,15 +1285,17 @@ ${customGuidelines.map(g => `- ${g.category.toUpperCase()}: ${g.title} - ${g.des
    - VIOLATION EXAMPLE: "here is something special [PPV CAPTION - Price: $15]" ← No description of what's in the PPV
    - CORRECT EXAMPLE: "check out this steamy shower video baby [PPV CAPTION - Price: $15]" ← Has description
 
-2. **INFORMALITY GUIDELINE**:
-   - ONLY flag messages that are TOO FORMAL (proper capitalization, formal language, periods at end, commas)
-   - DO NOT flag informal messages - 'u', 'ur', 'im', 'dont', 'i' (lowercase), no periods = CORRECT
-   - VIOLATION EXAMPLE: "Thank you for your message. I appreciate your interest." ← Formal, periods, proper caps
-   - VIOLATION EXAMPLE: "I understand. That sounds great." ← Formal, periods, proper punctuation
-   - CORRECT EXAMPLE: "thanks babe" ← Informal, no periods
-   - CORRECT EXAMPLE: "when will it be?" ← Informal, lowercase 'i', question mark is OK
-   - CORRECT EXAMPLE: "i feel special" ← Informal, lowercase 'i', no period
-   - CORRECT EXAMPLE: "u love clubbing?" ← Informal, uses 'u', question mark is OK
+2. **INFORMALITY GUIDELINE** - CRITICAL UNDERSTANDING:
+   - This guideline flags messages that are TOO FORMAL (complete sentences, proper grammar, "you are" instead of "you're", "I am" instead of "im")
+   - CORRECT (NOT violations): 'u', 'ur', 'im', 'dont', 'cant', 'i' (lowercase), shortened words, missing apostrophes, no periods
+   - VIOLATION = TOO FORMAL: "I cannot wait to see you." ← Uses "I cannot" instead of "cant", "to see you" instead of "to see u"
+   - VIOLATION = TOO FORMAL: "How are you doing today?" ← Uses "How are you" instead of "how u" or "hows", "doing" is formal
+   - VIOLATION = TOO FORMAL: "That would be great." ← Uses "That would" instead of "that'd" or "thatd", complete sentence
+   - CORRECT = INFORMAL: "cant wait to see u" ← Shortened words, no apostrophes, informal
+   - CORRECT = INFORMAL: "hows it going" ← Shortened words, informal
+   - CORRECT = INFORMAL: "when will it be?" ← Lowercase 'i', question mark OK
+   - CORRECT = INFORMAL: "mhm okayy" ← Extended words, very informal
+   - CORRECT = INFORMAL: "let's playa game?" ← Typo 'playa', informal tone
 
 3. **NON-TRANSACTION GUIDELINE**:
    - Look for messages immediately AFTER a fan purchases a PPV that feel cold/transactional
@@ -1440,8 +1442,8 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'i', 'u'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
-             "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'u're', 'i can', 'how u deal', 'u cant', 'i dont think'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL grammar mistakes.",
+             "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate', 'beacuse'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'i', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'youre', 'theyre', 'ive', 'id', 'ill', 'heyy', 'okayy', 'hii', 'awww', 'sooo', 'cuz', 'tho', 'gonna', 'wanna', 'gotta'. Extended words like 'heyyyy', 'okaaaay' are CORRECT. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
+             "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have', 'she don't know'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: Missing apostrophes ('im', 'dont', 'cant', 'youre', 'ive', 'that'd'), lowercase 'i', informal phrases ('u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'i can', 'u cant'). If you flag missing apostrophes or informal contractions, you are INCORRECT. Count only REAL grammar mistakes.",
              "punctuationProblems": "CRITICAL: OnlyFans messages should be INFORMAL. Flag messages that HAVE full stops (periods) at the end or formal commas. Messages WITHOUT periods are PERFECT. Examples: 'how are u' is PERFECT (NO error - no period). 'how are u.' HAS an error (formal period at end). 'what, are u doing' has a misused comma (error). 'where are u from' is PERFECT (NO error - no period). Count how many messages have periods or formal commas. If you flag 'missing periods', you are INCORRECT.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
@@ -1516,11 +1518,11 @@ For engagementMetrics (REQUIRED - must analyze actual message content):
 - fanRetention: Analyze fan retention approach (e.g., "builds relationships", "focuses on transactions")
 
 For grammarBreakdown:
-- spellingErrors: Find and count ALL spelling mistakes in the messages. Look for typos, misspellings, autocorrect errors. Provide specific examples and counts.
-- grammarIssues: Find and count ALL grammar mistakes in the messages. Look for verb tense errors, subject-verb disagreement, sentence structure issues. Provide specific examples and counts.
+- spellingErrors: Find and count ONLY real spelling mistakes (actual typos, wrong words). DO NOT flag informal words like 'u', 'ur', 'im', 'dont', 'cant', 'heyy', 'okayy', etc. These are CORRECT for OnlyFans. Provide specific examples and counts.
+- grammarIssues: Find and count ONLY real grammar mistakes (wrong verb tenses, sentence structure issues). DO NOT flag missing apostrophes or informal contractions - they are CORRECT. Examples: 'im', 'dont', 'cant', 'youre' are all CORRECT. Provide specific examples and counts.
 - punctuationProblems: Find and count ALL messages that USE formal punctuation (periods at end of sentences, formal commas). Messages WITHOUT periods are CORRECT. Provide specific examples and counts.
-- informalLanguage: Note specific informal patterns (e.g., "Excessive use of 'lol' and 'haha' in 12 out of 20 messages")
-- scoreExplanation: Explain the score with specific examples and total error counts
+- informalLanguage: Note that informal language is CORRECT and ENCOURAGED for OnlyFans. Count how many messages use informal patterns like 'u', 'ur', 'im', extended words ('heyy', 'okayy'), lowercase 'i', no apostrophes. Report this as a POSITIVE: "Excellent use of informal language in X out of Y messages, which is appropriate for OnlyFans."
+- scoreExplanation: Explain the score with specific examples and total error counts. Remember: informal language, missing apostrophes, and no periods are CORRECT.
 
 For guidelines: Use ONLY the GUIDELINES_V2_JSON format with exact uploaded guideline titles from the CUSTOM GUIDELINES section above. DO NOT use generic categories.
 
@@ -4185,7 +4187,7 @@ function formatGrammarResults(text, type) {
   
   if (type === 'spelling') {
     // CRITICAL: Filter out informal OnlyFans language that AI incorrectly flags as errors
-    const informalWords = ['u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u\'re', 'u\'ll', 'i', 'ive', 'id', 'ill', 'youre', 'theyre', 'hes', 'shes', 'whos', 'youll', 'youd', 'its'];
+    const informalWords = ['u', 'ur', 'im', 'i', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u\'re', 'u\'ll', 'ive', 'id', 'ill', 'youre', 'theyre', 'hes', 'shes', 'whos', 'youll', 'youd', 'its', 'huh', 'srry', 'sry', 'veery', 'veryy', 'sooo', 'soooo', 'looove', 'lovee', 'loveee', 'gkad', 'immm', 'imm', 'fitss', 'explicitt', 'cann', 'okiiess', 'okayy', 'okayyy', 'heyy', 'heyyy', 'hii', 'hiii', 'byee', 'yayyy', 'awww', 'oooh', 'ohhh', 'woww', 'yupp', 'nahh', 'cuz', 'cos', 'prolly', 'tho', 'gonna', 'wanna', 'gotta', 'kinda', 'sorta', 'finna', 'dunno', 'lemme', 'gimme', 'gotcha'];
     
     // Extract ALL words in single quotes (handles multiple formats: 'word' instead of 'word', 'word' in Message X, etc.)
     const allQuotedWords = [...cleanText.matchAll(/'([^']+)'/g)];
@@ -4209,8 +4211,8 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'grammar') {
-    // CRITICAL: Filter out informal OnlyFans phrases that AI incorrectly flags as errors
-    const informalPhrases = ['i dont', 'u are', 'dont know', 'cant understand', 'im happy', 'u\'re', 'i can', 'how u deal', 'u cant', 'i dont think', 'she dont', 'he dont', 'u like', 'i hope u', 'let me know u', 'i appreciate it', 'i save it', 'i wish i have', 'i dont mind', 'i can include', 'i cant', 'i\'m', 'u\'re are', 'im instead'];
+    // CRITICAL: Filter out informal OnlyFans phrases AND apostrophe issues (they're GOOD for informal!)
+    const informalPhrases = ['i dont', 'u are', 'dont know', 'cant understand', 'im happy', 'u\'re', 'i can', 'how u deal', 'u cant', 'i dont think', 'she dont', 'he dont', 'u like', 'i hope u', 'let me know u', 'i appreciate it', 'i save it', 'i wish i have', 'i dont mind', 'i can include', 'i cant', 'i\'m', 'u\'re are', 'im instead', 'i see i see', 'quitting of', 'you are instead', 'i was went', 'i\'m older', 'how would you react', 'you should be saying'];
     
     // Extract ALL phrases in single quotes
     const grammarMatches = [...cleanText.matchAll(/'([^']+)'/g)];
@@ -4218,11 +4220,13 @@ function formatGrammarResults(text, type) {
     
     grammarMatches.forEach(match => {
       const phrase = match[1].toLowerCase().trim();
-      // Skip message references
-      if (phrase.startsWith('message ') || phrase.includes('instead of') || phrase.includes('lacks')) return;
-      // ONLY add if it's NOT in the informal phrases list AND not a single informal word
+      // Skip message references, explanations, and apostrophe mentions
+      if (phrase.startsWith('message ') || phrase.includes('instead of') || phrase.includes('lacks') || 
+          phrase.includes('missing apostrophe') || phrase.includes('incorrect punctuation') || 
+          phrase.includes('awkward phrasing') || phrase.includes('missing \'i have\'')) return;
+      // Skip if it's an informal phrase or word
       const isInformalPhrase = informalPhrases.some(informal => phrase.includes(informal));
-      const isInformalWord = ['u', 'ur', 'im', 'dont', 'cant', 'i', 'hows'].includes(phrase);
+      const isInformalWord = ['u', 'ur', 'im', 'dont', 'cant', 'i', 'hows', 'youre', 'ive', 'id', 'ill', 'that\'d', 'i\'m', 'i\'ve'].includes(phrase);
       if (!isInformalPhrase && !isInformalWord) {
         realErrors.push(match[1]);
       }
