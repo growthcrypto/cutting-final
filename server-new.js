@@ -2765,7 +2765,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               // HYBRID APPROACH: Use AI for complex analysis, not fake counting
               console.log(`🤖 ${guideline.title} will be analyzed by AI`);
               // Set placeholder that will be overridden by AI analysis
-              reliableGuidelinesAnalysis[category].details.push({
+              reliableGuidelinesAnalysis[categoryKey].details.push({
                 title: guideline.title,
                 count: 0, // Will be overridden by AI
                 description: `AI will analyze: ${guideline.title}`,
@@ -3638,7 +3638,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Fallback to basic analysis if AI fails
       try {
         if (analysisType === 'individual') {
-          const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval, totalMessages);
+          const deterministic = generateDeterministicIndividualAnalysis(analyticsData, interval, analyticsData.messagesSent || 0);
           // Add raw metrics
           deterministic.ppvsSent = analyticsData.ppvsSent;
           deterministic.ppvsUnlocked = analyticsData.ppvsUnlocked;
