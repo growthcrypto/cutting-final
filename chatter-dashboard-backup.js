@@ -7,11 +7,85 @@ let customDateRange = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Content Loaded - Starting app initialization...');
     
-    checkAuthStatus();
-    setupEventListeners();
-    setDefaultDate();
-    // loadEmployees() will be called after authentication in checkAuthStatus()
+    // EMERGENCY FALLBACK: Only force auth screen if no authentication is found
+    setTimeout(() => {
+        const token = localStorage.getItem('authToken');
+        const user = localStorage.getItem('currentUser');
+        
+        if (!token || !user) {
+            console.log('🔥 EMERGENCY: No auth found, forcing auth screen');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const authScreen = document.getElementById('authScreen');
+            const mainApp = document.getElementById('mainApp');
+            
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                console.log('✅ Loading screen hidden');
+            }
+            if (authScreen) {
+                authScreen.classList.remove('hidden');
+                console.log('✅ Auth screen shown');
+            }
+            if (mainApp) {
+                mainApp.classList.add('hidden');
+                console.log('✅ Main app hidden');
+            }
+        } else {
+            console.log('✅ Auth found, letting normal flow continue');
+        }
+    }, 100);
+    
+    try {
+        checkAuthStatus();
+        setupEventListeners();
+        setDefaultDate();
+        console.log('✅ App initialization completed successfully');
+    } catch (error) {
+        console.error('❌ App initialization failed:', error);
+        // Force hide loading screen on error
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+        }
+        // Show auth screen as fallback
+        showAuthScreen();
+    }
+
+    // Watchdog: if loading screen is still visible after 2s, force-show auth screen
+    setTimeout(() => {
+        try {
+            const ls = document.getElementById('loadingScreen');
+            const auth = document.getElementById('authScreen');
+            const main = document.getElementById('mainApp');
+            if (ls && !ls.classList.contains('hidden')) {
+                console.warn('⏱️ Watchdog: Loading screen still visible after 2s. Forcing auth screen.');
+                ls.classList.add('hidden');
+                if (auth) auth.classList.remove('hidden');
+                if (main) main.classList.add('hidden');
+            }
+        } catch (_) {}
+    }, 2000);
+});
+
+// Global error handlers to prevent perma-loading
+window.addEventListener('error', (e) => {
+    try {
+        console.error('🌋 Global error:', e?.error || e?.message || e);
+        const ls = document.getElementById('loadingScreen');
+        if (ls) ls.classList.add('hidden');
+        showAuthScreen();
+    } catch (_) {}
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    try {
+        console.error('🌋 Unhandled promise rejection:', e?.reason || e);
+        const ls = document.getElementById('loadingScreen');
+        if (ls) ls.classList.add('hidden');
+        showAuthScreen();
+    } catch (_) {}
 });
 
 // Load employees from database
@@ -98,16 +172,27 @@ function updateEmployeeDropdown(selectId, employees) {
 }
 
 function checkAuthStatus() {
+    console.log('🔐 Checking authentication status...');
     const token = localStorage.getItem('authToken');
     const user = localStorage.getItem('currentUser');
 
+    console.log('Token exists:', !!token);
+    console.log('User exists:', !!user);
+
     if (token && user) {
-        authToken = token;
-        currentUser = JSON.parse(user);
-        showMainApp();
-        // Load employees after authentication
-        loadEmployees();
+        try {
+            authToken = token;
+            currentUser = JSON.parse(user);
+            console.log('✅ User authenticated:', currentUser.username);
+            showMainApp();
+            // Load employees after authentication
+            loadEmployees();
+        } catch (error) {
+            console.error('❌ Error parsing user data:', error);
+            showAuthScreen();
+        }
     } else {
+        console.log('❌ No authentication found, showing auth screen');
         showAuthScreen();
     }
 }
@@ -148,15 +233,27 @@ function switchBreakdownTab(tabName) {
 }
 
 function showAuthScreen() {
-    document.getElementById('authScreen').classList.remove('hidden');
-    document.getElementById('mainApp').classList.add('hidden');
-    document.getElementById('loadingScreen').classList.add('hidden');
+    console.log('🔑 Showing authentication screen...');
+    try {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('loadingScreen').classList.add('hidden');
+        console.log('✅ Auth screen displayed successfully');
+    } catch (error) {
+        console.error('❌ Error showing auth screen:', error);
+    }
 }
 
 function showMainApp() {
-    document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    document.getElementById('loadingScreen').classList.add('hidden');
+    console.log('🏠 Showing main application...');
+    try {
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('loadingScreen').classList.add('hidden');
+        console.log('✅ Main app displayed successfully');
+    } catch (error) {
+        console.error('❌ Error showing main app:', error);
+    }
 
     // Update welcome message
     const welcomeMsg = currentUser.role === 'chatter'
@@ -552,9 +649,6 @@ function createSection(sectionId) {
         case 'daily-report':
             section.innerHTML = createDailyReportSection();
             break;
-        case 'my-performance':
-            section.innerHTML = createMyPerformanceSection();
-            break;
         case 'team-comparison':
             section.innerHTML = createTeamComparisonSection();
             break;
@@ -586,14 +680,16 @@ function loadSectionData(sectionId) {
             loadChattersForInfloww();
             setDefaultDateRanges();
             break;
-        case 'my-performance':
-            loadMyPerformanceData();
+        case 'chatter-dashboard':
+            // Defer to ensure DOM is mounted
+            setTimeout(() => {
+                loadChatterDashboardData();
+            }, 0);
             break;
         default:
             break;
     }
 }
-
 async function loadChattersForInfloww() {
     try {
         const response = await fetch('/api/users', {
@@ -978,7 +1074,9 @@ async function loadDashboardData() {
         console.log('Intelligent metrics calculated:', intelligentMetrics);
         
         // Force clear specific metrics if no real data
-        if (data.totalRevenue === 0 && data.ppvsSent === 0) {
+        const hasRevenue = (data.totalRevenue || data.analytics?.totalRevenue || data.netRevenue || 0) > 0;
+        const hasPPVs = (data.ppvsSent || data.analytics?.ppvsSent || 0) > 0;
+        if (!hasRevenue && !hasPPVs) {
             forceClearSpecificMetrics();
         }
         
@@ -1022,18 +1120,27 @@ async function loadDashboardData() {
 
 // Calculate intelligent metrics not available in Infloww
 function calculateIntelligentMetrics(analytics) {
-    const clickToSubRate = analytics.profileClicks > 0 ? (analytics.newSubs / analytics.profileClicks * 100) : 0;
-    const ppvUnlockRate = analytics.ppvsSent > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
-    const revenuePerSub = analytics.totalSubs > 0 ? (analytics.totalRevenue / analytics.totalSubs) : 0;
+    // Get data with fallbacks
+    const profileClicks = analytics.profileClicks || analytics.analytics?.profileClicks || 0;
+    const newSubs = analytics.newSubs || analytics.analytics?.newSubs || 0;
+    const ppvsSent = analytics.ppvsSent || analytics.analytics?.ppvsSent || 0;
+    const ppvsUnlocked = analytics.ppvsUnlocked || analytics.analytics?.ppvsUnlocked || 0;
+    const totalSubs = analytics.totalSubs || analytics.analytics?.totalSubs || 0;
+    const totalRevenue = analytics.totalRevenue || analytics.analytics?.totalRevenue || analytics.netRevenue || 0;
+    const messagesSent = analytics.messagesSent || analytics.analytics?.messagesSent || 0;
+    
+    const clickToSubRate = profileClicks > 0 ? (newSubs / profileClicks * 100) : 0;
+    const ppvUnlockRate = ppvsSent > 0 ? (ppvsUnlocked / ppvsSent * 100) : 0;
+    const revenuePerSub = totalSubs > 0 ? (totalRevenue / totalSubs) : 0;
     // Calculate revenue per hour based on actual time period
     const timePeriodHours = currentTimeInterval === '24h' ? 24 : 
                            currentTimeInterval === '7d' ? 24 * 7 : 
                            currentTimeInterval === '30d' ? 24 * 30 : 24 * 7; // Default to 7 days
-    const revenuePerHour = analytics.totalRevenue / timePeriodHours;
-    const messagesPerPPV = analytics.ppvsSent > 0 ? (analytics.messagesSent / analytics.ppvsSent) : 0;
+    const revenuePerHour = totalRevenue / timePeriodHours;
+    const messagesPerPPV = ppvsSent > 0 ? (messagesSent / ppvsSent) : 0;
     
     // Team performance calculations - empty until real data uploaded
-    const topPerformer = analytics.totalRevenue > 0 ? 'Calculating from data...' : 'No data uploaded';
+    const topPerformer = totalRevenue > 0 ? 'Calculating from data...' : 'No data uploaded';
     const performanceGap = 0; // Will be calculated from real chatter data
     const teamConsistency = 0; // Will be calculated from real data
     const synergyScore = 0; // Will be calculated from real team data
@@ -1222,7 +1329,6 @@ function setAnalyticsInterval(interval) {
     // Reload analytics data
     loadAnalyticsData();
 }
-
 function showCustomDatePicker(context) {
     // Create a proper custom date picker modal
     const modal = document.createElement('div');
@@ -1736,7 +1842,6 @@ async function runAgencyAnalysis() {
         `;
     }
 }
-
 // Load Performance Trend Chart
 async function loadPerformanceTrends(chatterName) {
     try {
@@ -2243,7 +2348,6 @@ function generateComprehensiveChatterAnalysis(chatterName) {
         ]
     };
 }
-
 // Render Agency Analysis Results
 function renderAgencyAnalysisResults(data) {
     const container = document.getElementById('agencyAnalysisResults');
@@ -2875,7 +2979,6 @@ function loadLiveAIInsights(analytics, intelligent) {
         renderInsights(insights, container);
     });
 }
-
 // Load action opportunities  
 function loadActionOpportunities(analytics, intelligent) {
     const container = document.getElementById('actionOpportunities');
@@ -3075,36 +3178,44 @@ function updateDashboardMetrics(data) {
     if (revenueEl) {
         const changeHTML = renderChangeIndicator(changes.netRevenue);
         console.log('Revenue change HTML:', changeHTML);
-        revenueEl.innerHTML = `$${data.netRevenue.toLocaleString()}${changeHTML}`;
+        const revenue = data.netRevenue || data.analytics?.totalRevenue || data.totalRevenue || 0;
+        revenueEl.innerHTML = `$${revenue.toLocaleString()}${changeHTML}`;
     }
     
     const subsEl = document.getElementById('totalSubs');
     if (subsEl) {
-        subsEl.innerHTML = `${data.totalSubs.toLocaleString()}${renderChangeIndicator(changes.totalSubs)}`;
+        const subs = data.totalSubs || data.analytics?.totalSubs || 0;
+        subsEl.innerHTML = `${subs.toLocaleString()}${renderChangeIndicator(changes.totalSubs)}`;
     }
     
     const clicksEl = document.getElementById('profileClicks');
     if (clicksEl) {
-        clicksEl.innerHTML = `${data.profileClicks.toLocaleString()}${renderChangeIndicator(changes.profileClicks)}`;
+        const clicks = data.profileClicks || data.analytics?.profileClicks || 0;
+        clicksEl.innerHTML = `${clicks.toLocaleString()}${renderChangeIndicator(changes.profileClicks)}`;
     }
     
     const messagesEl = document.getElementById('messagesSent');
     if (messagesEl) {
-        messagesEl.innerHTML = `${data.messagesSent.toLocaleString()}${renderChangeIndicator(changes.messagesSent)}`;
+        const messages = data.messagesSent || data.analytics?.messagesSent || 0;
+        messagesEl.innerHTML = `${messages.toLocaleString()}${renderChangeIndicator(changes.messagesSent)}`;
     }
     
     const ppvsEl = document.getElementById('ppvsSent');
     if (ppvsEl) {
-        ppvsEl.innerHTML = `${data.ppvsSent.toLocaleString()}${renderChangeIndicator(changes.ppvsSent)}`;
+        const ppvs = data.ppvsSent || data.analytics?.ppvsSent || 0;
+        ppvsEl.innerHTML = `${ppvs.toLocaleString()}${renderChangeIndicator(changes.ppvsSent)}`;
     }
     
     const responseEl = document.getElementById('avgResponseTime');
     if (responseEl) {
-        responseEl.innerHTML = `${data.avgResponseTime}m${renderChangeIndicator(changes.avgResponseTime, true)}`; // reversed colors
+        const responseTime = data.avgResponseTime || data.analytics?.avgResponseTime || 0;
+        responseEl.innerHTML = `${responseTime}m${renderChangeIndicator(changes.avgResponseTime, true)}`; // reversed colors
     }
 
     // Calculate unlock rate
-    const unlockRate = data.ppvsSent > 0 ? (data.ppvsUnlocked / data.ppvsSent * 100).toFixed(1) : '0';
+    const ppvsSent = data.ppvsSent || data.analytics?.ppvsSent || 0;
+    const ppvsUnlocked = data.ppvsUnlocked || data.analytics?.ppvsUnlocked || 0;
+    const unlockRate = ppvsSent > 0 ? (ppvsUnlocked / ppvsSent * 100).toFixed(1) : '0';
     const unlockRateEl = document.getElementById('unlockRate');
     if (unlockRateEl) {
         unlockRateEl.innerHTML = `${unlockRate}% unlock rate${renderChangeIndicator(changes.unlockRate)}`;
@@ -3423,7 +3534,6 @@ function loadAIInsightsChart() {
         }
     });
 }
-
 // Section creation functions
 function createAnalyticsSection() {
     return `
@@ -4044,7 +4154,6 @@ function createDataUploadSection() {
         </div>
     `;
 }
-
 function createGuidelinesSection() {
     return `
         <div class="mb-8">
@@ -4183,35 +4292,410 @@ function createSettingsSection() {
 
 function createChatterDashboardSection() {
     return `
+        <!-- Header Section -->
         <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">My Dashboard</h2>
-            <p class="text-gray-400">Your personal performance overview</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="glass-card rounded-xl p-6 metric-card">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                        <i class="fas fa-comments text-xl text-white"></i>
-                    </div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Team Dashboard</h2>
+                    <p class="text-gray-400 text-lg">Comprehensive team analytics with individual chatter performance insights</p>
+                </div>
+                <div class="flex items-center space-x-4">
                     <div class="text-right">
-                        <div class="text-2xl font-bold" id="chatterMessages">156</div>
-                        <div class="text-xs text-gray-400">Messages Sent</div>
+                        <div class="text-sm text-gray-400">Last Updated</div>
+                        <div class="text-sm font-medium text-green-400" id="lastUpdated">Just now</div>
                     </div>
+                    <button onclick="loadChatterDashboardData()" class="premium-button text-white px-4 py-2 rounded-lg text-sm">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
                 </div>
             </div>
-            <div class="glass-card rounded-xl p-6 metric-card">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 rounded-xl gradient-success flex items-center justify-center">
-                        <i class="fas fa-dollar-sign text-xl text-white"></i>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-bold" id="chatterRevenue">$1,234</div>
-                        <div class="text-xs text-gray-400">Revenue Generated</div>
-                    </div>
+        </div>
+
+        <!-- Team Metrics Grid -->
+        <div class="mb-12">
+            <div class="glass-card rounded-xl p-8 border border-gray-700/50">
+                <h3 class="text-2xl font-semibold mb-6 flex items-center">
+                    <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
+                    Team Performance Overview
+                </h3>
+                <div id="teamMetricsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6"></div>
+            </div>
+        </div>
+
+        <!-- Visual Separator -->
+        <div class="flex items-center justify-center mb-12">
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
+            <div class="mx-6 px-4 py-2 bg-gray-800 rounded-full border border-gray-600">
+                <span class="text-sm font-medium text-gray-300">Individual Performance</span>
+            </div>
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
+        </div>
+
+        <!-- Individual Chatter Performance -->
+        <div class="mb-8">
+            <div class="glass-card rounded-xl p-8 border border-gray-700/50">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-semibold flex items-center">
+                        <i class="fas fa-users text-purple-400 mr-3"></i>
+                        Individual Chatter Performance
+                    </h3>
+                    <div id="chatterTabsMeta" class="text-sm text-gray-400"></div>
                 </div>
+                <div id="chatterTabsContainer" class="space-y-6"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-rocket text-orange-400 mr-2"></i>
+                Quick Actions
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="showSection('daily-report')" class="flex items-center p-4 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all duration-300 hover:scale-105">
+                    <i class="fas fa-plus text-white text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="text-white font-medium">Submit Daily Report</div>
+                        <div class="text-blue-200 text-sm">Upload your performance data</div>
+                    </div>
+                </button>
+                <button onclick="showSection('team-comparison')" class="flex items-center p-4 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all duration-300 hover:scale-105">
+                    <i class="fas fa-users text-white text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="text-white font-medium">Team Comparison</div>
+                        <div class="text-purple-200 text-sm">Compare team performance</div>
+                    </div>
+                </button>
+                <button onclick="showSection('data-upload')" class="flex items-center p-4 bg-gradient-to-r from-green-600 to-green-700 rounded-xl hover:from-green-500 hover:to-green-600 transition-all duration-300 hover:scale-105">
+                    <i class="fas fa-upload text-white text-xl mr-3"></i>
+                    <div class="text-left">
+                        <div class="text-white font-medium">Upload Data</div>
+                        <div class="text-green-200 text-sm">Import analytics data</div>
+                    </div>
+                </button>
             </div>
         </div>
     `;
+}
+
+async function loadChatterDashboardData() {
+    try {
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            console.error('No auth token found for chatter dashboard');
+            return;
+        }
+        
+        const interval = typeof currentTimeInterval === 'string' ? currentTimeInterval : '7d';
+        const response = await fetch(`/api/analytics/dashboard?interval=${interval}&_t=${Date.now()}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Cache-Control': 'no-cache'
+            }
+        });
+        if (!response.ok) throw new Error('Failed to load dashboard');
+        const data = await response.json();
+        console.log('=== CHATTER DASHBOARD DEBUG ===');
+        console.log('Full API response:', data);
+        console.log('Analytics object:', data.analytics);
+        console.log('ByChatter array:', data.byChatter);
+        console.log('ByChatter length:', data.byChatter?.length);
+        console.log('ByChatter type:', typeof data.byChatter);
+        console.log('Is byChatter array?', Array.isArray(data.byChatter));
+        if (data.byChatter && data.byChatter.length > 0) {
+            console.log('First chatter data:', data.byChatter[0]);
+        } else {
+            console.log('❌ NO CHATTER DATA FOUND - This means no ChatterPerformance records exist in database');
+        }
+        renderChatterDashboard(data);
+        
+        // Update last updated timestamp
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        if (lastUpdatedEl) {
+            lastUpdatedEl.textContent = new Date().toLocaleTimeString();
+        }
+    } catch (e) {
+        console.error('Error loading chatter dashboard:', e);
+    }
+}
+
+function renderChatterDashboard(payload) {
+    const analytics = payload.analytics || payload || {};
+    const byChatter = Array.isArray(payload.byChatter) ? payload.byChatter : [];
+    const teamQuality = payload.teamQualityScore;
+
+    const unlockRate = analytics.ppvsSent > 0 ? Math.round((analytics.ppvsUnlocked / analytics.ppvsSent) * 100) : 0;
+    
+    // Get team revenue with fallbacks
+    const teamRevenue = analytics.totalRevenue || analytics.netRevenue || 0;
+    
+    // Calculate additional team metrics
+    const totalMessages = analytics.messagesSent || 0;
+    const totalFans = analytics.fansChatted || 0;
+    const avgPPVPrice = analytics.avgPPVPrice || 0;
+    const conversionRate = analytics.conversionRate || 0;
+    const totalSubs = analytics.totalSubs || 0;
+    const newSubs = analytics.newSubs || 0;
+    const profileClicks = analytics.profileClicks || 0;
+    const recurringRevenue = analytics.recurringRevenue || 0;
+    
+    // Calculate derived metrics
+    const clickToSubRate = profileClicks > 0 ? ((newSubs / profileClicks) * 100) : 0;
+    const revenuePerSub = totalSubs > 0 ? (teamRevenue / totalSubs) : 0;
+    const revenuePerFan = totalFans > 0 ? (teamRevenue / totalFans) : 0;
+    const messagesPerFan = totalFans > 0 ? (totalMessages / totalFans) : 0;
+    const ppvConversionRate = analytics.ppvsSent > 0 ? ((analytics.ppvsUnlocked / analytics.ppvsSent) * 100) : 0;
+
+    // PURE CHATTER METRICS - using REAL data from API
+    const teamCards = [
+        { id: 'teamTotalRevenue', icon: 'fa-sack-dollar', label: 'Team Revenue', value: `$${teamRevenue.toLocaleString()}`, cls: 'gradient-success', trend: analytics.changes?.totalRevenue ? `${analytics.changes.totalRevenue > 0 ? '+' : ''}${analytics.changes.totalRevenue}%` : 'No data' },
+        { id: 'teamPPVsSent', icon: 'fa-paper-plane', label: 'PPVs Sent', value: `${analytics.ppvsSent||0}`, cls: 'gradient-primary', trend: analytics.changes?.ppvsSent ? `${analytics.changes.ppvsSent > 0 ? '+' : ''}${analytics.changes.ppvsSent}%` : 'No data' },
+        { id: 'teamPPVsUnlocked', icon: 'fa-lock-open', label: 'PPVs Unlocked', value: `${analytics.ppvsUnlocked||0}`, cls: 'gradient-warning', trend: analytics.changes?.ppvsUnlocked ? `${analytics.changes.ppvsUnlocked > 0 ? '+' : ''}${analytics.changes.ppvsUnlocked}%` : 'No data' },
+        { id: 'teamUnlockRate', icon: 'fa-percent', label: 'PPV Conversion Rate', value: `${ppvConversionRate.toFixed(1)}%`, cls: 'gradient-info', trend: analytics.changes?.unlockRate ? `${analytics.changes.unlockRate > 0 ? '+' : ''}${analytics.changes.unlockRate}%` : 'No data' },
+        { id: 'teamAvgResponseTime', icon: 'fa-bolt', label: 'Avg Response Time', value: `${analytics.avgResponseTime||0}m`, cls: 'gradient-danger', trend: analytics.changes?.avgResponseTime ? `${analytics.changes.avgResponseTime > 0 ? '+' : ''}${analytics.changes.avgResponseTime}m` : 'No data' },
+        { id: 'teamMessagesSent', icon: 'fa-comments', label: 'Messages Sent', value: `${totalMessages.toLocaleString()}`, cls: 'gradient-secondary', trend: analytics.changes?.messagesSent ? `${analytics.changes.messagesSent > 0 ? '+' : ''}${analytics.changes.messagesSent}%` : 'No data' },
+        { id: 'teamAvgPPVPrice', icon: 'fa-tag', label: 'Avg PPV Price', value: `$${avgPPVPrice.toFixed(2)}`, cls: 'gradient-orange', trend: 'Current' }
+    ];
+    
+    const teamQualityCard = (typeof teamQuality === 'number')
+        ? `<div class="glass-card rounded-xl p-6 metric-card hover:scale-105 transition-transform">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl gradient-purple flex items-center justify-center">
+                        <i class="fas fa-star text-xl text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-purple-400">${teamQuality}%</div>
+                        <div class="text-xs text-gray-400">Team Message Quality</div>
+                        <div class="text-xs text-green-400 mt-1">AI Analysis</div>
+                    </div>
+                </div>
+            </div>`
+        : '';
+
+    // Render enhanced team metrics
+    const teamMetricsEl = document.getElementById('teamMetricsContainer');
+    if (teamMetricsEl) {
+        teamMetricsEl.innerHTML = teamCards.map(c => `
+            <div class="glass-card rounded-xl p-6 metric-card hover:scale-105 transition-all duration-300 hover:shadow-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl ${c.cls} flex items-center justify-center shadow-lg">
+                        <i class="fas ${c.icon} text-xl text-white"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold" id="${c.id}">${c.value}</div>
+                        <div class="text-xs text-gray-400">${c.label}</div>
+                        <div class="text-xs text-green-400 mt-1">${c.trend}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('') + teamQualityCard;
+    }
+
+    // Enhanced chatter tabs section
+    const tabsMeta = document.getElementById('chatterTabsMeta');
+    if (tabsMeta) {
+        tabsMeta.innerHTML = `
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-400">${byChatter.length} chatters</span>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span class="text-xs text-green-400">All Active</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Use REAL chatter data from API - no mock data
+    let topChatters = byChatter
+        .slice()
+        .sort((a,b) => (b.netSales||0) - (a.netSales||0))
+        .slice(0, 4);
+    
+    console.log('Real chatter data:', topChatters);
+    
+    // TEMPORARY: If no real data, show test data to verify UI works
+    if (topChatters.length === 0) {
+        console.log('⚠️ No real chatter data found - showing test data to verify UI');
+        topChatters = [
+            {
+                chatterName: 'Test Chatter 1',
+                messagesSent: 0,
+                ppvsSent: 0,
+                ppvsUnlocked: 0,
+                unlockRate: 0,
+                avgResponseTime: 0,
+                netSales: 0,
+                qualityScore: null
+            }
+        ];
+    }
+
+    const tabsEl = document.getElementById('chatterTabsContainer');
+    if (!tabsEl) return;
+
+    if (topChatters.length === 0) {
+        tabsEl.innerHTML = `
+            <div class="glass-card rounded-xl p-12 text-center">
+                <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-users text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-300 mb-2">No Chatter Performance Data</h3>
+                <p class="text-gray-400 mb-6">Submit daily reports or upload chatter performance data to see individual analytics</p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="showSection('daily-report')" class="premium-button text-white px-6 py-3 rounded-xl">
+                        <i class="fas fa-plus mr-2"></i>Submit Daily Report
+                    </button>
+                    <button onclick="showSection('data-upload')" class="premium-button text-white px-6 py-3 rounded-xl">
+                        <i class="fas fa-upload mr-2"></i>Upload Data
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Enhanced tab buttons with rankings
+    const tabButtons = topChatters.map((c, idx) => `
+        <button data-tab="c${idx}" class="px-6 py-3 rounded-xl font-medium transition-all duration-300 ${idx===0?'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg':'bg-gray-700 text-gray-200 hover:bg-gray-600'} hover:scale-105">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs bg-white/20 px-2 py-1 rounded-full">#${idx + 1}</span>
+                <span>${c.chatterName}</span>
+                <span class="text-xs opacity-75">$${(c.netSales||0).toLocaleString()}</span>
+            </div>
+        </button>
+    `).join(' ');
+
+    // Enhanced individual chatter panels
+    const panels = topChatters.map((c, idx) => {
+        const revenuePerPPV = c.ppvsSent > 0 ? (c.netSales / c.ppvsSent) : 0;
+        const messagesPerFan = c.fansChatted > 0 ? (c.messagesSent / c.fansChatted) : 0;
+        const responseTimeScore = c.avgResponseTime < 2 ? 'Excellent' : c.avgResponseTime < 5 ? 'Good' : 'Needs Improvement';
+        const unlockRateScore = c.unlockRate > 60 ? 'Excellent' : c.unlockRate > 40 ? 'Good' : 'Needs Improvement';
+        
+        const panel = `
+        <div id="panel-c${idx}" class="${idx===0?'':'hidden'} space-y-8">
+            <!-- Performance Overview -->
+            <div class="glass-card rounded-xl p-8 border border-gray-700/30">
+                <h3 class="text-xl font-semibold mb-6 flex items-center">
+                    <i class="fas fa-chart-line text-blue-400 mr-3"></i>
+                    ${c.chatterName}'s Performance Overview
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    ${metricCard('Messages Sent', c.messagesSent||0, 'fa-comments', 'gradient-primary')}
+                    ${metricCard('PPVs Sent', c.ppvsSent||0, 'fa-paper-plane', 'gradient-info')}
+                    ${metricCard('PPVs Unlocked', c.ppvsUnlocked||0, 'fa-lock-open', 'gradient-warning')}
+                    ${metricCard('Net Sales', `$${(c.netSales||0).toLocaleString()}`, 'fa-sack-dollar', 'gradient-success')}
+                </div>
+            </div>
+            
+            <!-- Efficiency Metrics -->
+            <div class="glass-card rounded-xl p-8 border border-gray-700/30">
+                <h3 class="text-xl font-semibold mb-6 flex items-center">
+                    <i class="fas fa-tachometer-alt text-green-400 mr-3"></i>
+                    Efficiency Metrics
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${metricCard('Unlock Rate', `${c.unlockRate||0}%`, 'fa-percent', 'gradient-success')}
+                    ${metricCard('Avg Response', `${c.avgResponseTime||0}m`, 'fa-bolt', 'gradient-danger')}
+                    ${metricCard('Revenue/PPV', `$${revenuePerPPV.toFixed(2)}`, 'fa-tag', 'gradient-purple')}
+                </div>
+            </div>
+            
+            <!-- Performance Insights -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card rounded-xl p-8 border border-gray-700/30">
+                    <h3 class="text-lg font-semibold mb-6 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                        Performance Insights
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                            <span class="text-sm">Response Time</span>
+                            <span class="text-sm font-medium ${c.avgResponseTime < 2 ? 'text-green-400' : c.avgResponseTime < 5 ? 'text-yellow-400' : 'text-red-400'}">${responseTimeScore}</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                            <span class="text-sm">PPV Performance</span>
+                            <span class="text-sm font-medium ${c.unlockRate > 60 ? 'text-green-400' : c.unlockRate > 40 ? 'text-yellow-400' : 'text-red-400'}">${unlockRateScore}</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+                            <span class="text-sm">Revenue Generation</span>
+                            <span class="text-sm font-medium text-green-400">$${(c.netSales||0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                        <div class="glass-card rounded-xl p-8 border border-gray-700/30">
+                            <h3 class="text-lg font-semibold mb-6 flex items-center">
+                                <i class="fas fa-star text-purple-400 mr-3"></i>
+                                Quality Score
+                            </h3>
+                    ${typeof c.qualityScore === 'number' ? `
+                    <div class="text-center">
+                        <div class="text-4xl font-bold text-purple-400 mb-2">${c.qualityScore}%</div>
+                        <div class="text-sm text-gray-400 mb-4">Message Quality Score</div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full" style="width: ${c.qualityScore}%"></div>
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="text-center text-gray-400">
+                        <i class="fas fa-clock text-2xl mb-2"></i>
+                        <div class="text-sm">Quality analysis pending</div>
+                    </div>
+                    `}
+                </div>
+            </div>
+        </div>`;
+        return panel;
+    }).join('');
+
+    tabsEl.innerHTML = `
+        <div class="flex flex-wrap gap-3 mb-6">${tabButtons}</div>
+        <div class="space-y-6">${panels}</div>
+    `;
+
+    // Enhanced tab switching with smooth transitions
+    tabsEl.querySelectorAll('button[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            
+            // Update button states
+            tabsEl.querySelectorAll('button[data-tab]').forEach(b => {
+                b.className = 'px-6 py-3 rounded-xl font-medium transition-all duration-300 bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-105';
+            });
+            btn.className = 'px-6 py-3 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:scale-105';
+            
+            // Hide all panels with fade effect
+            tabsEl.querySelectorAll('[id^="panel-"]').forEach(panel => {
+                panel.style.opacity = '0';
+                setTimeout(() => panel.classList.add('hidden'), 150);
+            });
+            
+            // Show selected panel with fade effect
+            setTimeout(() => {
+                const panel = document.getElementById(`panel-${tabId}`);
+                if (panel) {
+                    panel.classList.remove('hidden');
+                    panel.style.opacity = '1';
+                }
+            }, 150);
+        });
+    });
+}
+
+function metricCard(label, value, icon, cls) {
+    return `
+    <div class="glass-card rounded-xl p-6 metric-card">
+        <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-xl ${cls} flex items-center justify-center">
+                <i class="fas ${icon} text-xl text-white"></i>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold">${value}</div>
+                <div class="text-xs text-gray-400">${label}</div>
+            </div>
+        </div>
+    </div>`;
 }
 
 function createDailyReportSection() {
@@ -4524,9 +5008,6 @@ async function deleteGuideline(guidelineId) {
         showError('Failed to delete guideline');
     }
 }
-
-
-
 // Form handlers
 async function handleOFAccountDataSubmit(event) {
     console.log('OF Account form submit triggered');
@@ -5114,18 +5595,10 @@ function renderChangeIndicator(change, reverseColors = false) {
         <i class="fas ${icon}"></i> ${Math.abs(numChange).toFixed(1)}%
     </span>`;
 }
-
 // Helper function to format breakdown content with proper line breaks and bullet points
 function formatBreakdownContent(content) {
-    // v2.0 - Fixed to properly display "No violations found" messages
-    
     if (!content || content === 'No significant issues found') {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
-    }
-    
-    // Handle "No violations found" messages - ALWAYS show these with green checkmark
-    if (content.includes('No violations found')) {
-        return `<span class="text-green-400">✓ ${content}</span>`;
     }
     
     // Check if content is structured analysis (new format with counts and issues)
@@ -5285,7 +5758,7 @@ function renderSophisticatedChatterAnalysis(data) {
             
             
             <!-- Message Quality Analysis -->
-            ${data.grammarBreakdown || data.guidelinesBreakdown || data.overallBreakdown ? `
+            ${data.chattingStyle || data.messagePatterns || data.engagementMetrics ? `
             <div class="glass-card rounded-xl p-6 border border-purple-500/30 slide-up-1 hover-lift">
                 <h5 class="text-lg font-bold text-white mb-4 flex items-center">
                     <i class="fas fa-comments text-purple-400 mr-3"></i>
@@ -5517,73 +5990,48 @@ function renderSophisticatedChatterAnalysis(data) {
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        ${data.guidelinesBreakdown && data.guidelinesBreakdown.guidelinesBreakdownV2 ? `
+                                        ${(() => { const g = (data.guidelinesBreakdownV2 || (data.guidelinesBreakdown && data.guidelinesBreakdown.guidelinesBreakdownV2)); return g ? `
                                         <div class="p-4 bg-blue-500/5 rounded-xl border border-blue-500/20">
                                             <div class="flex items-center mb-3">
                                                 <i class="fas fa-comments text-blue-400 mr-3 text-lg"></i>
                                                 <span class="text-lg font-semibold text-blue-400">General Chatting</span>
                                             </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.generalChatting)}</div>
+                                            <div class="text-sm text-gray-300">${(() => {
+                                                const pending = data.guidelinesPendingAI || (g.details && g.details.generalChatting && Array.isArray(g.details.generalChatting.items) && g.details.generalChatting.items.every(it => (it.needsAI && (it.count||0)===0)));
+                                                return pending ? '<span class="text-yellow-400">Awaiting AI analysis…</span>' : formatBreakdownContent(g.generalChatting);
+                                            })()}</div>
                                         </div>
                                         <div class="p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/20">
                                             <div class="flex items-center mb-3">
                                                 <i class="fas fa-brain text-indigo-400 mr-3 text-lg"></i>
                                                 <span class="text-lg font-semibold text-indigo-400">Psychology</span>
                                             </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.psychology)}</div>
+                                            <div class="text-sm text-gray-300">${(() => {
+                                                const pending = data.guidelinesPendingAI || (g.details && g.details.psychology && Array.isArray(g.details.psychology.items) && g.details.psychology.items.every(it => (it.needsAI && (it.count||0)===0)));
+                                                return pending ? '<span class="text-yellow-400">Awaiting AI analysis…</span>' : formatBreakdownContent(g.psychology);
+                                            })()}</div>
                                         </div>
                                         <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
                                             <div class="flex items-center mb-3">
                                                 <i class="fas fa-camera text-teal-400 mr-3 text-lg"></i>
                                                 <span class="text-lg font-semibold text-teal-400">Captions</span>
                                             </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.captions)}</div>
+                                            <div class="text-sm text-gray-300">${(() => {
+                                                const pending = data.guidelinesPendingAI || (g.details && g.details.captions && Array.isArray(g.details.captions.items) && g.details.captions.items.every(it => (it.needsAI && (it.count||0)===0)));
+                                                return pending ? '<span class="text-yellow-400">Awaiting AI analysis…</span>' : formatBreakdownContent(g.captions);
+                                            })()}</div>
                                         </div>
                                         <div class="p-4 bg-green-500/5 rounded-xl border border-green-500/20">
                                             <div class="flex items-center mb-3">
                                                 <i class="fas fa-dollar-sign text-green-400 mr-3 text-lg"></i>
                                                 <span class="text-lg font-semibold text-green-400">Sales</span>
                                             </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.guidelinesBreakdownV2.sales)}</div>
+                                            <div class="text-sm text-gray-300">${(() => {
+                                                const pending = data.guidelinesPendingAI || (g.details && g.details.sales && Array.isArray(g.details.sales.items) && g.details.sales.items.every(it => (it.needsAI && (it.count||0)===0)));
+                                                return pending ? '<span class="text-yellow-400">Awaiting AI analysis…</span>' : formatBreakdownContent(g.sales);
+                                            })()}</div>
                                         </div>
-                                        ` : `
-                                        ${data.guidelinesBreakdown.salesEffectiveness ? `
-                                        <div class="p-4 bg-green-500/5 rounded-xl border border-green-500/20">
-                                            <div class="flex items-center mb-3">
-                                                <i class="fas fa-dollar-sign text-green-400 mr-3 text-lg"></i>
-                                                <span class="text-lg font-semibold text-green-400">Sales Effectiveness</span>
-                                            </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.salesEffectiveness)}</div>
-                                        </div>
-                                        ` : ''}
-                                        ${data.guidelinesBreakdown.engagementQuality ? `
-                                        <div class="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
-                                            <div class="flex items-center mb-3">
-                                                <i class="fas fa-heart text-emerald-400 mr-3 text-lg"></i>
-                                                <span class="text-lg font-semibold text-emerald-400">Engagement Quality</span>
-                                            </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.engagementQuality)}</div>
-                                        </div>
-                                        ` : ''}
-                                        ${data.guidelinesBreakdown.captionQuality ? `
-                                        <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
-                                            <div class="flex items-center mb-3">
-                                                <i class="fas fa-camera text-teal-400 mr-3 text-lg"></i>
-                                                <span class="text-lg font-semibold text-teal-400">Caption Quality</span>
-                                            </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.captionQuality)}</div>
-                                        </div>
-                                        ` : ''}
-                                        ${data.guidelinesBreakdown.conversationFlow ? `
-                                        <div class="p-4 bg-cyan-500/5 rounded-xl border border-cyan-500/20">
-                                            <div class="flex items-center mb-3">
-                                                <i class="fas fa-comments text-cyan-400 mr-3 text-lg"></i>
-                                                <span class="text-lg font-semibold text-cyan-400">Conversation Flow</span>
-                                            </div>
-                                            <div class="text-sm text-gray-300">${formatBreakdownContent(data.guidelinesBreakdown.conversationFlow)}</div>
-                                        </div>
-                                        ` : ''}
-                                        `}
+                                        ` : `` })()}
                                     </div>
                                     
                                     ${data.guidelinesBreakdown.scoreExplanation ? `
@@ -5888,5 +6336,3 @@ function renderSophisticatedChatterAnalysis(data) {
         </div>
     `;
 }
-
-
