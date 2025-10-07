@@ -2838,7 +2838,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               console.log('🔄 All batches analyzed successfully');
               
             } catch (error) {
-              console.log('❌ Batch analysis failed:', error.message);
+              console.log('❌ Batch analysis failed:', error);
+              console.log('❌ Error stack:', error.stack);
+              console.log('❌ Error details:', JSON.stringify(error, null, 2));
               combinedGrammarAnalysis = {
                 spellingErrors: 'AI ANALYSIS FAILED: Unable to analyze spelling issues. Please check AI configuration.',
                 grammarIssues: 'AI ANALYSIS FAILED: Unable to analyze grammar issues. Please check AI configuration.',
