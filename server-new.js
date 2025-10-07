@@ -3238,6 +3238,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
       console.log('🔍 Frontend guidelinesBreakdownV2:', JSON.stringify(aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2));
       console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
+      console.log('🚨 CRITICAL DEBUG - reliableGuidelinesAnalysis:', JSON.stringify(aiAnalysis.reliableGuidelinesAnalysis));
+      console.log('🚨 CRITICAL DEBUG - V2 generalChatting text:', aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2?.generalChatting);
+      console.log('🚨 CRITICAL DEBUG - V2 details:', JSON.stringify(aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2?.details));
       
       // Debug individual properties
       if (aiAnalysis.chattingStyle) {
