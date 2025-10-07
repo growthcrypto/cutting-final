@@ -5517,6 +5517,16 @@ function renderSophisticatedChatterAnalysis(data) {
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        ${(() => {
+                                            console.log('🔍 GUIDELINES CHECK:', {
+                                                hasGuidelinesBreakdown: !!data.guidelinesBreakdown,
+                                                hasV2: !!data.guidelinesBreakdown?.guidelinesBreakdownV2,
+                                                v2Keys: data.guidelinesBreakdown?.guidelinesBreakdownV2 ? Object.keys(data.guidelinesBreakdown.guidelinesBreakdownV2) : 'N/A',
+                                                generalChatting: data.guidelinesBreakdown?.guidelinesBreakdownV2?.generalChatting,
+                                                psychology: data.guidelinesBreakdown?.guidelinesBreakdownV2?.psychology
+                                            });
+                                            return '';
+                                        })()}
                                         ${data.guidelinesBreakdown && data.guidelinesBreakdown.guidelinesBreakdownV2 ? `
                                         <div class="p-4 bg-blue-500/5 rounded-xl border border-blue-500/20">
                                             <div class="flex items-center mb-3">
