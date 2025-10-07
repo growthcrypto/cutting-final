@@ -3229,6 +3229,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
       console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
       console.log('🔍 Frontend engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
+      console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
+      console.log('🔍 Frontend guidelinesBreakdownV2:', JSON.stringify(aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2));
+      console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
       
       // Debug individual properties
       if (aiAnalysis.chattingStyle) {
