@@ -2471,6 +2471,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               scoreExplanation: ''
             };
             
+            // Store ALL raw AI responses for guidelines parsing
+            let allRawResponses = [];
+            
             try {
               // Process batches SEQUENTIALLY to ensure consistent results
               for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
@@ -2493,6 +2496,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 
                 // Process the single batch result
                 if (batchResult) {
+                  // CRITICAL: Store the raw AI response for guidelines parsing
+                  if (batchResult._rawResponse) {
+                    allRawResponses.push(batchResult._rawResponse);
+                    console.log(`📋 Stored raw response ${batchIndex + 1} (${batchResult._rawResponse.length} chars)`);
+                  }
                   
                   // Combine grammar analysis from all batches to get complete coverage
                   if (batchResult.grammarBreakdown) {
@@ -2653,13 +2661,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             const salesText = combinedGuidelinesAnalysis.salesEffectiveness || '';
 
             // Prefer strict JSON block if the model emitted GUIDELINES_V2_JSON
-            const combinedRawGuidelines = [
-              generalText,
-              psychologyText,
-              captionsText,
-              salesText,
-              combinedGuidelinesAnalysis.scoreExplanation || ''
-            ].join(' ');
+            // CRITICAL: Use ALL raw AI responses, not the old format
+            const combinedRawGuidelines = allRawResponses.join('\n\n');
+            console.log(`📋 Parsing ${allRawResponses.length} raw AI responses (${combinedRawGuidelines.length} total chars)`);
 
             function parseGuidelinesV2Json(raw) {
               try {
@@ -5176,6 +5180,10 @@ CRITICAL ANALYSIS REQUIREMENTS:
     try {
       const analysis = JSON.parse(jsonMatch[0]);
       console.log('Parsed AI Analysis:', JSON.stringify(analysis, null, 2));
+      
+      // CRITICAL: Attach the raw response for guidelines parsing
+      analysis._rawResponse = jsonMatch[0];
+      console.log(`📋 Attached raw response (${analysis._rawResponse.length} chars)`);
       
       // Debug: Check if the required fields are present
       console.log('🔍 AI Analysis Fields Check:');
