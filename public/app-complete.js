@@ -5762,9 +5762,6 @@ function renderSophisticatedChatterAnalysis(data) {
     console.log('🚨 guidelinesBreakdown truthy?', !!data.guidelinesBreakdown);
     console.log('🚨 overallBreakdown truthy?', !!data.overallBreakdown);
     
-    alert(`ANALYSIS SECTION WILL ${showAnalysisSection ? 'SHOW' : 'NOT SHOW'}!\n\ngrammarBreakdown: ${!!data.grammarBreakdown}\nguidelinesBreakdown: ${!!data.guidelinesBreakdown}\noverallBreakdown: ${!!data.overallBreakdown}`);
-    
-    
     // Calculate derived metrics
     const ppvUnlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0;
     const messagesPerPPV = data.ppvsSent > 0 ? (data.messagesSent / data.ppvsSent).toFixed(1) : 0;
