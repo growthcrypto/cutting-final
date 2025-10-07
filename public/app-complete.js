@@ -5117,8 +5117,15 @@ function renderChangeIndicator(change, reverseColors = false) {
 
 // Helper function to format breakdown content with proper line breaks and bullet points
 function formatBreakdownContent(content) {
+    console.log('🔍 formatBreakdownContent called with:', content);
+    
     if (!content || content === 'No significant issues found') {
         return `<span class="text-green-400">✓ No significant issues found</span>`;
+    }
+    
+    // Handle "No violations found" messages
+    if (content.includes('No violations found')) {
+        return `<span class="text-green-400">✓ ${content}</span>`;
     }
     
     // Check if content is structured analysis (new format with counts and issues)
