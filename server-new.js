@@ -3209,14 +3209,39 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('🔄 Formatted grammarIssues:', formattedGrammarAnalysis.grammarIssues);
             
             // Create comprehensive analysis with combined results
+            // Build detailed error summary by category
+            const grammarErrorSummary = {
+              spelling: spellingCount > 0 ? `${spellingCount} spelling error${spellingCount !== 1 ? 's' : ''} found (${(spellingCount/analysisMessageTexts.length*100).toFixed(1)}% of messages)` : 'No spelling errors',
+              grammar: grammarCount > 0 ? `${grammarCount} grammar error${grammarCount !== 1 ? 's' : ''} found (${(grammarCount/analysisMessageTexts.length*100).toFixed(1)}% of messages)` : 'No grammar errors',
+              punctuation: punctuationCount > 0 ? `${punctuationCount} punctuation issue${punctuationCount !== 1 ? 's' : ''} found (${(punctuationCount/analysisMessageTexts.length*100).toFixed(1)}% of messages)` : 'No punctuation issues',
+              total: `${totalErrors} total error${totalErrors !== 1 ? 's' : ''} across ${analysisMessageTexts.length} messages`,
+              errorRate: `${(totalErrors/analysisMessageTexts.length*100).toFixed(2)}% error rate`
+            };
+            
+            const guidelinesErrorSummary = {
+              generalChatting: reliableGuidelinesAnalysis.generalChatting.violations > 0 ? 
+                `${reliableGuidelinesAnalysis.generalChatting.violations} violation${reliableGuidelinesAnalysis.generalChatting.violations !== 1 ? 's' : ''} (${reliableGuidelinesAnalysis.generalChatting.details.map(d => `${d.title}: ${d.count}`).join(', ')})` : 
+                'No violations',
+              psychology: reliableGuidelinesAnalysis.psychology.violations > 0 ? 
+                `${reliableGuidelinesAnalysis.psychology.violations} violation${reliableGuidelinesAnalysis.psychology.violations !== 1 ? 's' : ''} (${reliableGuidelinesAnalysis.psychology.details.map(d => `${d.title}: ${d.count}`).join(', ')})` : 
+                'No violations',
+              captions: reliableGuidelinesAnalysis.captions.violations > 0 ? 
+                `${reliableGuidelinesAnalysis.captions.violations} violation${reliableGuidelinesAnalysis.captions.violations !== 1 ? 's' : ''} (${reliableGuidelinesAnalysis.captions.details.map(d => `${d.title}: ${d.count}`).join(', ')})` : 
+                'No violations',
+              sales: reliableGuidelinesAnalysis.sales.violations > 0 ? 
+                `${reliableGuidelinesAnalysis.sales.violations} violation${reliableGuidelinesAnalysis.sales.violations !== 1 ? 's' : ''} (${reliableGuidelinesAnalysis.sales.details.map(d => `${d.title}: ${d.count}`).join(', ')})` : 
+                'No violations',
+              total: `${totalGuidelineViolations} total violation${totalGuidelineViolations !== 1 ? 's' : ''} across ${analysisMessageTexts.length} messages`,
+              violationRate: `${(totalGuidelineViolations/analysisMessageTexts.length*100).toFixed(2)}% violation rate`
+            };
+            
             const reAnalysis = {
               grammarBreakdown: formattedGrammarAnalysis,
               guidelinesBreakdown: formattedGuidelinesAnalysis,
               overallBreakdown: {
-                messageClarity: `Main clarity analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving message clarity, avoiding confusion, and ensuring clear communication.`,
-                emotionalImpact: `Main emotional analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving emotional connections, building rapport, and creating meaningful interactions.`,
-                conversionPotential: `Main conversion analysis: Based on analysis of all ${analysisMessageTexts.length} messages, focus on improving conversion opportunities, sales timing, and revenue generation.`,
-                scoreExplanation: `Comprehensive overall analysis of all ${analysisMessageTexts.length} messages: Focus on improving message clarity, emotional impact, and conversion potential.`
+                grammarSummary: grammarErrorSummary,
+                guidelinesSummary: guidelinesErrorSummary,
+                scoreExplanation: `Grammar: ${calculatedGrammarScore}/100 (${totalErrors} errors). Guidelines: ${calculatedGuidelinesScore}/100 (${totalGuidelineViolations} violations). Overall: ${Math.round((calculatedGrammarScore + calculatedGuidelinesScore) / 2)}/100.`
               }
             };
           
