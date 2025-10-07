@@ -4174,7 +4174,18 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'punctuation') {
-    // CRITICAL: Extract the count and show it, even if AI is confused about what "punctuation errors" means
+    // CRITICAL: Only show punctuation errors if AI found messages WITH periods/commas
+    // The informality guideline is violated when messages HAVE formal punctuation, not when they lack it
+    
+    // First check: If AI says "Missing periods" or "lack of periods", that's GOOD (not an error)
+    // Because OnlyFans messages SHOULD be informal (no periods)
+    if (cleanText.toLowerCase().includes('missing period') || 
+        cleanText.toLowerCase().includes('lack of period') ||
+        cleanText.toLowerCase().includes('periods at the end') ||
+        cleanText.toLowerCase().includes('no period')) {
+      console.log(`🔍 PUNCTUATION FILTER: Detected 'missing periods' language - this is NOT an error (informal is correct)`);
+      return "No punctuation errors found - informal OnlyFans language is correct.";
+    }
     
     // Extract the count from "Found X punctuation problems/issues:"
     const countMatch = cleanText.match(/Found (\d+) punctuation/i);
@@ -4182,7 +4193,7 @@ function formatGrammarResults(text, type) {
     if (countMatch) {
       const count = parseInt(countMatch[1]);
       if (count > 0) {
-        // Show the count regardless of what the AI thinks
+        console.log(`🔍 PUNCTUATION FILTER: Found ${count} messages WITH formal punctuation (real errors)`);
         return `Found ${count} punctuation issue${count !== 1 ? 's' : ''} across analyzed messages.`;
       }
     }
@@ -4192,6 +4203,7 @@ function formatGrammarResults(text, type) {
     if (patternMatch) {
       const count = parseInt(patternMatch[1]);
       if (count > 0) {
+        console.log(`🔍 PUNCTUATION FILTER: Found ${count} messages WITH formal punctuation (real errors)`);
         return `Found ${count} punctuation issue${count !== 1 ? 's' : ''} across analyzed messages.`;
       }
     }
