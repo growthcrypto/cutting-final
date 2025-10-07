@@ -1629,6 +1629,10 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       console.log('🔧 Attempting to parse JSON with auto-corrections...');
       const analysisResult = JSON.parse(jsonText);
       
+      // CRITICAL: Attach the raw JSON for guidelines parsing
+      analysisResult._rawResponse = jsonText;
+      console.log(`📋 Attached raw response to batch result (${jsonText.length} chars)`);
+      
       if (analysisResult.grammarBreakdown) {
         // Grammar breakdown found
       }
