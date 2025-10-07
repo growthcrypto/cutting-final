@@ -1242,7 +1242,7 @@ IMPORTANT: Look for actual errors in the messages using CONSISTENT criteria:
 
 COUNTING RULES: Count each error only once per message. If the same error appears multiple times in the same message, count it as one error. Be systematic and consistent in your counting approach.
 
-PUNCTUATION RULES: Flag ONLY full stops (periods) and formal commas as errors. All other punctuation is CORRECT and should NOT be flagged.
+PUNCTUATION RULES: Flag messages that USE full stops (periods) or formal commas as errors. Messages WITHOUT periods are CORRECT. All other punctuation (?, !, emojis) is CORRECT and should NOT be flagged.
 
 🚫 NEVER FLAG THESE AS ERRORS:
 - Question marks (?)
@@ -1408,7 +1408,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
            "grammarBreakdown": {
              "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'i', 'u'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
              "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'u're', 'i can', 'how u deal', 'u cant', 'i dont think'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL grammar mistakes.",
-             "punctuationProblems": "CRITICAL: OnlyFans messages DO NOT need periods. DO NOT flag missing periods as errors. ONLY flag MISUSED formal punctuation (like random commas in wrong places). Most messages will have NO punctuation errors. Examples: 'how are u' is PERFECT (NO error). 'where are u from' is PERFECT (NO error). 'what, are u doing' has a misused comma (error). If you flag missing periods, you are INCORRECT.",
+             "punctuationProblems": "CRITICAL: OnlyFans messages should be INFORMAL. Flag messages that HAVE full stops (periods) at the end or formal commas. Messages WITHOUT periods are PERFECT. Examples: 'how are u' is PERFECT (NO error - no period). 'how are u.' HAS an error (formal period at end). 'what, are u doing' has a misused comma (error). 'where are u from' is PERFECT (NO error - no period). Count how many messages have periods or formal commas. If you flag 'missing periods', you are INCORRECT.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "overallBreakdown": {
@@ -1484,7 +1484,7 @@ For engagementMetrics (REQUIRED - must analyze actual message content):
 For grammarBreakdown:
 - spellingErrors: Find and count ALL spelling mistakes in the messages. Look for typos, misspellings, autocorrect errors. Provide specific examples and counts.
 - grammarIssues: Find and count ALL grammar mistakes in the messages. Look for verb tense errors, subject-verb disagreement, sentence structure issues. Provide specific examples and counts.
-- punctuationProblems: Find and count ALL formal punctuation mistakes in the messages. Look for periods at end of sentences, formal commas, etc. Provide specific examples and counts.
+- punctuationProblems: Find and count ALL messages that USE formal punctuation (periods at end of sentences, formal commas). Messages WITHOUT periods are CORRECT. Provide specific examples and counts.
 - informalLanguage: Note specific informal patterns (e.g., "Excessive use of 'lol' and 'haha' in 12 out of 20 messages")
 - scoreExplanation: Explain the score with specific examples and total error counts
 
@@ -1548,7 +1548,7 @@ CRITICAL ERROR DETECTION REQUIREMENTS:
 - Count EVERY error across ALL messages that actually exist
 - Scan every word, every sentence, every message for mistakes
 - Look for ACTUAL mistakes: spelling errors, grammar errors, typos, autocorrect errors
-- Look for ONLY full stops (periods) and formal commas as punctuation errors
+- Flag messages that HAVE full stops (periods) at the end or formal commas as punctuation errors
 - DO NOT flag informal language (u, ur, im, dont, cant) as errors - these are perfect for OnlyFans
 - DO NOT flag apostrophes, question marks, exclamation points as errors - these are perfect for OnlyFans
 - For 2000+ messages, expect to find 100-300+ errors total
@@ -4174,27 +4174,37 @@ function formatGrammarResults(text, type) {
   }
   
   if (type === 'punctuation') {
-    // CRITICAL: Filter out "missing periods" as those are NOT errors in OnlyFans
-    // ONLY count MISUSED formal punctuation (like random commas in wrong places)
+    // CRITICAL: For OnlyFans, we want to DETECT formal punctuation being USED (not missing)
+    // The informality guideline says: "Be informal, do not use formal punctuation like full stops or commas"
+    // So we're looking for messages WITH periods/commas (which violates the guideline)
     
-    // If the text mentions "missing periods" or "missing periods at the end", it's NOT an error
+    // Extract the count from "Found X punctuation problems/issues:"
+    const countMatch = cleanText.match(/Found (\d+) punctuation/i);
+    
+    if (countMatch) {
+      const count = parseInt(countMatch[1]);
+      if (count > 0) {
+        return `Found ${count} punctuation issue${count !== 1 ? 's' : ''} across analyzed messages.`;
+      }
+    }
+    
+    // Look for patterns like "X messages with periods" or "X messages have formal punctuation"
+    const patternMatch = cleanText.match(/(\d+) messages? (?:with|have|use|using) (?:periods?|formal|punctuation)/i);
+    if (patternMatch) {
+      const count = parseInt(patternMatch[1]);
+      if (count > 0) {
+        return `Found ${count} punctuation issue${count !== 1 ? 's' : ''} across analyzed messages.`;
+      }
+    }
+    
+    // If we see "Missing periods" or "lack of periods", this is GOOD (not an error)
     if (cleanText.toLowerCase().includes('missing period') || 
-        cleanText.toLowerCase().includes('missing periods') ||
-        cleanText.toLowerCase().includes('periods at the end')) {
+        cleanText.toLowerCase().includes('lack of period') ||
+        cleanText.toLowerCase().includes('no period')) {
       return "No punctuation errors found - informal OnlyFans language is correct.";
     }
     
-    // Look for actual punctuation MISUSE (not missing punctuation)
-    const misusedCommaMatches = [...cleanText.matchAll(/misused comma|random comma|wrong comma|incorrect comma/gi)];
-    const misusedformalMatches = [...cleanText.matchAll(/formal (?:period|comma)|wrong (?:period|comma)/gi)];
-    
-    const totalIssues = misusedCommaMatches.length + misusedformalMatches.length;
-    
-    if (totalIssues === 0) {
-      return "No punctuation errors found - informal OnlyFans language is correct.";
-    }
-    
-    return `Found ${totalIssues} punctuation issue${totalIssues !== 1 ? 's' : ''} across analyzed messages.`;
+    return "No punctuation errors found - informal OnlyFans language is correct.";
   }
   
   return cleanText;
