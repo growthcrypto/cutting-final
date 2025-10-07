@@ -1395,9 +1395,9 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
     "fanRetention": "excellent"
   },
            "grammarBreakdown": {
-             "spellingErrors": "Find ONLY actual spelling mistakes like typos and misspellings. Examples of REAL errors: 'recieve' instead of 'receive', 'definately' instead of 'definitely', 'weel' instead of 'well', 'seperate' instead of 'separate'. DO NOT flag these (they are correct OnlyFans language): 'u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll'. Count only REAL misspellings.",
-             "grammarIssues": "Find ONLY actual grammar mistakes like verb tense errors and subject-verb disagreement. Examples of REAL errors: 'I was went' instead of 'I went', 'they was' instead of 'they were', 'do he have' instead of 'does he have'. DO NOT flag these (they are correct OnlyFans language): 'u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'u're', 'i can', 'how u deal'. Count only REAL grammar mistakes.",
-             "punctuationProblems": "OnlyFans messages do NOT need periods or formal punctuation. DO NOT flag missing periods as errors. ONLY flag MISUSED formal punctuation (like random commas in wrong places). Most messages will have NO punctuation errors. Examples: 'how are u' is PERFECT (no error). 'what, are u doing' has a misused comma (error). Count only ACTUAL punctuation mistakes, NOT missing periods.",
+             "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'i', 'u'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
+             "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'u're', 'i can', 'how u deal', 'u cant', 'i dont think'. If you flag ANY of these as errors, you are INCORRECT. Count only REAL grammar mistakes.",
+             "punctuationProblems": "CRITICAL: OnlyFans messages DO NOT need periods. DO NOT flag missing periods as errors. ONLY flag MISUSED formal punctuation (like random commas in wrong places). Most messages will have NO punctuation errors. Examples: 'how are u' is PERFECT (NO error). 'where are u from' is PERFECT (NO error). 'what, are u doing' has a misused comma (error). If you flag missing periods, you are INCORRECT.",
              "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
            },
   "overallBreakdown": {
@@ -2733,9 +2733,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
               
               if (replyTimeGuideline) {
                 const category = replyTimeGuideline.category;
-                if (reliableGuidelinesAnalysis[category.toLowerCase().replace(' ', '')]) {
-                  reliableGuidelinesAnalysis[category.toLowerCase().replace(' ', '')].violations = actualReplyTimeViolations;
-                  reliableGuidelinesAnalysis[category.toLowerCase().replace(' ', '')].details.push({
+                // Map category to camelCase format (e.g., "General Chatting" -> "generalChatting")
+                const categoryKey = category.replace(/\s+(.)/g, (match, letter) => letter.toUpperCase()).replace(/^(.)/, (match, letter) => letter.toLowerCase());
+                if (reliableGuidelinesAnalysis[categoryKey]) {
+                  reliableGuidelinesAnalysis[categoryKey].violations = actualReplyTimeViolations;
+                  reliableGuidelinesAnalysis[categoryKey].details.push({
                     title: replyTimeGuideline.title,
                     count: actualReplyTimeViolations,
                     description: `Found ${actualReplyTimeViolations} violations of reply time guideline`
@@ -2751,11 +2753,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 return; // Already handled above with actual data
               }
               
-              const category = guideline.category.toLowerCase().replace(' ', '');
-              console.log(`🔍 DEBUG: Guideline "${guideline.title}" has category "${guideline.category}" -> "${category}"`);
+              // Map category to camelCase format (e.g., "General Chatting" -> "generalChatting")
+              const categoryKey = guideline.category.replace(/\s+(.)/g, (match, letter) => letter.toUpperCase()).replace(/^(.)/, (match, letter) => letter.toLowerCase());
+              console.log(`🔍 DEBUG: Guideline "${guideline.title}" has category "${guideline.category}" -> "${categoryKey}"`);
               console.log(`🔍 DEBUG: Available categories:`, Object.keys(reliableGuidelinesAnalysis));
-              if (!reliableGuidelinesAnalysis[category]) {
-                console.log(`❌ Category "${category}" not found in reliableGuidelinesAnalysis`);
+              if (!reliableGuidelinesAnalysis[categoryKey]) {
+                console.log(`❌ Category "${categoryKey}" not found in reliableGuidelinesAnalysis`);
                 return;
               }
               
