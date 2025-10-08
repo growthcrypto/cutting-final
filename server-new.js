@@ -2337,6 +2337,10 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
         aiAnalysis: aiAnalysis.slice(-3).map(a => ({
           id: a._id,
           chatterName: a.chatterName,
+          timestamp: a.timestamp,
+          grammarScore: a.grammarScore,
+          guidelinesScore: a.guidelinesScore,
+          overallScore: a.overallScore,
           analysisType: a.analysisType,
           createdAt: a.createdAt
         }))
