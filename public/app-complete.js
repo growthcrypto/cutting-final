@@ -4496,9 +4496,18 @@ async function loadTeamDashboard() {
     if (content) content.classList.add('hidden');
     
     try {
-        let url = `/api/analytics/team-dashboard?interval=${currentTeamInterval}`;
-        if (currentTeamDateRange) {
-            url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
+        // Build URL based on filter type (use same filters as Manager Dashboard)
+        let url;
+        if (currentFilterType === 'week' && currentWeekFilter) {
+            url = `/api/analytics/team-dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}`;
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            url = `/api/analytics/team-dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}`;
+        } else {
+            // Fallback to old behavior
+            url = `/api/analytics/team-dashboard?interval=${currentTeamInterval || '7d'}`;
+            if (currentTeamDateRange) {
+                url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
+            }
         }
         
         const response = await fetch(url, {
