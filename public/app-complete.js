@@ -1781,16 +1781,26 @@ async function runAgencyAnalysis() {
             throw new Error('Not authenticated');
         }
 
-        // Prepare request body for AI analysis
+        // Prepare request body for AI analysis (use shared week/month filter)
         const requestBody = {
             analysisType: 'agency',
-            interval: currentAIAnalysisInterval
+            interval: '7d' // Default fallback
         };
 
-        // Add custom date range if applicable
-        if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
+        // Use shared week/month filter if available
+        if (currentFilterType === 'week' && currentWeekFilter) {
+            requestBody.startDate = currentWeekFilter.start;
+            requestBody.endDate = currentWeekFilter.end;
+            console.log('Using week filter for AI analysis:', currentWeekFilter);
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            requestBody.startDate = currentMonthFilter.firstDay;
+            requestBody.endDate = currentMonthFilter.lastDay;
+            console.log('Using month filter for AI analysis:', currentMonthFilter);
+        } else if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
             requestBody.startDate = window.customDateRange.start;
             requestBody.endDate = window.customDateRange.end;
+        } else {
+            requestBody.interval = currentAIAnalysisInterval || '7d';
         }
 
         console.log('Sending AI analysis request:', requestBody);
@@ -2120,17 +2130,28 @@ async function runChatterAnalysis() {
             throw new Error('Not authenticated');
         }
 
-        // Prepare request body for AI analysis
+        // Prepare request body for AI analysis (use shared week/month filter)
         const requestBody = {
             analysisType: 'individual',
-            interval: currentAIAnalysisInterval,
+            interval: '7d', // Default fallback
             chatterId: select.value
         };
 
-        // Add custom date range if applicable
-        if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
+        // Use shared week/month filter if available
+        if (currentFilterType === 'week' && currentWeekFilter) {
+            requestBody.startDate = currentWeekFilter.start;
+            requestBody.endDate = currentWeekFilter.end;
+            console.log('✅ AI Analysis using WEEK filter:', currentWeekFilter);
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            requestBody.startDate = currentMonthFilter.firstDay;
+            requestBody.endDate = currentMonthFilter.lastDay;
+            console.log('✅ AI Analysis using MONTH filter:', currentMonthFilter);
+        } else if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
             requestBody.startDate = window.customDateRange.start;
             requestBody.endDate = window.customDateRange.end;
+        } else {
+            requestBody.interval = currentAIAnalysisInterval || '7d';
+            console.log('⚠️ AI Analysis using interval fallback:', requestBody.interval);
         }
 
         console.log('Sending AI analysis request:', requestBody);
