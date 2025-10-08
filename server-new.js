@@ -1642,7 +1642,30 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
          11. CRITICAL: You MUST count every single error across all messages. Do not give vague numbers.
          12. CRITICAL: Format your response as: "Found X [error type]: [specific examples]. Found Y [different error type]: [specific examples]." Do NOT repeat the same error type multiple times.
 
-Return ONLY the grammarBreakdown JSON above, followed by the GUIDELINES_V2_JSON block (which you were instructed to provide at the top of this prompt). No additional text.
+🚨 CRITICAL - YOU MUST RETURN BOTH OF THESE:
+
+1. First, return the grammarBreakdown JSON (as specified above)
+2. Then, IMMEDIATELY after the JSON, return the GUIDELINES_V2_JSON block (as specified at lines 1573-1580)
+
+BOTH are MANDATORY. If you return ONLY the grammarBreakdown JSON without the GUIDELINES_V2_JSON block, the analysis will FAIL.
+
+Example of correct format:
+{
+  "grammarBreakdown": {
+    "spellingErrors": "...",
+    "grammarIssues": "...",
+    "punctuationProblems": "...",
+    "scoreExplanation": "..."
+  }
+}
+GUIDELINES_V2_JSON:
+{
+  "generalChatting": { "items": [...] },
+  "psychology": { "items": [...] },
+  "captions": { "items": [...] },
+  "sales": { "items": [...] }
+}
+END_GUIDELINES_V2_JSON
 
 ANALYSIS REQUIREMENTS:
 - Analyze the actual message content to determine chatting style, patterns, and engagement
