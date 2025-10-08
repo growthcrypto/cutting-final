@@ -788,9 +788,12 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     };
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
 
-    // Get latest AI analysis for each chatter
+    // Get latest AI analysis for each chatter WITHIN THE DATE RANGE
     const aiAnalysisPromises = chatterNames.map(async (name) => {
-      const latestAnalysis = await AIAnalysis.findOne({ chatterName: name })
+      const latestAnalysis = await AIAnalysis.findOne({ 
+        chatterName: name,
+        timestamp: { $gte: start, $lte: end } // Filter by date range
+      })
         .sort({ timestamp: -1 })
         .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp');
       return { chatterName: name, analysis: latestAnalysis };
