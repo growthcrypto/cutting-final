@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['manager', 'chatter'], required: true },
+  role: { type: String, enum: ['manager', 'chatter', 'marketer'], required: true },
   chatterName: { type: String }, // For chatter accounts
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
@@ -53,6 +53,8 @@ const dailyChatterReportSchema = new mongoose.Schema({
   ppvSales: [{
     amount: { type: Number, required: true },
     creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
+    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' }, // NEW: Track source
+    vipFanUsername: { type: String }, // NEW: VIP fan username (optional)
     timestamp: { type: Date, default: Date.now }
   }],
   
@@ -60,6 +62,8 @@ const dailyChatterReportSchema = new mongoose.Schema({
   tips: [{
     amount: { type: Number, required: true },
     creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
+    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' }, // NEW: Track source
+    vipFanUsername: { type: String }, // NEW: VIP fan username (optional)
     timestamp: { type: Date, default: Date.now }
   }],
   
@@ -358,6 +362,146 @@ const analyticsSchema = new mongoose.Schema({
 const Chatter = mongoose.model('Chatter', chatterSchema);
 const Analytics = mongoose.model('Analytics', analyticsSchema);
 
+// ==================== MARKETING ANALYTICS SCHEMAS ====================
+
+// Traffic Sources - Track different marketing channels
+const trafficSourceSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // "Reddit - r/fitness"
+  category: { type: String, enum: ['reddit', 'twitter', 'instagram', 'tiktok', 'youtube', 'other'], required: true },
+  subcategory: { type: String }, // "r/fitness", "viral_thread_123"
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+});
+
+// VIP Fans - High-value fans tracked individually
+const vipFanSchema = new mongoose.Schema({
+  username: { type: String, required: true }, // OnlyFans username
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' },
+  
+  // Fan Details
+  joinDate: { type: Date, required: true },
+  status: { 
+    type: String, 
+    enum: ['active', 'churned'], 
+    default: 'active' 
+  },
+  
+  // Financial Metrics
+  lifetimeSpend: { type: Number, default: 0 },
+  lastPurchaseDate: { type: Date },
+  purchaseCount: { type: Number, default: 0 },
+  avgPurchaseValue: { type: Number, default: 0 },
+  
+  // Engagement
+  isEngaged: { type: Boolean, default: false }, // Has responded to messages
+  isGhost: { type: Boolean, default: false }, // Never responds
+  firstResponseDate: { type: Date },
+  
+  // Metadata
+  notes: { type: String },
+  tags: [{ type: String }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Fan Purchases - Individual purchase tracking (linked to daily logs)
+const fanPurchaseSchema = new mongoose.Schema({
+  vipFan: { type: mongoose.Schema.Types.ObjectId, ref: 'VIPFan' },
+  fanUsername: { type: String }, // For non-VIP purchases
+  
+  amount: { type: Number, required: true },
+  type: { type: String, enum: ['ppv', 'tip', 'subscription', 'message'], required: true },
+  trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' },
+  
+  date: { type: Date, required: true },
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  chatterName: { type: String, required: true },
+  
+  // Link to daily report
+  dailyReport: { type: mongoose.Schema.Types.ObjectId, ref: 'DailyChatterReport' },
+  
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Traffic Source Performance - Aggregated weekly metrics
+const trafficSourcePerformanceSchema = new mongoose.Schema({
+  trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource', required: true },
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  // Subscriber Metrics
+  newSubscribers: { type: Number, default: 0 },
+  totalSubscribers: { type: Number, default: 0 }, // Cumulative
+  activeSubscribers: { type: Number, default: 0 },
+  churnedSubscribers: { type: Number, default: 0 },
+  
+  // Revenue Metrics
+  totalRevenue: { type: Number, default: 0 },
+  vipRevenue: { type: Number, default: 0 },
+  regularRevenue: { type: Number, default: 0 },
+  revenuePerSub: { type: Number, default: 0 },
+  
+  // Engagement Metrics
+  vipCount: { type: Number, default: 0 },
+  vipConversionRate: { type: Number, default: 0 }, // % who become VIPs
+  ghostCount: { type: Number, default: 0 },
+  ghostRate: { type: Number, default: 0 },
+  engagedCount: { type: Number, default: 0 },
+  engagementRate: { type: Number, default: 0 },
+  buyerCount: { type: Number, default: 0 },
+  buyerRate: { type: Number, default: 0 },
+  
+  // Funnel Metrics (from link tracking)
+  landingPageViews: { type: Number, default: 0 },
+  onlyFansClicks: { type: Number, default: 0 },
+  clickThroughRate: { type: Number, default: 0 },
+  subscriptionConversionRate: { type: Number, default: 0 },
+  
+  // Retention (calculated monthly)
+  retentionRate30Day: { type: Number, default: 0 },
+  retentionRate60Day: { type: Number, default: 0 },
+  retentionRate90Day: { type: Number, default: 0 },
+  
+  // Quality Score (A+ to F)
+  qualityScore: { type: String },
+  qualityGrade: { type: Number, default: 0 }, // 0-100
+  
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Link Tracking Data - Weekly uploads from Bitly/Linktree
+const linkTrackingDataSchema = new mongoose.Schema({
+  trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource', required: true },
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  
+  weekStartDate: { type: Date, required: true },
+  weekEndDate: { type: Date, required: true },
+  
+  landingPageViews: { type: Number, required: true },
+  onlyFansClicks: { type: Number, required: true },
+  clickThroughRate: { type: Number, default: 0 },
+  
+  // Optional detailed metrics
+  uniqueVisitors: { type: Number },
+  avgTimeOnPage: { type: Number }, // seconds
+  bounceRate: { type: Number },
+  topCountries: [{ country: String, views: Number }],
+  topDevices: [{ device: String, views: Number }],
+  
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const TrafficSource = mongoose.model('TrafficSource', trafficSourceSchema);
+const VIPFan = mongoose.model('VIPFan', vipFanSchema);
+const FanPurchase = mongoose.model('FanPurchase', fanPurchaseSchema);
+const TrafficSourcePerformance = mongoose.model('TrafficSourcePerformance', trafficSourcePerformanceSchema);
+const LinkTrackingData = mongoose.model('LinkTrackingData', linkTrackingDataSchema);
+
 module.exports = {
   User,
   CreatorAccount,
@@ -369,5 +513,10 @@ module.exports = {
   AIAnalysis,
   PerformanceHistory,
   Chatter,
-  Analytics
+  Analytics,
+  TrafficSource,
+  VIPFan,
+  FanPurchase,
+  TrafficSourcePerformance,
+  LinkTrackingData
 };
