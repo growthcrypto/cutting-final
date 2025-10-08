@@ -666,9 +666,17 @@ function showSection(sectionId) {
         if (availableWeeks.length === 0) {
             loadAvailablePeriods().then(() => {
                 populateAISelectors();
+                // If chatter, auto-show individual analysis for themselves
+                if (currentUser?.role === 'chatter') {
+                    setTimeout(() => showChatterAnalysisAuto(), 200);
+                }
             });
         } else {
             populateAISelectors();
+            // If chatter, auto-show individual analysis for themselves
+            if (currentUser?.role === 'chatter') {
+                setTimeout(() => showChatterAnalysisAuto(), 200);
+            }
         }
     }
 }
@@ -1522,6 +1530,41 @@ function showAgencyAnalysis() {
     
     if (chatterSection) {
         chatterSection.classList.add('hidden');
+    }
+}
+
+// Auto-show chatter analysis for logged-in chatter
+function showChatterAnalysisAuto() {
+    const typeSelection = document.getElementById('analysisTypeSelection');
+    const agencySection = document.getElementById('agencyAnalysisSection');
+    const chatterSection = document.getElementById('chatterAnalysisSection');
+    
+    // Hide type selection for chatters (they only get individual analysis)
+    if (typeSelection) {
+        typeSelection.classList.add('hidden');
+    }
+    
+    // Hide agency analysis for chatters
+    if (agencySection) {
+        agencySection.classList.add('hidden');
+    }
+    
+    // Show chatter analysis section
+    if (chatterSection) {
+        chatterSection.classList.remove('hidden');
+        
+        // Auto-select current chatter in dropdown
+        const chatterSelect = document.getElementById('chatterSelect');
+        if (chatterSelect && currentUser?.id) {
+            chatterSelect.value = currentUser.id;
+            console.log('✅ Auto-selected chatter:', currentUser.username || currentUser.chatterName);
+            
+            // Hide the chatter dropdown too (they can only analyze themselves)
+            const chatterSelectContainer = chatterSelect.closest('.mb-8');
+            if (chatterSelectContainer) {
+                chatterSelectContainer.classList.add('hidden');
+            }
+        }
     }
 }
 
