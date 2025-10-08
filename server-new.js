@@ -929,6 +929,62 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       };
     }).sort((a, b) => b.revenue - a.revenue); // Sort by revenue descending
 
+    // Calculate period-over-period changes for team metrics
+    const periodDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const prevEnd = new Date(start);
+    const prevStart = new Date(start);
+    prevStart.setDate(prevStart.getDate() - periodDays);
+    
+    const prevChatterPerformance = await ChatterPerformance.find({
+      weekStartDate: { $lte: prevEnd },
+      weekEndDate: { $gte: prevStart }
+    });
+    
+    let prevTeamMetrics = {
+      totalRevenue: 0,
+      ppvsSent: 0,
+      ppvsUnlocked: 0,
+      messagesSent: 0,
+      responseTimesSum: 0,
+      responseTimeCount: 0
+    };
+    
+    prevChatterPerformance.forEach(data => {
+      prevTeamMetrics.totalRevenue += (data.ppvRevenue || 0) + (data.tipRevenue || 0);
+      prevTeamMetrics.ppvsSent += data.ppvsSent || 0;
+      prevTeamMetrics.ppvsUnlocked += data.ppvsUnlocked || 0;
+      prevTeamMetrics.messagesSent += data.messagesSent || 0;
+      if (data.avgResponseTime && data.avgResponseTime > 0) {
+        prevTeamMetrics.responseTimesSum += data.avgResponseTime;
+        prevTeamMetrics.responseTimeCount++;
+      }
+    });
+    
+    const prevUnlockRate = prevTeamMetrics.ppvsSent > 0 
+      ? (prevTeamMetrics.ppvsUnlocked / prevTeamMetrics.ppvsSent) * 100
+      : 0;
+    const prevAvgResponseTime = prevTeamMetrics.responseTimeCount > 0
+      ? prevTeamMetrics.responseTimesSum / prevTeamMetrics.responseTimeCount
+      : 0;
+    const prevAvgPPVPrice = prevTeamMetrics.ppvsUnlocked > 0
+      ? prevTeamMetrics.totalRevenue / prevTeamMetrics.ppvsUnlocked
+      : 0;
+    
+    const calcChange = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    };
+    
+    const changes = {
+      totalRevenue: calcChange(teamMetrics.totalRevenue, prevTeamMetrics.totalRevenue).toFixed(1),
+      ppvsSent: calcChange(teamMetrics.ppvsSent, prevTeamMetrics.ppvsSent).toFixed(1),
+      ppvsUnlocked: calcChange(teamMetrics.ppvsUnlocked, prevTeamMetrics.ppvsUnlocked).toFixed(1),
+      unlockRate: calcChange(unlockRate, prevUnlockRate).toFixed(1),
+      messagesSent: calcChange(teamMetrics.messagesSent, prevTeamMetrics.messagesSent).toFixed(1),
+      avgResponseTime: calcChange(avgResponseTime, prevAvgResponseTime).toFixed(1),
+      avgPPVPrice: calcChange(avgPPVPrice, prevAvgPPVPrice).toFixed(1)
+    };
+
     const response = {
       teamMetrics: {
         totalRevenue: Math.round(teamMetrics.totalRevenue),
@@ -947,7 +1003,8 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
           name: topPerformer[0],
           revenue: Math.round(topPerformer[1])
         } : null,
-        chatterCount: chatterNames.length
+        chatterCount: chatterNames.length,
+        changes: changes
       },
       chatters: chatterData,
       dateRange: {
@@ -1045,13 +1102,9 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     if (req.body.avgResponseTime !== undefined) chatterDataObj.avgResponseTime = req.body.avgResponseTime;
     if (req.body.netSales !== undefined) chatterDataObj.netSales = req.body.netSales;
     
-    // Calculate and store average PPV price (revenue per PPV purchased)
-    if (req.body.netSales !== undefined && req.body.ppvsUnlocked !== undefined && req.body.ppvsUnlocked > 0) {
-      chatterDataObj.avgPPVPrice = req.body.netSales / req.body.ppvsUnlocked;
-      console.log(`✅ Calculated avgPPVPrice: $${chatterDataObj.avgPPVPrice.toFixed(2)} ($${req.body.netSales} ÷ ${req.body.ppvsUnlocked} PPVs)`);
-    } else {
-      console.log(`⚠️ Cannot calculate avgPPVPrice: netSales=${req.body.netSales}, ppvsUnlocked=${req.body.ppvsUnlocked}`);
-    }
+    // NOTE: avgPPVPrice is calculated correctly in individual analysis from DailyChatterReport PPV sales (excluding tips)
+    // DO NOT calculate it here from netSales/ppvsUnlocked as that includes tips and is incorrect
+    // See line 2676 for correct calculation
 
     const chatterData = new ChatterPerformance(chatterDataObj);
     
