@@ -5026,59 +5026,124 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
   try {
     const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
     
-    let query = {};
+    let dateQuery = {};
     
-    // Build date filter
+    // Build date filter for FanPurchase
     if (filterType === 'week' && weekStart && weekEnd) {
-      query.weekStartDate = new Date(weekStart);
-      query.weekEndDate = new Date(weekEnd);
+      dateQuery.date = {
+        $gte: new Date(weekStart),
+        $lte: new Date(weekEnd)
+      };
     } else if (filterType === 'month' && monthStart && monthEnd) {
-      const start = new Date(monthStart);
-      const end = new Date(monthEnd);
-      query.$or = [
-        { weekStartDate: { $gte: start, $lte: end } },
-        { weekEndDate: { $gte: start, $lte: end } },
-        { weekStartDate: { $lte: start }, weekEndDate: { $gte: end } }
-      ];
+      dateQuery.date = {
+        $gte: new Date(monthStart),
+        $lte: new Date(monthEnd)
+      };
     }
     
-    // Get all traffic source performance data
-    const sourcePerformance = await TrafficSourcePerformance.find(query)
+    console.log('📊 Marketing Dashboard query:', dateQuery);
+    
+    // Get all purchases (aggregated from FanPurchase)
+    const purchases = await FanPurchase.find(dateQuery)
       .populate('trafficSource')
-      .sort({ totalRevenue: -1 });
+      .populate('vipFan');
     
-    // Aggregate metrics
-    const aggregated = {
-      totalRevenue: 0,
-      totalSubscribers: 0,
-      totalVIPs: 0,
-      avgRevenuePerSub: 0,
-      sources: []
-    };
+    console.log(`📊 Found ${purchases.length} purchases for dashboard`);
     
-    sourcePerformance.forEach(perf => {
-      aggregated.totalRevenue += perf.totalRevenue;
-      aggregated.totalSubscribers += perf.newSubscribers;
-      aggregated.totalVIPs += perf.vipCount;
+    // Get all traffic sources
+    const allSources = await TrafficSource.find({ isActive: true });
+    
+    // Aggregate by traffic source
+    const sourceMap = {};
+    let totalRevenue = 0;
+    const vipSet = new Set();
+    
+    purchases.forEach(purchase => {
+      totalRevenue += purchase.amount;
       
-      aggregated.sources.push({
-        id: perf.trafficSource._id,
-        name: perf.trafficSource.name,
-        category: perf.trafficSource.category,
-        revenue: perf.totalRevenue,
-        subscribers: perf.newSubscribers,
-        vips: perf.vipCount,
-        vipRate: perf.vipConversionRate,
-        ghostRate: perf.ghostRate,
-        buyerRate: perf.buyerRate,
-        qualityScore: perf.qualityScore,
-        qualityGrade: perf.qualityGrade
-      });
+      // Track VIPs
+      if (purchase.vipFan) {
+        vipSet.add(purchase.vipFan._id.toString());
+      }
+      
+      // Aggregate by source
+      const sourceId = purchase.trafficSource?._id?.toString() || 'unknown';
+      if (sourceId !== 'unknown' && purchase.trafficSource) {
+        if (!sourceMap[sourceId]) {
+          sourceMap[sourceId] = {
+            id: sourceId,
+            name: purchase.trafficSource.name,
+            category: purchase.trafficSource.category,
+            revenue: 0,
+            purchaseCount: 0,
+            vipPurchases: new Set(),
+            buyers: new Set()
+          };
+        }
+        
+        sourceMap[sourceId].revenue += purchase.amount;
+        sourceMap[sourceId].purchaseCount += 1;
+        
+        if (purchase.vipFan) {
+          sourceMap[sourceId].vipPurchases.add(purchase.vipFan._id.toString());
+        }
+        if (purchase.fanUsername) {
+          sourceMap[sourceId].buyers.add(purchase.fanUsername);
+        }
+      }
     });
     
-    if (aggregated.totalSubscribers > 0) {
-      aggregated.avgRevenuePerSub = aggregated.totalRevenue / aggregated.totalSubscribers;
-    }
+    // Convert to array and calculate metrics
+    const sources = Object.values(sourceMap).map(source => {
+      const vipCount = source.vipPurchases.size;
+      const buyerCount = source.buyers.size;
+      const vipRate = buyerCount > 0 ? (vipCount / buyerCount) * 100 : 0;
+      const buyerRate = source.purchaseCount > 0 ? (buyerCount / source.purchaseCount) * 100 : 0;
+      
+      // Simple quality score based on revenue and VIP rate
+      const revenueScore = Math.min(source.revenue / 100, 50); // Up to 50 points for revenue
+      const vipScore = vipRate * 0.5; // Up to 50 points for VIP rate
+      const qualityGrade = Math.min(revenueScore + vipScore, 100);
+      
+      let qualityScore = 'N/A';
+      if (qualityGrade >= 80) qualityScore = 'A+';
+      else if (qualityGrade >= 70) qualityScore = 'A';
+      else if (qualityGrade >= 60) qualityScore = 'B';
+      else if (qualityGrade >= 50) qualityScore = 'C';
+      else if (qualityGrade >= 40) qualityScore = 'D';
+      else qualityScore = 'F';
+      
+      return {
+        id: source.id,
+        name: source.name,
+        category: source.category,
+        revenue: source.revenue,
+        subscribers: 0, // Will be calculated when we have subscriber data
+        vips: vipCount,
+        vipRate: vipRate,
+        ghostRate: 0,
+        buyerRate: buyerRate,
+        qualityScore,
+        qualityGrade: Math.round(qualityGrade)
+      };
+    });
+    
+    // Sort by revenue
+    sources.sort((a, b) => b.revenue - a.revenue);
+    
+    const aggregated = {
+      totalRevenue,
+      totalSubscribers: 0, // Will need subscriber tracking
+      totalVIPs: vipSet.size,
+      avgRevenuePerSub: 0,
+      sources
+    };
+    
+    console.log('📊 Dashboard aggregated:', {
+      totalRevenue,
+      totalVIPs: vipSet.size,
+      sourcesCount: sources.length
+    });
     
     res.json(aggregated);
   } catch (error) {

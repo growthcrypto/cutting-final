@@ -6669,6 +6669,87 @@ function removeTip(button) {
     button.closest('.tip-entry').remove();
 }
 
+// Daily Report Form Submission
+async function handleDailyReportSubmit(event) {
+    event.preventDefault();
+
+    const data = {
+        date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        shift: document.getElementById('reportShift')?.value || 'morning',
+        fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
+        avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
+        notes: document.getElementById('reportNotes')?.value || '',
+        ppvSales: [],
+        tips: []
+    };
+
+    // Collect PPV sales with traffic source and VIP fan
+    const ppvContainer = document.getElementById('ppvSalesContainer');
+    const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
+    ppvEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const source = entry.querySelector('select[name="ppvSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        
+        if (amount) {
+            const saleData = {
+                amount: parseFloat(amount)
+            };
+            if (source) saleData.trafficSource = source;
+            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            
+            data.ppvSales.push(saleData);
+        }
+    });
+
+    // Collect tips with traffic source and VIP fan
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
+    tipEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const source = entry.querySelector('select[name="tipSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        
+        if (amount) {
+            const tipData = {
+                amount: parseFloat(amount)
+            };
+            if (source) tipData.trafficSource = source;
+            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            
+            data.tips.push(tipData);
+        }
+    });
+
+    console.log('📊 Submitting daily report:', data);
+
+    try {
+        const response = await fetch('/api/daily-reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Daily report saved successfully!', 'success');
+            document.getElementById('dailyReportForm')?.reset();
+            if (ppvContainer) ppvContainer.innerHTML = '';
+            if (tipsContainer) tipsContainer.innerHTML = '';
+            console.log('✅ Daily report saved:', result);
+        } else {
+            showNotification(result.error || 'Failed to save report', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting daily report:', error);
+        showNotification('Connection error. Please try again.', 'error');
+    }
+}
+
 // My Performance functions
 let currentMyPerformanceInterval = '7d';
 
