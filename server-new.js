@@ -907,6 +907,16 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     console.log('📊 Team Dashboard - ChatterPerformance found:', chatterPerformance.length, 'records');
+    if (chatterPerformance.length > 0) {
+      console.log('📊 Sample record:', {
+        chatterName: chatterPerformance[0].chatterName,
+        weekStartDate: chatterPerformance[0].weekStartDate,
+        weekEndDate: chatterPerformance[0].weekEndDate,
+        messagesSent: chatterPerformance[0].messagesSent
+      });
+    } else {
+      console.log('❌ No ChatterPerformance records found with query:', chatterPerformanceQuery);
+    }
 
     // Get latest AI analysis for each chatter based on filter type
     const aiAnalysisPromises = chatterNames.map(async (name) => {
