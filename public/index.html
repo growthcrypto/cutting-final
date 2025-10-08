@@ -490,7 +490,7 @@
                                 30d
                             </button>
                             <div class="date-picker relative">
-                                <button id="customDateBtn" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 flex items-center gap-2">
+                                <button type="button" id="customDateBtn" onclick="toggleCustomDatePicker()" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 flex items-center gap-2">
                                     <span class="h-6 w-6 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
                                         <i class="fas fa-calendar text-blue-400 text-xs"></i>
                                     </span>
@@ -526,14 +526,22 @@
                                     </div>
 
                                     <div class="actions mt-6 flex gap-3">
-                                        <button id="applyCustomRange" class="flex-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm shadow-md shadow-blue-900/50">
+                                        <button type="button" id="applyCustomRange" onclick="applyCustomDateRange('dashboard')" class="flex-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm shadow-md shadow-blue-900/50">
                                             Apply Range
                                         </button>
-                                        <button id="cancelCustomRange" class="flex-1 bg-slate-800 text-blue-100 border border-blue-500/40 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition">
+                                        <button type="button" id="cancelCustomRange" onclick="closeCustomDatePicker()" class="flex-1 bg-slate-800 text-blue-100 border border-blue-500/40 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition">
                                             Cancel
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                            <!-- Custom Date Range Indicator -->
+                            <div id="customDateRangeIndicator" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-2">
+                                <i class="fas fa-calendar-check text-blue-400"></i>
+                                <span id="customDateRangeText"></span>
+                                <button onclick="setTimeInterval('7d')" class="ml-2 text-blue-400 hover:text-blue-300">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1390,6 +1398,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1759902000000"></script>
+        <script src="app-complete.js?v=1759920000000"></script>
 </body>
 </html>

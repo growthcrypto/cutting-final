@@ -708,6 +708,12 @@ function setTimeInterval(interval) {
     if (!isCustom) {
         customDateRange = null;
         closeCustomDatePicker({ skipReset: true });
+        
+        // Hide custom date range indicator
+        const indicator = document.getElementById('customDateRangeIndicator');
+        if (indicator) {
+            indicator.classList.add('hidden');
+        }
     }
 
     updateTimeIntervalButtons();
@@ -778,50 +784,7 @@ function toggleCustomDatePicker() {
     }
 }
 
-function applyCustomDateRange() {
-    const picker = document.getElementById('customDatePicker');
-    const startInput = document.getElementById('customStartDate');
-    const endInput = document.getElementById('customEndDate');
-
-    if (!picker || !startInput || !endInput) {
-        showError('Unable to apply custom dates. Please refresh and try again.');
-        return;
-    }
-
-    const startDate = startInput.value;
-    const endDate = endInput.value;
-
-    if (!startDate || !endDate) {
-        showError('Please choose both start and end dates.');
-        return;
-    }
-
-    if (new Date(startDate) > new Date(endDate)) {
-        showError('Start date cannot be after end date.');
-        return;
-    }
-
-    // Set the custom date range
-    customDateRange = { start: startDate, end: endDate };
-    currentTimeInterval = 'custom';
-    
-    // Update button states
-    updateTimeIntervalButtons();
-    
-    // Close the picker
-    closeCustomDatePicker();
-
-    // Reload data for managers
-    if (currentUser?.role === 'manager') {
-        loadDashboardData();
-        loadAIRecommendations();
-    }
-
-    // Show success message
-    const startFormatted = formatDateLabel(startDate);
-    const endFormatted = formatDateLabel(endDate);
-    showNotification(`Custom range applied: ${startFormatted} → ${endFormatted}`, 'success');
-}
+// REMOVED DUPLICATE - See line 1272 for the real applyCustomDateRange(context) function
 
 function closeCustomDatePicker(options = {}) {
     const picker = document.getElementById('customDatePicker');
@@ -1291,6 +1254,15 @@ function applyCustomDateRange(context) {
         customDateRange = { start: startDate, end: endDate };
         currentTimeInterval = 'custom';
         updateTimeIntervalButtons();
+        
+        // Show date range indicator
+        const indicator = document.getElementById('customDateRangeIndicator');
+        const textSpan = document.getElementById('customDateRangeText');
+        if (indicator && textSpan) {
+            textSpan.textContent = `${startDate} to ${endDate}`;
+            indicator.classList.remove('hidden');
+        }
+        
         loadDashboardData();
     } else if (context === 'ai-analysis') {
         window.customDateRange = { start: startDate, end: endDate };
