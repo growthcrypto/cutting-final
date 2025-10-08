@@ -4300,31 +4300,24 @@ function createChatterDashboardSection() {
                     <p class="text-gray-400">Combined analytics across all chatters</p>
                 </div>
                 
-                <!-- Date Selector for Team Metrics -->
-                <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                    <span class="text-sm text-gray-400 mr-3">Team Period:</span>
-                    <button onclick="setTeamInterval('24h')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="24h">24h</button>
-                    <button onclick="setTeamInterval('7d')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white" data-interval="7d">7d</button>
-                    <button onclick="setTeamInterval('30d')" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="30d">30d</button>
-                    <div class="relative">
-                        <button onclick="toggleTeamCustomDatePicker()" class="team-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300" data-interval="custom">
-                            <i class="fas fa-calendar mr-1"></i>Custom
-                        </button>
-                        <div id="teamCustomDatePicker" class="hidden absolute right-0 mt-2 p-4 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 w-72">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Start Date</label>
-                                    <input type="date" id="teamCustomStartDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">End Date</label>
-                                    <input type="date" id="teamCustomEndDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                                </div>
-                                <button onclick="applyTeamCustomDateRange()" class="w-full premium-button text-white py-2 px-4 rounded-lg">
-                                    Apply Range
-                                </button>
-                            </div>
-                        </div>
+                <!-- Week/Month Selector (Shared with Manager Dashboard) -->
+                <div class="flex items-center space-x-3 mt-4 lg:mt-0">
+                    <span class="text-sm text-gray-400 mr-3">Filter by:</span>
+                    
+                    <!-- Week Selector -->
+                    <select id="teamWeekSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-purple-500">
+                        <option value="">Select Week...</option>
+                    </select>
+                    
+                    <!-- Month Selector -->
+                    <select id="teamMonthSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-purple-500">
+                        <option value="">Select Month...</option>
+                    </select>
+                    
+                    <!-- Current Filter Display -->
+                    <div id="teamCurrentFilterDisplay" class="hidden text-xs px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-2">
+                        <i class="fas fa-calendar-check text-purple-400"></i>
+                        <span id="teamCurrentFilterText"></span>
                     </div>
                 </div>
             </div>
@@ -4493,6 +4486,81 @@ let currentTeamInterval = '7d';
 let currentTeamDateRange = null;
 let currentChatterTab = null;
 
+// Populate team week selector dropdown
+function populateTeamWeekSelector() {
+    const selector = document.getElementById('teamWeekSelector');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">Select Week...</option>';
+    availableWeeks.forEach(week => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ start: week.start, end: week.end });
+        option.textContent = week.label;
+        // Select if this is the current filter
+        if (currentWeekFilter && week.start === currentWeekFilter.start) {
+            option.selected = true;
+        }
+        selector.appendChild(option);
+    });
+    
+    // Add change listener (only once)
+    selector.replaceWith(selector.cloneNode(true)); // Remove old listeners
+    document.getElementById('teamWeekSelector').addEventListener('change', (e) => {
+        if (e.target.value) {
+            const week = JSON.parse(e.target.value);
+            selectWeek(week);
+            const monthSelector = document.getElementById('teamMonthSelector');
+            if (monthSelector) monthSelector.value = '';
+        }
+    });
+}
+
+// Populate team month selector dropdown
+function populateTeamMonthSelector() {
+    const selector = document.getElementById('teamMonthSelector');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">Select Month...</option>';
+    availableMonths.forEach(month => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ firstDay: month.firstDay, lastDay: month.lastDay });
+        option.textContent = month.label;
+        // Select if this is the current filter
+        if (currentMonthFilter && month.firstDay === currentMonthFilter.firstDay) {
+            option.selected = true;
+        }
+        selector.appendChild(option);
+    });
+    
+    // Add change listener (only once)
+    selector.replaceWith(selector.cloneNode(true)); // Remove old listeners
+    document.getElementById('teamMonthSelector').addEventListener('change', (e) => {
+        if (e.target.value) {
+            const month = JSON.parse(e.target.value);
+            selectMonth(month);
+            const weekSelector = document.getElementById('teamWeekSelector');
+            if (weekSelector) weekSelector.value = '';
+        }
+    });
+}
+
+// Update team filter display
+function updateTeamFilterDisplay() {
+    const display = document.getElementById('teamCurrentFilterDisplay');
+    const text = document.getElementById('teamCurrentFilterText');
+    if (!display || !text) return;
+    
+    if (currentFilterType === 'week' && currentWeekFilter) {
+        text.textContent = `Week: ${new Date(currentWeekFilter.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(currentWeekFilter.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        display.classList.remove('hidden');
+    } else if (currentFilterType === 'month' && currentMonthFilter) {
+        text.textContent = `Month: ${new Date(currentMonthFilter.firstDay).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        display.classList.remove('hidden');
+    } else {
+        display.classList.add('hidden');
+    }
+}
+
 // Load team dashboard data
 async function loadTeamDashboard() {
     const loading = document.getElementById('teamDashboardLoading');
@@ -4500,6 +4568,13 @@ async function loadTeamDashboard() {
     
     if (loading) loading.classList.remove('hidden');
     if (content) content.classList.add('hidden');
+    
+    // Populate team selectors if available
+    if (availableWeeks.length > 0) {
+        populateTeamWeekSelector();
+        populateTeamMonthSelector();
+        updateTeamFilterDisplay();
+    }
     
     try {
         // Build URL based on filter type (use same filters as Manager Dashboard)
