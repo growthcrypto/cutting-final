@@ -4162,6 +4162,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔥 AFTER DELETION - messagePatterns exists:', !!aiAnalysis.messagePatterns);
       console.log('🔥 AFTER DELETION - engagementMetrics exists:', !!aiAnalysis.engagementMetrics);
       
+      console.log('🚨🚨🚨 ABOUT TO SAVE AIANALYSIS TO DATABASE 🚨🚨🚨');
+      console.log('🚨 analysisType:', analysisType);
+      console.log('🚨 chatterId:', chatterId);
+      
       // CRITICAL: Save aiAnalysis to AIAnalysis collection for team dashboard
       try {
         // Get the actual chatter name (for individual analysis, use the name candidates we built earlier)
