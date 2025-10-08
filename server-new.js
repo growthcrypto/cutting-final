@@ -1824,17 +1824,35 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
     
     const analysisText = completion.choices[0].message.content;
     
-    // Check if AI is returning the template structure with placeholder values
+    // Extract ONLY the first JSON object (grammarBreakdown), NOT the GUIDELINES_V2_JSON block
+    // The GUIDELINES_V2_JSON block comes after as a separate text block
+    const responseText = analysisText; // Store full response for _rawResponse
     
-    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-    
-    if (!jsonMatch) {
+    // Find the first complete JSON object by counting braces
+    let jsonStart = analysisText.indexOf('{');
+    if (jsonStart === -1) {
       console.log('❌ No JSON found in AI response');
       throw new Error('Failed to parse AI analysis response');
     }
     
+    let braceCount = 0;
+    let jsonEnd = jsonStart;
+    for (let i = jsonStart; i < analysisText.length; i++) {
+      if (analysisText[i] === '{') braceCount++;
+      if (analysisText[i] === '}') braceCount--;
+      if (braceCount === 0) {
+        jsonEnd = i + 1;
+        break;
+      }
+    }
+    
+    if (braceCount !== 0) {
+      console.log('❌ Malformed JSON - braces do not match');
+      throw new Error('Failed to parse AI analysis response - unmatched braces');
+    }
+    
     try {
-      let jsonText = jsonMatch[0];
+      let jsonText = analysisText.substring(jsonStart, jsonEnd);
       
       // Debug: Show the raw JSON before fixes
       console.log('🔍 Raw JSON length:', jsonText.length);
@@ -2720,17 +2738,15 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
       aiAnalysis.messagesSent = analyticsData.messagesSent;
       
-        // FORCE RE-ANALYSIS WITH NEW PROMPT - ALWAYS OVERRIDE OLD DATA
-        console.log('🔄 FORCING RE-ANALYSIS WITH NEW PROMPT');
-        if (analysisMessageTexts && analysisMessageTexts.length > 0) {
-          console.log('🔄 Re-analyzing messages with new prompt...');
-          console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
-          
-          // OLD BATCHING SYSTEM REMOVED - Using new comprehensive batching below
-            
-            // Get AI analysis for BOTH grammar and guidelines using ALL messages in batches
-            console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
-            console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
+      // FORCE RE-ANALYSIS WITH NEW PROMPT - ALWAYS OVERRIDE OLD DATA
+      console.log('🔄 FORCING RE-ANALYSIS WITH NEW PROMPT');
+      if (analysisMessageTexts && analysisMessageTexts.length > 0) {
+        console.log('🔄 Re-analyzing messages with new prompt...');
+        console.log('🔄 MessageContent sample:', analysisMessageTexts.slice(0, 3));
+        
+        // Get AI analysis for BOTH grammar and guidelines using ALL messages in batches
+        console.log('🔄 Getting AI analysis for grammar AND guidelines using ALL messages in batches...');
+        console.log('🔄 Total messages to analyze:', analysisMessageTexts.length);
             
             let batchSize = calculateOptimalBatchSize(analysisMessageTexts);
             
