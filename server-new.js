@@ -5500,30 +5500,30 @@ Respond in STRICT JSON with this exact shape:
   },
   "strategicInsights": {
     "revenueOptimization": {
-      "leakagePoints": ["Specific revenue leak with exact numbers and impact", "Another specific leak with quantified loss", "Third leak with improvement potential"],
-      "growthOpportunities": ["Specific opportunity with exact revenue potential", "Another opportunity with projected impact", "Third opportunity with implementation strategy"],
-      "efficiencyGains": ["Specific efficiency gain with exact calculation", "Another efficiency gain with projected results"]
+      "leakagePoints": ["CRITICAL: DO NOT mention 'average PPV price' or specific pricing like '$13.76' - we DO NOT have daily sales/pricing data. ONLY use: Total revenue $${analyticsData.netSales}, ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} PPVs purchased.", "DO NOT make up pricing recommendations. We ONLY know total revenue, not individual PPV prices.", "Focus on ACTUAL problems from the analysis: Grammar score ${analyticsData.grammarScore}/100, Guidelines score ${analyticsData.guidelinesScore}/100."],
+      "growthOpportunities": ["DO NOT make up random projections like 'increase price by $2' or '10% increase = $50' or 'could add $34.40 in revenue'.", "ONLY recommend fixing ACTUAL problems found: grammar errors, guideline violations, reply time issues.", "If you don't have specific data showing a growth opportunity, say 'Requires more data to identify specific growth opportunities.'"],
+      "efficiencyGains": ["DO NOT say 'reduce response time from 13.4 to 5 minutes' unless the data ACTUALLY shows 13.4 minute average.", "DO NOT say 'increase PPV price' - we don't have pricing data.", "ONLY recommend fixing ACTUAL problems: grammar errors (${analyticsData.grammarScore}/100), guideline violations (${analyticsData.guidelinesScore}/100)."]
     },
     "messageOptimization": {
-      "qualityImprovements": ["Specific message quality improvement with expected impact", "Another quality improvement with implementation"],
-      "engagementStrategies": ["Specific engagement strategy with projected results", "Another engagement strategy with metrics"],
-      "conversionOptimization": ["Specific conversion improvement with exact numbers", "Another conversion strategy with expected outcomes"]
+      "qualityImprovements": ["Grammar score is ${analyticsData.grammarScore}/100. If low, recommend improving grammar. If high (80+), say 'Grammar quality is strong.'", "Guidelines score is ${analyticsData.guidelinesScore}/100. If low, recommend fixing guideline violations. If high (80+), say 'Guideline adherence is strong.'", "DO NOT make generic recommendations like 'improve clarity' unless you have SPECIFIC data showing clarity issues."],
+      "engagementStrategies": ["We DO NOT have engagement data unless it's in the message analysis. DO NOT make up engagement strategies.", "If no specific engagement data is available, say 'Engagement analysis requires more detailed message data.'", "DO NOT make random projections."],
+      "conversionOptimization": ["The ONLY conversion data is: ${analyticsData.ppvsUnlocked}/${analyticsData.ppvsSent} = ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate.", "DO NOT make up projections about 'improving to 40%' or 'adding $100 in revenue' unless based on SPECIFIC data.", "If the unlock rate is already good (40%+), say 'Conversion rate is solid.' If low (<30%), recommend analyzing why PPVs aren't converting."]
     },
     "performanceDrivers": {
-      "primaryDrivers": ["Driver 1 with exact impact analysis and numbers", "Driver 2 with specific impact analysis"],
-      "limitingFactors": ["Factor 1 with specific solution and expected results", "Factor 2 with detailed solution"],
-      "leveragePoints": ["Leverage point 1 with exact expected outcome", "Leverage point 2 with specific results"]
+      "primaryDrivers": ["Grammar score: ${analyticsData.grammarScore}/100. Guidelines score: ${analyticsData.guidelinesScore}/100. These are the primary quality drivers.", "PPV unlock rate: ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}%. This is the primary conversion driver.", "DO NOT make up other drivers - stick to the actual data provided."],
+      "limitingFactors": ["If grammar score is low (<70), say 'Low grammar score limiting message effectiveness.' If high, don't mention it.", "If guidelines score is low (<70), say 'Low guidelines score limiting conversion potential.' If high, don't mention it.", "DO NOT mention factors we don't have data for (e.g., response time, unless ACTUAL reply time violations are in the data)."],
+      "leveragePoints": ["If grammar/guidelines scores are low, say 'Improving message quality could enhance conversion rates.'", "If unlock rate is low, say 'Improving PPV messaging could increase unlock rate.'", "DO NOT make up leverage points with fake numbers."]
     }
   },
   "actionPlan": {
-    "immediateActions": ["Specific action with exact expected outcome and timeline", "Another specific action with projected results and timeline"],
-    "messageOptimization": ["Specific message improvement with exact expected impact", "Another message strategy with projected results"],
-    "revenueOptimization": ["Specific revenue improvement with exact numbers", "Another revenue strategy with projected impact"],
-    "successMetrics": ["Specific metric with exact target and timeline", "Another metric with specific target and timeline"],
+    "immediateActions": ["ONLY recommend fixing ACTUAL problems: If grammar score is ${analyticsData.grammarScore}/100, recommend 'Fix grammar errors to improve message quality.'", "If guidelines score is ${analyticsData.guidelinesScore}/100, recommend 'Address guideline violations to improve conversion.'", "DO NOT make up actions like 'reduce response time' unless we have actual response time data."],
+    "messageOptimization": ["Grammar: ${analyticsData.grammarScore}/100. If low, recommend grammar improvements. If high, skip.", "Guidelines: ${analyticsData.guidelinesScore}/100. If low, recommend guideline adherence. If high, skip.", "DO NOT make generic recommendations."],
+    "revenueOptimization": ["DO NOT make up pricing strategies like 'increase PPV price to $15' - we don't have pricing data.", "DO NOT make up random revenue projections.", "ONLY recommend: 'Improve message quality (grammar: ${analyticsData.grammarScore}/100, guidelines: ${analyticsData.guidelinesScore}/100) to potentially improve ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate.'"],
+    "successMetrics": ["Target: Improve grammar score from ${analyticsData.grammarScore}/100 to at least 85/100 within 30 days.", "Target: Improve guidelines score from ${analyticsData.guidelinesScore}/100 to at least 85/100 within 30 days.", "DO NOT make up metrics we can't measure."],
     "roiProjections": {
-      "currentState": "Current performance with exact revenue impact and numbers",
-      "optimizedState": "Projected performance with exact revenue impact and numbers",
-      "improvementValue": "Quantified improvement with exact numbers and timeline"
+      "currentState": "Current: $${analyticsData.netSales} revenue, ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate, ${analyticsData.grammarScore}/100 grammar, ${analyticsData.guidelinesScore}/100 guidelines.",
+      "optimizedState": "DO NOT make up fake projections like '$500 revenue' or '60% unlock rate'. Say: 'Optimized state requires more data to project.'",
+      "improvementValue": "DO NOT make up fake improvement values. Say: 'Quantified improvement requires baseline comparison data.'"
     }
   }
 }
