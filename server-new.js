@@ -3312,11 +3312,37 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                   }
                 });
                 
-                // Recalculate total violations for this category
-                reliableGuidelinesAnalysis[category].violations = reliableDetails.reduce((sum, detail) => sum + (detail.count || 0), 0);
-              });
-              
-              console.log('✅ Merged AI complex analysis with reliable simple analysis');
+              // Recalculate total violations for this category
+              reliableGuidelinesAnalysis[category].violations = reliableDetails.reduce((sum, detail) => sum + (detail.count || 0), 0);
+            });
+            
+            console.log('✅ Merged AI complex analysis with reliable simple analysis');
+            
+            // CRITICAL SUMMARY: Show ALL violations with actual message content (at the end so Railway doesn't drop it)
+            console.log('\n🚨🚨🚨 FINAL VIOLATIONS SUMMARY 🚨🚨🚨');
+            ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
+              const catData = reliableGuidelinesAnalysis[category];
+              if (catData.violations > 0) {
+                console.log(`\n📊 ${category.toUpperCase()}: ${catData.violations} total violations`);
+                catData.details.forEach(detail => {
+                  if (detail.count > 0 && detail.examples && detail.examples.length > 0) {
+                    console.log(`\n  ❌ ${detail.title}: ${detail.count} violations`);
+                    detail.examples.slice(0, 3).forEach(msgIdx => {
+                      const msg = analysisMessageTexts[msgIdx];
+                      if (msg) {
+                        const msgText = msg.text || JSON.stringify(msg);
+                        const ppvInfo = msg.isPPV ? ` [PPV: $${msg.ppvRevenue}]` : '';
+                        console.log(`     Message ${msgIdx}: "${msgText}"${ppvInfo}`);
+                      }
+                    });
+                    if (detail.examples.length > 3) {
+                      console.log(`     ... and ${detail.examples.length - 3} more violations`);
+                    }
+                  }
+                });
+              }
+            });
+            console.log('🚨🚨🚨 END VIOLATIONS SUMMARY 🚨🚨🚨\n');
             } else {
               console.log('⚠️ No AI analysis available for complex guidelines - using placeholders');
             }
