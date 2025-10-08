@@ -2783,6 +2783,12 @@ function renderChatterAnalysisResults(data) {
 // Generate real data-driven insights based on actual performance data
 async function generateRealDataInsights(analytics, intelligent) {
     try {
+        // Only fetch AI recommendations for managers
+        if (currentUser?.role !== 'manager') {
+            console.log('Skipping AI recommendations - not a manager');
+            return generateFallbackInsights(analytics, intelligent);
+        }
+        
         // Fetch real AI recommendations from backend
         const response = await fetch(`/api/ai/recommendations?interval=${currentTimeInterval}`, {
             headers: {
