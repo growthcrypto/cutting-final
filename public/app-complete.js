@@ -4534,30 +4534,6 @@ function renderTeamMetrics(metrics) {
             <div class="text-xs text-gray-400">Avg PPV Price</div>
         </div>
         
-        <!-- Revenue Per Message -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-cyan-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
-                    <i class="fas fa-comment-dollar text-white"></i>
-                </div>
-                <div class="text-xs text-gray-400">Per Message</div>
-            </div>
-            <div class="text-2xl font-black text-white mb-1">$${metrics.revenuePerMessage}</div>
-            <div class="text-xs text-gray-400">Revenue/Message</div>
-        </div>
-        
-        <!-- Messages Sent -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-gray-500/30 bg-gradient-to-br from-gray-500/10 to-slate-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500 to-slate-500 flex items-center justify-center">
-                    <i class="fas fa-comments text-white"></i>
-                </div>
-                <div class="text-xs text-gray-400">Team Total</div>
-            </div>
-            <div class="text-2xl font-black text-white mb-1">${metrics.messagesSent.toLocaleString()}</div>
-            <div class="text-xs text-gray-400">Messages Sent</div>
-        </div>
-        
         <!-- Fans Chatted -->
         <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-rose-500/10">
             <div class="flex items-center justify-between mb-3">
@@ -4584,17 +4560,6 @@ function renderTeamMetrics(metrics) {
         </div>
         ` : ''}
         
-        <!-- Team Size -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-                    <i class="fas fa-user-friends text-white"></i>
-                </div>
-                <div class="text-xs text-gray-400">Active</div>
-            </div>
-            <div class="text-2xl font-black text-white mb-1">${metrics.chatterCount}</div>
-            <div class="text-xs text-gray-400">Team Members</div>
-        </div>
     `;
     
     grid.innerHTML = metricsHTML;
