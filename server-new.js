@@ -955,8 +955,15 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       }
       
       const latestAnalysis = await AIAnalysis.findOne(analysisQuery)
-        .sort({ timestamp: -1 })
+        .sort({ _id: -1 }) // Sort by _id to get the most recently created record
         .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp dateRange');
+      
+      console.log(`📊 AI Analysis for ${name}:`, latestAnalysis ? { 
+        scores: { grammar: latestAnalysis.grammarScore, guidelines: latestAnalysis.guidelinesScore }, 
+        timestamp: latestAnalysis.timestamp,
+        dateRange: latestAnalysis.dateRange
+      } : 'NOT FOUND');
+      
       return { chatterName: name, analysis: latestAnalysis };
     });
     const chatterAnalyses = await Promise.all(aiAnalysisPromises);
