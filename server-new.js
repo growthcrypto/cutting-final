@@ -3875,15 +3875,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         guidelinesBreakdownKeys: aiAnalysis.guidelinesBreakdown ? Object.keys(aiAnalysis.guidelinesBreakdown) : [],
         overallBreakdownKeys: aiAnalysis.overallBreakdown ? Object.keys(aiAnalysis.overallBreakdown) : []
       });
-      console.log('🔍 Frontend chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
-      console.log('🔍 Frontend messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
-      console.log('🔍 Frontend engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
-      console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
-      console.log('🔍 Frontend guidelinesBreakdownV2:', JSON.stringify(aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2));
-      console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
-      console.log('🚨 CRITICAL DEBUG - reliableGuidelinesAnalysis:', JSON.stringify(aiAnalysis.reliableGuidelinesAnalysis));
-      console.log('🚨 CRITICAL DEBUG - V2 generalChatting text:', aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2?.generalChatting);
-      console.log('🚨 CRITICAL DEBUG - V2 details:', JSON.stringify(aiAnalysis.guidelinesBreakdown?.guidelinesBreakdownV2?.details));
+      // REMOVED: Massive JSON logging that caused Railway to drop 67K+ messages
+      // This was causing the save success/failure logs to be dropped
       
       // Debug individual properties
       if (aiAnalysis.chattingStyle) {
@@ -3907,19 +3900,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // This field is no longer used - we use executiveSummary instead
       console.log('✅ SKIPPED old engagementMetrics fallback - not needed anymore');
       
-      // Debug the final response being sent
-  console.log('🔍 FINAL RESPONSE - chattingStyle:', JSON.stringify(aiAnalysis.chattingStyle));
-  console.log('🔍 FINAL RESPONSE - messagePatterns:', JSON.stringify(aiAnalysis.messagePatterns));
-  console.log('🔍 FINAL RESPONSE - engagementMetrics:', JSON.stringify(aiAnalysis.engagementMetrics));
-  
-  // MOVED deletion to right before res.json() - see line 3972
-      
-      // CRITICAL DEBUG: Check what's actually being sent in the response
-      console.log('🔍 RESPONSE OBJECT KEYS:', Object.keys(aiAnalysis));
-      console.log('🔍 RESPONSE OBJECT FULL:', JSON.stringify(aiAnalysis, null, 2));
-      console.log('🔍 Frontend grammarBreakdown:', JSON.stringify(aiAnalysis.grammarBreakdown));
-      console.log('🔍 Frontend guidelinesBreakdown:', JSON.stringify(aiAnalysis.guidelinesBreakdown));
-      console.log('🔍 Frontend overallBreakdown:', JSON.stringify(aiAnalysis.overallBreakdown));
+      // REMOVED: Excessive logging that causes Railway to drop critical save logs (67K+ messages)
+      // These logs make Railway hit 500 logs/sec limit and drop save success/failure messages
       
       // Helper to extract message texts for deterministic breakdowns (from ALL MessageAnalysis records)
       const getWindowMessages = () => {
@@ -5500,12 +5482,8 @@ function cleanAnalysisResponse(analysis) {
 // AI Analysis function using OpenAI
 async function generateAIAnalysis(analyticsData, analysisType, interval, messageContent = [], totalMessages = analyticsData.messagesSent) {
   try {
-    console.log('🚨 STARTING AI ANALYSIS FUNCTION');
-    console.log('🚨 MESSAGE CONTENT:', messageContent);
-    console.log('🚨 MESSAGE CONTENT LENGTH:', messageContent ? messageContent.length : 0);
-    console.log('🚨 ANALYTICS DATA:', analyticsData);
-    console.log('🚨 ANALYSIS TYPE:', analysisType);
-    console.log('🚨 INTERVAL:', interval);
+    console.log('🚨 STARTING AI ANALYSIS');
+    // REMOVED: Massive object logging that causes Railway to drop 67K+ messages
     
     // Check if OpenAI is properly configured
     if (!openai || !openai.chat || !openai.chat.completions) {
@@ -5520,8 +5498,7 @@ async function generateAIAnalysis(analyticsData, analysisType, interval, message
       };
     }
 
-    // Debug: Log the analytics data being sent to AI
-    console.log('Analytics data being sent to AI:', JSON.stringify(analyticsData, null, 2));
+    // REMOVED: Massive JSON logging that causes Railway log drops
     
     let prompt;
     if (analysisType === 'agency') {
