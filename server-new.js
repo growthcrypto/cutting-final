@@ -1044,6 +1044,14 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     if (req.body.fansChatted !== undefined) chatterDataObj.fansChattedWith = req.body.fansChatted;
     if (req.body.avgResponseTime !== undefined) chatterDataObj.avgResponseTime = req.body.avgResponseTime;
     if (req.body.netSales !== undefined) chatterDataObj.netSales = req.body.netSales;
+    
+    // Calculate and store average PPV price (revenue per PPV purchased)
+    if (req.body.netSales !== undefined && req.body.ppvsUnlocked !== undefined && req.body.ppvsUnlocked > 0) {
+      chatterDataObj.avgPPVPrice = req.body.netSales / req.body.ppvsUnlocked;
+      console.log(`✅ Calculated avgPPVPrice: $${chatterDataObj.avgPPVPrice.toFixed(2)} ($${req.body.netSales} ÷ ${req.body.ppvsUnlocked} PPVs)`);
+    } else {
+      console.log(`⚠️ Cannot calculate avgPPVPrice: netSales=${req.body.netSales}, ppvsUnlocked=${req.body.ppvsUnlocked}`);
+    }
 
     const chatterData = new ChatterPerformance(chatterDataObj);
     
@@ -2577,6 +2585,30 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const netSales = chatterData.reduce((sum, data) => sum + (data.netSales || 0), 0);
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
+      
+      // Calculate average PPV price across all periods
+      // Method 1: If individual records have avgPPVPrice, average them (weighted by PPVs)
+      // Method 2: Otherwise, calculate from total revenue / total PPVs unlocked
+      const recordsWithPPVPrice = chatterData.filter(data => data.avgPPVPrice && data.avgPPVPrice > 0);
+      let avgPPVPrice = 0;
+      if (recordsWithPPVPrice.length > 0) {
+        // Weighted average based on number of PPVs in each period
+        const totalWeightedPrice = chatterData.reduce((sum, data) => {
+          if (data.avgPPVPrice && data.ppvsUnlocked > 0) {
+            return sum + (data.avgPPVPrice * data.ppvsUnlocked);
+          }
+          return sum;
+        }, 0);
+        avgPPVPrice = totalWeightedPrice / totalPPVsUnlocked;
+        console.log(`✅ Calculated weighted avgPPVPrice: $${avgPPVPrice.toFixed(2)} (from ${recordsWithPPVPrice.length} records)`);
+      } else if (netSales > 0 && totalPPVsUnlocked > 0) {
+        // Fallback: Calculate from totals
+        avgPPVPrice = netSales / totalPPVsUnlocked;
+        console.log(`✅ Calculated avgPPVPrice from totals: $${avgPPVPrice.toFixed(2)} ($${netSales} ÷ ${totalPPVsUnlocked} PPVs)`);
+      } else {
+        console.log(`⚠️ Cannot calculate avgPPVPrice: netSales=${netSales}, ppvsUnlocked=${totalPPVsUnlocked}`);
+      }
+      
       // Calculate avg response time only from records that have response time data
       const chatterDataWithResponseTime = chatterData.filter(data => data.avgResponseTime != null && data.avgResponseTime > 0);
       const avgResponseTime = chatterDataWithResponseTime.length > 0 
@@ -2644,6 +2676,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         netSales,
         ppvsSent: totalPPVsSent,
         ppvsUnlocked: totalPPVsUnlocked,
+        avgPPVPrice, // Average revenue per PPV purchased
         messagesSent,
         fansChatted,
         avgResponseTime,
@@ -5500,7 +5533,7 @@ Respond in STRICT JSON with this exact shape:
   },
   "strategicInsights": {
     "revenueOptimization": {
-      "leakagePoints": ["Use ACTUAL data: Total revenue $${analyticsData.netSales}, ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} PPVs purchased.", "If average PPV price data exists (e.g., avgPPVPrice in analyticsData), you can calculate: $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} per PPV purchased. Otherwise, say 'Individual PPV pricing data not available.'", "Focus on ACTUAL problems: Grammar ${analyticsData.grammarScore}/100, Guidelines ${analyticsData.guidelinesScore}/100, ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate."],
+      "leakagePoints": ["Use ACTUAL data: Total revenue $${analyticsData.netSales}, ${analyticsData.ppvsSent} PPVs sent, ${analyticsData.ppvsUnlocked} PPVs purchased.${analyticsData.avgPPVPrice > 0 ? ` Average PPV price: $${analyticsData.avgPPVPrice.toFixed(2)}.` : ' (Individual PPV pricing not yet available.)'}", "Focus on ACTUAL problems: Grammar ${analyticsData.grammarScore}/100, Guidelines ${analyticsData.guidelinesScore}/100, ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate.", "Identify SPECIFIC leaks: e.g., 'Grammar errors may reduce PPV conversion', 'Reply time violations (X found) may lose fan engagement.'"],
       "growthOpportunities": ["ONLY make projections if you can show the MATH: e.g., 'If unlock rate improves from ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% to X%, revenue could increase by Y.' Show your work.", "DO NOT use random numbers like '10% increase = $50' unless you calculate it from ACTUAL data.", "If you can't calculate a real projection, say 'Growth opportunities require baseline comparison data.'"],
       "efficiencyGains": ["ONLY mention response time if avgResponseTime shows in the data: ${analyticsData.avgResponseTime} minutes. If it's 0 or undefined, don't mention it.", "ONLY recommend pricing changes if you have ACTUAL pricing data. Calculate: $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} PPVs = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} per PPV. You can recommend pricing based on THIS.", "Focus on ACTUAL problems: Grammar (${analyticsData.grammarScore}/100), Guidelines (${analyticsData.guidelinesScore}/100)."]
     },
@@ -5518,12 +5551,12 @@ Respond in STRICT JSON with this exact shape:
   "actionPlan": {
     "immediateActions": ["ONLY recommend fixing ACTUAL problems: If grammar score is ${analyticsData.grammarScore}/100, recommend 'Fix grammar errors to improve message quality.'", "If guidelines score is ${analyticsData.guidelinesScore}/100, recommend 'Address guideline violations to improve conversion.'", "DO NOT make up actions like 'reduce response time' unless we have actual response time data."],
     "messageOptimization": ["Grammar: ${analyticsData.grammarScore}/100. If low, recommend grammar improvements. If high, skip.", "Guidelines: ${analyticsData.guidelinesScore}/100. If low, recommend guideline adherence. If high, skip.", "DO NOT make generic recommendations."],
-    "revenueOptimization": ["You CAN calculate average PPV price: $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} PPVs purchased = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} per PPV. Use THIS for pricing recommendations, not made-up numbers.", "You CAN make revenue projections IF you show the math: 'If unlock rate improves from ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% to X%, with ${analyticsData.ppvsSent} PPVs at $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} average, revenue could increase by $Y.' SHOW THE CALCULATION.", "Recommend: Improve grammar (${analyticsData.grammarScore}/100) and guidelines (${analyticsData.guidelinesScore}/100) to improve ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate."],
+    "revenueOptimization": ["${analyticsData.avgPPVPrice > 0 ? `Average PPV price: $${analyticsData.avgPPVPrice.toFixed(2)} (from uploaded data). Use THIS for pricing recommendations.` : `You CAN calculate average PPV price: $${analyticsData.netSales} ÷ ${analyticsData.ppvsUnlocked} PPVs = $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} per PPV. Use THIS for pricing recommendations.`}", "You CAN make revenue projections IF you show the math: 'If unlock rate improves from ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% to X%, with ${analyticsData.ppvsSent} PPVs at $${analyticsData.avgPPVPrice > 0 ? analyticsData.avgPPVPrice.toFixed(2) : (analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} average price, revenue could increase by $Y.' SHOW THE CALCULATION.", "Recommend: Improve grammar (${analyticsData.grammarScore}/100) and guidelines (${analyticsData.guidelinesScore}/100) to improve ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate."],
     "successMetrics": ["Target: Improve grammar score from ${analyticsData.grammarScore}/100 to at least 85/100 within 30 days.", "Target: Improve guidelines score from ${analyticsData.guidelinesScore}/100 to at least 85/100 within 30 days.", "DO NOT make up metrics we can't measure."],
     "roiProjections": {
       "currentState": "Current: $${analyticsData.netSales} revenue, ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% unlock rate (${analyticsData.ppvsUnlocked}/${analyticsData.ppvsSent} PPVs), ${analyticsData.grammarScore}/100 grammar, ${analyticsData.guidelinesScore}/100 guidelines.",
       "optimizedState": "You CAN make projections IF you show the MATH and reasoning. Example: 'If grammar improves to 85/100 and guidelines improve to 85/100, and this leads to 10% better unlock rate (based on correlation data), revenue could increase to $X.' SHOW YOUR WORK. DO NOT use random numbers.",
-      "improvementValue": "Calculate based on ACTUAL data. Example: 'If unlock rate improves from ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% to X% (specific reasoning), with ${analyticsData.ppvsSent} PPVs at $${(analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} average, revenue could increase by $Y.' SHOW THE CALCULATION."
+      "improvementValue": "Calculate based on ACTUAL data. Example: 'If unlock rate improves from ${(analyticsData.ppvsUnlocked/analyticsData.ppvsSent*100).toFixed(1)}% to X% (specific reasoning), with ${analyticsData.ppvsSent} PPVs at $${analyticsData.avgPPVPrice > 0 ? analyticsData.avgPPVPrice.toFixed(2) : (analyticsData.netSales/analyticsData.ppvsUnlocked).toFixed(2)} average price, revenue could increase by $Y.' SHOW THE CALCULATION."
     }
   }
 }

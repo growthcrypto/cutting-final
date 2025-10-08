@@ -222,6 +222,7 @@ const chatterPerformanceSchema = new mongoose.Schema({
   
   // Calculated Rates (only chatter-specific metrics)
   unlockRate: { type: Number, default: 0 }, // (ppvsUnlocked / ppvsSent) * 100
+  avgPPVPrice: { type: Number, default: 0 }, // netSales / ppvsUnlocked - average revenue per PPV purchased
   // Note: Removed profitMargin since we don't have actual costs data
   netRevenuePerFan: { type: Number, default: 0 }, // netSales / fansChattedWith - chatter-specific
   
