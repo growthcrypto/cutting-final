@@ -4426,21 +4426,27 @@ async function loadTeamDashboard() {
     }
 }
 
-// Render team-wide metrics
+// Render team-wide metrics - REDESIGNED FOR MILLION DOLLAR LOOK
 function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
     const getScoreColor = (score) => {
-        if (score >= 80) return 'text-green-400';
-        if (score >= 60) return 'text-yellow-400';
+        if (score >= 85) return 'text-emerald-400';
+        if (score >= 70) return 'text-yellow-400';
         return 'text-red-400';
     };
     
     const getScoreBg = (score) => {
-        if (score >= 80) return 'from-green-500/20 to-emerald-500/20 border-green-500/30';
-        if (score >= 60) return 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30';
-        return 'from-red-500/20 to-pink-500/20 border-red-500/30';
+        if (score >= 85) return 'from-emerald-500/10 to-green-500/10 border-emerald-500/20';
+        if (score >= 70) return 'from-yellow-500/10 to-orange-500/10 border-yellow-500/20';
+        return 'from-red-500/10 to-rose-500/10 border-red-500/20';
+    };
+    
+    const getScoreGradient = (score) => {
+        if (score >= 85) return 'from-emerald-500 to-green-500';
+        if (score >= 70) return 'from-yellow-500 to-orange-500';
+        return 'from-red-500 to-rose-500';
     };
     
     const metricsHTML = `
