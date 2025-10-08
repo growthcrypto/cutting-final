@@ -4325,14 +4325,6 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         // Find the earliest and latest dates from the actual data
         const allDates = [];
         
-        // Get dates from ChatterPerformance records (if available in analyticsData)
-        if (chatterData && chatterData.length > 0) {
-          chatterData.forEach(record => {
-            if (record.weekStartDate) allDates.push(new Date(record.weekStartDate));
-            if (record.weekEndDate) allDates.push(new Date(record.weekEndDate));
-          });
-        }
-        
         // Get dates from MessageAnalysis records
         if (analyticsData.messagesAnalysis && analyticsData.messagesAnalysis.length > 0) {
           analyticsData.messagesAnalysis.forEach(record => {
