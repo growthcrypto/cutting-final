@@ -4173,6 +4173,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           }
         }
         
+        console.log('🔍 DEBUG: About to save AIAnalysis with scores:', {
+          chatterName: actualChatterName,
+          grammarScore: aiAnalysis.grammarScore,
+          guidelinesScore: aiAnalysis.guidelinesScore,
+          overallScore: aiAnalysis.overallScore
+        });
+        
         const aiAnalysisDoc = new AIAnalysis({
           chatterName: actualChatterName,
           timestamp: new Date(),
@@ -4188,7 +4195,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           actionPlan: aiAnalysis.actionPlan || {}
         });
         await aiAnalysisDoc.save();
-        console.log('✅ AIAnalysis saved to database for team dashboard:', aiAnalysisDoc._id, 'chatterName:', aiAnalysisDoc.chatterName);
+        console.log('✅ AIAnalysis saved to database for team dashboard:', aiAnalysisDoc._id, 'chatterName:', aiAnalysisDoc.chatterName, 'scores:', {
+          grammar: aiAnalysisDoc.grammarScore,
+          guidelines: aiAnalysisDoc.guidelinesScore,
+          overall: aiAnalysisDoc.overallScore
+        });
       } catch (saveError) {
         console.error('❌ Failed to save AIAnalysis to database:', saveError);
         console.error('❌ Save error details:', saveError.message);
