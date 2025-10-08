@@ -2534,6 +2534,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       });
       
       console.log('Found chatter performance data:', chatterData.length, 'records');
+      
+      // Also fetch DailyChatterReports to calculate avgPPVPrice from actual ppvSales logs
+      let dailyReportsQuery = { chatterName: { $in: [...new Set(nameCandidates)] } };
+      if (startDate && endDate) {
+        dailyReportsQuery.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+      } else {
+        const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        dailyReportsQuery.date = { $gte: start };
+      }
+      
+      const dailyReports = await DailyChatterReport.find(dailyReportsQuery);
+      console.log('Found daily chatter reports:', dailyReports.length, 'records');
 
       // Also load message analysis for same chatter and date range
       console.log('🔍 About to query message analysis...');
@@ -2581,33 +2595,37 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.log('❌ NO MESSAGE ANALYSIS RECORDS FOUND!');
       }
       
-      const totalRevenue = 0; // Revenue not captured in ChatterPerformance
+      // Calculate revenue and avgPPVPrice from actual ppvSales logs (not ChatterPerformance aggregates)
+      // This is correct because total revenue includes tips, but avgPPVPrice should only use PPV sales
+      const allPPVSales = dailyReports.reduce((sales, report) => {
+        if (report.ppvSales && Array.isArray(report.ppvSales)) {
+          return [...sales, ...report.ppvSales];
+        }
+        return sales;
+      }, []);
+      
+      const totalPPVRevenue = allPPVSales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
+      const totalTipRevenue = dailyReports.reduce((sum, report) => {
+        if (report.tips && Array.isArray(report.tips)) {
+          return sum + report.tips.reduce((tipSum, tip) => tipSum + (tip.amount || 0), 0);
+        }
+        return sum;
+      }, 0);
+      const totalRevenue = totalPPVRevenue + totalTipRevenue;
+      
+      // Calculate avgPPVPrice from actual individual PPV sales (the correct way)
+      let avgPPVPrice = 0;
+      if (allPPVSales.length > 0) {
+        avgPPVPrice = totalPPVRevenue / allPPVSales.length;
+        console.log(`✅ Calculated avgPPVPrice from ${allPPVSales.length} individual PPV sales: $${avgPPVPrice.toFixed(2)} (total PPV revenue: $${totalPPVRevenue.toFixed(2)})`);
+      } else {
+        console.log(`⚠️ No PPV sales found in daily reports for this date range`);
+      }
+      
+      // Get aggregate data from ChatterPerformance for other metrics
       const netSales = chatterData.reduce((sum, data) => sum + (data.netSales || 0), 0);
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
-      
-      // Calculate average PPV price across all periods
-      // Method 1: If individual records have avgPPVPrice, average them (weighted by PPVs)
-      // Method 2: Otherwise, calculate from total revenue / total PPVs unlocked
-      const recordsWithPPVPrice = chatterData.filter(data => data.avgPPVPrice && data.avgPPVPrice > 0);
-      let avgPPVPrice = 0;
-      if (recordsWithPPVPrice.length > 0) {
-        // Weighted average based on number of PPVs in each period
-        const totalWeightedPrice = chatterData.reduce((sum, data) => {
-          if (data.avgPPVPrice && data.ppvsUnlocked > 0) {
-            return sum + (data.avgPPVPrice * data.ppvsUnlocked);
-          }
-          return sum;
-        }, 0);
-        avgPPVPrice = totalWeightedPrice / totalPPVsUnlocked;
-        console.log(`✅ Calculated weighted avgPPVPrice: $${avgPPVPrice.toFixed(2)} (from ${recordsWithPPVPrice.length} records)`);
-      } else if (netSales > 0 && totalPPVsUnlocked > 0) {
-        // Fallback: Calculate from totals
-        avgPPVPrice = netSales / totalPPVsUnlocked;
-        console.log(`✅ Calculated avgPPVPrice from totals: $${avgPPVPrice.toFixed(2)} ($${netSales} ÷ ${totalPPVsUnlocked} PPVs)`);
-      } else {
-        console.log(`⚠️ Cannot calculate avgPPVPrice: netSales=${netSales}, ppvsUnlocked=${totalPPVsUnlocked}`);
-      }
       
       // Calculate avg response time only from records that have response time data
       const chatterDataWithResponseTime = chatterData.filter(data => data.avgResponseTime != null && data.avgResponseTime > 0);
