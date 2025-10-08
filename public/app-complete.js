@@ -243,6 +243,210 @@ function selectMonth(month) {
     loadDashboardData();
 }
 
+// ==================== TRAFFIC SOURCES MANAGEMENT ====================
+
+let currentTrafficSourceFilter = 'all';
+let allTrafficSourcesData = [];
+
+async function loadTrafficSourcesData() {
+    try {
+        await loadTrafficSources(); // Load global trafficSources array
+        allTrafficSourcesData = trafficSources;
+        renderTrafficSources();
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        showNotification('Failed to load traffic sources', 'error');
+    }
+}
+
+function renderTrafficSources() {
+    const grid = document.getElementById('trafficSourcesGrid');
+    if (!grid) return;
+    
+    // Filter sources
+    const filtered = currentTrafficSourceFilter === 'all' 
+        ? allTrafficSourcesData 
+        : allTrafficSourcesData.filter(s => s.category === currentTrafficSourceFilter);
+    
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-inbox text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400 text-lg">No traffic sources found</p>
+                <button onclick="showAddTrafficSourceModal()" class="mt-4 premium-button text-white font-medium py-2 px-4 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Add Your First Source
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render source cards
+    grid.innerHTML = filtered.map(source => {
+        const categoryIcons = {
+            reddit: 'fab fa-reddit',
+            twitter: 'fab fa-twitter',
+            instagram: 'fab fa-instagram',
+            tiktok: 'fab fa-tiktok',
+            youtube: 'fab fa-youtube',
+            other: 'fas fa-globe'
+        };
+        
+        const categoryColors = {
+            reddit: 'from-orange-500 to-red-500',
+            twitter: 'from-blue-400 to-blue-600',
+            instagram: 'from-pink-500 to-purple-600',
+            tiktok: 'from-black to-cyan-500',
+            youtube: 'from-red-500 to-red-700',
+            other: 'from-gray-500 to-gray-700'
+        };
+        
+        return `
+            <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-200 border border-gray-700 hover:border-${source.category === 'reddit' ? 'orange' : source.category === 'twitter' ? 'blue' : source.category === 'instagram' ? 'pink' : 'purple'}-500/50">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColors[source.category]} flex items-center justify-center">
+                            <i class="${categoryIcons[source.category]} text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white">${source.name}</h4>
+                            ${source.subcategory ? `<p class="text-xs text-gray-400">${source.subcategory}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="editTrafficSource('${source._id}')" class="p-2 hover:bg-gray-700 rounded-lg transition-all" title="Edit">
+                            <i class="fas fa-edit text-blue-400"></i>
+                        </button>
+                        <button onclick="deleteTrafficSource('${source._id}', '${source.name}')" class="p-2 hover:bg-gray-700 rounded-lg transition-all" title="Delete">
+                            <i class="fas fa-trash text-red-400"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-700">
+                    <span class="text-xs text-gray-400 capitalize">
+                        <i class="fas fa-tag mr-1"></i>${source.category}
+                    </span>
+                    <span class="text-xs ${source.isActive ? 'text-green-400' : 'text-gray-500'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${source.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterTrafficSources(category) {
+    currentTrafficSourceFilter = category;
+    
+    // Update button styles
+    document.querySelectorAll('.traffic-source-filter').forEach(btn => {
+        btn.className = 'traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all';
+    });
+    event.target.className = 'traffic-source-filter px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium';
+    
+    renderTrafficSources();
+}
+
+function showAddTrafficSourceModal() {
+    document.getElementById('modalTitle').textContent = 'Add Traffic Source';
+    document.getElementById('editSourceId').value = '';
+    document.getElementById('sourceName').value = '';
+    document.getElementById('sourceCategory').value = '';
+    document.getElementById('sourceSubcategory').value = '';
+    document.getElementById('trafficSourceModal').style.display = 'flex';
+}
+
+function closeTrafficSourceModal() {
+    document.getElementById('trafficSourceModal').style.display = 'none';
+}
+
+async function editTrafficSource(sourceId) {
+    const source = allTrafficSourcesData.find(s => s._id === sourceId);
+    if (!source) return;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Traffic Source';
+    document.getElementById('editSourceId').value = source._id;
+    document.getElementById('sourceName').value = source.name;
+    document.getElementById('sourceCategory').value = source.category;
+    document.getElementById('sourceSubcategory').value = source.subcategory || '';
+    document.getElementById('trafficSourceModal').style.display = 'flex';
+}
+
+async function deleteTrafficSource(sourceId, sourceName) {
+    if (!confirm(`Are you sure you want to delete "${sourceName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/marketing/traffic-sources/${sourceId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Traffic source deleted successfully', 'success');
+            loadTrafficSourcesData();
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'Failed to delete traffic source', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting traffic source:', error);
+        showNotification('Failed to delete traffic source', 'error');
+    }
+}
+
+// Handle traffic source form submission
+document.addEventListener('submit', async function(e) {
+    if (e.target.id === 'trafficSourceForm') {
+        e.preventDefault();
+        
+        const sourceId = document.getElementById('editSourceId').value;
+        const data = {
+            name: document.getElementById('sourceName').value,
+            category: document.getElementById('sourceCategory').value,
+            subcategory: document.getElementById('sourceSubcategory').value || undefined
+        };
+        
+        try {
+            const url = sourceId 
+                ? `/api/marketing/traffic-sources/${sourceId}`
+                : '/api/marketing/traffic-sources';
+            
+            const method = sourceId ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showNotification(`Traffic source ${sourceId ? 'updated' : 'created'} successfully`, 'success');
+                closeTrafficSourceModal();
+                loadTrafficSourcesData();
+            } else {
+                const result = await response.json();
+                showNotification(result.error || 'Failed to save traffic source', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving traffic source:', error);
+            showNotification('Failed to save traffic source', 'error');
+        }
+    }
+});
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('trafficSourceModal');
+    if (modal && e.target === modal) {
+        closeTrafficSourceModal();
+    }
+});
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -862,6 +1066,9 @@ function createSection(sectionId) {
         case 'team-management':
             section.innerHTML = createTeamManagementSection();
             break;
+        case 'traffic-sources':
+            section.innerHTML = createTrafficSourcesSection();
+            break;
         case 'settings':
             section.innerHTML = createSettingsSection();
             break;
@@ -889,6 +1096,9 @@ function loadSectionData(sectionId) {
     switch(sectionId) {
         case 'team-management':
             loadUsers();
+            break;
+        case 'traffic-sources':
+            loadTrafficSourcesData();
             break;
         case 'guidelines':
             loadGuidelines();
@@ -4462,6 +4672,99 @@ function createGuidelinesSection() {
                 <div id="guidelinesList" class="space-y-3 max-h-96 overflow-y-auto scrollbar-thin">
                     <p class="text-gray-400">No guidelines added yet</p>
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== TRAFFIC SOURCES SECTION ====================
+
+function createTrafficSourcesSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        <i class="fas fa-bullseye mr-2"></i>Traffic Sources
+                    </h2>
+                    <p class="text-gray-400">Manage marketing channels and track performance</p>
+                </div>
+                <button onclick="showAddTrafficSourceModal()" class="premium-button text-white font-medium py-3 px-6 rounded-xl hover:scale-105 transition-transform">
+                    <i class="fas fa-plus mr-2"></i>Add Source
+                </button>
+            </div>
+        </div>
+        
+        <!-- Category Tabs -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="filterTrafficSources('all')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium">
+                All Sources
+            </button>
+            <button onclick="filterTrafficSources('reddit')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-reddit mr-1"></i>Reddit
+            </button>
+            <button onclick="filterTrafficSources('twitter')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-twitter mr-1"></i>Twitter
+            </button>
+            <button onclick="filterTrafficSources('instagram')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-instagram mr-1"></i>Instagram
+            </button>
+            <button onclick="filterTrafficSources('tiktok')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-tiktok mr-1"></i>TikTok
+            </button>
+            <button onclick="filterTrafficSources('youtube')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-youtube mr-1"></i>YouTube
+            </button>
+            <button onclick="filterTrafficSources('other')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fas fa-globe mr-1"></i>Other
+            </button>
+        </div>
+        
+        <!-- Traffic Sources Grid -->
+        <div id="trafficSourcesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Will be populated dynamically -->
+        </div>
+        
+        <!-- Add/Edit Modal -->
+        <div id="trafficSourceModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50" style="display: none;">
+            <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    <span id="modalTitle">Add Traffic Source</span>
+                </h3>
+                <form id="trafficSourceForm" class="space-y-4">
+                    <input type="hidden" id="editSourceId">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Source Name</label>
+                        <input type="text" id="sourceName" required placeholder="e.g., Reddit - r/fitness"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Category</label>
+                        <select id="sourceCategory" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                            <option value="">Select category...</option>
+                            <option value="reddit">Reddit</option>
+                            <option value="twitter">Twitter</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Subcategory <span class="text-gray-500 font-normal">(optional)</span></label>
+                        <input type="text" id="sourceSubcategory" placeholder="e.g., r/fitness, thread_id"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 premium-button text-white font-medium py-3 px-6 rounded-xl">
+                            <i class="fas fa-save mr-2"></i>Save
+                        </button>
+                        <button type="button" onclick="closeTrafficSourceModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     `;
