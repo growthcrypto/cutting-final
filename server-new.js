@@ -4428,7 +4428,45 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
     });
 
     await report.save();
-    res.json({ message: 'Daily report saved successfully', report });
+    
+    // Recalculate avgPPVPrice from ALL daily reports for this chatter
+    // This ensures Dashboard/Analytics/Analysis all show the updated avgPPVPrice
+    const allReports = await DailyChatterReport.find({ 
+      chatterName: req.user.chatterName 
+    });
+    
+    // Sum all PPV sales (excluding tips)
+    let totalPPVAmount = 0;
+    let totalPPVCount = 0;
+    
+    allReports.forEach(r => {
+      if (r.ppvSales && r.ppvSales.length > 0) {
+        r.ppvSales.forEach(sale => {
+          totalPPVAmount += sale.amount;
+          totalPPVCount++;
+        });
+      }
+    });
+    
+    const calculatedAvgPPVPrice = totalPPVCount > 0 ? totalPPVAmount / totalPPVCount : 0;
+    
+    // Update or create ChatterPerformance record with the new avgPPVPrice
+    // Find the most recent ChatterPerformance for this chatter
+    const latestPerformance = await ChatterPerformance.findOne({ 
+      chatterName: req.user.chatterName 
+    }).sort({ weekStartDate: -1 });
+    
+    if (latestPerformance) {
+      latestPerformance.avgPPVPrice = calculatedAvgPPVPrice;
+      await latestPerformance.save();
+      console.log(`✅ Updated avgPPVPrice for ${req.user.chatterName}: $${calculatedAvgPPVPrice.toFixed(2)} (from ${totalPPVCount} PPV sales)`);
+    }
+    
+    res.json({ 
+      message: 'Daily report saved successfully', 
+      report,
+      avgPPVPrice: calculatedAvgPPVPrice
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
