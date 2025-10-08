@@ -4868,7 +4868,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-spell-check ${getScoreColor(metrics.avgGrammarScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(metrics.avgGrammarScore)} mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Grammar Score</div>
             </div>
         </div>
@@ -4881,7 +4881,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-clipboard-check ${getScoreColor(metrics.avgGuidelinesScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(metrics.avgGuidelinesScore)} mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Guidelines Score</div>
             </div>
         </div>
@@ -4894,7 +4894,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-star ${getScoreColor(metrics.avgOverallScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(metrics.avgOverallScore)} mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Overall Score</div>
             </div>
         </div>

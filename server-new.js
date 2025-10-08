@@ -1152,18 +1152,29 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       : 0;
     
     const calcChange = (current, previous) => {
-      if (previous === 0) return current > 0 ? 100 : 0;
-      return ((current - previous) / previous) * 100;
+      // If both are 0 or very close to 0, return null (no change to display)
+      if (Math.abs(current) < 0.01 && Math.abs(previous) < 0.01) return null;
+      // If previous is 0 but current is not
+      if (previous === 0 || Math.abs(previous) < 0.01) {
+        return current > 0 ? 100 : null;
+      }
+      const change = ((current - previous) / previous) * 100;
+      // Don't show tiny changes (<0.5%)
+      return Math.abs(change) < 0.5 ? null : change;
+    };
+    
+    const formatChange = (value) => {
+      return value !== null && value !== undefined ? value.toFixed(1) : '0.0';
     };
     
     const changes = {
-      totalRevenue: calcChange(teamMetrics.totalRevenue, prevTeamMetrics.totalRevenue).toFixed(1),
-      ppvsSent: calcChange(teamMetrics.ppvsSent, prevTeamMetrics.ppvsSent).toFixed(1),
-      ppvsUnlocked: calcChange(teamMetrics.ppvsUnlocked, prevTeamMetrics.ppvsUnlocked).toFixed(1),
-      unlockRate: calcChange(unlockRate, prevUnlockRate).toFixed(1),
-      messagesSent: calcChange(teamMetrics.messagesSent, prevTeamMetrics.messagesSent).toFixed(1),
-      avgResponseTime: calcChange(avgResponseTime, prevAvgResponseTime).toFixed(1),
-      avgPPVPrice: calcChange(avgPPVPrice, prevAvgPPVPrice).toFixed(1)
+      totalRevenue: formatChange(calcChange(teamMetrics.totalRevenue, prevTeamMetrics.totalRevenue)),
+      ppvsSent: formatChange(calcChange(teamMetrics.ppvsSent, prevTeamMetrics.ppvsSent)),
+      ppvsUnlocked: formatChange(calcChange(teamMetrics.ppvsUnlocked, prevTeamMetrics.ppvsUnlocked)),
+      unlockRate: formatChange(calcChange(unlockRate, prevUnlockRate)),
+      messagesSent: formatChange(calcChange(teamMetrics.messagesSent, prevTeamMetrics.messagesSent)),
+      avgResponseTime: formatChange(calcChange(avgResponseTime, prevAvgResponseTime)),
+      avgPPVPrice: formatChange(calcChange(avgPPVPrice, prevAvgPPVPrice))
     };
 
     const response = {
