@@ -4236,7 +4236,7 @@ function createChatterDashboardSection() {
         <!-- Team Dashboard Content -->
         <div id="teamDashboardContent" class="hidden">
             <!-- Team Metrics Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" id="teamMetricsGrid">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8" id="teamMetricsGrid">
                 <!-- Metrics will be dynamically inserted here -->
             </div>
             
@@ -4451,17 +4451,15 @@ function renderTeamMetrics(metrics) {
     
     const metricsHTML = `
         <!-- Total Revenue - REDESIGNED -->
-        <div class="group relative overflow-hidden rounded-2xl p-4 border border-purple-500/40 bg-gradient-to-br from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 backdrop-blur-sm">
-            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <div class="group relative overflow-hidden rounded-xl p-3 border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:border-purple-500/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-purple-500/20 backdrop-blur-sm">
             <div class="relative">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-                        <i class="fas fa-dollar-sign text-white text-lg"></i>
+                <div class="flex items-center justify-between mb-2">
+                    <div class="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30">
+                        <i class="fas fa-dollar-sign text-purple-400 text-sm"></i>
                     </div>
-                    <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-purple-500/30 text-purple-200">TEAM</span>
                 </div>
-                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.totalRevenue > 0 ? '$' + metrics.totalRevenue.toLocaleString() : '$0'}</div>
-                <div class="text-xs text-gray-400 font-medium">Total Revenue</div>
+                <div class="text-2xl font-bold text-white mb-0.5">${metrics.totalRevenue > 0 ? '$' + metrics.totalRevenue.toLocaleString() : '$0'}</div>
+                <div class="text-[11px] text-gray-400 font-medium">Total Revenue</div>
             </div>
         </div>
         
@@ -4671,17 +4669,22 @@ function renderChatterContent(chatter) {
     if (!container) return;
     
     const getScoreColor = (score) => {
-        if (!score) return 'text-gray-400';
-        if (score >= 80) return 'text-green-400';
-        if (score >= 60) return 'text-yellow-400';
+        if (score === null || score === undefined) return 'text-gray-400';
+        if (score >= 85) return 'text-emerald-400';
+        if (score >= 70) return 'text-yellow-400';
         return 'text-red-400';
     };
     
     const getScoreBadge = (score) => {
-        if (!score) return '⚪';
-        if (score >= 80) return '🟢';
-        if (score >= 60) return '🟡';
+        if (score === null || score === undefined) return '⚪';
+        if (score >= 85) return '✨';
+        if (score >= 70) return '⚡';
         return '🔴';
+    };
+    
+    const formatScore = (score) => {
+        if (score === null || score === undefined) return 'No data yet';
+        return Math.round(score);
     };
     
     const formatDate = (dateStr) => {
@@ -4691,48 +4694,71 @@ function renderChatterContent(chatter) {
     };
     
     const contentHTML = `
-        <!-- Chatter Analytics -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="text-xs text-gray-400 mb-1">Revenue</div>
-                <div class="text-xl font-bold text-white">$${chatter.revenue.toLocaleString()}</div>
+        <!-- Chatter Analytics - REDESIGNED -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="relative overflow-hidden p-3 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-xl border border-slate-700/50 hover:border-purple-500/30 transition-all">
+                <div class="flex items-center mb-2">
+                    <div class="p-1.5 rounded-lg bg-purple-500/20 mr-2">
+                        <i class="fas fa-dollar-sign text-purple-400 text-xs"></i>
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Revenue</div>
+                </div>
+                <div class="text-xl font-bold text-white">${chatter.revenue > 0 ? '$' + chatter.revenue.toLocaleString() : '$0'}</div>
             </div>
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="text-xs text-gray-400 mb-1">Unlock Rate</div>
-                <div class="text-xl font-bold text-white">${chatter.unlockRate}%</div>
+            <div class="relative overflow-hidden p-3 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-xl border border-slate-700/50 hover:border-blue-500/30 transition-all">
+                <div class="flex items-center mb-2">
+                    <div class="p-1.5 rounded-lg bg-blue-500/20 mr-2">
+                        <i class="fas fa-unlock text-blue-400 text-xs"></i>
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Unlock Rate</div>
+                </div>
+                <div class="text-xl font-bold text-white">${chatter.unlockRate.toFixed(1)}%</div>
             </div>
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="text-xs text-gray-400 mb-1">Messages</div>
+            <div class="relative overflow-hidden p-3 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-xl border border-slate-700/50 hover:border-cyan-500/30 transition-all">
+                <div class="flex items-center mb-2">
+                    <div class="p-1.5 rounded-lg bg-cyan-500/20 mr-2">
+                        <i class="fas fa-comments text-cyan-400 text-xs"></i>
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Messages</div>
+                </div>
                 <div class="text-xl font-bold text-white">${chatter.messagesSent.toLocaleString()}</div>
             </div>
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="text-xs text-gray-400 mb-1">Response Time</div>
-                <div class="text-xl font-bold text-white">${chatter.avgResponseTime}m</div>
+            <div class="relative overflow-hidden p-3 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-xl border border-slate-700/50 hover:border-indigo-500/30 transition-all">
+                <div class="flex items-center mb-2">
+                    <div class="p-1.5 rounded-lg bg-indigo-500/20 mr-2">
+                        <i class="fas fa-clock text-indigo-400 text-xs"></i>
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Response Time</div>
+                </div>
+                <div class="text-xl font-bold text-white">${chatter.avgResponseTime.toFixed(1)}<span class="text-sm text-gray-400">min</span></div>
             </div>
         </div>
         
-        <!-- Scores -->
-        <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-sm text-gray-400">Grammar</div>
-                    <div class="text-lg">${getScoreBadge(chatter.grammarScore)}</div>
+        <!-- Scores - REDESIGNED -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Grammar</div>
+                    <div class="text-2xl">${getScoreBadge(chatter.grammarScore)}</div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(chatter.grammarScore)}">${chatter.grammarScore || 'N/A'}</div>
+                <div class="text-3xl font-black ${getScoreColor(chatter.grammarScore)} mb-1">${formatScore(chatter.grammarScore)}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.grammarScore ? '/100' : ''}</div>
             </div>
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-sm text-gray-400">Guidelines</div>
-                    <div class="text-lg">${getScoreBadge(chatter.guidelinesScore)}</div>
+            <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Guidelines</div>
+                    <div class="text-2xl">${getScoreBadge(chatter.guidelinesScore)}</div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(chatter.guidelinesScore)}">${chatter.guidelinesScore || 'N/A'}</div>
+                <div class="text-3xl font-black ${getScoreColor(chatter.guidelinesScore)} mb-1">${formatScore(chatter.guidelinesScore)}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.guidelinesScore ? '/100' : ''}</div>
             </div>
-            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-sm text-gray-400">Overall</div>
-                    <div class="text-lg">${getScoreBadge(chatter.overallScore)}</div>
+            <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Overall</div>
+                    <div class="text-2xl">${getScoreBadge(chatter.overallScore)}</div>
                 </div>
-                <div class="text-2xl font-bold ${getScoreColor(chatter.overallScore)}">${chatter.overallScore || 'N/A'}</div>
+                <div class="text-3xl font-black ${getScoreColor(chatter.overallScore)} mb-1">${formatScore(chatter.overallScore)}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.overallScore ? '/100' : ''}</div>
             </div>
         </div>
         
