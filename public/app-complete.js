@@ -4296,7 +4296,22 @@ function createSettingsSection() {
 
 function createChatterDashboardSection() {
     // Load team dashboard data on mount
-    setTimeout(() => loadTeamDashboard(), 100);
+    setTimeout(() => {
+        // First populate the selectors
+        if (availableWeeks.length === 0) {
+            loadAvailablePeriods().then(() => {
+                populateTeamWeekSelector();
+                populateTeamMonthSelector();
+                updateTeamFilterDisplay();
+                loadTeamDashboard();
+            });
+        } else {
+            populateTeamWeekSelector();
+            populateTeamMonthSelector();
+            updateTeamFilterDisplay();
+            loadTeamDashboard();
+        }
+    }, 100);
     
     return `
         <div class="mb-8">
@@ -4497,8 +4512,12 @@ let currentChatterTab = null;
 // Populate team week selector dropdown
 function populateTeamWeekSelector() {
     const selector = document.getElementById('teamWeekSelector');
-    if (!selector) return;
+    if (!selector) {
+        console.log('⚠️ TEAM week selector not found in DOM');
+        return;
+    }
     
+    console.log('📅 Populating TEAM week selector with', availableWeeks.length, 'weeks');
     selector.innerHTML = '<option value="">Select Week...</option>';
     availableWeeks.forEach(week => {
         const option = document.createElement('option');
