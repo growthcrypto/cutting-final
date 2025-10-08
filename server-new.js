@@ -4107,6 +4107,41 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🔥 AFTER DELETION - messagePatterns exists:', !!aiAnalysis.messagePatterns);
       console.log('🔥 AFTER DELETION - engagementMetrics exists:', !!aiAnalysis.engagementMetrics);
       
+      // CRITICAL: Save aiAnalysis to AIAnalysis collection for team dashboard
+      try {
+        // Get the actual chatter name (for individual analysis, use the name candidates we built earlier)
+        let actualChatterName = chatterId;
+        if (analysisType === 'individual' && chatterId) {
+          try {
+            const userDoc = await User.findById(chatterId).select('chatterName username');
+            actualChatterName = userDoc?.chatterName || userDoc?.username || chatterId;
+          } catch (e) {
+            console.log('⚠️ Could not resolve chatter name, using chatterId:', chatterId);
+          }
+        }
+        
+        const aiAnalysisDoc = new AIAnalysis({
+          chatterName: actualChatterName,
+          timestamp: new Date(),
+          grammarScore: aiAnalysis.grammarScore || 0,
+          guidelinesScore: aiAnalysis.guidelinesScore || 0,
+          overallScore: aiAnalysis.overallScore || 0,
+          grammarBreakdown: aiAnalysis.grammarBreakdown || {},
+          guidelinesBreakdown: aiAnalysis.guidelinesBreakdown || {},
+          overallBreakdown: aiAnalysis.overallBreakdown || {},
+          executiveSummary: aiAnalysis.executiveSummary || {},
+          advancedMetrics: aiAnalysis.advancedMetrics || {},
+          strategicInsights: aiAnalysis.strategicInsights || {},
+          actionPlan: aiAnalysis.actionPlan || {}
+        });
+        await aiAnalysisDoc.save();
+        console.log('✅ AIAnalysis saved to database for team dashboard:', aiAnalysisDoc._id, 'chatterName:', aiAnalysisDoc.chatterName);
+      } catch (saveError) {
+        console.error('❌ Failed to save AIAnalysis to database:', saveError);
+        console.error('❌ Save error details:', saveError.message);
+        // Don't fail the request if save fails - still return the analysis
+      }
+      
       res.json(aiAnalysis);
     } catch (aiError) {
       console.error('AI Analysis failed, falling back to basic analysis:', aiError);
