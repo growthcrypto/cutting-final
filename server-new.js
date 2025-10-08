@@ -2497,10 +2497,11 @@ app.get('/api/debug/data', checkDatabaseConnection, async (req, res) => {
           guidelinesBreakdown: m.guidelinesBreakdown,
           overallBreakdown: m.overallBreakdown
         })),
-        aiAnalysis: aiAnalysis.slice(-3).map(a => ({
+        aiAnalysis: aiAnalysis.slice(-5).map(a => ({
           id: a._id,
           chatterName: a.chatterName,
           timestamp: a.timestamp,
+          dateRange: a.dateRange,
           grammarScore: a.grammarScore,
           guidelinesScore: a.guidelinesScore,
           overallScore: a.overallScore,
