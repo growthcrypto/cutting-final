@@ -231,42 +231,36 @@ const chatterPerformanceSchema = new mongoose.Schema({
 
 // AI Analysis Results
 const aiAnalysisSchema = new mongoose.Schema({
-  analysisType: { type: String, enum: ['agency_health', 'chatter_individual', 'opportunity_sizing'], required: true },
+  chatterName: { type: String, required: true }, // Chatter username
+  timestamp: { type: Date, default: Date.now },
+  
+  // Core Scores
+  grammarScore: { type: Number, min: 0, max: 100, default: 0 },
+  guidelinesScore: { type: Number, min: 0, max: 100, default: 0 },
+  overallScore: { type: Number, min: 0, max: 100, default: 0 },
+  
+  // Detailed Breakdowns
+  grammarBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
+  guidelinesBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
+  overallBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
+  
+  // Executive Analysis
+  executiveSummary: { type: mongoose.Schema.Types.Mixed, default: {} },
+  advancedMetrics: { type: mongoose.Schema.Types.Mixed, default: {} },
+  strategicInsights: { type: mongoose.Schema.Types.Mixed, default: {} },
+  actionPlan: { type: mongoose.Schema.Types.Mixed, default: {} },
+  
+  // Legacy fields (optional - for backwards compatibility with old agency analysis)
+  analysisType: { type: String, enum: ['agency_health', 'chatter_individual', 'opportunity_sizing'] },
   dateRange: {
-    start: { type: Date, required: true },
-    end: { type: Date, required: true }
+    start: { type: Date },
+    end: { type: Date }
   },
-  
-  // Analysis Results
-  criticalIssues: [{
-    issue: { type: String, required: true },
-    severity: { type: String, enum: ['low', 'medium', 'high', 'critical'], required: true },
-    affectedMetrics: [{ type: String }],
-    description: { type: String }
-  }],
-  
-  recommendations: [{
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    priority: { type: String, enum: ['low', 'medium', 'high'], required: true },
-    expectedImpact: { type: String },
-    roiCalculation: {
-      currentValue: { type: Number },
-      potentialValue: { type: Number },
-      weeklyImpact: { type: Number },
-      monthlyImpact: { type: Number }
-    }
-  }],
-  
-  opportunities: [{
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    potentialRevenue: { type: Number },
-    implementationDifficulty: { type: String, enum: ['easy', 'medium', 'hard'] }
-  }],
-  
+  criticalIssues: [{ type: mongoose.Schema.Types.Mixed }],
+  recommendations: [{ type: mongoose.Schema.Types.Mixed }],
+  opportunities: [{ type: mongoose.Schema.Types.Mixed }],
   keyInsights: [{ type: String }],
-  performanceMetrics: { type: mongoose.Schema.Types.Mixed }, // Flexible data structure
+  performanceMetrics: { type: mongoose.Schema.Types.Mixed },
   
   generatedAt: { type: Date, default: Date.now }
 });

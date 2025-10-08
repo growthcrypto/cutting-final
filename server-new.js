@@ -4149,15 +4149,18 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       console.log('🚨 chatterId:', chatterId);
       
       // CRITICAL: Save aiAnalysis to AIAnalysis collection for team dashboard
+      // Define actualChatterName OUTSIDE try block so it's available in catch block
+      let actualChatterName = chatterId;
       try {
         // Get the actual chatter name (for individual analysis, use the name candidates we built earlier)
-        let actualChatterName = chatterId;
         if (analysisType === 'individual' && chatterId) {
           try {
             const userDoc = await User.findById(chatterId).select('chatterName username');
             actualChatterName = userDoc?.chatterName || userDoc?.username || chatterId;
+            console.log('✅ Resolved chatter name:', actualChatterName);
           } catch (e) {
             console.log('⚠️ Could not resolve chatter name, using chatterId:', chatterId);
+            actualChatterName = chatterId; // Fallback to chatterId
           }
         }
         
