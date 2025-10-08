@@ -4159,19 +4159,60 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Define actualChatterName OUTSIDE try block so it's available in catch block
       let actualChatterName = chatterId;
       
-      // Calculate the timestamp for this analysis based on the data period
-      // Use the middle of the date range so it shows up when filtering for that period
+      // Calculate the timestamp for this analysis based on the ACTUAL DATA PERIOD
+      // This ensures the analysis shows up when filtering for the data's date range
       let analysisTimestamp;
-      if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        // Use middle of date range
-        analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
-        console.log('📅 Using middle of date range as timestamp:', analysisTimestamp);
+      
+      // For individual analysis, use the date range of the actual data being analyzed
+      if (analysisType === 'individual' && analyticsData.messagesAnalysis) {
+        // Find the earliest and latest dates from the actual data
+        const allDates = [];
+        
+        // Get dates from ChatterPerformance records (if available in analyticsData)
+        if (chatterData && chatterData.length > 0) {
+          chatterData.forEach(record => {
+            if (record.weekStartDate) allDates.push(new Date(record.weekStartDate));
+            if (record.weekEndDate) allDates.push(new Date(record.weekEndDate));
+          });
+        }
+        
+        // Get dates from MessageAnalysis records
+        if (analyticsData.messagesAnalysis && analyticsData.messagesAnalysis.length > 0) {
+          analyticsData.messagesAnalysis.forEach(record => {
+            if (record.weekStartDate) allDates.push(new Date(record.weekStartDate));
+            if (record.weekEndDate) allDates.push(new Date(record.weekEndDate));
+          });
+        }
+        
+        if (allDates.length > 0) {
+          // Use the middle of the actual data period
+          const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+          const latestDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+          analysisTimestamp = new Date((earliestDate.getTime() + latestDate.getTime()) / 2);
+          console.log('📅 Using middle of ACTUAL data period:', earliestDate.toISOString(), 'to', latestDate.toISOString(), '→', analysisTimestamp.toISOString());
+        } else {
+          // Fallback: use custom dates if provided, otherwise current time
+          if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
+            console.log('📅 Using middle of custom date range as fallback:', analysisTimestamp);
+          } else {
+            analysisTimestamp = new Date();
+            console.log('📅 Using current time as fallback:', analysisTimestamp);
+          }
+        }
       } else {
-        // If no explicit dates, use current time
-        analysisTimestamp = new Date();
-        console.log('📅 Using current time as timestamp:', analysisTimestamp);
+        // For agency analysis or if no data, use custom dates or current time
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
+          console.log('📅 Using middle of custom date range:', analysisTimestamp);
+        } else {
+          analysisTimestamp = new Date();
+          console.log('📅 Using current time:', analysisTimestamp);
+        }
       }
       
       try {
