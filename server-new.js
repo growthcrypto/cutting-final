@@ -3055,6 +3055,21 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
             console.log('  - Combined Raw Length:', combinedRawGuidelines.length);
             console.log('  - V2 JSON Parsed:', !!v2Json);
             
+            // VERBOSE: Show what the AI actually returned
+            if (v2Json) {
+              console.log('📋 AI RETURNED GUIDELINES_V2_JSON:');
+              console.log('  ✅ generalChatting:', JSON.stringify(v2Json.generalChatting, null, 2));
+              console.log('  ✅ psychology:', JSON.stringify(v2Json.psychology, null, 2));
+              console.log('  ✅ captions:', JSON.stringify(v2Json.captions, null, 2));
+              console.log('  ✅ sales:', JSON.stringify(v2Json.sales, null, 2));
+            } else {
+              console.log('❌ AI DID NOT RETURN GUIDELINES_V2_JSON BLOCK!');
+              console.log('📋 RAW AI RESPONSE PREVIEW (first 2000 chars):');
+              console.log(combinedRawGuidelines.substring(0, 2000));
+              console.log('📋 RAW AI RESPONSE PREVIEW (last 2000 chars):');
+              console.log(combinedRawGuidelines.substring(Math.max(0, combinedRawGuidelines.length - 2000)));
+            }
+            
             // COMPLETELY BYPASS UNRELIABLE AI - BUILD GUIDELINES ANALYSIS OURSELVES
             console.log('🔧 BYPASSING AI: Building guidelines analysis with reliable server-side logic...');
             
@@ -3228,7 +3243,19 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                         if (aiItem.examples.length > 5) {
                           console.log(`   ... and ${aiItem.examples.length - 5} more violations`);
                         }
+                      } else if (aiItem.count === 0) {
+                        // Show sample messages that the AI checked but found no violations
+                        console.log(`✅ NO VIOLATIONS FOUND FOR "${detail.title}"`);
+                        console.log(`📋 Sample messages AI checked (first 3 from batch):`);
+                        analysisMessageTexts.slice(0, 3).forEach((msg, idx) => {
+                          if (msg) {
+                            const msgText = msg.text || JSON.stringify(msg);
+                            console.log(`   Message ${idx}: "${msgText.substring(0, 150)}${msgText.length > 150 ? '...' : ''}"`);
+                          }
+                        });
                       }
+                    } else {
+                      console.log(`⚠️ NO AI DATA FOUND FOR "${detail.title}" - keeping placeholder`);
                     }
                   }
                 });
