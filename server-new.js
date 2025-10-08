@@ -788,14 +788,31 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     };
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
 
-    // Get latest AI analysis for each chatter WITHIN THE DATE RANGE
+    // Get latest AI analysis for each chatter WHERE DATA PERIOD OVERLAPS WITH FILTER RANGE
     const aiAnalysisPromises = chatterNames.map(async (name) => {
       const latestAnalysis = await AIAnalysis.findOne({ 
         chatterName: name,
-        timestamp: { $gte: start, $lte: end } // Filter by date range
+        $or: [
+          // Analysis has dateRange - check for overlap
+          {
+            'dateRange.start': { $exists: true, $ne: null },
+            'dateRange.end': { $exists: true, $ne: null },
+            'dateRange.start': { $lte: end },
+            'dateRange.end': { $gte: start }
+          },
+          // Legacy: Analysis has no dateRange - use timestamp
+          {
+            'dateRange.start': { $exists: false },
+            timestamp: { $gte: start, $lte: end }
+          },
+          {
+            'dateRange.start': null,
+            timestamp: { $gte: start, $lte: end }
+          }
+        ]
       })
         .sort({ timestamp: -1 })
-        .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp');
+        .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp dateRange');
       return { chatterName: name, analysis: latestAnalysis };
     });
     const chatterAnalyses = await Promise.all(aiAnalysisPromises);
@@ -4162,6 +4179,8 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // Calculate the timestamp for this analysis based on the ACTUAL DATA PERIOD
       // This ensures the analysis shows up when filtering for the data's date range
       let analysisTimestamp;
+      let analysisDateRangeStart;
+      let analysisDateRangeEnd;
       
       // For individual analysis, use the date range of the actual data being analyzed
       if (analysisType === 'individual' && analyticsData.messagesAnalysis) {
@@ -4185,21 +4204,31 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         }
         
         if (allDates.length > 0) {
-          // Use the middle of the actual data period
+          // Use the middle of the actual data period for timestamp
           const earliestDate = new Date(Math.min(...allDates.map(d => d.getTime())));
           const latestDate = new Date(Math.max(...allDates.map(d => d.getTime())));
           analysisTimestamp = new Date((earliestDate.getTime() + latestDate.getTime()) / 2);
-          console.log('📅 Using middle of ACTUAL data period:', earliestDate.toISOString(), 'to', latestDate.toISOString(), '→', analysisTimestamp.toISOString());
+          
+          // CRITICAL: Also store the full date range so we can query by overlap
+          analysisDateRangeStart = earliestDate;
+          analysisDateRangeEnd = latestDate;
+          
+          console.log('📅 Using ACTUAL data period:', earliestDate.toISOString(), 'to', latestDate.toISOString());
+          console.log('📅 Timestamp (middle):', analysisTimestamp.toISOString());
         } else {
           // Fallback: use custom dates if provided, otherwise current time
           if (startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
             analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
-            console.log('📅 Using middle of custom date range as fallback:', analysisTimestamp);
+            analysisDateRangeStart = start;
+            analysisDateRangeEnd = end;
+            console.log('📅 Using custom date range as fallback:', start.toISOString(), 'to', end.toISOString());
           } else {
             analysisTimestamp = new Date();
-            console.log('📅 Using current time as fallback:', analysisTimestamp);
+            analysisDateRangeStart = null;
+            analysisDateRangeEnd = null;
+            console.log('📅 Using current time as fallback (no date range):', analysisTimestamp);
           }
         }
       } else {
@@ -4208,10 +4237,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           const start = new Date(startDate);
           const end = new Date(endDate);
           analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
-          console.log('📅 Using middle of custom date range:', analysisTimestamp);
+          analysisDateRangeStart = start;
+          analysisDateRangeEnd = end;
+          console.log('📅 Using custom date range:', start.toISOString(), 'to', end.toISOString());
         } else {
           analysisTimestamp = new Date();
-          console.log('📅 Using current time:', analysisTimestamp);
+          analysisDateRangeStart = null;
+          analysisDateRangeEnd = null;
+          console.log('📅 Using current time (no date range):', analysisTimestamp);
         }
       }
       
@@ -4238,6 +4271,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         const aiAnalysisDoc = new AIAnalysis({
           chatterName: actualChatterName,
           timestamp: analysisTimestamp,
+          dateRange: {
+            start: analysisDateRangeStart,
+            end: analysisDateRangeEnd
+          },
           grammarScore: aiAnalysis.grammarScore || 0,
           guidelinesScore: aiAnalysis.guidelinesScore || 0,
           overallScore: aiAnalysis.overallScore || 0,
