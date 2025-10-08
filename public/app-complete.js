@@ -4450,113 +4450,137 @@ function renderTeamMetrics(metrics) {
     };
     
     const metricsHTML = `
-        <!-- Total Revenue -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-pink-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <i class="fas fa-dollar-sign text-white"></i>
+        <!-- Total Revenue - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-purple-500/40 bg-gradient-to-br from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
+                        <i class="fas fa-dollar-sign text-white text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-purple-500/30 text-purple-200">TEAM</span>
                 </div>
-                <div class="text-xs text-gray-400">Team Total</div>
+                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.totalRevenue > 0 ? '$' + metrics.totalRevenue.toLocaleString() : '$0'}</div>
+                <div class="text-xs text-gray-400 font-medium">Total Revenue</div>
             </div>
-            <div class="text-2xl font-black text-white mb-1">$${metrics.totalRevenue.toLocaleString()}</div>
-            <div class="text-xs text-gray-400">Total Revenue</div>
         </div>
         
-        <!-- PPV Unlock Rate -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <i class="fas fa-unlock text-white"></i>
+        <!-- PPV Unlock Rate - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-blue-500/40 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 hover:from-blue-600/30 hover:to-cyan-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/50 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+                        <i class="fas fa-unlock text-white text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-blue-500/30 text-blue-200">${metrics.ppvsUnlocked}/${metrics.ppvsSent}</span>
                 </div>
-                <div class="text-xs text-gray-400">${metrics.ppvsUnlocked}/${metrics.ppvsSent}</div>
+                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.unlockRate.toFixed(1)}<span class="text-xl text-blue-300">%</span></div>
+                <div class="text-xs text-gray-400 font-medium">PPV Unlock Rate</div>
             </div>
-            <div class="text-2xl font-black text-white mb-1">${metrics.unlockRate}%</div>
-            <div class="text-xs text-gray-400">Unlock Rate</div>
         </div>
         
-        <!-- Avg Response Time -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                    <i class="fas fa-clock text-white"></i>
+        <!-- Avg Response Time - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-indigo-500/40 bg-gradient-to-br from-indigo-600/20 to-violet-600/20 hover:from-indigo-600/30 hover:to-violet-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/50 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg">
+                        <i class="fas fa-clock text-white text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-indigo-500/30 text-indigo-200">AVG</span>
                 </div>
-                <div class="text-xs text-gray-400">Team Avg</div>
+                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.avgResponseTime.toFixed(1)}<span class="text-lg text-indigo-300 ml-0.5">min</span></div>
+                <div class="text-xs text-gray-400 font-medium">Response Time</div>
             </div>
-            <div class="text-2xl font-black text-white mb-1">${metrics.avgResponseTime}m</div>
-            <div class="text-xs text-gray-400">Response Time</div>
         </div>
         
-        <!-- Avg Grammar Score -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgGrammarScore)}">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-                    <i class="fas fa-spell-check text-white"></i>
+        <!-- Grammar Score - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border ${getScoreBg(metrics.avgGrammarScore).includes('emerald') ? 'border-emerald-500/40' : getScoreBg(metrics.avgGrammarScore).includes('yellow') ? 'border-yellow-500/40' : 'border-red-500/40'} bg-gradient-to-br ${getScoreBg(metrics.avgGrammarScore)} hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm">
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br ${getScoreGradient(metrics.avgGrammarScore)} shadow-lg">
+                        <i class="fas fa-spell-check text-white text-lg"></i>
+                    </div>
+                    <span class="text-xl">${metrics.avgGrammarScore >= 85 ? '✨' : metrics.avgGrammarScore >= 70 ? '⚡' : '🔴'}</span>
                 </div>
-                <div class="text-xs ${getScoreColor(metrics.avgGrammarScore)}">${metrics.avgGrammarScore >= 80 ? '🟢' : metrics.avgGrammarScore >= 60 ? '🟡' : '🔴'}</div>
+                <div class="text-3xl font-black ${getScoreColor(metrics.avgGrammarScore)} mb-0.5 tracking-tight">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-xs text-gray-400 font-medium">Grammar Score</div>
             </div>
-            <div class="text-2xl font-black ${getScoreColor(metrics.avgGrammarScore)} mb-1">${metrics.avgGrammarScore}/100</div>
-            <div class="text-xs text-gray-400">Grammar Score</div>
         </div>
         
-        <!-- Avg Guidelines Score -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgGuidelinesScore)}">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                    <i class="fas fa-chart-line text-white"></i>
+        <!-- Guidelines Score - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border ${getScoreBg(metrics.avgGuidelinesScore).includes('emerald') ? 'border-emerald-500/40' : getScoreBg(metrics.avgGuidelinesScore).includes('yellow') ? 'border-yellow-500/40' : 'border-red-500/40'} bg-gradient-to-br ${getScoreBg(metrics.avgGuidelinesScore)} hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm">
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br ${getScoreGradient(metrics.avgGuidelinesScore)} shadow-lg">
+                        <i class="fas fa-clipboard-check text-white text-lg"></i>
+                    </div>
+                    <span class="text-xl">${metrics.avgGuidelinesScore >= 85 ? '✨' : metrics.avgGuidelinesScore >= 70 ? '⚡' : '🔴'}</span>
                 </div>
-                <div class="text-xs ${getScoreColor(metrics.avgGuidelinesScore)}">${metrics.avgGuidelinesScore >= 80 ? '🟢' : metrics.avgGuidelinesScore >= 60 ? '🟡' : '🔴'}</div>
+                <div class="text-3xl font-black ${getScoreColor(metrics.avgGuidelinesScore)} mb-0.5 tracking-tight">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-xs text-gray-400 font-medium">Guidelines Score</div>
             </div>
-            <div class="text-2xl font-black ${getScoreColor(metrics.avgGuidelinesScore)} mb-1">${metrics.avgGuidelinesScore}/100</div>
-            <div class="text-xs text-gray-400">Guidelines Score</div>
         </div>
         
-        <!-- Overall Score -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border bg-gradient-to-br ${getScoreBg(metrics.avgOverallScore)}">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                    <i class="fas fa-star text-white"></i>
+        <!-- Overall Score - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border ${getScoreBg(metrics.avgOverallScore).includes('emerald') ? 'border-emerald-500/40' : getScoreBg(metrics.avgOverallScore).includes('yellow') ? 'border-yellow-500/40' : 'border-red-500/40'} bg-gradient-to-br ${getScoreBg(metrics.avgOverallScore)} hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm">
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br ${getScoreGradient(metrics.avgOverallScore)} shadow-lg">
+                        <i class="fas fa-star text-white text-lg"></i>
+                    </div>
+                    <span class="text-xl">${metrics.avgOverallScore >= 85 ? '🏆' : metrics.avgOverallScore >= 70 ? '⭐' : '📊'}</span>
                 </div>
-                <div class="text-xs ${getScoreColor(metrics.avgOverallScore)}">${metrics.avgOverallScore >= 80 ? '🟢' : metrics.avgOverallScore >= 60 ? '🟡' : '🔴'}</div>
+                <div class="text-3xl font-black ${getScoreColor(metrics.avgOverallScore)} mb-0.5 tracking-tight">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-xs text-gray-400 font-medium">Overall Score</div>
             </div>
-            <div class="text-2xl font-black ${getScoreColor(metrics.avgOverallScore)} mb-1">${metrics.avgOverallScore}/100</div>
-            <div class="text-xs text-gray-400">Overall Score</div>
         </div>
         
-        <!-- Avg PPV Price -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                    <i class="fas fa-tag text-white"></i>
+        <!-- Avg PPV Price - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-emerald-500/40 bg-gradient-to-br from-emerald-600/20 to-green-600/20 hover:from-emerald-600/30 hover:to-green-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/50 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shadow-lg">
+                        <i class="fas fa-tag text-white text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/30 text-emerald-200">EACH</span>
                 </div>
-                <div class="text-xs text-gray-400">Per PPV</div>
+                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.avgPPVPrice > 0 ? '$' + metrics.avgPPVPrice.toFixed(2) : '$0'}</div>
+                <div class="text-xs text-gray-400 font-medium">Avg PPV Price</div>
             </div>
-            <div class="text-2xl font-black text-white mb-1">$${metrics.avgPPVPrice}</div>
-            <div class="text-xs text-gray-400">Avg PPV Price</div>
         </div>
         
-        <!-- Fans Chatted -->
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-rose-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                    <i class="fas fa-users text-white"></i>
+        <!-- Fans Chatted - REDESIGNED -->
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-pink-500/40 bg-gradient-to-br from-pink-600/20 to-rose-600/20 hover:from-pink-600/30 hover:to-rose-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-pink-500/50 backdrop-blur-sm">
+            <div class="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
+                        <i class="fas fa-users text-white text-lg"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-pink-500/30 text-pink-200">TOTAL</span>
                 </div>
-                <div class="text-xs text-gray-400">Team Total</div>
+                <div class="text-3xl font-black text-white mb-0.5 tracking-tight">${metrics.fansChatted.toLocaleString()}</div>
+                <div class="text-xs text-gray-400 font-medium">Fans Chatted</div>
             </div>
-            <div class="text-2xl font-black text-white mb-1">${metrics.fansChatted.toLocaleString()}</div>
-            <div class="text-xs text-gray-400">Fans Chatted</div>
         </div>
         
-        <!-- Top Performer -->
+        <!-- Top Performer - REDESIGNED -->
         ${metrics.topPerformer ? `
-        <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-300 border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-amber-500/10">
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 flex items-center justify-center">
-                    <i class="fas fa-trophy text-white"></i>
+        <div class="group relative overflow-hidden rounded-2xl p-4 border border-yellow-500/40 bg-gradient-to-br from-yellow-600/20 to-amber-600/20 hover:from-yellow-600/30 hover:to-amber-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-500/50 backdrop-blur-sm col-span-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-lg">
+                        <i class="fas fa-trophy text-white text-lg"></i>
+                    </div>
+                    <span class="text-2xl">🏆</span>
                 </div>
-                <div class="text-xs text-gray-400">🏆</div>
+                <div class="text-2xl font-black text-yellow-400 mb-0.5 tracking-tight">${metrics.topPerformer.name || metrics.topPerformer}</div>
+                <div class="text-xs text-gray-400 font-medium">Top Performer • $${((metrics.topPerformer.revenue || 0)).toLocaleString()}</div>
             </div>
-            <div class="text-lg font-black text-yellow-400 mb-1">${metrics.topPerformer.name}</div>
-            <div class="text-xs text-gray-400">$${metrics.topPerformer.revenue.toLocaleString()} • Top Performer</div>
         </div>
         ` : ''}
         
