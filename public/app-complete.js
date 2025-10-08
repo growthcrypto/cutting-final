@@ -4503,12 +4503,21 @@ async function loadTeamDashboard() {
         } else if (currentFilterType === 'month' && currentMonthFilter) {
             url = `/api/analytics/team-dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}`;
         } else {
-            // Fallback to old behavior
+            // Fallback: Load available periods first if not loaded
+            if (!currentFilterType && availableWeeks.length === 0) {
+                console.log('No filter set, loading available periods...');
+                await loadAvailablePeriods();
+                // After loading, this will trigger again with a filter set
+                return;
+            }
+            // Old behavior fallback
             url = `/api/analytics/team-dashboard?interval=${currentTeamInterval || '7d'}`;
             if (currentTeamDateRange) {
                 url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
             }
         }
+        
+        console.log('Team Dashboard URL:', url);
         
         const response = await fetch(url, {
             headers: {
@@ -4516,7 +4525,13 @@ async function loadTeamDashboard() {
             }
         });
         
-        if (!response.ok) throw new Error('Failed to load team dashboard');
+        console.log('Team Dashboard response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Team Dashboard error response:', errorText);
+            throw new Error(`Failed to load team dashboard: ${response.status} - ${errorText}`);
+        }
         
         const data = await response.json();
         console.log('Team dashboard data:', data);
