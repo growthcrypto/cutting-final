@@ -445,6 +445,350 @@ document.addEventListener('click', function(e) {
     if (modal && e.target === modal) {
         closeTrafficSourceModal();
     }
+    
+    const linkModal = document.getElementById('linkTrackingModal');
+    if (linkModal && e.target === linkModal) {
+        closeLinkTrackingModal();
+    }
+});
+
+// ==================== MARKETING DASHBOARD FUNCTIONS ====================
+
+let currentMarketingFilter = { type: null, week: null, month: null };
+let marketingDashboardData = null;
+
+async function loadMarketingDashboard() {
+    try {
+        // Populate selectors if not already done
+        await loadAvailablePeriods();
+        populateMarketingSelectors();
+        
+        // Build query params
+        let params = new URLSearchParams();
+        if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
+            params.append('filterType', 'week');
+            params.append('weekStart', currentMarketingFilter.week.start);
+            params.append('weekEnd', currentMarketingFilter.week.end);
+        } else if (currentMarketingFilter.type === 'month' && currentMarketingFilter.month) {
+            params.append('filterType', 'month');
+            params.append('monthStart', currentMarketingFilter.month.start);
+            params.append('monthEnd', currentMarketingFilter.month.end);
+        }
+        
+        const response = await fetch(`/api/marketing/dashboard?${params}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            marketingDashboardData = await response.json();
+            renderMarketingDashboard();
+        } else {
+            console.error('Failed to load marketing dashboard');
+            showNotification('Failed to load marketing dashboard', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading marketing dashboard:', error);
+        showNotification('Failed to load marketing dashboard', 'error');
+    }
+}
+
+function populateMarketingSelectors() {
+    const weekSelector = document.getElementById('marketingWeekSelector');
+    const monthSelector = document.getElementById('marketingMonthSelector');
+    
+    if (weekSelector && availableWeeks.length > 0) {
+        weekSelector.innerHTML = '<option value="">Select Week...</option>';
+        availableWeeks.forEach(week => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ start: week.start, end: week.end });
+            option.textContent = week.label;
+            weekSelector.appendChild(option);
+        });
+        
+        weekSelector.onchange = function() {
+            if (this.value) {
+                const week = JSON.parse(this.value);
+                currentMarketingFilter = { type: 'week', week, month: null };
+                monthSelector.value = '';
+                updateMarketingFilterDisplay();
+                loadMarketingDashboard();
+            }
+        };
+    }
+    
+    if (monthSelector && availableMonths.length > 0) {
+        monthSelector.innerHTML = '<option value="">Select Month...</option>';
+        availableMonths.forEach(month => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ start: month.start, end: month.end });
+            option.textContent = month.label;
+            monthSelector.appendChild(option);
+        });
+        
+        monthSelector.onchange = function() {
+            if (this.value) {
+                const month = JSON.parse(this.value);
+                currentMarketingFilter = { type: 'month', week: null, month };
+                weekSelector.value = '';
+                updateMarketingFilterDisplay();
+                loadMarketingDashboard();
+            }
+        };
+    }
+}
+
+function updateMarketingFilterDisplay() {
+    const display = document.getElementById('marketingFilterDisplay');
+    if (!display) return;
+    
+    if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
+        const startDate = new Date(currentMarketingFilter.week.start);
+        const endDate = new Date(currentMarketingFilter.week.end);
+        display.textContent = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    } else if (currentMarketingFilter.type === 'month' && currentMarketingFilter.month) {
+        const startDate = new Date(currentMarketingFilter.month.start);
+        display.textContent = startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else {
+        display.textContent = 'All Time';
+    }
+}
+
+function renderMarketingDashboard() {
+    if (!marketingDashboardData) return;
+    
+    const data = marketingDashboardData;
+    
+    // Render overview cards
+    const overviewCards = document.getElementById('marketingOverviewCards');
+    if (overviewCards) {
+        overviewCards.innerHTML = `
+            <!-- Total Revenue -->
+            <div class="glass-card rounded-xl p-6 border border-green-500/30 hover:border-green-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Revenue</span>
+                    <i class="fas fa-dollar-sign text-green-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">$${data.totalRevenue?.toFixed(2) || '0.00'}</div>
+                <div class="text-xs text-gray-400">From all sources</div>
+            </div>
+            
+            <!-- Total Subscribers -->
+            <div class="glass-card rounded-xl p-6 border border-blue-500/30 hover:border-blue-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">New Subscribers</span>
+                    <i class="fas fa-users text-blue-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${data.totalSubscribers || 0}</div>
+                <div class="text-xs text-gray-400">Total new subs</div>
+            </div>
+            
+            <!-- VIP Fans -->
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">VIP Fans</span>
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${data.totalVIPs || 0}</div>
+                <div class="text-xs text-gray-400">High-value customers</div>
+            </div>
+            
+            <!-- Avg Revenue Per Sub -->
+            <div class="glass-card rounded-xl p-6 border border-cyan-500/30 hover:border-cyan-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Avg Rev/Sub</span>
+                    <i class="fas fa-chart-line text-cyan-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">$${data.avgRevenuePerSub?.toFixed(2) || '0.00'}</div>
+                <div class="text-xs text-gray-400">Per subscriber</div>
+            </div>
+        `;
+    }
+    
+    // Render top performing sources
+    const performanceGrid = document.getElementById('sourcePerformanceGrid');
+    if (performanceGrid && data.sources && data.sources.length > 0) {
+        const topSources = data.sources.slice(0, 6); // Top 6 sources
+        
+        performanceGrid.innerHTML = topSources.map((source, index) => {
+            const categoryColors = {
+                reddit: 'from-orange-500 to-red-600',
+                twitter: 'from-blue-400 to-blue-600',
+                instagram: 'from-pink-500 to-purple-600',
+                tiktok: 'from-black to-cyan-500',
+                youtube: 'from-red-500 to-red-700',
+                other: 'from-gray-500 to-gray-700'
+            };
+            
+            const categoryIcons = {
+                reddit: 'fab fa-reddit',
+                twitter: 'fab fa-twitter',
+                instagram: 'fab fa-instagram',
+                tiktok: 'fab fa-tiktok',
+                youtube: 'fab fa-youtube',
+                other: 'fas fa-globe'
+            };
+            
+            const qualityColor = source.qualityGrade >= 80 ? 'green' : source.qualityGrade >= 60 ? 'yellow' : source.qualityGrade >= 40 ? 'orange' : 'red';
+            
+            return `
+                <div class="glass-card rounded-xl p-6 border border-gray-700 hover:border-${qualityColor}-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColors[source.category]} flex items-center justify-center">
+                                <i class="${categoryIcons[source.category]} text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-lg">${source.name}</h4>
+                                <p class="text-xs text-gray-400 capitalize">${source.category}</p>
+                            </div>
+                        </div>
+                        ${index === 0 ? '<i class="fas fa-trophy text-yellow-400 text-2xl"></i>' : ''}
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Revenue</div>
+                            <div class="text-xl font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Subscribers</div>
+                            <div class="text-xl font-bold text-blue-400">${source.subscribers || 0}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">VIPs</div>
+                            <div class="text-xl font-bold text-purple-400">${source.vips || 0}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">VIP Rate</div>
+                            <div class="text-xl font-bold text-cyan-400">${source.vipRate?.toFixed(1) || '0'}%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-700 flex items-center justify-between">
+                        <span class="text-sm text-gray-400">Quality Score</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="text-lg font-bold text-${qualityColor}-400">${source.qualityScore || 'N/A'}</div>
+                            <div class="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-${qualityColor}-500 to-${qualityColor}-400" style="width: ${source.qualityGrade || 0}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else if (performanceGrid) {
+        performanceGrid.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-chart-bar text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400 text-lg mb-2">No data available</p>
+                <p class="text-gray-500 text-sm">Start logging sales with traffic sources to see analytics</p>
+            </div>
+        `;
+    }
+    
+    // Render detailed table
+    const tableBody = document.getElementById('marketingSourcesTableBody');
+    if (tableBody && data.sources && data.sources.length > 0) {
+        tableBody.innerHTML = data.sources.map(source => {
+            const qualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
+            
+            return `
+                <tr class="border-b border-gray-800 hover:bg-gray-800/50 transition-all">
+                    <td class="px-4 py-4">
+                        <div class="font-semibold text-white">${source.name}</div>
+                    </td>
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 rounded-lg bg-gray-700 text-xs text-gray-300 capitalize">${source.category}</span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <span class="font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <span class="text-blue-400">${source.subscribers || 0}</span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <span class="text-purple-400">${source.vips || 0}</span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <span class="text-cyan-400">${source.vipRate?.toFixed(1) || '0'}%</span>
+                    </td>
+                    <td class="px-4 py-4 text-right">
+                        <span class="text-yellow-400">${source.buyerRate?.toFixed(1) || '0'}%</span>
+                    </td>
+                    <td class="px-4 py-4 text-center">
+                        <span class="font-bold ${qualityColor}">${source.qualityScore || 'N/A'}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } else if (tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="px-4 py-12 text-center">
+                    <i class="fas fa-inbox text-4xl text-gray-600 mb-2"></i>
+                    <p class="text-gray-400">No source data available</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Link tracking modal functions
+function showLinkTrackingModal() {
+    // Populate traffic sources
+    const select = document.getElementById('linkTrafficSource');
+    if (select && trafficSources.length > 0) {
+        select.innerHTML = '<option value="">Select source...</option>' + 
+            trafficSources.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+    }
+    
+    document.getElementById('linkTrackingModal').style.display = 'flex';
+}
+
+function closeLinkTrackingModal() {
+    document.getElementById('linkTrackingModal').style.display = 'none';
+}
+
+// Handle link tracking form submission
+document.addEventListener('submit', async function(e) {
+    if (e.target.id === 'linkTrackingForm') {
+        e.preventDefault();
+        
+        const data = {
+            trafficSourceId: document.getElementById('linkTrafficSource').value,
+            weekStart: document.getElementById('linkWeekStart').value,
+            weekEnd: document.getElementById('linkWeekEnd').value,
+            landingPageViews: parseInt(document.getElementById('linkLandingViews').value),
+            onlyFansClicks: parseInt(document.getElementById('linkOFClicks').value)
+        };
+        
+        try {
+            const response = await fetch('/api/marketing/link-tracking', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showNotification('Link tracking data uploaded successfully', 'success');
+                closeLinkTrackingModal();
+                e.target.reset();
+                // Reload dashboard if on marketing page
+                if (document.getElementById('marketing-dashboard')?.classList.contains('hidden') === false) {
+                    loadMarketingDashboard();
+                }
+            } else {
+                const result = await response.json();
+                showNotification(result.error || 'Failed to upload link tracking data', 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading link tracking data:', error);
+            showNotification('Failed to upload link tracking data', 'error');
+        }
+    }
 });
 
 // Initialize the application
@@ -1068,6 +1412,9 @@ function createSection(sectionId) {
             break;
         case 'traffic-sources':
             section.innerHTML = createTrafficSourcesSection();
+            break;
+        case 'marketing-dashboard':
+            section.innerHTML = createMarketingDashboardSection();
             break;
         case 'settings':
             section.innerHTML = createSettingsSection();
@@ -4672,6 +5019,138 @@ function createGuidelinesSection() {
                 <div id="guidelinesList" class="space-y-3 max-h-96 overflow-y-auto scrollbar-thin">
                     <p class="text-gray-400">No guidelines added yet</p>
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== MARKETING DASHBOARD SECTION ====================
+
+function createMarketingDashboardSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        <i class="fas fa-rocket mr-2"></i>Marketing Analytics
+                    </h2>
+                    <p class="text-gray-400">Track traffic source performance and ROI</p>
+                </div>
+                <button onclick="showLinkTrackingModal()" class="premium-button text-white font-medium py-3 px-6 rounded-xl hover:scale-105 transition-transform">
+                    <i class="fas fa-upload mr-2"></i>Upload Link Data
+                </button>
+            </div>
+        </div>
+        
+        <!-- Date Filter -->
+        <div class="mb-6 glass-card rounded-xl p-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-calendar text-blue-400"></i>
+                    <span class="text-sm font-semibold text-gray-300">Filter Period:</span>
+                </div>
+                <select id="marketingWeekSelector" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="">Select Week...</option>
+                </select>
+                <select id="marketingMonthSelector" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="">Select Month...</option>
+                </select>
+                <div id="marketingFilterDisplay" class="px-4 py-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg text-sm font-medium text-blue-300">
+                    Last 7 days
+                </div>
+            </div>
+        </div>
+        
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="marketingOverviewCards">
+            <!-- Will be populated dynamically -->
+        </div>
+        
+        <!-- Source Performance Grid -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-trophy text-yellow-400 mr-2"></i>
+                Top Performing Sources
+            </h3>
+            <div id="sourcePerformanceGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Detailed Analytics Table -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-table text-purple-400 mr-2"></i>
+                All Sources - Detailed View
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full" id="marketingSourcesTable">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Source</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Subscribers</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">VIPs</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">VIP Rate</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Buyer Rate</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marketingSourcesTableBody">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Link Tracking Upload Modal -->
+        <div id="linkTrackingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50" style="display: none;">
+            <div class="bg-gray-800 rounded-2xl p-8 max-w-lg w-full mx-4 border border-blue-500/30 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    <i class="fas fa-link mr-2"></i>Upload Link Tracking Data
+                </h3>
+                <form id="linkTrackingForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Traffic Source</label>
+                        <select id="linkTrafficSource" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                            <option value="">Select source...</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week Start</label>
+                            <input type="date" id="linkWeekStart" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week End</label>
+                            <input type="date" id="linkWeekEnd" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Landing Page Views</label>
+                            <input type="number" id="linkLandingViews" required min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">OnlyFans Clicks</label>
+                            <input type="number" id="linkOFClicks" required min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 premium-button text-white font-medium py-3 px-6 rounded-xl">
+                            <i class="fas fa-check mr-2"></i>Upload
+                        </button>
+                        <button type="button" onclick="closeLinkTrackingModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     `;
