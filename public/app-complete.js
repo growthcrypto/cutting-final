@@ -40,8 +40,12 @@ async function loadAvailablePeriods() {
 // Populate week selector dropdown
 function populateWeekSelector() {
     const selector = document.getElementById('weekSelector');
-    if (!selector) return;
+    if (!selector) {
+        console.log('⚠️ Week selector not found in DOM');
+        return;
+    }
     
+    console.log('📅 Populating week selector with', availableWeeks.length, 'weeks');
     selector.innerHTML = '<option value="">Select Week...</option>';
     availableWeeks.forEach(week => {
         const option = document.createElement('option');
@@ -64,8 +68,12 @@ function populateWeekSelector() {
 // Populate month selector dropdown
 function populateMonthSelector() {
     const selector = document.getElementById('monthSelector');
-    if (!selector) return;
+    if (!selector) {
+        console.log('⚠️ Month selector not found in DOM');
+        return;
+    }
     
+    console.log('📅 Populating month selector with', availableMonths.length, 'months');
     selector.innerHTML = '<option value="">Select Month...</option>';
     availableMonths.forEach(month => {
         const option = document.createElement('option');
