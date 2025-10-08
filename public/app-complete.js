@@ -9,6 +9,104 @@ let availableMonths = [];
 let currentFilterType = null; // 'week' or 'month'
 let currentWeekFilter = null;
 let currentMonthFilter = null;
+let trafficSources = []; // Marketing: Available traffic sources
+let vipFans = []; // Marketing: VIP fans for autocomplete
+
+// ==================== MARKETING FUNCTIONS ====================
+
+// Load traffic sources from backend
+async function loadTrafficSources() {
+    try {
+        const response = await fetch('/api/marketing/traffic-sources', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            trafficSources = data.sources || [];
+            console.log('📊 Loaded traffic sources:', trafficSources.length);
+        }
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        trafficSources = [];
+    }
+}
+
+// Load VIP fans for autocomplete
+async function loadVIPFans() {
+    try {
+        const response = await fetch('/api/marketing/vip-fans', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            vipFans = data.fans || [];
+            console.log('⭐ Loaded VIP fans:', vipFans.length);
+            updateVIPFansDatalist();
+        }
+    } catch (error) {
+        console.error('Error loading VIP fans:', error);
+        vipFans = [];
+    }
+}
+
+// Update VIP fans datalist for autocomplete
+function updateVIPFansDatalist() {
+    let datalist = document.getElementById('vipFansList');
+    if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'vipFansList';
+        document.body.appendChild(datalist);
+    }
+    
+    datalist.innerHTML = vipFans.map(fan => 
+        `<option value="${fan.username}">${fan.username} - $${fan.lifetimeSpend} lifetime</option>`
+    ).join('');
+}
+
+// Populate traffic source dropdowns in PPV/Tip forms
+function populateTrafficSourceDropdowns() {
+    const selects = document.querySelectorAll('.traffic-source-select');
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Unknown</option>';
+        
+        // Group by category
+        const categories = {
+            reddit: [],
+            twitter: [],
+            instagram: [],
+            tiktok: [],
+            youtube: [],
+            other: []
+        };
+        
+        trafficSources.forEach(source => {
+            if (source.isActive) {
+                categories[source.category].push(source);
+            }
+        });
+        
+        // Add optgroups for each category with sources
+        Object.entries(categories).forEach(([category, sources]) => {
+            if (sources.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
+                sources.forEach(source => {
+                    const option = document.createElement('option');
+                    option.value = source._id;
+                    option.textContent = source.name;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+        });
+        
+        // Restore previous value if it exists
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+}
 
 // Load available weeks and months from backend
 async function loadAvailablePeriods() {
@@ -807,8 +905,17 @@ function loadSectionData(sectionId) {
             loadChattersForInfloww();
             setDefaultDateRanges();
             break;
+        case 'daily-report':
+            // Load marketing data for daily report
+            loadTrafficSources();
+            loadVIPFans();
+            break;
         case 'my-performance':
             loadMyPerformanceData();
+            break;
+        case 'marketing-dashboard':
+            // Load marketing dashboard data
+            loadMarketingDashboard();
             break;
         default:
             break;
@@ -5673,21 +5780,51 @@ function addPPVSaleField() {
     const index = container.children.length;
 
     const saleDiv = document.createElement('div');
-    saleDiv.className = 'ppv-sale-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
+    saleDiv.className = 'ppv-sale-entry p-4 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl hover:border-purple-500/50 transition-all';
     saleDiv.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium mb-1">PPV Price ($)</label>
-            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
-        </div>
-        <div class="flex items-end">
-            <button type="button" class="remove-ppv-sale bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
-                <i class="fas fa-trash"></i>
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Amount -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-dollar-sign mr-1"></i>Amount
+                </label>
+                <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Traffic Source -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
+                </label>
+                <select name="ppvSource" class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all traffic-source-select">
+                    <option value="">Unknown</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- VIP Fan Username (Optional) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input type="text" name="ppvVipFan" placeholder="username" list="vipFansList"
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Remove Button -->
+            <div class="flex items-end">
+                <button type="button" class="remove-ppv-sale w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            </div>
         </div>
     `;
 
     container.appendChild(saleDiv);
+    
+    // Populate traffic sources for this new field
+    populateTrafficSourceDropdowns();
 }
 
 function addTipField() {
@@ -5695,21 +5832,51 @@ function addTipField() {
     if (!container) return;
 
     const tipDiv = document.createElement('div');
-    tipDiv.className = 'tip-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
+    tipDiv.className = 'tip-entry p-4 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl hover:border-green-500/50 transition-all';
     tipDiv.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium mb-1">Tip Amount ($)</label>
-            <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
-        </div>
-        <div class="flex items-end">
-            <button type="button" class="remove-tip bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
-                <i class="fas fa-trash"></i>
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Amount -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-dollar-sign mr-1"></i>Amount
+                </label>
+                <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00" required
+                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+            </div>
+            
+            <!-- Traffic Source -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
+                </label>
+                <select name="tipSource" class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all traffic-source-select">
+                    <option value="">Unknown</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- VIP Fan Username (Optional) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input type="text" name="tipVipFan" placeholder="username" list="vipFansList"
+                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+            </div>
+            
+            <!-- Remove Button -->
+            <div class="flex items-end">
+                <button type="button" class="remove-tip w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            </div>
         </div>
     `;
 
     container.appendChild(tipDiv);
+    
+    // Populate traffic sources for this new field
+    populateTrafficSourceDropdowns();
 }
 
 function removePPVSale(button) {
@@ -5921,25 +6088,41 @@ async function handleDailyReportSubmit(event) {
         tips: []
     };
 
-    // Collect PPV sales
+    // Collect PPV sales with traffic source and VIP fan
     const ppvContainer = document.getElementById('ppvSalesContainer');
-    const ppvInputs = ppvContainer.querySelectorAll('input[name="ppvAmount"]');
-    ppvInputs.forEach(input => {
-        if (input.value) {
-            data.ppvSales.push({
-                amount: parseFloat(input.value)
-            });
+    const ppvEntries = ppvContainer.querySelectorAll('.ppv-sale-entry');
+    ppvEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const source = entry.querySelector('select[name="ppvSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        
+        if (amount) {
+            const saleData = {
+                amount: parseFloat(amount)
+            };
+            if (source) saleData.trafficSource = source;
+            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            
+            data.ppvSales.push(saleData);
         }
     });
 
-    // Collect tips
+    // Collect tips with traffic source and VIP fan
     const tipsContainer = document.getElementById('tipsContainer');
-    const tipInputs = tipsContainer.querySelectorAll('input[name="tipAmount"]');
-    tipInputs.forEach(input => {
-        if (input.value) {
-            data.tips.push({
-                amount: parseFloat(input.value)
-            });
+    const tipEntries = tipsContainer.querySelectorAll('.tip-entry');
+    tipEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const source = entry.querySelector('select[name="tipSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        
+        if (amount) {
+            const tipData = {
+                amount: parseFloat(amount)
+            };
+            if (source) tipData.trafficSource = source;
+            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            
+            data.tips.push(tipData);
         }
     });
 
