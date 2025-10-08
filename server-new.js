@@ -1372,6 +1372,21 @@ async function analyzeMessages(messages, chatterName) {
   });
   console.log('🚨🚨🚨 END OF GUIDELINES 🚨🚨🚨\n');
   
+  // VERBOSE: Show PPV captions in this batch for caption guidelines
+  const ppvCaptionsInBatch = sampledMessages.filter(msg => msg.isPPV && msg.ppvRevenue > 0);
+  if (ppvCaptionsInBatch.length > 0) {
+    console.log(`\n💰 PPV CAPTIONS IN THIS BATCH: ${ppvCaptionsInBatch.length} total`);
+    ppvCaptionsInBatch.slice(0, 5).forEach((msg, idx) => {
+      console.log(`   ${idx + 1}. "${msg.text}" [Price: $${msg.ppvRevenue}]`);
+    });
+    if (ppvCaptionsInBatch.length > 5) {
+      console.log(`   ... and ${ppvCaptionsInBatch.length - 5} more PPV captions`);
+    }
+    console.log('💰 AI MUST check if these captions have descriptions and hooks!\n');
+  } else {
+    console.log(`\n💰 NO PPV CAPTIONS IN THIS BATCH - caption guidelines will show 0 violations\n`);
+  }
+  
   // Reconstruct conversation flows by grouping messages by fan username
   const conversationFlows = {};
   sampledMessages.forEach((msg, index) => {
@@ -1569,6 +1584,36 @@ FOR EVERY GUIDELINE YOU ANALYZE, YOU MUST:
 5. Put each guideline in the correct category
 
 🚨 MANDATORY JSON FORMAT - COPY THIS EXACTLY:
+
+🚨 CRITICAL GUIDELINE ANALYSIS INSTRUCTIONS:
+
+FOR "Describe Captions" GUIDELINE:
+- PPV captions are messages tagged with [PPV CAPTION - Price: $X]
+- A caption VIOLATES this guideline if it does NOT describe what's in the PPV
+- Examples of VIOLATIONS: "hey babe [PPV CAPTION - Price: $25]", "check this out [PPV CAPTION - Price: $30]"
+- Examples of CORRECT: "how fast would u take this lingerie off me Ethan? It fits sooo tight :) [PPV CAPTION - Price: $30]"
+- You MUST find ALL PPV captions and check if they describe the content
+- Count ONLY the PPV captions that DON'T describe what's in the PPV as violations
+
+FOR "Hook" GUIDELINE:
+- PPV captions are messages tagged with [PPV CAPTION - Price: $X]
+- A caption VIOLATES this guideline if it does NOT have a hook (question, personalization, attention grabber)
+- Examples of VIOLATIONS: "new content [PPV CAPTION - Price: $25]", "heres something for u [PPV CAPTION - Price: $30]"
+- Examples of CORRECT: "how fast would u take this lingerie off me Ethan? [PPV CAPTION - Price: $30]" (has question + personalization)
+- You MUST find ALL PPV captions and check if they have hooks
+- Count ONLY the PPV captions that DON'T have hooks as violations
+
+FOR "PPV Price Progression" GUIDELINE:
+- This requires checking the CONVERSATION FLOW CONTEXT section above
+- For EACH fan, check if PPV prices are increasing over time
+- Look at the conversation flow: if Fan X gets a $20 PPV, then later gets a $15 PPV, that's a VIOLATION (price decreased)
+- Count how many fans receive PPVs with DECREASING or FLAT prices as violations
+- You MUST track prices per fan across the conversation flow
+
+FOR ALL OTHER GUIDELINES:
+- Analyze the actual message content
+- Use the guideline description as your criteria
+- Count actual violations, not theoretical ones
 
 GUIDELINES_V2_JSON:
 {
