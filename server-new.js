@@ -1620,47 +1620,11 @@ ANALYSIS REQUIREMENTS:
 Return this EXACT JSON with COMPREHENSIVE analysis:
 
 {
-  "overallScore": 85,
-  "grammarScore": 78,
-  "guidelinesScore": 82,
-  "strengths": ["strength 1", "strength 2"],
-  "weaknesses": ["weakness 1", "weakness 2"],
-  "suggestions": ["recommendation 1", "recommendation 2"],
-  "chattingStyle": {
-    "directness": "moderately direct",
-    "friendliness": "very friendly",
-    "salesApproach": "moderate",
-    "personality": "flirty",
-    "emojiUsage": "moderate",
-    "messageLength": "medium",
-    "responsePattern": "thoughtful"
-  },
-  "messagePatterns": {
-    "questionFrequency": "high",
-    "exclamationUsage": "moderate",
-    "capitalizationStyle": "casual",
-    "punctuationStyle": "casual",
-    "topicDiversity": "high",
-    "sexualContent": "moderate",
-    "personalSharing": "high"
-  },
-  "engagementMetrics": {
-    "conversationStarter": "excellent",
-    "conversationMaintainer": "good",
-    "salesConversation": "good",
-    "fanRetention": "excellent"
-  },
-           "grammarBreakdown": {
-             "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate', 'beacuse'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'i', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'youre', 'theyre', 'ive', 'id', 'ill', 'heyy', 'okayy', 'hii', 'awww', 'sooo', 'cuz', 'tho', 'gonna', 'wanna', 'gotta'. Extended words like 'heyyyy', 'okaaaay' are CORRECT. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
-             "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have', 'she don't know'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: Missing apostrophes ('im', 'dont', 'cant', 'youre', 'ive', 'that'd'), lowercase 'i', informal phrases ('u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'i can', 'u cant'). If you flag missing apostrophes or informal contractions, you are INCORRECT. Count only REAL grammar mistakes.",
-             "punctuationProblems": "CRITICAL: OnlyFans messages should be INFORMAL. Flag messages that HAVE full stops (periods) at the end or formal commas. Messages WITHOUT periods are PERFECT. Examples: 'how are u' is PERFECT (NO error - no period). 'how are u.' HAS an error (formal period at end). 'what, are u doing' has a misused comma (error). 'where are u from' is PERFECT (NO error - no period). Count how many messages have periods or formal commas. If you flag 'missing periods', you are INCORRECT.",
-             "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
-           },
-  "overallBreakdown": {
-    "messageClarity": "COMPREHENSIVE clarity analysis: Count ALL clarity issues across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 10 unclear messages across 80 messages: 4 run-on sentences, 3 vague statements, 2 confusing questions, 1 incomplete thought').",
-    "emotionalImpact": "COMPREHENSIVE emotional analysis: Count ALL emotional connection attempts across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 18 emotional connections across 80 messages: 8 compliments, 5 personal shares, 3 empathy expressions, 2 vulnerability moments').",
-    "conversionPotential": "COMPREHENSIVE conversion analysis: Count ALL conversion opportunities across ALL messages. List specific examples with message numbers. Provide statistics (e.g., 'Found 12 conversion opportunities across 80 messages: 6 purchase intent signals, 4 engagement peaks, 2 sales-ready moments').",
-    "scoreExplanation": "COMPREHENSIVE summary: Based on analysis of ALL messages, what are the TOP 3 priorities with specific counts and examples to maximize revenue?"
+  "grammarBreakdown": {
+    "spellingErrors": "CRITICAL: ONLY flag ACTUAL typos and misspellings (e.g., 'recieve', 'definately', 'weel', 'seperate', 'beacuse'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: 'u', 'ur', 'im', 'i', 'dont', 'cant', 'wont', 'didnt', 'isnt', 'hows', 'thats', 'whats', 'ilove', 'u're', 'u'll', 'youre', 'theyre', 'ive', 'id', 'ill', 'heyy', 'okayy', 'hii', 'awww', 'sooo', 'cuz', 'tho', 'gonna', 'wanna', 'gotta'. Extended words like 'heyyyy', 'okaaaay' are CORRECT. If you flag ANY of these as errors, you are INCORRECT. Count only REAL typos.",
+    "grammarIssues": "CRITICAL: ONLY flag ACTUAL grammar mistakes (e.g., 'I was went', 'they was', 'do he have', 'she don't know'). THE FOLLOWING ARE NOT ERRORS - THEY ARE CORRECT ONLYFANS LANGUAGE: Missing apostrophes ('im', 'dont', 'cant', 'youre', 'ive', 'that'd'), lowercase 'i', informal phrases ('u are', 'dont know', 'cant understand', 'im happy', 'i dont', 'i can', 'u cant'). If you flag missing apostrophes or informal contractions, you are INCORRECT. Count only REAL grammar mistakes.",
+    "punctuationProblems": "CRITICAL: OnlyFans messages should be INFORMAL. Flag messages that HAVE full stops (periods) at the end or formal commas. Messages WITHOUT periods are PERFECT. Examples: 'how are u' is PERFECT (NO error - no period). 'how are u.' HAS an error (formal period at end). 'what, are u doing' has a misused comma (error). 'where are u from' is PERFECT (NO error - no period). Count how many messages have periods or formal commas. If you flag 'missing periods', you are INCORRECT.",
+    "scoreExplanation": "Grammar score: X/100. Main issues: [issue 1], [issue 2]. Total errors: [count]."
   }
 }
 
@@ -1678,7 +1642,7 @@ Return this EXACT JSON with COMPREHENSIVE analysis:
          11. CRITICAL: You MUST count every single error across all messages. Do not give vague numbers.
          12. CRITICAL: Format your response as: "Found X [error type]: [specific examples]. Found Y [different error type]: [specific examples]." Do NOT repeat the same error type multiple times.
 
-Return ONLY the JSON object above. No additional text.
+Return ONLY the grammarBreakdown JSON above, followed by the GUIDELINES_V2_JSON block (which you were instructed to provide at the top of this prompt). No additional text.
 
 ANALYSIS REQUIREMENTS:
 - Analyze the actual message content to determine chatting style, patterns, and engagement
