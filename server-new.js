@@ -23,7 +23,12 @@ const {
   AIAnalysis,
   PerformanceHistory,
   Chatter,
-  Analytics
+  Analytics,
+  TrafficSource,
+  VIPFan,
+  FanPurchase,
+  TrafficSourcePerformance,
+  LinkTrackingData
 } = require('./models');
 
 const app = express();
@@ -4702,6 +4707,124 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
 
     await report.save();
     
+    // ==================== MARKETING ANALYTICS: Create FanPurchase records ====================
+    const creatorAccount = await CreatorAccount.findOne(); // Get default creator account
+    const reportDate = new Date(date);
+    
+    // Process PPV sales
+    for (const sale of ppvSales) {
+      const fanPurchase = new FanPurchase({
+        amount: sale.amount,
+        type: 'ppv',
+        date: reportDate,
+        creatorAccount: creatorAccount?._id,
+        chatterName: req.user.chatterName,
+        dailyReport: report._id
+      });
+      
+      if (sale.trafficSource) {
+        fanPurchase.trafficSource = sale.trafficSource;
+      }
+      
+      if (sale.vipFanUsername) {
+        fanPurchase.fanUsername = sale.vipFanUsername;
+        
+        // Check if VIP fan exists, create or update
+        let vipFan = await VIPFan.findOne({ 
+          username: sale.vipFanUsername,
+          creatorAccount: creatorAccount?._id
+        });
+        
+        if (!vipFan) {
+          // Create new VIP fan
+          vipFan = new VIPFan({
+            username: sale.vipFanUsername,
+            creatorAccount: creatorAccount?._id,
+            trafficSource: sale.trafficSource,
+            joinDate: reportDate,
+            lifetimeSpend: sale.amount,
+            lastPurchaseDate: reportDate,
+            purchaseCount: 1,
+            avgPurchaseValue: sale.amount
+          });
+          await vipFan.save();
+          console.log(`⭐ Created new VIP fan: ${sale.vipFanUsername}`);
+        } else {
+          // Update existing VIP fan
+          vipFan.lifetimeSpend += sale.amount;
+          vipFan.lastPurchaseDate = reportDate;
+          vipFan.purchaseCount += 1;
+          vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
+          vipFan.status = 'active';
+          vipFan.updatedAt = new Date();
+          await vipFan.save();
+          console.log(`⭐ Updated VIP fan: ${sale.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+        }
+        
+        fanPurchase.vipFan = vipFan._id;
+      }
+      
+      await fanPurchase.save();
+    }
+    
+    // Process tips
+    for (const tip of tips) {
+      const fanPurchase = new FanPurchase({
+        amount: tip.amount,
+        type: 'tip',
+        date: reportDate,
+        creatorAccount: creatorAccount?._id,
+        chatterName: req.user.chatterName,
+        dailyReport: report._id
+      });
+      
+      if (tip.trafficSource) {
+        fanPurchase.trafficSource = tip.trafficSource;
+      }
+      
+      if (tip.vipFanUsername) {
+        fanPurchase.fanUsername = tip.vipFanUsername;
+        
+        // Check if VIP fan exists, create or update
+        let vipFan = await VIPFan.findOne({ 
+          username: tip.vipFanUsername,
+          creatorAccount: creatorAccount?._id
+        });
+        
+        if (!vipFan) {
+          // Create new VIP fan
+          vipFan = new VIPFan({
+            username: tip.vipFanUsername,
+            creatorAccount: creatorAccount?._id,
+            trafficSource: tip.trafficSource,
+            joinDate: reportDate,
+            lifetimeSpend: tip.amount,
+            lastPurchaseDate: reportDate,
+            purchaseCount: 1,
+            avgPurchaseValue: tip.amount
+          });
+          await vipFan.save();
+          console.log(`⭐ Created new VIP fan: ${tip.vipFanUsername}`);
+        } else {
+          // Update existing VIP fan
+          vipFan.lifetimeSpend += tip.amount;
+          vipFan.lastPurchaseDate = reportDate;
+          vipFan.purchaseCount += 1;
+          vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
+          vipFan.status = 'active';
+          vipFan.updatedAt = new Date();
+          await vipFan.save();
+          console.log(`⭐ Updated VIP fan: ${tip.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+        }
+        
+        fanPurchase.vipFan = vipFan._id;
+      }
+      
+      await fanPurchase.save();
+    }
+    
+    console.log(`💰 Created ${ppvSales.length + tips.length} FanPurchase records`);
+    
     // Recalculate avgPPVPrice from ALL daily reports for this chatter
     // This ensures Dashboard/Analytics/Analysis all show the updated avgPPVPrice
     const allReports = await DailyChatterReport.find({ 
@@ -4804,6 +4927,200 @@ async function updateCreatorNames() {
     console.log('Creator name migration skipped:', error.message);
   }
 }
+
+// ==================== MARKETING ANALYTICS APIs ====================
+
+// Get all traffic sources
+app.get('/api/marketing/traffic-sources', authenticateToken, async (req, res) => {
+  try {
+    const sources = await TrafficSource.find().sort({ category: 1, name: 1 });
+    res.json({ sources });
+  } catch (error) {
+    console.error('Error fetching traffic sources:', error);
+    res.status(500).json({ error: 'Failed to fetch traffic sources' });
+  }
+});
+
+// Create traffic source
+app.post('/api/marketing/traffic-sources', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { name, category, subcategory } = req.body;
+    
+    if (!name || !category) {
+      return res.status(400).json({ error: 'Name and category are required' });
+    }
+    
+    const source = new TrafficSource({
+      name,
+      category,
+      subcategory,
+      createdBy: req.user.userId
+    });
+    
+    await source.save();
+    console.log('✅ Created traffic source:', name);
+    res.json({ success: true, source });
+  } catch (error) {
+    console.error('Error creating traffic source:', error);
+    res.status(500).json({ error: 'Failed to create traffic source' });
+  }
+});
+
+// Update traffic source
+app.put('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { name, category, subcategory, isActive } = req.body;
+    
+    const source = await TrafficSource.findByIdAndUpdate(
+      req.params.id,
+      { name, category, subcategory, isActive },
+      { new: true }
+    );
+    
+    if (!source) {
+      return res.status(404).json({ error: 'Traffic source not found' });
+    }
+    
+    console.log('✅ Updated traffic source:', source.name);
+    res.json({ success: true, source });
+  } catch (error) {
+    console.error('Error updating traffic source:', error);
+    res.status(500).json({ error: 'Failed to update traffic source' });
+  }
+});
+
+// Delete traffic source
+app.delete('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const source = await TrafficSource.findByIdAndDelete(req.params.id);
+    
+    if (!source) {
+      return res.status(404).json({ error: 'Traffic source not found' });
+    }
+    
+    console.log('✅ Deleted traffic source:', source.name);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting traffic source:', error);
+    res.status(500).json({ error: 'Failed to delete traffic source' });
+  }
+});
+
+// Get VIP fans (for autocomplete)
+app.get('/api/marketing/vip-fans', authenticateToken, async (req, res) => {
+  try {
+    const fans = await VIPFan.find({ status: 'active' })
+      .select('username lifetimeSpend purchaseCount')
+      .sort({ lifetimeSpend: -1 })
+      .limit(100);
+    
+    res.json({ fans });
+  } catch (error) {
+    console.error('Error fetching VIP fans:', error);
+    res.status(500).json({ error: 'Failed to fetch VIP fans' });
+  }
+});
+
+// Get marketing dashboard data
+app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
+    
+    let query = {};
+    
+    // Build date filter
+    if (filterType === 'week' && weekStart && weekEnd) {
+      query.weekStartDate = new Date(weekStart);
+      query.weekEndDate = new Date(weekEnd);
+    } else if (filterType === 'month' && monthStart && monthEnd) {
+      const start = new Date(monthStart);
+      const end = new Date(monthEnd);
+      query.$or = [
+        { weekStartDate: { $gte: start, $lte: end } },
+        { weekEndDate: { $gte: start, $lte: end } },
+        { weekStartDate: { $lte: start }, weekEndDate: { $gte: end } }
+      ];
+    }
+    
+    // Get all traffic source performance data
+    const sourcePerformance = await TrafficSourcePerformance.find(query)
+      .populate('trafficSource')
+      .sort({ totalRevenue: -1 });
+    
+    // Aggregate metrics
+    const aggregated = {
+      totalRevenue: 0,
+      totalSubscribers: 0,
+      totalVIPs: 0,
+      avgRevenuePerSub: 0,
+      sources: []
+    };
+    
+    sourcePerformance.forEach(perf => {
+      aggregated.totalRevenue += perf.totalRevenue;
+      aggregated.totalSubscribers += perf.newSubscribers;
+      aggregated.totalVIPs += perf.vipCount;
+      
+      aggregated.sources.push({
+        id: perf.trafficSource._id,
+        name: perf.trafficSource.name,
+        category: perf.trafficSource.category,
+        revenue: perf.totalRevenue,
+        subscribers: perf.newSubscribers,
+        vips: perf.vipCount,
+        vipRate: perf.vipConversionRate,
+        ghostRate: perf.ghostRate,
+        buyerRate: perf.buyerRate,
+        qualityScore: perf.qualityScore,
+        qualityGrade: perf.qualityGrade
+      });
+    });
+    
+    if (aggregated.totalSubscribers > 0) {
+      aggregated.avgRevenuePerSub = aggregated.totalRevenue / aggregated.totalSubscribers;
+    }
+    
+    res.json(aggregated);
+  } catch (error) {
+    console.error('Error fetching marketing dashboard:', error);
+    res.status(500).json({ error: 'Failed to fetch marketing dashboard' });
+  }
+});
+
+// Upload link tracking data
+app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => {
+  try {
+    const { trafficSourceId, weekStart, weekEnd, landingPageViews, onlyFansClicks, ...optionalData } = req.body;
+    
+    if (!trafficSourceId || !weekStart || !weekEnd || !landingPageViews || !onlyFansClicks) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Get creator account (assume first one for now, or get from user)
+    const creatorAccount = await CreatorAccount.findOne();
+    
+    const clickThroughRate = landingPageViews > 0 ? (onlyFansClicks / landingPageViews) * 100 : 0;
+    
+    const linkData = new LinkTrackingData({
+      trafficSource: trafficSourceId,
+      creatorAccount: creatorAccount._id,
+      weekStartDate: new Date(weekStart),
+      weekEndDate: new Date(weekEnd),
+      landingPageViews,
+      onlyFansClicks,
+      clickThroughRate,
+      ...optionalData,
+      uploadedBy: req.user.userId
+    });
+    
+    await linkData.save();
+    console.log('✅ Saved link tracking data for week:', weekStart);
+    res.json({ success: true, data: linkData });
+  } catch (error) {
+    console.error('Error saving link tracking data:', error);
+    res.status(500).json({ error: 'Failed to save link tracking data' });
+  }
+});
 
 // Start server
 app.listen(PORT, () => {
