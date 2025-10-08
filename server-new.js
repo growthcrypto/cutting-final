@@ -509,76 +509,157 @@ app.delete('/api/users/:userId', checkDatabaseConnection, authenticateToken, req
   }
 });
 
+// Get available weeks and months from uploaded data
+app.get('/api/analytics/available-periods', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    // Get all unique weeks from ChatterPerformance and AccountData
+    const chatterWeeks = await ChatterPerformance.find({})
+      .select('weekStartDate weekEndDate')
+      .sort({ weekStartDate: 1 });
+    
+    const accountWeeks = await AccountData.find({})
+      .select('weekStartDate weekEndDate')
+      .sort({ weekStartDate: 1 });
+    
+    // Combine and deduplicate weeks
+    const allWeeks = [...chatterWeeks, ...accountWeeks];
+    const uniqueWeeks = [];
+    const weekSet = new Set();
+    
+    allWeeks.forEach(w => {
+      if (w.weekStartDate && w.weekEndDate) {
+        const key = `${w.weekStartDate.toISOString()}_${w.weekEndDate.toISOString()}`;
+        if (!weekSet.has(key)) {
+          weekSet.add(key);
+          uniqueWeeks.push({
+            start: w.weekStartDate,
+            end: w.weekEndDate,
+            label: `${w.weekStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${w.weekEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+          });
+        }
+      }
+    });
+    
+    // Sort by start date
+    uniqueWeeks.sort((a, b) => a.start - b.start);
+    
+    // Extract unique months
+    const monthSet = new Set();
+    const months = [];
+    
+    uniqueWeeks.forEach(week => {
+      const monthKey = `${week.start.getFullYear()}-${week.start.getMonth()}`;
+      const monthKeyEnd = `${week.end.getFullYear()}-${week.end.getMonth()}`;
+      
+      [monthKey, monthKeyEnd].forEach(key => {
+        if (!monthSet.has(key)) {
+          monthSet.add(key);
+          const [year, month] = key.split('-').map(Number);
+          const date = new Date(year, month, 1);
+          months.push({
+            year: year,
+            month: month,
+            label: date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            firstDay: new Date(year, month, 1),
+            lastDay: new Date(year, month + 1, 0)
+          });
+        }
+      });
+    });
+    
+    // Sort months
+    months.sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
+    });
+    
+    res.json({
+      weeks: uniqueWeeks,
+      months: months
+    });
+    
+  } catch (error) {
+    console.error('Error fetching available periods:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get dashboard analytics
 app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { interval = '7d', startDate, endDate } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
 
-    // Define start and end dates first
+    console.log('📊 Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
+
+    // Define start and end dates based on filter type
     let start, end;
-    if (startDate && endDate) {
-      start = new Date(startDate);
-      end = new Date(endDate);
+    let isWeekFilter = false;
+    let isMonthFilter = false;
+    
+    if (filterType === 'week' && weekStart && weekEnd) {
+      // Exact week filter
+      start = new Date(weekStart);
+      end = new Date(weekEnd);
+      isWeekFilter = true;
+      console.log('✅ Using WEEK filter:', start.toISOString(), 'to', end.toISOString());
+    } else if (filterType === 'month' && monthStart && monthEnd) {
+      // Month filter (all weeks touching this month)
+      start = new Date(monthStart);
+      end = new Date(monthEnd);
+      isMonthFilter = true;
+      console.log('✅ Using MONTH filter:', start.toISOString(), 'to', end.toISOString());
     } else {
-      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      // Fallback: last 7 days
       end = new Date();
       start = new Date();
-      start.setDate(start.getDate() - days);
+      start.setDate(start.getDate() - 7);
+      console.log('⚠️ Using fallback (last 7 days):', start.toISOString(), 'to', end.toISOString());
     }
 
-    let dateQuery = {};
-    if (startDate && endDate) {
-      dateQuery = {
-        date: {
-          $gte: start,
-          $lte: end
-        }
-      };
-    } else {
-      dateQuery = { date: { $gte: start } };
-    }
-
-    // Get data from all sources with proper date filtering
-    const dailyReports = await DailyChatterReport.find(dateQuery);
+    // Build queries based on filter type
+    let accountDataQuery, chatterPerformanceQuery, dateQuery;
     
-    // AccountData uses weekStartDate/weekEndDate, not date
-    let accountDataQuery = {};
-    if (startDate && endDate) {
+    if (isWeekFilter) {
+      // EXACT WEEK MATCH
       accountDataQuery = {
-        $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-          { weekStartDate: { $gte: start, $lte: end } },
-          { weekEndDate: { $gte: start, $lte: end } }
-        ]
+        weekStartDate: start,
+        weekEndDate: end
       };
-    } else {
-      // Strict overlap: data period must actually overlap with query period
+      chatterPerformanceQuery = {
+        weekStartDate: start,
+        weekEndDate: end
+      };
+      dateQuery = { date: { $gte: start, $lte: end } };
+      console.log('📅 Using exact week match query');
+    } else if (isMonthFilter) {
+      // MONTH OVERLAP (any week touching this month)
       accountDataQuery = {
         weekStartDate: { $lte: end },
         weekEndDate: { $gte: start }
       };
-    }
-    const ofAccountData = await AccountData.find(accountDataQuery);
-    
-    // Get chatter performance data with proper date range matching
-    let chatterPerformanceQuery = {};
-    if (startDate && endDate) {
-      // Find records that overlap with the requested date range
       chatterPerformanceQuery = {
-        $or: [
-          { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-          { weekStartDate: { $gte: start, $lte: end } },
-          { weekEndDate: { $gte: start, $lte: end } }
-        ]
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
       };
+      dateQuery = { date: { $gte: start, $lte: end } };
+      console.log('📅 Using month overlap query');
     } else {
-      // Strict overlap: data period must actually overlap with query period
+      // Fallback: overlap query
+      accountDataQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
       chatterPerformanceQuery = { 
         weekStartDate: { $lte: end },
         weekEndDate: { $gte: start }
       };
-      console.log('Dashboard querying ChatterPerformance with dates:', { start, end, interval });
+      dateQuery = { date: { $gte: start, $lte: end } };
+      console.log('📅 Using fallback overlap query');
     }
+    
+    // Fetch data
+    const dailyReports = await DailyChatterReport.find(dateQuery);
+    const ofAccountData = await AccountData.find(accountDataQuery);
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
     console.log('=== DASHBOARD QUERY DEBUG ===');
@@ -763,54 +844,109 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 // Team Dashboard API - Get combined team performance + individual chatter data
 app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { interval = '7d', startDate, endDate } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
 
-    // Define start and end dates
+    console.log('👥 Team Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
+
+    // Define start and end dates based on filter type
     let start, end;
-    if (startDate && endDate) {
-      start = new Date(startDate);
-      end = new Date(endDate);
+    let isWeekFilter = false;
+    let isMonthFilter = false;
+    
+    if (filterType === 'week' && weekStart && weekEnd) {
+      // Exact week filter
+      start = new Date(weekStart);
+      end = new Date(weekEnd);
+      isWeekFilter = true;
+      console.log('✅ Team using WEEK filter:', start.toISOString(), 'to', end.toISOString());
+    } else if (filterType === 'month' && monthStart && monthEnd) {
+      // Month filter (all weeks touching this month)
+      start = new Date(monthStart);
+      end = new Date(monthEnd);
+      isMonthFilter = true;
+      console.log('✅ Team using MONTH filter:', start.toISOString(), 'to', end.toISOString());
     } else {
-      const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
+      // Fallback: last 7 days
       end = new Date();
       start = new Date();
-      start.setDate(start.getDate() - days);
+      start.setDate(start.getDate() - 7);
+      console.log('⚠️ Team using fallback (last 7 days):', start.toISOString(), 'to', end.toISOString());
     }
 
     // Get all chatters
     const allChatters = await User.find({ role: 'chatter' });
     const chatterNames = allChatters.map(c => c.chatterName || c.username);
 
-    // Query for chatter performance data
-    let chatterPerformanceQuery = {
-      weekStartDate: { $lte: end },
-      weekEndDate: { $gte: start }
-    };
+    // Query for chatter performance data based on filter type
+    let chatterPerformanceQuery;
+    if (isWeekFilter) {
+      // EXACT WEEK MATCH
+      chatterPerformanceQuery = {
+        weekStartDate: start,
+        weekEndDate: end
+      };
+    } else if (isMonthFilter) {
+      // MONTH OVERLAP
+      chatterPerformanceQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
+    } else {
+      // FALLBACK OVERLAP
+      chatterPerformanceQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
+    }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
 
-    // Get latest AI analysis for each chatter WHERE DATA PERIOD OVERLAPS WITH FILTER RANGE
+    // Get latest AI analysis for each chatter based on filter type
     const aiAnalysisPromises = chatterNames.map(async (name) => {
-      const latestAnalysis = await AIAnalysis.findOne({ 
-        chatterName: name,
-        $or: [
-          // Analysis has dateRange - check for overlap
-          {
-            'dateRange.start': { $exists: true, $ne: null },
-            'dateRange.end': { $exists: true, $ne: null },
-            'dateRange.start': { $lte: end },
-            'dateRange.end': { $gte: start }
-          },
-          // Legacy: Analysis has no dateRange - use timestamp
-          {
-            'dateRange.start': { $exists: false },
-            timestamp: { $gte: start, $lte: end }
-          },
-          {
-            'dateRange.start': null,
-            timestamp: { $gte: start, $lte: end }
-          }
-        ]
-      })
+      let analysisQuery;
+      
+      if (isWeekFilter) {
+        // EXACT WEEK MATCH
+        analysisQuery = {
+          chatterName: name,
+          $or: [
+            // Exact week match in dateRange
+            {
+              'dateRange.start': start,
+              'dateRange.end': end
+            },
+            // Legacy: exact week match in timestamp (unlikely but handle it)
+            {
+              'dateRange.start': { $exists: false },
+              timestamp: { $gte: start, $lte: end }
+            }
+          ]
+        };
+      } else {
+        // MONTH or OVERLAP: any analysis covering this period
+        analysisQuery = {
+          chatterName: name,
+          $or: [
+            // Analysis dateRange overlaps with filter range
+            {
+              'dateRange.start': { $exists: true, $ne: null },
+              'dateRange.end': { $exists: true, $ne: null },
+              'dateRange.start': { $lte: end },
+              'dateRange.end': { $gte: start }
+            },
+            // Legacy: timestamp within range
+            {
+              'dateRange.start': { $exists: false },
+              timestamp: { $gte: start, $lte: end }
+            },
+            {
+              'dateRange.start': null,
+              timestamp: { $gte: start, $lte: end }
+            }
+          ]
+        };
+      }
+      
+      const latestAnalysis = await AIAnalysis.findOne(analysisQuery)
         .sort({ timestamp: -1 })
         .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp dateRange');
       return { chatterName: name, analysis: latestAnalysis };
