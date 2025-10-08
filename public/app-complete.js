@@ -99,12 +99,20 @@ function selectWeek(week) {
     currentWeekFilter = week;
     currentMonthFilter = null;
     
-    // Update display
+    // Update Manager Dashboard display
     const display = document.getElementById('currentFilterDisplay');
     const text = document.getElementById('currentFilterText');
     if (display && text) {
         text.textContent = `Week: ${new Date(week.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(week.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
         display.classList.remove('hidden');
+    }
+    
+    // Update Team Dashboard display
+    const teamDisplay = document.getElementById('teamCurrentFilterDisplay');
+    const teamText = document.getElementById('teamCurrentFilterText');
+    if (teamDisplay && teamText) {
+        teamText.textContent = `Week: ${new Date(week.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(week.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        teamDisplay.classList.remove('hidden');
     }
     
     // Reload dashboard
@@ -117,12 +125,20 @@ function selectMonth(month) {
     currentMonthFilter = month;
     currentWeekFilter = null;
     
-    // Update display
+    // Update Manager Dashboard display
     const display = document.getElementById('currentFilterDisplay');
     const text = document.getElementById('currentFilterText');
     if (display && text) {
         text.textContent = `Month: ${new Date(month.firstDay).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
         display.classList.remove('hidden');
+    }
+    
+    // Update Team Dashboard display
+    const teamDisplay = document.getElementById('teamCurrentFilterDisplay');
+    const teamText = document.getElementById('teamCurrentFilterText');
+    if (teamDisplay && teamText) {
+        teamText.textContent = `Month: ${new Date(month.firstDay).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        teamDisplay.classList.remove('hidden');
     }
     
     // Reload dashboard
