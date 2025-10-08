@@ -4154,6 +4154,22 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       // CRITICAL: Save aiAnalysis to AIAnalysis collection for team dashboard
       // Define actualChatterName OUTSIDE try block so it's available in catch block
       let actualChatterName = chatterId;
+      
+      // Calculate the timestamp for this analysis based on the data period
+      // Use the middle of the date range so it shows up when filtering for that period
+      let analysisTimestamp;
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        // Use middle of date range
+        analysisTimestamp = new Date((start.getTime() + end.getTime()) / 2);
+        console.log('📅 Using middle of date range as timestamp:', analysisTimestamp);
+      } else {
+        // If no explicit dates, use current time
+        analysisTimestamp = new Date();
+        console.log('📅 Using current time as timestamp:', analysisTimestamp);
+      }
+      
       try {
         // Get the actual chatter name (for individual analysis, use the name candidates we built earlier)
         if (analysisType === 'individual' && chatterId) {
@@ -4176,7 +4192,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         
         const aiAnalysisDoc = new AIAnalysis({
           chatterName: actualChatterName,
-          timestamp: new Date(),
+          timestamp: analysisTimestamp,
           grammarScore: aiAnalysis.grammarScore || 0,
           guidelinesScore: aiAnalysis.guidelinesScore || 0,
           overallScore: aiAnalysis.overallScore || 0,
