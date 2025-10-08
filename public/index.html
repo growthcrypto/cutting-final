@@ -477,71 +477,24 @@
                             <p class="text-gray-400">AI-powered insights that drive growth and optimize performance</p>
                         </div>
 
-                        <!-- Time Interval Controls -->
-                        <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                            <span class="text-sm text-gray-400 mr-3">Analysis Period:</span>
-                            <button onclick="setTimeInterval('24h')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">
-                                24h
-                            </button>
-                            <button onclick="setTimeInterval('7d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">
-                                7d
-                            </button>
-                            <button onclick="setTimeInterval('30d')" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">
-                                30d
-                            </button>
-                            <div class="date-picker relative">
-                                <button type="button" id="customDateBtn" onclick="toggleCustomDatePicker()" class="time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 flex items-center gap-2">
-                                    <span class="h-6 w-6 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
-                                        <i class="fas fa-calendar text-blue-400 text-xs"></i>
-                                    </span>
-                                    Custom
-                                </button>
-                                <div id="customDatePicker" class="custom-date-dropdown">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div>
-                                            <h3 class="text-sm font-semibold text-blue-200 tracking-wide uppercase">Custom Date Range</h3>
-                                            <p class="text-xs text-blue-100/70">Select start and end dates to filter analytics</p>
-                                        </div>
-                                        <button class="text-blue-200 hover:text-white transition" id="closeDatePicker" title="Close">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-2">Start Date</label>
-                                            <input type="date" id="customStartDate">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-2">End Date</label>
-                                            <input type="date" id="customEndDate">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-6 flex items-center justify-between text-xs text-blue-100/70 bg-blue-900/30 rounded-lg p-3 border border-blue-500/30">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fas fa-info-circle text-blue-300"></i>
-                                            <span>Need more than 30 days? Export full report from analytics page.</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="actions mt-6 flex gap-3">
-                                        <button type="button" id="applyCustomRange" onclick="applyCustomDateRange('dashboard')" class="flex-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm shadow-md shadow-blue-900/50">
-                                            Apply Range
-                                        </button>
-                                        <button type="button" id="cancelCustomRange" onclick="closeCustomDatePicker()" class="flex-1 bg-slate-800 text-blue-100 border border-blue-500/40 px-4 py-2 rounded-lg text-sm hover:bg-slate-700 transition">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Custom Date Range Indicator -->
-                            <div id="customDateRangeIndicator" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-2">
+                        <!-- Week/Month Selector -->
+                        <div class="flex items-center space-x-3 mt-4 lg:mt-0">
+                            <span class="text-sm text-gray-400 mr-3">Filter by:</span>
+                            
+                            <!-- Week Selector -->
+                            <select id="weekSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-blue-500">
+                                <option value="">Select Week...</option>
+                            </select>
+                            
+                            <!-- Month Selector -->
+                            <select id="monthSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-blue-500">
+                                <option value="">Select Month...</option>
+                            </select>
+                            
+                            <!-- Current Filter Display -->
+                            <div id="currentFilterDisplay" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-2">
                                 <i class="fas fa-calendar-check text-blue-400"></i>
-                                <span id="customDateRangeText"></span>
-                                <button onclick="setTimeInterval('7d')" class="ml-2 text-blue-400 hover:text-blue-300">
-                                    <i class="fas fa-times text-xs"></i>
-                                </button>
+                                <span id="currentFilterText"></span>
                             </div>
                         </div>
                     </div>

@@ -4,6 +4,122 @@ let authToken = null;
 let creatorAccounts = [];
 let currentTimeInterval = '7d';
 let customDateRange = null;
+let availableWeeks = [];
+let availableMonths = [];
+let currentFilterType = null; // 'week' or 'month'
+let currentWeekFilter = null;
+let currentMonthFilter = null;
+
+// Load available weeks and months from backend
+async function loadAvailablePeriods() {
+    try {
+        const response = await fetch('/api/analytics/available-periods', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        availableWeeks = data.weeks || [];
+        availableMonths = data.months || [];
+        
+        console.log('📅 Loaded periods:', { weeks: availableWeeks.length, months: availableMonths.length });
+        
+        // Populate selectors
+        populateWeekSelector();
+        populateMonthSelector();
+        
+        // Auto-select latest week if available
+        if (availableWeeks.length > 0) {
+            const latestWeek = availableWeeks[availableWeeks.length - 1];
+            selectWeek(latestWeek);
+        }
+    } catch (error) {
+        console.error('Error loading available periods:', error);
+    }
+}
+
+// Populate week selector dropdown
+function populateWeekSelector() {
+    const selector = document.getElementById('weekSelector');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">Select Week...</option>';
+    availableWeeks.forEach(week => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ start: week.start, end: week.end });
+        option.textContent = week.label;
+        selector.appendChild(option);
+    });
+    
+    // Add change listener
+    selector.addEventListener('change', (e) => {
+        const monthSelector = document.getElementById('monthSelector');
+        if (e.target.value) {
+            const week = JSON.parse(e.target.value);
+            selectWeek(week);
+            if (monthSelector) monthSelector.value = ''; // Clear month
+        }
+    });
+}
+
+// Populate month selector dropdown
+function populateMonthSelector() {
+    const selector = document.getElementById('monthSelector');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">Select Month...</option>';
+    availableMonths.forEach(month => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ firstDay: month.firstDay, lastDay: month.lastDay });
+        option.textContent = month.label;
+        selector.appendChild(option);
+    });
+    
+    // Add change listener
+    selector.addEventListener('change', (e) => {
+        const weekSelector = document.getElementById('weekSelector');
+        if (e.target.value) {
+            const month = JSON.parse(e.target.value);
+            selectMonth(month);
+            if (weekSelector) weekSelector.value = ''; // Clear week
+        }
+    });
+}
+
+// Select a specific week
+function selectWeek(week) {
+    currentFilterType = 'week';
+    currentWeekFilter = week;
+    currentMonthFilter = null;
+    
+    // Update display
+    const display = document.getElementById('currentFilterDisplay');
+    const text = document.getElementById('currentFilterText');
+    if (display && text) {
+        text.textContent = `Week: ${new Date(week.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(week.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        display.classList.remove('hidden');
+    }
+    
+    // Reload dashboard
+    loadDashboardData();
+}
+
+// Select a specific month
+function selectMonth(month) {
+    currentFilterType = 'month';
+    currentMonthFilter = month;
+    currentWeekFilter = null;
+    
+    // Update display
+    const display = document.getElementById('currentFilterDisplay');
+    const text = document.getElementById('currentFilterText');
+    if (display && text) {
+        text.textContent = `Month: ${new Date(month.firstDay).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        display.classList.remove('hidden');
+    }
+    
+    // Reload dashboard
+    loadDashboardData();
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -512,8 +628,9 @@ function showSection(sectionId) {
     // Load section-specific data
     loadSectionData(sectionId);
     
-    // If showing dashboard, aggressively clear metrics
+    // If showing dashboard, load available periods
     if (sectionId === 'dashboard' && currentUser?.role === 'manager') {
+        loadAvailablePeriods();
         setTimeout(() => {
             forceClearSpecificMetrics();
             console.log('Dashboard section shown - clearing metrics');
@@ -899,10 +1016,20 @@ function updateUsersTable(users) {
 
 async function loadDashboardData() {
     try {
-        const url = `/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`;
+        // Build URL based on filter type
+        let url;
+        if (currentFilterType === 'week' && currentWeekFilter) {
+            url = `/api/analytics/dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}&_t=${Date.now()}`;
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            url = `/api/analytics/dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}&_t=${Date.now()}`;
+        } else {
+            // Fallback to old behavior
+            url = `/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`;
+        }
         console.log('Loading dashboard with URL:', url);
-        console.log('Current interval:', currentTimeInterval);
-        console.log('Custom date range:', customDateRange);
+        console.log('Filter type:', currentFilterType);
+        console.log('Week filter:', currentWeekFilter);
+        console.log('Month filter:', currentMonthFilter);
         
         // Fetch real data from API
         const response = await fetch(url, {
