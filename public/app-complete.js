@@ -2786,7 +2786,7 @@ async function generateRealDataInsights(analytics, intelligent) {
         // Only fetch AI recommendations for managers
         if (currentUser?.role !== 'manager') {
             console.log('Skipping AI recommendations - not a manager');
-            return generateFallbackInsights(analytics, intelligent);
+            return generateBasicInsights(analytics, intelligent);
         }
         
         // Fetch real AI recommendations from backend
