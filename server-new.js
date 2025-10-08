@@ -1617,12 +1617,19 @@ FOR ALL OTHER GUIDELINES:
 
 GUIDELINES_V2_JSON:
 {
-  "generalChatting": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "psychology": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "captions": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] },
-  "sales": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "EXACT_DESCRIPTION_FROM_UPLOADED_GUIDELINES", "count": <number>, "examples": [<messageIdx>...] } ] }
+  "generalChatting": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "Brief description", "count": 0, "examples": [] } ] },
+  "psychology": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "Brief description", "count": 0, "examples": [] } ] },
+  "captions": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "Brief description", "count": 0, "examples": [] } ] },
+  "sales": { "items": [ { "title": "EXACT_TITLE_FROM_UPLOADED_GUIDELINES", "description": "Brief description", "count": 0, "examples": [] } ] }
 }
 END_GUIDELINES_V2_JSON
+
+🚨 CRITICAL JSON REQUIREMENTS:
+1. EVERY item MUST have ALL 4 fields: "title", "description", "count", "examples"
+2. If count is 0, examples MUST be an empty array: []
+3. If count > 0, examples MUST be an array of message indices: [1, 5, 10]
+4. NEVER omit any field - the JSON will FAIL to parse
+5. PUT EACH GUIDELINE IN THE CORRECT CATEGORY - "PPV Price Progression" goes in SALES, not CAPTIONS!
 
 🚨 IF YOU DO NOT PROVIDE THIS EXACT FORMAT, THE ANALYSIS WILL FAIL COMPLETELY.
 🚨 DO NOT ADD ANYTHING BEFORE OR AFTER THE JSON.
