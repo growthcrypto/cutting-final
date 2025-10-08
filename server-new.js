@@ -880,11 +880,18 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     // Query for chatter performance data based on filter type
     let chatterPerformanceQuery;
     if (isWeekFilter) {
-      // EXACT WEEK MATCH
+      // WEEK FILTER: Match records where weekStartDate and weekEndDate match the filter dates
+      // Use date range to handle timezone/precision issues
+      const startOfDay = new Date(start);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(end);
+      endOfDay.setHours(23, 59, 59, 999);
+      
       chatterPerformanceQuery = {
-        weekStartDate: start,
-        weekEndDate: end
+        weekStartDate: { $gte: startOfDay, $lte: new Date(start.getTime() + 24 * 60 * 60 * 1000) },
+        weekEndDate: { $gte: new Date(end.getTime() - 24 * 60 * 60 * 1000), $lte: endOfDay }
       };
+      console.log('📅 Week query:', { startOfDay, endOfDay, weekStart: start, weekEnd: end });
     } else if (isMonthFilter) {
       // MONTH OVERLAP
       chatterPerformanceQuery = {
@@ -899,6 +906,7 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       };
     }
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
+    console.log('📊 Team Dashboard - ChatterPerformance found:', chatterPerformance.length, 'records');
 
     // Get latest AI analysis for each chatter based on filter type
     const aiAnalysisPromises = chatterNames.map(async (name) => {
