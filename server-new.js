@@ -2808,7 +2808,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         }
         
         if (allMessagesFromAllRecords.length > 0) {
+          const ppvCount = allMessagesFromAllRecords.filter(m => m.isPPV || m.ppvRevenue > 0).length;
           console.log(`🔄 Retrieved ${allMessagesFromAllRecords.length} messages from ${analyticsData.messagesAnalysis.length} MessageAnalysis records`);
+          console.log(`📊 PPV messages in analysis: ${ppvCount} (isPPV or ppvRevenue > 0)`);
           analysisMessageTexts = allMessagesFromAllRecords;
         } else {
           // Fallback to analyticsData.messageRecords if available
