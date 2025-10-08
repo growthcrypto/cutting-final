@@ -4756,6 +4756,9 @@ async function loadTeamDashboard() {
         const data = await response.json();
         console.log('Team dashboard data:', data);
         
+        // Cache the data for tab switching
+        latestTeamDashboardData = data;
+        
         renderTeamMetrics(data.teamMetrics);
         renderChatterTabs(data.chatters);
         
@@ -4975,6 +4978,9 @@ function renderChatterTabs(chatters) {
     }
 }
 
+// Store the latest team dashboard data for tab switching
+let latestTeamDashboardData = null;
+
 // Switch chatter tab
 function switchChatterTab(chatterName) {
     currentChatterTab = chatterName;
@@ -4990,35 +4996,17 @@ function switchChatterTab(chatterName) {
         }
     });
     
-    // Find and render chatter data
-    // This will be called again when tab is clicked, so we need to fetch the data
-    loadChatterData(chatterName);
-}
-
-// Load individual chatter data
-async function loadChatterData(chatterName) {
-    try {
-        let url = `/api/analytics/team-dashboard?interval=${currentTeamInterval}`;
-        if (currentTeamDateRange) {
-            url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
-        }
-        
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load chatter data');
-        
-        const data = await response.json();
-        const chatter = data.chatters.find(c => c.chatterName === chatterName);
-        
+    // Use cached data instead of making a new API call
+    if (latestTeamDashboardData) {
+        const chatter = latestTeamDashboardData.chatters.find(c => c.chatterName === chatterName);
         if (chatter) {
+            console.log('📊 Switching to chatter:', chatterName, 'Data:', chatter);
             renderChatterContent(chatter);
+        } else {
+            console.warn('❌ Chatter not found in cached data:', chatterName);
         }
-    } catch (error) {
-        console.error('Error loading chatter data:', error);
+    } else {
+        console.warn('❌ No cached team dashboard data available');
     }
 }
 
