@@ -482,19 +482,19 @@
                             <span class="text-sm text-gray-400 mr-3">Filter by:</span>
                             
                             <!-- Week Selector -->
-                            <select id="weekSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-blue-500">
+                            <select id="weekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-0 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-900/50 cursor-pointer">
                                 <option value="">Select Week...</option>
                             </select>
                             
                             <!-- Month Selector -->
-                            <select id="monthSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-blue-500">
+                            <select id="monthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-purple-600 to-pink-600 text-white border-0 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/50 cursor-pointer">
                                 <option value="">Select Month...</option>
                             </select>
                             
                             <!-- Current Filter Display -->
-                            <div id="currentFilterDisplay" class="hidden text-xs px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-2">
+                            <div id="currentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 flex items-center gap-2 shadow-inner">
                                 <i class="fas fa-calendar-check text-blue-400"></i>
-                                <span id="currentFilterText"></span>
+                                <span id="currentFilterText" class="font-medium"></span>
                             </div>
                         </div>
                     </div>
@@ -1156,14 +1156,25 @@
                             <p class="text-gray-400 text-lg">Deep performance insights with actionable recommendations</p>
                         </div>
                         
-                        <!-- AI Analysis Time Controls -->
+                        <!-- Week/Month Selector (Shared with other dashboards) -->
                         <div class="flex items-center space-x-3 mt-6 lg:mt-0">
-                            <span class="text-sm text-gray-400 mr-4">Analysis Period:</span>
-                            <button onclick="setAIAnalysisInterval('7d')" class="ai-time-btn bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="7d">7 Days</button>
-                            <button onclick="setAIAnalysisInterval('30d')" class="ai-time-btn bg-gray-700 text-gray-300 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="30d">30 Days</button>
-                            <button onclick="setAIAnalysisInterval('custom')" class="ai-time-btn bg-gray-700 text-gray-300 px-4 py-3 rounded-xl text-sm font-medium transition-all" data-interval="custom">
-                                <i class="fas fa-calendar mr-2 text-xs"></i>Custom
-                            </button>
+                            <span class="text-sm text-gray-400 mr-3">Filter by:</span>
+                            
+                            <!-- Week Selector -->
+                            <select id="aiWeekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-blue-600 to-purple-600 text-white border-0 hover:from-blue-500 hover:to-purple-500 shadow-lg shadow-blue-900/50 cursor-pointer">
+                                <option value="">Select Week...</option>
+                            </select>
+                            
+                            <!-- Month Selector -->
+                            <select id="aiMonthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-indigo-600 to-blue-600 text-white border-0 hover:from-indigo-500 hover:to-blue-500 shadow-lg shadow-indigo-900/50 cursor-pointer">
+                                <option value="">Select Month...</option>
+                            </select>
+                            
+                            <!-- Current Filter Display -->
+                            <div id="aiCurrentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 flex items-center gap-2 shadow-inner">
+                                <i class="fas fa-calendar-check text-blue-400"></i>
+                                <span id="aiCurrentFilterText" class="font-medium"></span>
+                            </div>
                         </div>
                     </div>
 

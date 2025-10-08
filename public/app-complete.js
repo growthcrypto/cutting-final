@@ -660,6 +660,78 @@ function showSection(sectionId) {
             console.log('Dashboard section shown - clearing metrics');
         }, 100);
     }
+    
+    // If showing AI analysis, populate selectors
+    if (sectionId === 'ai-analysis') {
+        if (availableWeeks.length === 0) {
+            loadAvailablePeriods().then(() => {
+                populateAISelectors();
+            });
+        } else {
+            populateAISelectors();
+        }
+    }
+}
+
+// Populate AI Analysis selectors
+function populateAISelectors() {
+    const weekSelector = document.getElementById('aiWeekSelector');
+    const monthSelector = document.getElementById('aiMonthSelector');
+    
+    if (weekSelector) {
+        weekSelector.innerHTML = '<option value="">Select Week...</option>';
+        availableWeeks.forEach(week => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ start: week.start, end: week.end });
+            option.textContent = week.label;
+            if (currentWeekFilter && week.start === currentWeekFilter.start) {
+                option.selected = true;
+            }
+            weekSelector.appendChild(option);
+        });
+        
+        weekSelector.addEventListener('change', (e) => {
+            if (e.target.value) {
+                const week = JSON.parse(e.target.value);
+                selectWeek(week);
+                if (monthSelector) monthSelector.value = '';
+            }
+        });
+    }
+    
+    if (monthSelector) {
+        monthSelector.innerHTML = '<option value="">Select Month...</option>';
+        availableMonths.forEach(month => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ firstDay: month.firstDay, lastDay: month.lastDay });
+            option.textContent = month.label;
+            if (currentMonthFilter && month.firstDay === currentMonthFilter.firstDay) {
+                option.selected = true;
+            }
+            monthSelector.appendChild(option);
+        });
+        
+        monthSelector.addEventListener('change', (e) => {
+            if (e.target.value) {
+                const month = JSON.parse(e.target.value);
+                selectMonth(month);
+                if (weekSelector) weekSelector.value = '';
+            }
+        });
+    }
+    
+    // Update display
+    const display = document.getElementById('aiCurrentFilterDisplay');
+    const text = document.getElementById('aiCurrentFilterText');
+    if (display && text) {
+        if (currentFilterType === 'week' && currentWeekFilter) {
+            text.textContent = `Week: ${new Date(currentWeekFilter.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(currentWeekFilter.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            display.classList.remove('hidden');
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            text.textContent = `Month: ${new Date(currentMonthFilter.firstDay).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+            display.classList.remove('hidden');
+        }
+    }
 }
 
 function createSection(sectionId) {
@@ -4344,19 +4416,19 @@ function createChatterDashboardSection() {
                     <span class="text-sm text-gray-400 mr-3">Filter by:</span>
                     
                     <!-- Week Selector -->
-                    <select id="teamWeekSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-purple-500">
+                    <select id="teamWeekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-purple-600 to-pink-600 text-white border-0 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/50 cursor-pointer">
                         <option value="">Select Week...</option>
                     </select>
                     
                     <!-- Month Selector -->
-                    <select id="teamMonthSelector" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-700 text-gray-300 border border-gray-600 hover:border-purple-500">
+                    <select id="teamMonthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-pink-600 to-rose-600 text-white border-0 hover:from-pink-500 hover:to-rose-500 shadow-lg shadow-pink-900/50 cursor-pointer">
                         <option value="">Select Month...</option>
                     </select>
                     
                     <!-- Current Filter Display -->
-                    <div id="teamCurrentFilterDisplay" class="hidden text-xs px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-2">
+                    <div id="teamCurrentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-200 border border-purple-500/30 flex items-center gap-2 shadow-inner">
                         <i class="fas fa-calendar-check text-purple-400"></i>
-                        <span id="teamCurrentFilterText"></span>
+                        <span id="teamCurrentFilterText" class="font-medium"></span>
                     </div>
                 </div>
             </div>
