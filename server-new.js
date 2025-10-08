@@ -1166,7 +1166,9 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       dateRange: {
         start,
         end,
-        interval
+        filterType: filterType || 'fallback',
+        isWeekFilter,
+        isMonthFilter
       }
     };
 
