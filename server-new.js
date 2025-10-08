@@ -4207,8 +4207,11 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
           overall: aiAnalysisDoc.overallScore
         });
       } catch (saveError) {
-        console.error('❌ Failed to save AIAnalysis to database:', saveError);
-        console.error('❌ Save error details:', saveError.message);
+        console.error('🚨🚨🚨 SAVE FAILED 🚨🚨🚨');
+        console.error('❌ Error:', saveError.message);
+        console.error('❌ Stack:', saveError.stack);
+        console.error('❌ Attempted to save with chatterName:', actualChatterName);
+        console.error('❌ Scores:', { grammar: aiAnalysis.grammarScore, guidelines: aiAnalysis.guidelinesScore, overall: aiAnalysis.overallScore });
         // Don't fail the request if save fails - still return the analysis
       }
       
