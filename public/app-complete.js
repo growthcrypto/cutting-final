@@ -4701,12 +4701,15 @@ async function loadTeamDashboard() {
         } else {
             // Fallback: Load available periods first if not loaded
             if (!currentFilterType && availableWeeks.length === 0) {
-                console.log('No filter set, loading available periods...');
+                console.log('🔄 Team Dashboard: No filter set, loading available periods...');
                 await loadAvailablePeriods();
-                // After loading, this will trigger again with a filter set
-                return;
+                // After periods loaded, selectWeek() was called which triggers loadDashboardData() but not loadTeamDashboard()
+                // So we need to reload the team dashboard now
+                console.log('🔄 Team Dashboard: Periods loaded, reloading with filter...');
+                return loadTeamDashboard(); // Recursively call with filter now set
             }
-            // Old behavior fallback
+            // Old behavior fallback - should not reach here anymore
+            console.warn('⚠️ Team Dashboard using old fallback - this should not happen!');
             url = `/api/analytics/team-dashboard?interval=${currentTeamInterval || '7d'}`;
             if (currentTeamDateRange) {
                 url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
