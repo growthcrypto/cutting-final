@@ -4259,7 +4259,7 @@ function loadLiveAIInsights(analytics, intelligent) {
                 title: 'Strength: Excellent PPV Performance',
                 value: `${unlockRate.toFixed(1)}%`,
                 message: `${analytics.ppvsUnlocked} of ${analytics.ppvsSent} PPVs unlocked - team is crushing it!`,
-                action: 'Document what's working and scale this approach'
+                action: 'Document what is working and scale this approach'
             });
         }
     }
