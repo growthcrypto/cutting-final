@@ -1748,15 +1748,26 @@ function showSection(sectionId) {
         section.classList.add('hidden');
     });
 
+    // SPECIAL: Always recreate analytics section to ensure fresh HTML
+    if (sectionId === 'analytics') {
+        const existingSection = document.getElementById('analytics');
+        if (existingSection) {
+            console.log('🗑️ Removing old analytics section');
+            existingSection.remove();
+        }
+    }
+
     // Show selected section
     let targetSection = document.getElementById(sectionId);
     if (!targetSection) {
         // Create section dynamically if it doesn't exist
+        console.log('📝 Creating section:', sectionId);
         targetSection = createSection(sectionId);
     }
     
     if (targetSection) {
         targetSection.classList.remove('hidden');
+        console.log('✅ Section shown:', sectionId);
     }
 
     // Update active nav link
