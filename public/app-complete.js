@@ -6940,22 +6940,22 @@ function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
-    // Homogeneous color scheme - slate/purple/blue only
+    // Homogeneous color scheme - slate/purple/blue only (0-10 scale)
     const getScoreColor = (score) => {
-        if (score >= 85) return 'text-blue-400';
-        if (score >= 70) return 'text-purple-400';
-        return 'text-slate-400';
+        if (score >= 8) return 'text-blue-400'; // 8+/10
+        if (score >= 6) return 'text-purple-400'; // 6-7/10
+        return 'text-slate-400'; // Below 6/10
     };
     
     const getScoreBg = (score) => {
-        if (score >= 85) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
-        if (score >= 70) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
+        if (score >= 8) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
+        if (score >= 6) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
         return 'from-slate-500/10 to-slate-600/10 border-slate-500/20';
     };
     
     const getScoreGradient = (score) => {
-        if (score >= 85) return 'from-blue-500 to-blue-600';
-        if (score >= 70) return 'from-purple-500 to-purple-600';
+        if (score >= 8) return 'from-blue-500 to-blue-600';
+        if (score >= 6) return 'from-purple-500 to-purple-600';
         return 'from-slate-500 to-slate-600';
     };
     
@@ -7180,16 +7180,16 @@ function renderChatterContent(chatter) {
     
     const getScoreColor = (score) => {
         if (score === null || score === undefined) return 'text-gray-400';
-        if (score >= 85) return 'text-emerald-400';
-        if (score >= 70) return 'text-yellow-400';
-        return 'text-red-400';
+        if (score >= 8) return 'text-emerald-400'; // 8+/10
+        if (score >= 6) return 'text-yellow-400'; // 6-7/10
+        return 'text-red-400'; // Below 6/10
     };
     
     const getScoreBadge = (score) => {
         if (score === null || score === undefined) return '⚪';
-        if (score >= 85) return '✨';
-        if (score >= 70) return '⚡';
-        return '🔴';
+        if (score >= 8) return '✨'; // 8+/10
+        if (score >= 6) return '⚡'; // 6-7/10
+        return '🔴'; // Below 6/10
     };
     
     const formatScore = (score) => {
@@ -7252,7 +7252,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.grammarScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.grammarScore)} mb-1">${formatScore(chatter.grammarScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.grammarScore ? '/100' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.grammarScore ? '/10' : ''}</div>
             </div>
             <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -7260,7 +7260,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.guidelinesScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.guidelinesScore)} mb-1">${formatScore(chatter.guidelinesScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.guidelinesScore ? '/100' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.guidelinesScore ? '/10' : ''}</div>
             </div>
             <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -7268,7 +7268,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.overallScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.overallScore)} mb-1">${formatScore(chatter.overallScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.overallScore ? '/100' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.overallScore ? '/10' : ''}</div>
             </div>
         </div>
         
