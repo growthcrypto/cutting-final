@@ -9349,18 +9349,19 @@ async function loadMyPerformanceData() {
         document.getElementById('myAvgPPVPrice').textContent = `$${data.avgPPVPrice || 0}`;
         document.getElementById('myResponseTime').textContent = `${data.avgResponseTime || 0}m`;
 
-        // Update combined analytics
+        // Update Conversion Metrics
         const revenuePerPPV = data.ppvsSent > 0 ? (data.totalRevenue / data.ppvsSent) : 0;
-        const revenuePerHour = data.totalRevenue / (currentMyPerformanceInterval === '24h' ? 24 : currentMyPerformanceInterval === '7d' ? 168 : 720);
+        const unlockRate = data.ppvsSent > 0 && data.ppvsUnlocked ? ((data.ppvsUnlocked / data.ppvsSent) * 100) : 0;
+        const messagesPerPPV = data.ppvsSent > 0 && data.messagesSent ? (data.messagesSent / data.ppvsSent) : 0;
         
         document.getElementById('myRevenuePerPPV').textContent = `$${revenuePerPPV.toFixed(2)}`;
-        document.getElementById('myRevenuePerHour').textContent = `$${revenuePerHour.toFixed(2)}`;
-        document.getElementById('myConversionRate').textContent = `${data.conversionRate || 0}%`;
+        document.getElementById('myUnlockRate').textContent = `${unlockRate.toFixed(1)}%`;
+        document.getElementById('myMessagesPerPPV').textContent = messagesPerPPV.toFixed(1);
 
-        // Update performance trends (no fake data)
-        document.getElementById('myWeeklyGrowth').textContent = 'No trend data available';
-        document.getElementById('myBestDay').textContent = 'No data available';
-        document.getElementById('myPeakHour').textContent = 'No data available';
+        // Update Activity Metrics
+        document.getElementById('myFansChatted').textContent = data.fansChatted || 0;
+        document.getElementById('myMessagesSent').textContent = data.messagesSent || 0;
+        document.getElementById('myAvgResponseTime').textContent = `${data.avgResponseTime || 0}m`;
 
         // Load message analysis
         await loadMyMessageAnalysis();
