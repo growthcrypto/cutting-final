@@ -753,11 +753,73 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
     const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
+    // Get link clicks from LinkTrackingData (uses weekStartDate/weekEndDate)
+    let linkTrackingQuery = {};
+    if (isWeekFilter) {
+      linkTrackingQuery = {
+        weekStartDate: start,
+        weekEndDate: end
+      };
+    } else if (isMonthFilter) {
+      linkTrackingQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
+    } else {
+      linkTrackingQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
+    }
+    
+    const linkTrackingData = await LinkTrackingData.find(linkTrackingQuery);
+    const totalLinkClicks = linkTrackingData.reduce((sum, lt) => sum + (lt.onlyFansClicks || 0), 0);
+    const totalLinkViews = linkTrackingData.reduce((sum, lt) => sum + (lt.landingPageViews || 0), 0);
+    
+    // Calculate combined fans chatted (needed for spender conversion)
+    const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
+    
+    // Calculate spender conversion rate (fans who became buyers)
+    const uniqueSpenders = new Set(fanPurchases.map(p => p.fanUsername).filter(u => u)).size;
+    const spenderConversionRate = combinedFansChatted > 0 ? (uniqueSpenders / combinedFansChatted) * 100 : 0;
+    
+    // Get latest analysis scores for each chatter
+    const latestAnalyses = await MessageAnalysis.aggregate([
+      {
+        $sort: { weekEndDate: -1 }
+      },
+      {
+        $group: {
+          _id: '$chatterName',
+          latestAnalysis: { $first: '$$ROOT' }
+        }
+      }
+    ]);
+    
+    const overallScores = latestAnalyses
+      .map(a => a.latestAnalysis.overallScore)
+      .filter(s => s != null && s > 0);
+    const grammarScores = latestAnalyses
+      .map(a => a.latestAnalysis.grammarScore)
+      .filter(s => s != null && s > 0);
+    const guidelineScores = latestAnalyses
+      .map(a => a.latestAnalysis.guidelinesScore)
+      .filter(s => s != null && s > 0);
+    
+    const avgOverallScore = overallScores.length > 0 
+      ? Math.round(overallScores.reduce((s, v) => s + v, 0) / overallScores.length) 
+      : null;
+    const avgGrammarScore = grammarScores.length > 0
+      ? Math.round(grammarScores.reduce((s, v) => s + v, 0) / grammarScores.length)
+      : null;
+    const avgGuidelinesScore = guidelineScores.length > 0
+      ? Math.round(guidelineScores.reduce((s, v) => s + v, 0) / guidelineScores.length)
+      : null;
+    
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
     const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
     const combinedMessagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0) + chatterMessagesSent;
-    const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
 
     const analytics = {
       totalRevenue: Math.round(totalRevenue),
@@ -768,13 +830,20 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       totalSubs: Math.round(totalSubs),
       newSubs: Math.round(newSubs),
       profileClicks: Math.round(profileClicks),
+      linkClicks: Math.round(totalLinkClicks), // NEW: Link clicks from tracking data
+      linkViews: Math.round(totalLinkViews),
       messagesSent: combinedMessagesSent,
       ppvsSent: combinedPPVsSent,
       ppvsUnlocked: combinedPPVsUnlocked,
       fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
-      // Average PPV price: average of each day's average PPV price within the timeframe
-      avgPPVPrice: avgPPVPriceDaily,
+      avgPPVPrice: avgPPVPriceDaily, // NEW: For Efficiency Matrix card
+      spenderConversionRate: Math.round(spenderConversionRate * 10) / 10, // NEW: For Efficiency Matrix
+      uniqueSpenders: uniqueSpenders, // NEW: For calculations
+      // Analysis scores
+      avgOverallScore: avgOverallScore, // NEW: For Team Dynamics
+      avgGrammarScore: avgGrammarScore, // NEW: For Team Dynamics
+      avgGuidelinesScore: avgGuidelinesScore, // NEW: For Team Dynamics
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
     

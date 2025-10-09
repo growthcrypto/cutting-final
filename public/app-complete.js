@@ -2283,9 +2283,9 @@ async function loadDashboardData() {
         loadLiveAIInsights(data, intelligentMetrics);
         loadActionOpportunities(data, intelligentMetrics);
         
-        // Load charts
-        loadRevenueChart();
-        loadAIInsightsChart();
+        // Load new charts
+        loadRevenueAttributionChart();
+        loadConversionFunnelChart(data);
     } catch (error) {
         console.error('Error loading dashboard data:', error);
         // Use empty data as fallback
@@ -2310,8 +2310,8 @@ async function loadDashboardData() {
         loadLiveAIInsights(emptyData, intelligentMetrics);
         loadActionOpportunities(emptyData, intelligentMetrics);
         
-        loadRevenueChart();
-        loadAIInsightsChart();
+        loadRevenueAttributionChart();
+        loadConversionFunnelChart(emptyData);
     }
 }
 
@@ -2368,16 +2368,16 @@ function updateIntelligentMetrics(analytics, intelligent) {
         ppvUnlockRate: `${intelligent.ppvUnlockRate}%`,
         revenuePerSub: `$${intelligent.revenuePerSub}`,
         
-        // Efficiency metrics
-        revenuePerHour: `$${intelligent.revenuePerHour}`,
+        // Efficiency metrics - NEW
+        avgPPVPrice: `$${analytics.avgPPVPrice || 0}`,
+        spenderConvRate: `${analytics.spenderConversionRate || 0}%`,
         messagesPerPPV: intelligent.messagesPerPPV,
-        peakTime: intelligent.peakTime,
         
-        // Team dynamics
+        // Team quality - NEW
         topPerformer: intelligent.topPerformer,
-        performanceGap: `${intelligent.performanceGap}%`,
-        teamConsistency: `${intelligent.teamConsistency}%`,
-        synergyScore: `${intelligent.synergyScore}%`
+        avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/10` : '-',
+        avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/10` : '-',
+        avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/10` : '-'
     };
 
     // Update all elements
@@ -4236,13 +4236,267 @@ function loadLiveAIInsights(analytics, intelligent) {
         return;
     }
     
-    // Generate real data-driven insights
-    generateRealDataInsights(analytics, intelligent).then(insights => {
-        renderInsights(insights, container);
-    });
+    // DEEP ANALYSIS - Find critical weaknesses and strengths
+    const insights = [];
+    
+    // 1. PPV UNLOCK RATE ANALYSIS
+    if (analytics.ppvsSent > 0) {
+        const unlockRate = intelligent.ppvUnlockRate;
+        if (unlockRate < 25) {
+            const potentialRevenue = (analytics.ppvsSent * 0.35 - analytics.ppvsUnlocked) * (analytics.avgPPVPrice || 20);
+            insights.push({
+                type: 'critical',
+                icon: 'fa-exclamation-triangle',
+                title: 'Critical: Low PPV Unlock Rate',
+                value: `${unlockRate.toFixed(1)}%`,
+                message: `Only ${analytics.ppvsUnlocked} of ${analytics.ppvsSent} PPVs unlocked. Missing $${potentialRevenue.toFixed(0)}/period potential if rate improved to 35%.`,
+                action: 'Review message quality and PPV pricing strategy'
+            });
+        } else if (unlockRate > 45) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-trophy',
+                title: 'Strength: Excellent PPV Performance',
+                value: `${unlockRate.toFixed(1)}%`,
+                message: `${analytics.ppvsUnlocked} of ${analytics.ppvsSent} PPVs unlocked - team is crushing it!`,
+                action: 'Document what's working and scale this approach'
+            });
+        }
+    }
+    
+    // 2. ANALYSIS SCORE TREND
+    if (analytics.avgOverallScore != null || analytics.avgGrammarScore != null || analytics.avgGuidelinesScore != null) {
+        const lowestScore = Math.min(
+            analytics.avgOverallScore || 10,
+            analytics.avgGrammarScore || 10,
+            analytics.avgGuidelinesScore || 10
+        );
+        const lowestCategory = lowestScore === analytics.avgGrammarScore ? 'Grammar' :
+                               lowestScore === analytics.avgGuidelinesScore ? 'Guidelines' : 'Overall';
+        
+        if (lowestScore < 6) {
+            insights.push({
+                type: 'critical',
+                icon: 'fa-exclamation-circle',
+                title: `Critical: ${lowestCategory} Score Low`,
+                value: `${lowestScore}/10`,
+                message: `Team ${lowestCategory.toLowerCase()} score is below acceptable. This impacts fan experience and revenue.`,
+                action: `Immediate training session on ${lowestCategory.toLowerCase()} improvement needed`
+            });
+        } else if (lowestScore >= 8) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-star',
+                title: 'Strength: High Quality Messaging',
+                value: `${Math.max(analytics.avgOverallScore || 0, analytics.avgGrammarScore || 0, analytics.avgGuidelinesScore || 0)}/10`,
+                message: 'Team maintaining excellent messaging standards across all categories.',
+                action: 'Keep current training and quality standards'
+            });
+        }
+    }
+    
+    // 3. SPENDER CONVERSION ANALYSIS
+    if (analytics.fansChatted > 0 && analytics.uniqueSpenders != null) {
+        const convRate = analytics.spenderConversionRate;
+        if (convRate < 5) {
+            const targetSpenders = Math.ceil(analytics.fansChatted * 0.08);
+            const missedRevenue = (targetSpenders - analytics.uniqueSpenders) * (analytics.avgPPVPrice || 20);
+            insights.push({
+                type: 'warning',
+                icon: 'fa-user-slash',
+                title: 'Warning: Low Spender Conversion',
+                value: `${convRate.toFixed(1)}%`,
+                message: `Only ${analytics.uniqueSpenders} of ${analytics.fansChatted} fans became buyers. Missing ~$${missedRevenue.toFixed(0)} if rate improved to 8%.`,
+                action: 'Focus on identifying buying signals and targeted selling'
+            });
+        } else if (convRate > 10) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-chart-line',
+                title: 'Strength: High Conversion Efficiency',
+                value: `${convRate.toFixed(1)}%`,
+                message: `${analytics.uniqueSpenders} buyers from ${analytics.fansChatted} fans - excellent qualification!`,
+                action: 'Scale this approach across all chatters'
+            });
+        }
+    }
+    
+    // 4. RESPONSE TIME IMPACT
+    if (analytics.avgResponseTime > 0) {
+        if (analytics.avgResponseTime > 7) {
+            const estimatedLoss = analytics.totalRevenue * 0.15; // 15% loss from slow responses
+            insights.push({
+                type: 'warning',
+                icon: 'fa-clock',
+                title: 'Warning: Slow Response Times',
+                value: `${analytics.avgResponseTime}min`,
+                message: `Avg response time above 7min can reduce conversions by ~15%. Potential loss: $${estimatedLoss.toFixed(0)}/period.`,
+                action: 'Implement response time targets and monitoring'
+            });
+        } else if (analytics.avgResponseTime < 4) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-bolt',
+                title: 'Strength: Lightning Fast Responses',
+                value: `${analytics.avgResponseTime}min`,
+                message: 'Team responding quickly - this drives higher engagement and sales.',
+                action: 'Maintain current response standards'
+            });
+        }
+    }
+    
+    // 5. REVENUE PER SUB ANALYSIS
+    if (analytics.totalSubs > 0) {
+        const revPerSub = intelligent.revenuePerSub;
+        if (revPerSub < 10) {
+            const potentialRevenue = analytics.totalSubs * 15 - analytics.totalRevenue;
+            insights.push({
+                type: 'warning',
+                icon: 'fa-dollar-sign',
+                title: 'Warning: Low Revenue per Subscriber',
+                value: `$${revPerSub.toFixed(2)}`,
+                message: `Each subscriber generating only $${revPerSub.toFixed(2)}. Missing $${potentialRevenue.toFixed(0)} potential at $15/sub target.`,
+                action: 'Increase PPV frequency and improve upselling techniques'
+            });
+        } else if (revPerSub > 20) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-gem',
+                title: 'Strength: High-Value Subscribers',
+                value: `$${revPerSub.toFixed(2)}`,
+                message: `Subscribers generating $${revPerSub.toFixed(2)} each - excellent monetization!`,
+                action: 'Analyze and replicate what\'s working'
+            });
+        }
+    }
+    
+    // 6. AVG PPV PRICE OPTIMIZATION
+    if (analytics.avgPPVPrice > 0 && analytics.ppvsUnlocked > 10) {
+        if (analytics.avgPPVPrice < 15) {
+            const revenueIncrease = analytics.ppvsUnlocked * 5; // $5 increase per PPV
+            insights.push({
+                type: 'opportunity',
+                icon: 'fa-arrow-up',
+                title: 'Opportunity: Increase PPV Pricing',
+                value: `$${analytics.avgPPVPrice}`,
+                message: `Avg PPV at $${analytics.avgPPVPrice}. Raising to $${analytics.avgPPVPrice + 5} could add $${revenueIncrease.toFixed(0)}/period.`,
+                action: 'Test higher PPV prices with high-engagement fans'
+            });
+        } else if (analytics.avgPPVPrice > 30) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-fire',
+                title: 'Strength: Premium PPV Pricing',
+                value: `$${analytics.avgPPVPrice}`,
+                message: 'Team successfully selling premium-priced content!',
+                action: 'Continue premium positioning strategy'
+            });
+        }
+    }
+    
+    // 7. MESSAGES PER PPV EFFICIENCY
+    if (intelligent.messagesPerPPV > 0) {
+        if (intelligent.messagesPerPPV > 150) {
+            const timeWasted = (intelligent.messagesPerPPV - 100) * analytics.ppvsSent * 0.5; // minutes
+            insights.push({
+                type: 'warning',
+                icon: 'fa-comments',
+                title: 'Warning: High Message-to-Sale Ratio',
+                value: `${intelligent.messagesPerPPV.toFixed(0)}`,
+                message: `${intelligent.messagesPerPPV.toFixed(0)} messages per PPV sale. Team spending ~${timeWasted.toFixed(0)} extra minutes. Improve qualification.`,
+                action: 'Train on buyer signal recognition and faster closing'
+            });
+        } else if (intelligent.messagesPerPPV < 80) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-bullseye',
+                title: 'Strength: Efficient Sales Process',
+                value: `${intelligent.messagesPerPPV.toFixed(0)}`,
+                message: 'Team closing sales quickly with minimal message waste!',
+                action: 'Share best practices across team'
+            });
+        }
+    }
+    
+    // 8. LINK CLICK TO SUBSCRIBER CONVERSION
+    if (analytics.linkClicks > 0 && analytics.newSubs > 0) {
+        const linkToSubRate = (analytics.newSubs / analytics.linkClicks) * 100;
+        if (linkToSubRate < 3) {
+            const potentialSubs = Math.ceil(analytics.linkClicks * 0.05 - analytics.newSubs);
+            insights.push({
+                type: 'warning',
+                icon: 'fa-link',
+                title: 'Warning: Poor Link-to-Sub Conversion',
+                value: `${linkToSubRate.toFixed(1)}%`,
+                message: `${analytics.newSubs} subs from ${analytics.linkClicks} clicks. Missing ${potentialSubs} potential subs at 5% conversion.`,
+                action: 'Optimize landing page and OnlyFans profile appeal'
+            });
+        } else if (linkToSubRate > 5) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-rocket',
+                title: 'Strength: Excellent Traffic Quality',
+                value: `${linkToSubRate.toFixed(1)}%`,
+                message: `${analytics.newSubs} subs from ${analytics.linkClicks} clicks - traffic sources are high-quality!`,
+                action: 'Scale winning traffic sources'
+            });
+        }
+    }
+    
+    // Sort: Critical first, then warnings, then opportunities, then strengths
+    const sortOrder = { critical: 0, warning: 1, opportunity: 2, strength: 3 };
+    insights.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
+    
+    // Render insights (max 8, only show if actionable)
+    if (insights.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-8">
+                <i class="fas fa-check-circle text-green-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-green-300 mb-2">All Systems Optimal</h4>
+                <p class="text-gray-400">No critical issues detected. Team performing well!</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = insights.slice(0, 8).map(insight => {
+            const colorClass = {
+                critical: 'border-red-500/50 bg-red-900/10',
+                warning: 'border-yellow-500/50 bg-yellow-900/10',
+                opportunity: 'border-blue-500/50 bg-blue-900/10',
+                strength: 'border-green-500/50 bg-green-900/10'
+            }[insight.type];
+            
+            const iconColor = {
+                critical: 'text-red-400',
+                warning: 'text-yellow-400',
+                opportunity: 'text-blue-400',
+                strength: 'text-green-400'
+            }[insight.type];
+            
+            return `
+                <div class="glass-card rounded-lg p-5 border ${colorClass} hover:border-opacity-75 transition-all">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-lg bg-gray-800/50 flex items-center justify-center flex-shrink-0">
+                            <i class="fas ${insight.icon} ${iconColor} text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-white text-sm">${insight.title}</h4>
+                                <span class="px-2 py-1 rounded-lg ${colorClass} text-xs font-bold">${insight.value}</span>
+                            </div>
+                            <p class="text-gray-300 text-xs mb-3 leading-relaxed">${insight.message}</p>
+                            <div class="flex items-center pt-2 border-t border-gray-700/50">
+                                <i class="fas fa-lightbulb text-purple-400 mr-2 text-xs"></i>
+                                <span class="text-purple-300 text-xs font-medium">${insight.action}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
-// Load action opportunities  
+// Load action opportunities with REAL calculations and predictions
 function loadActionOpportunities(analytics, intelligent) {
     const container = document.getElementById('actionOpportunities');
     if (!container) return;
@@ -4259,92 +4513,157 @@ function loadActionOpportunities(analytics, intelligent) {
         return;
     }
     
-    // Only show opportunities when we have meaningful data to analyze
+    // Generate REAL actionable opportunities with calculations
     const opportunities = [];
     
-    // Weekend performance analysis (only if we have enough data)
-    if (analytics.totalRevenue > 1000) { // Only show if we have substantial data
+    // 1. IMPROVE PPV UNLOCK RATE
+    if (analytics.ppvsSent > 0 && intelligent.ppvUnlockRate < 40) {
+        const currentUnlocked = analytics.ppvsUnlocked;
+        const targetUnlocked = Math.ceil(analytics.ppvsSent * 0.40);
+        const additionalUnlocks = targetUnlocked - currentUnlocked;
+        const revenueGain = additionalUnlocks * (analytics.avgPPVPrice || 20);
+        
         opportunities.push({
-            title: 'Weekend Performance Analysis',
-            urgency: 'medium',
-            impact: 'Data analysis required',
-            description: 'Upload weekend vs weekday data to identify performance gaps',
-            action: 'Upload detailed daily reports',
-            timeframe: '1 week'
-        });
-    }
-    
-    // Response time optimization (only if we have response time data)
-    if (analytics.avgResponseTime > 0 && analytics.avgResponseTime < 10) {
-        opportunities.push({
-            title: 'Response Time Optimization',
-            urgency: analytics.avgResponseTime > 5 ? 'high' : 'low',
-            impact: 'Performance improvement opportunity',
-            description: `Current response time: ${analytics.avgResponseTime}min (target: <5min)`,
-            action: analytics.avgResponseTime > 5 ? 'Implement response time improvements' : 'Monitor consistency',
-            timeframe: '1 week'
-        });
-    }
-    
-    // PPV pricing analysis (only if we have PPV data)
-    if (analytics.ppvsSent > 0 && analytics.avgPPVPrice > 0) {
-        opportunities.push({
-            title: 'PPV Pricing Analysis',
-            urgency: 'medium',
-            impact: 'Revenue optimization opportunity',
-            description: `Current avg PPV price: $${analytics.avgPPVPrice.toFixed(2)}`,
-            action: 'Upload team PPV data for pricing comparison',
-            timeframe: '2 weeks'
-        });
-    }
-    
-    // Team performance analysis (only if we have multiple chatters)
-    if (analytics.totalRevenue > 500) {
-        opportunities.push({
-            title: 'Team Performance Analysis',
-            urgency: 'medium',
-            impact: 'Team optimization opportunity',
-            description: 'Upload data from multiple chatters to identify performance gaps',
-            action: 'Upload individual chatter reports',
-            timeframe: '2 weeks'
-        });
-    }
-    
-    // If no opportunities can be generated from current data, show data requirements
-    if (opportunities.length === 0) {
-        opportunities.push({
-            title: 'Data Collection Required',
+            title: 'Improve PPV Unlock Rate',
             urgency: 'high',
-            impact: 'Analysis not possible',
-            description: 'Upload daily chatter reports and message data to generate actionable opportunities',
-            action: 'Upload performance data',
-            timeframe: 'Immediate'
+            impact: `+$${revenueGain.toFixed(0)}/period`,
+            description: `Increase unlock rate from ${intelligent.ppvUnlockRate.toFixed(1)}% to 40% = ${additionalUnlocks} more sales`,
+            action: 'Train chatters on message quality and timing',
+            calculation: `${targetUnlocked} unlocks × $${analytics.avgPPVPrice || 20} - current revenue`
         });
     }
     
-    container.innerHTML = opportunities.slice(0, 6).map(opp => `
-        <div class="glass-card rounded-lg p-4 hover:bg-gray-700/20 transition-all cursor-pointer">
-            <div class="flex items-center justify-between mb-2">
-                <h4 class="font-semibold text-white text-sm">${opp.title}</h4>
-                <span class="px-2 py-1 rounded-full text-xs font-bold ${
-                    opp.urgency === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                    opp.urgency === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                    opp.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-blue-500/20 text-blue-400'
-                }">${opp.urgency.toUpperCase()}</span>
+    // 2. INCREASE PPV SEND RATE
+    if (analytics.ppvsSent > 0 && analytics.fansChatted > 0) {
+        const ppvSendRate = (analytics.ppvsSent / analytics.fansChatted) * 100;
+        if (ppvSendRate < 30) {
+            const targetPPVs = Math.ceil(analytics.fansChatted * 0.35);
+            const additionalPPVs = targetPPVs - analytics.ppvsSent;
+            const additionalUnlocks = Math.ceil(additionalPPVs * (intelligent.ppvUnlockRate / 100));
+            const revenueGain = additionalUnlocks * (analytics.avgPPVPrice || 20);
+            
+            opportunities.push({
+                title: 'Increase PPV Send Frequency',
+                urgency: 'medium',
+                impact: `+$${revenueGain.toFixed(0)}/period`,
+                description: `Send ${additionalPPVs} more PPVs to hit 35% send rate (currently ${ppvSendRate.toFixed(1)}%)`,
+                action: 'Send PPVs to more qualified fans',
+                calculation: `${additionalPPVs} PPVs × ${intelligent.ppvUnlockRate.toFixed(0)}% unlock × $${analytics.avgPPVPrice || 20}`
+            });
+        }
+    }
+    
+    // 3. IMPROVE SPENDER CONVERSION
+    if (analytics.fansChatted > 0 && analytics.uniqueSpenders != null) {
+        const convRate = analytics.spenderConversionRate;
+        if (convRate < 8) {
+            const targetSpenders = Math.ceil(analytics.fansChatted * 0.10);
+            const additionalSpenders = targetSpenders - analytics.uniqueSpenders;
+            const revenueGain = additionalSpenders * (analytics.avgPPVPrice || 20);
+            
+            opportunities.push({
+                title: 'Boost Spender Conversion Rate',
+                urgency: 'high',
+                impact: `+$${revenueGain.toFixed(0)}/period`,
+                description: `Convert ${additionalSpenders} more fans from chatters to buyers (target: 10%)`,
+                action: 'Focus on high-intent fans and improve qualification',
+                calculation: `${additionalSpenders} new spenders × $${analytics.avgPPVPrice || 20} avg purchase`
+            });
+        }
+    }
+    
+    // 4. OPTIMIZE RESPONSE TIME
+    if (analytics.avgResponseTime > 5 && analytics.totalRevenue > 0) {
+        const revenueLoss = analytics.totalRevenue * 0.12; // 12% loss from slow responses
+        const revenueGain = revenueLoss * 0.8; // 80% recoverable
+        
+        opportunities.push({
+            title: 'Reduce Response Time',
+            urgency: 'high',
+            impact: `+$${revenueGain.toFixed(0)}/period`,
+            description: `Reduce avg response time from ${analytics.avgResponseTime}min to <5min`,
+            action: 'Set response time alerts and team targets',
+            calculation: `Recover 80% of ${revenueLoss.toFixed(0)} estimated loss from slow responses`
+        });
+    }
+    
+    // 5. INCREASE AVG PPV PRICE
+    if (analytics.avgPPVPrice > 0 && analytics.avgPPVPrice < 20 && analytics.ppvsUnlocked > 10) {
+        const priceIncrease = 5;
+        const revenueGain = analytics.ppvsUnlocked * priceIncrease;
+        
+        opportunities.push({
+            title: 'Test Higher PPV Pricing',
+            urgency: 'medium',
+            impact: `+$${revenueGain.toFixed(0)}/period`,
+            description: `Increase avg PPV from $${analytics.avgPPVPrice} to $${analytics.avgPPVPrice + priceIncrease}`,
+            action: 'Test $5 price increase with high-engagement fans first',
+            calculation: `${analytics.ppvsUnlocked} sales × $${priceIncrease} increase`
+        });
+    }
+    
+    // 6. IMPROVE REVENUE PER SUB
+    if (analytics.totalSubs > 0 && intelligent.revenuePerSub < 12) {
+        const target = 15;
+        const revenueGain = analytics.totalSubs * (target - intelligent.revenuePerSub);
+        
+        opportunities.push({
+            title: 'Increase Revenue per Subscriber',
+            urgency: 'medium',
+            impact: `+$${revenueGain.toFixed(0)}/period`,
+            description: `Raise revenue/sub from $${intelligent.revenuePerSub.toFixed(2)} to $${target}`,
+            action: 'Increase PPV sends and improve content quality',
+            calculation: `${analytics.totalSubs} subs × $${(target - intelligent.revenuePerSub).toFixed(2)} increase`
+        });
+    }
+    
+    // Sort by impact (highest revenue first)
+    opportunities.sort((a, b) => {
+        const impactA = parseFloat(a.impact.replace(/[^0-9.-]/g, '')) || 0;
+        const impactB = parseFloat(b.impact.replace(/[^0-9.-]/g, '')) || 0;
+        return impactB - impactA;
+    });
+    
+    // Show top 6 opportunities
+    if (opportunities.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-3 text-center py-8">
+                <i class="fas fa-check-circle text-green-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-green-300 mb-2">Performance Optimal</h4>
+                <p class="text-gray-400">No immediate optimization opportunities detected!</p>
             </div>
-            <p class="text-gray-400 text-xs mb-3">${opp.description}</p>
-            <div class="flex items-center justify-between">
-                <span class="text-green-400 font-bold text-sm">${opp.impact}</span>
-                <span class="text-gray-500 text-xs">${opp.timeframe}</span>
-            </div>
-            <div class="mt-3 pt-2 border-t border-gray-700">
-                <button class="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                    <i class="fas fa-play mr-1"></i>${opp.action}
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    } else {
+        container.innerHTML = opportunities.slice(0, 6).map(opp => {
+            const urgencyClass = {
+                urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
+                high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+                medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                low: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+            }[opp.urgency];
+            
+            return `
+                <div class="glass-card rounded-xl p-5 border border-gray-700 hover:border-green-500/30 transition-all">
+                    <div class="flex items-start justify-between mb-3">
+                        <h4 class="font-bold text-white text-sm flex-1">${opp.title}</h4>
+                        <span class="px-2 py-1 rounded-lg text-xs font-bold ${urgencyClass} ml-2">${opp.urgency.toUpperCase()}</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-2xl font-bold text-green-400 mb-1">${opp.impact}</div>
+                        <p class="text-gray-300 text-xs leading-relaxed">${opp.description}</p>
+                    </div>
+                    <div class="mb-3 p-2 bg-gray-800/50 rounded-lg">
+                        <div class="text-xs text-gray-400 mb-1">Calculation:</div>
+                        <div class="text-xs text-blue-300 font-mono">${opp.calculation}</div>
+                    </div>
+                    <div class="flex items-center pt-3 border-t border-gray-700">
+                        <i class="fas fa-play text-purple-400 mr-2 text-xs"></i>
+                        <span class="text-purple-300 text-xs font-medium">${opp.action}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
 function clearDashboardToZero() {
@@ -4449,9 +4768,9 @@ function updateDashboardMetrics(data) {
         subsEl.innerHTML = `${data.totalSubs.toLocaleString()}${renderChangeIndicator(changes.totalSubs)}`;
     }
     
-    const clicksEl = document.getElementById('profileClicks');
+    const clicksEl = document.getElementById('linkClicks');
     if (clicksEl) {
-        clicksEl.innerHTML = `${data.profileClicks.toLocaleString()}${renderChangeIndicator(changes.profileClicks)}`;
+        clicksEl.innerHTML = `${(data.linkClicks || 0).toLocaleString()}${renderChangeIndicator(changes.linkClicks)}`;
     }
     
     const messagesEl = document.getElementById('messagesSent');
@@ -4600,50 +4919,128 @@ function destroyAllCharts() {
 }
 
 // Chart functions
-function loadRevenueChart() {
-    const ctx = document.getElementById('revenueChart');
+// Load Revenue Attribution Chart (Donut chart by category)
+async function loadRevenueAttributionChart() {
+    const ctx = document.getElementById('revenueAttributionChart');
     if (!ctx) return;
 
     // Destroy existing chart if it exists
-    if (chartInstances.revenueChart) {
-        chartInstances.revenueChart.destroy();
+    if (chartInstances.revenueAttributionChart) {
+        chartInstances.revenueAttributionChart.destroy();
     }
-
-    chartInstances.revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Revenue',
-                data: [1200, 1900, 800, 1500, 2000, 1700, 1300],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e5e7eb'
-                    }
+    
+    try {
+        // Fetch traffic source data
+        const params = new URLSearchParams();
+        if (currentTimeInterval === '7d') {
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - 7);
+            params.append('filterType', 'week');
+            params.append('weekStart', weekStart.toISOString());
+            params.append('weekEnd', new Date().toISOString());
+        }
+        
+        const response = await fetch(`/api/marketing/dashboard?${params}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch marketing data');
+        }
+        
+        const data = await response.json();
+        
+        // Aggregate by category
+        const categoryRevenue = {};
+        if (data.sources && data.sources.length > 0) {
+            data.sources.forEach(source => {
+                if (!categoryRevenue[source.category]) {
+                    categoryRevenue[source.category] = 0;
                 }
+                categoryRevenue[source.category] += source.revenue || 0;
+            });
+        }
+        
+        const categories = Object.keys(categoryRevenue);
+        const revenues = Object.values(categoryRevenue);
+        
+        // If no data, show placeholder
+        if (categories.length === 0) {
+            categories.push('No Data');
+            revenues.push(100);
+        }
+        
+        const colors = {
+            reddit: '#FF4500',
+            twitter: '#1DA1F2',
+            instagram: '#E4405F',
+            tiktok: '#00F2EA',
+            youtube: '#FF0000',
+            other: '#6B7280',
+            'No Data': '#374151'
+        };
+        
+        chartInstances.revenueAttributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+                datasets: [{
+                    data: revenues,
+                    backgroundColor: categories.map(c => colors[c] || colors.other),
+                    borderColor: '#1f2937',
+                    borderWidth: 2
+                }]
             },
-            scales: {
-                x: {
-                    ticks: {
-                        color: '#9ca3af'
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: '#9ca3af'
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#e5e7eb',
+                            padding: 15,
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: $${value.toFixed(0)} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Error loading revenue attribution chart:', error);
+        // Show fallback
+        chartInstances.revenueAttributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['No Data'],
+                datasets: [{
+                    data: [100],
+                    backgroundColor: ['#374151'],
+                    borderColor: '#1f2937',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+    }
 }
 
 function loadAnalyticsCharts() {
@@ -4730,59 +5127,93 @@ function loadAnalyticsCharts() {
     }
 }
 
-function loadAIInsightsChart() {
-    const ctx = document.getElementById('aiInsightsChart');
+// Load Conversion Funnel Chart (Link Clicks → Subs → Spenders → Revenue)
+function loadConversionFunnelChart(analytics) {
+    const ctx = document.getElementById('conversionFunnelChart');
     if (!ctx) return;
 
     // Destroy existing chart if it exists
-    if (chartInstances.aiInsightsChart) {
-        chartInstances.aiInsightsChart.destroy();
+    if (chartInstances.conversionFunnelChart) {
+        chartInstances.conversionFunnelChart.destroy();
     }
 
-    chartInstances.aiInsightsChart = new Chart(ctx, {
-        type: 'radar',
+    // Build funnel data
+    const linkClicks = analytics.linkClicks || 0;
+    const newSubs = analytics.newSubs || 0;
+    const spenders = analytics.uniqueSpenders || 0;
+    const revenue = analytics.totalRevenue || 0;
+    
+    // Calculate percentages
+    const clickToSubRate = linkClicks > 0 ? (newSubs / linkClicks * 100).toFixed(1) : 0;
+    const subToSpenderRate = newSubs > 0 ? (spenders / newSubs * 100).toFixed(1) : 0;
+    const spenderToRevenueRate = spenders > 0 ? (revenue / spenders).toFixed(0) : 0;
+    
+    chartInstances.conversionFunnelChart = new Chart(ctx, {
+        type: 'bar',
         data: {
-            labels: ['Response Time', 'Conversion Rate', 'Message Quality', 'PPV Performance', 'Customer Satisfaction', 'Revenue Growth'],
+            labels: [
+                `Link Clicks\n${linkClicks.toLocaleString()}`,
+                `Subscribers\n${newSubs.toLocaleString()} (${clickToSubRate}%)`,
+                `Spenders\n${spenders.toLocaleString()} (${subToSpenderRate}%)`,
+                `Revenue\n$${revenue.toLocaleString()}`
+            ],
             datasets: [{
-                label: 'Agency Performance',
-                data: [85, 72, 88, 76, 91, 68],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#3b82f6'
-            }, {
-                label: 'Industry Average',
-                data: [70, 65, 75, 70, 80, 60],
-                borderColor: '#6b7280',
-                backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                pointBackgroundColor: '#6b7280',
-                pointBorderColor: '#6b7280'
+                label: 'Conversion Funnel',
+                data: [
+                    linkClicks,
+                    newSubs,
+                    spenders,
+                    revenue / 10 // Scale down revenue for visual comparison
+                ],
+                backgroundColor: [
+                    'rgba(147, 51, 234, 0.8)', // Purple
+                    'rgba(59, 130, 246, 0.8)', // Blue
+                    'rgba(16, 185, 129, 0.8)', // Green
+                    'rgba(245, 158, 11, 0.8)'  // Yellow
+                ],
+                borderColor: [
+                    'rgba(147, 51, 234, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)'
+                ],
+                borderWidth: 2
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        color: '#9ca3af'
-                    },
-                    grid: {
-                        color: '#374151'
-                    },
-                    pointLabels: {
-                        color: '#e5e7eb',
-                        font: {
-                            size: 11
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            if (index === 3) {
+                                return `Revenue: $${(context.parsed.x * 10).toFixed(0)}`;
+                            }
+                            return `${context.label.split('\n')[0]}: ${context.parsed.x.toLocaleString()}`;
                         }
                     }
                 }
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e5e7eb'
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    ticks: {
+                        color: '#e5e7eb',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        display: false
                     }
                 }
             }

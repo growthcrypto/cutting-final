@@ -565,11 +565,11 @@
                         <div class="metric-card glass-card rounded-xl p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div>
-                                    <p class="text-gray-400 text-sm font-medium tooltip" data-tooltip="Number of clicks to OnlyFans profiles from marketing campaigns">Profile Clicks</p>
-                                    <p class="text-3xl font-bold text-purple-400" id="profileClicks">0</p>
+                                    <p class="text-gray-400 text-sm font-medium tooltip" data-tooltip="OnlyFans link clicks from all traffic sources">Link Clicks</p>
+                                    <p class="text-3xl font-bold text-purple-400" id="linkClicks">0</p>
                                 </div>
                                 <div class="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-mouse-pointer text-purple-400"></i>
+                                    <i class="fas fa-link text-purple-400"></i>
                                 </div>
                             </div>
                             <div class="flex items-center justify-between text-sm">
@@ -631,18 +631,18 @@
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average revenue generated per working hour">Revenue/Hour</span>
-                                    <span class="text-xl font-bold text-green-400" id="revenuePerHour">$0</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average price per PPV sale">Avg PPV Price</span>
+                                    <span class="text-xl font-bold text-green-400" id="avgPPVPrice">$0</span>
+                                </div>
+                                
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Percentage of fans chatted with who became buyers">Spender Conv. Rate</span>
+                                    <span class="text-xl font-bold text-purple-400" id="spenderConvRate">0%</span>
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-300 text-sm tooltip" data-tooltip="Average number of messages sent before each PPV sale">Messages/PPV</span>
-                                    <span class="text-xl font-bold text-purple-400" id="messagesPerPPV">0</span>
-                                </div>
-                                
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Time of day when team performance is highest">Peak Performance Time</span>
-                                    <span class="text-sm font-bold text-cyan-400" id="peakTime">--:--</span>
+                                    <span class="text-xl font-bold text-cyan-400" id="messagesPerPPV">0</span>
                                 </div>
                                 
                                 <div class="mt-4 pt-4 border-t border-gray-700">
@@ -658,7 +658,7 @@
                         <div class="glass-card rounded-xl p-6">
                             <h3 class="text-lg font-semibold mb-6 flex items-center">
                                 <i class="fas fa-users text-cyan-400 mr-3"></i>
-                                Team Dynamics
+                                Team Quality
                             </h3>
                             <div class="space-y-5">
                                 <div class="flex justify-between items-center">
@@ -667,24 +667,24 @@
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Performance Gap</span>
-                                    <span class="text-lg font-bold text-red-400" id="performanceGap">0%</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average overall score from latest chatter analyses">Overall Score</span>
+                                    <span class="text-xl font-bold text-blue-400" id="avgOverallScore">-</span>
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Team Consistency</span>
-                                    <span class="text-lg font-bold text-blue-400" id="teamConsistency">0%</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average grammar score from latest analyses">Grammar Score</span>
+                                    <span class="text-xl font-bold text-yellow-400" id="avgGrammarScore">-</span>
                                 </div>
                                 
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-300 text-sm">Synergy Score</span>
-                                    <span class="text-lg font-bold text-purple-400" id="synergyScore">0%</span>
+                                    <span class="text-gray-300 text-sm tooltip" data-tooltip="Average guidelines adherence score">Guidelines Score</span>
+                                    <span class="text-xl font-bold text-purple-400" id="avgGuidelinesScore">-</span>
                                 </div>
                                 
                                 <div class="mt-4 pt-4 border-t border-gray-700">
                                     <div class="flex items-start">
                                         <i class="fas fa-chart-line text-cyan-400 mr-2 mt-0.5 text-sm"></i>
-                                        <span class="text-xs text-gray-300 leading-relaxed" id="teamInsight">Analyzing team collaboration patterns...</span>
+                                        <span class="text-xs text-gray-300 leading-relaxed" id="teamInsight">Analyzing team performance quality...</span>
                                     </div>
                                 </div>
                             </div>
@@ -824,26 +824,22 @@
                     <!-- Charts Section -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                         <div class="chart-container">
-                            <h3 class="text-lg font-semibold mb-4">Revenue Trends</h3>
-                            <canvas id="revenueChart" width="400" height="200"></canvas>
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-chart-pie text-green-400 mr-2"></i>
+                                Revenue Attribution by Source
+                            </h3>
+                            <canvas id="revenueAttributionChart" width="400" height="300"></canvas>
                         </div>
 
                         <div class="chart-container">
-                            <h3 class="text-lg font-semibold mb-4">AI Agency Insights</h3>
-                            <canvas id="aiInsightsChart" width="400" height="200"></canvas>
+                            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                <i class="fas fa-filter text-blue-400 mr-2"></i>
+                                Conversion Funnel
+                            </h3>
+                            <canvas id="conversionFunnelChart" width="400" height="300"></canvas>
                         </div>
                     </div>
 
-                    <!-- AI Recommendations -->
-                    <div id="aiRecommendations" class="ai-insight-card">
-                        <h3 class="font-semibold mb-4 flex items-center">
-                            <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
-                            AI Recommendations
-                        </h3>
-                        <div id="aiRecommendationsList" class="space-y-3">
-                            <!-- AI recommendations will be loaded here -->
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Daily Report Section (For Chatters) -->
@@ -1369,6 +1365,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760030000000"></script>
+        <script src="app-complete.js?v=1760040000000"></script>
 </body>
 </html>
