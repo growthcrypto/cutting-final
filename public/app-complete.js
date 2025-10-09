@@ -1816,6 +1816,11 @@ function loadSectionData(sectionId) {
             // Load marketing data for daily report
             loadTrafficSources();
             loadVIPFans();
+            // Add one PPV and one Tip field by default with new format
+            setTimeout(() => {
+                addPPVSaleField();
+                addTipField();
+            }, 100);
             break;
         case 'my-performance':
             loadMyPerformanceData();
@@ -7642,85 +7647,6 @@ function loadMyPerformanceChart(data) {
     });
 }
 
-async function handleDailyReportSubmit(event) {
-    event.preventDefault();
-
-    const data = {
-        date: document.getElementById('reportDate').value,
-        shift: document.getElementById('reportShift').value,
-        shiftDuration: parseFloat(document.getElementById('shiftDuration').value) || 0,
-        notes: document.getElementById('shiftNotes').value || '',
-        ppvSales: [],
-        tips: []
-    };
-
-    // Collect PPV sales with traffic source and VIP fan
-    const ppvContainer = document.getElementById('ppvSalesContainer');
-    const ppvEntries = ppvContainer.querySelectorAll('.ppv-sale-entry');
-    ppvEntries.forEach(entry => {
-        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
-        const source = entry.querySelector('select[name="ppvSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
-        
-        if (amount) {
-            const saleData = {
-                amount: parseFloat(amount)
-            };
-            if (source) saleData.trafficSource = source;
-            if (vipFan) saleData.vipFanUsername = vipFan.trim();
-            
-            data.ppvSales.push(saleData);
-        }
-    });
-
-    // Collect tips with traffic source and VIP fan
-    const tipsContainer = document.getElementById('tipsContainer');
-    const tipEntries = tipsContainer.querySelectorAll('.tip-entry');
-    tipEntries.forEach(entry => {
-        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
-        const source = entry.querySelector('select[name="tipSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
-        
-        if (amount) {
-            const tipData = {
-                amount: parseFloat(amount)
-            };
-            if (source) tipData.trafficSource = source;
-            if (vipFan) tipData.vipFanUsername = vipFan.trim();
-            
-            data.tips.push(tipData);
-        }
-    });
-
-    showLoading(true);
-
-    try {
-        const response = await fetch('/api/daily-reports', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showNotification('Daily report saved successfully!', 'success');
-            document.getElementById('dailyReportForm').reset();
-            document.getElementById('ppvSalesContainer').innerHTML = '';
-            document.getElementById('tipsContainer').innerHTML = '';
-            setDefaultDate();
-        } else {
-            showError(result.error || 'Failed to save report');
-        }
-    } catch (error) {
-        showError('Connection error. Please try again.');
-    } finally {
-        showLoading(false);
-    }
-}
 
 // Utility functions
 function showLoading(show) {
