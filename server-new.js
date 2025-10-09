@@ -809,6 +809,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       .map(a => a.latestAnalysis.guidelinesScore)
       .filter(s => s != null && s > 0);
     
+    // Average scores are now 0-10 scale (already converted when saved to AIAnalysis)
     const avgOverallScore = overallScores.length > 0 
       ? Math.round(overallScores.reduce((s, v) => s + v, 0) / overallScores.length) 
       : null;
@@ -4125,13 +4126,20 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
-      aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore || analyticsData.grammarScore;
-      aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
-      // Derive overall score as average of grammar and guidelines when available
+      // Convert scores from 0-100 to 0-10 scale
+      aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore != null 
+        ? Math.round(analyticsData.calculatedGrammarScore / 10) 
+        : (analyticsData.grammarScore != null ? Math.round(analyticsData.grammarScore / 10) : null);
+      aiAnalysis.guidelinesScore = analyticsData.guidelinesScore != null 
+        ? Math.round(analyticsData.guidelinesScore / 10) 
+        : null;
+      // Derive overall score as average of grammar and guidelines when available (already 0-10)
       if (aiAnalysis.grammarScore != null && aiAnalysis.guidelinesScore != null) {
         aiAnalysis.overallScore = Math.round((aiAnalysis.grammarScore + aiAnalysis.guidelinesScore) / 2);
+      } else if (analyticsData.overallMessageScore != null) {
+        aiAnalysis.overallScore = Math.round(analyticsData.overallMessageScore / 10);
       } else {
-        aiAnalysis.overallScore = analyticsData.overallMessageScore;
+        aiAnalysis.overallScore = null;
       }
       
       // REMOVED: Old code that copied chattingStyle/messagePatterns/engagementMetrics from analyticsData

@@ -2374,7 +2374,7 @@ function updateIntelligentMetrics(analytics, intelligent) {
         clicksToSpenders: analytics.linkClicks > 0 ? `${((analytics.uniqueSpenders / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
         messagesPerPPV: intelligent.messagesPerPPV,
         
-        // Team quality - NEW
+        // Team quality - NEW (scores are already 0-10 from backend)
         topPerformer: analytics.topPerformer || 'No data',
         avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/10` : '-',
         avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/10` : '-',
@@ -4265,7 +4265,7 @@ function loadLiveAIInsights(analytics, intelligent) {
         }
     }
     
-    // 2. ANALYSIS SCORE TREND
+    // 2. ANALYSIS SCORE TREND (scores are 0-10 scale)
     if (analytics.avgOverallScore != null || analytics.avgGrammarScore != null || analytics.avgGuidelinesScore != null) {
         const lowestScore = Math.min(
             analytics.avgOverallScore || 10,
@@ -4275,7 +4275,7 @@ function loadLiveAIInsights(analytics, intelligent) {
         const lowestCategory = lowestScore === analytics.avgGrammarScore ? 'Grammar' :
                                lowestScore === analytics.avgGuidelinesScore ? 'Guidelines' : 'Overall';
         
-        if (lowestScore < 6) {
+        if (lowestScore < 6) { // Below 6/10
             insights.push({
                 type: 'critical',
                 icon: 'fa-exclamation-circle',
@@ -4284,7 +4284,7 @@ function loadLiveAIInsights(analytics, intelligent) {
                 message: `Team ${lowestCategory.toLowerCase()} score is below acceptable. This impacts fan experience and revenue.`,
                 action: `Immediate training session on ${lowestCategory.toLowerCase()} improvement needed`
             });
-        } else if (lowestScore >= 8) {
+        } else if (lowestScore >= 8) { // 8/10 or higher
             insights.push({
                 type: 'strength',
                 icon: 'fa-star',
@@ -7031,7 +7031,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-spell-check ${getScoreColor(metrics.avgGrammarScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/10</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Grammar Score</div>
             </div>
         </div>
@@ -7044,7 +7044,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-clipboard-check ${getScoreColor(metrics.avgGuidelinesScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/10</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Guidelines Score</div>
             </div>
         </div>
@@ -7057,7 +7057,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-star ${getScoreColor(metrics.avgOverallScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/10</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Overall Score</div>
             </div>
         </div>
