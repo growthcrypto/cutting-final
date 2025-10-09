@@ -1913,6 +1913,9 @@ function createSection(sectionId) {
         case 'team-management':
             section.innerHTML = createTeamManagementSection();
             break;
+        case 'team-comparison':
+            section.innerHTML = createTeamComparisonSection();
+            break;
         case 'traffic-sources':
             section.innerHTML = createTrafficSourcesSection();
             break;
@@ -1949,6 +1952,9 @@ function loadSectionData(sectionId) {
     switch(sectionId) {
         case 'team-management':
             loadUsers();
+            break;
+        case 'team-comparison':
+            loadTeamComparisonData();
             break;
         case 'traffic-sources':
             loadTrafficSourcesData();
@@ -2332,6 +2338,203 @@ function updateUsersTable(users) {
             tbody.appendChild(row);
         });
     }
+}
+
+// ==================== TEAM COMPARISON FUNCTIONS ====================
+
+let teamComparisonData = [];
+let currentSortBy = 'revenue';
+let currentSortOrder = 'desc';
+
+async function loadTeamComparisonData() {
+    try {
+        // Get all chatter performance data from team dashboard API
+        const response = await fetch('/api/analytics/team-dashboard?filterType=week', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load team data');
+
+        const data = await response.json();
+        teamComparisonData = data.chatters || [];
+
+        // Sort by revenue by default
+        sortTeamBy('revenue');
+    } catch (error) {
+        console.error('Error loading team comparison:', error);
+        showNotification('Failed to load team comparison data', 'error');
+    }
+}
+
+function sortTeamBy(metric) {
+    // Toggle sort order if clicking same column
+    if (currentSortBy === metric) {
+        currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+    } else {
+        currentSortBy = metric;
+        currentSortOrder = 'desc'; // Default to descending
+    }
+
+    // For response time, lower is better (so reverse the sort)
+    const isLowerBetter = metric === 'responseTime';
+
+    teamComparisonData.sort((a, b) => {
+        let aVal = a[metric] || 0;
+        let bVal = b[metric] || 0;
+
+        if (metric === 'name') {
+            aVal = a.chatterName || a.username || '';
+            bVal = b.chatterName || b.username || '';
+            return currentSortOrder === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+        }
+
+        if (isLowerBetter) {
+            return currentSortOrder === 'desc' ? aVal - bVal : bVal - aVal;
+        }
+        return currentSortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    renderTeamComparison();
+}
+
+function renderTeamComparison() {
+    const tbody = document.getElementById('teamComparisonTableBody');
+    const yourPositionCard = document.getElementById('yourPositionCard');
+    const teamAverageRow = document.getElementById('teamAverageRow');
+
+    if (!tbody || !yourPositionCard || !teamAverageRow) return;
+
+    // Calculate team averages
+    const teamAvg = {
+        revenue: teamComparisonData.reduce((sum, c) => sum + (c.revenue || 0), 0) / (teamComparisonData.length || 1),
+        unlockRate: teamComparisonData.reduce((sum, c) => sum + (c.unlockRate || 0), 0) / (teamComparisonData.length || 1),
+        responseTime: teamComparisonData.reduce((sum, c) => sum + (c.responseTime || 0), 0) / (teamComparisonData.length || 1),
+        messagesPerPPV: teamComparisonData.reduce((sum, c) => sum + (c.messagesPerPPV || 0), 0) / (teamComparisonData.length || 1),
+        overallScore: teamComparisonData.reduce((sum, c) => sum + (c.overallScore || 0), 0) / (teamComparisonData.length || 1),
+        grammarScore: teamComparisonData.reduce((sum, c) => sum + (c.grammarScore || 0), 0) / (teamComparisonData.length || 1),
+        guidelinesScore: teamComparisonData.reduce((sum, c) => sum + (c.guidelinesScore || 0), 0) / (teamComparisonData.length || 1)
+    };
+
+    // Find current user's data
+    const currentUserData = teamComparisonData.find(c => 
+        c.chatterName === currentUser.chatterName || c.username === currentUser.username
+    );
+    const userRank = teamComparisonData.indexOf(currentUserData) + 1;
+
+    // Render "Your Position" card
+    if (currentUserData && userRank > 0) {
+        const getRankEmoji = (rank) => {
+            if (rank === 1) return '🥇';
+            if (rank === 2) return '🥈';
+            if (rank === 3) return '🥉';
+            return `#${rank}`;
+        };
+
+        const rankDisplay = getRankEmoji(userRank);
+        const isTop3 = userRank <= 3;
+
+        yourPositionCard.innerHTML = `
+            <div class="relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r ${isTop3 ? 'from-yellow-600/20 to-orange-600/10' : 'from-blue-600/10 to-cyan-600/5'} rounded-3xl"></div>
+                <div class="relative glass-card rounded-3xl p-8 border-2 ${isTop3 ? 'border-yellow-500/50' : 'border-cyan-500/30'}">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center">
+                            <div class="text-6xl mr-6">${rankDisplay}</div>
+                            <div>
+                                <h3 class="text-3xl font-bold text-white">Your Position</h3>
+                                <p class="text-gray-400 text-lg">${currentUserData.chatterName || currentUser.username}</p>
+                            </div>
+                        </div>
+                        ${userRank > 1 ? `
+                            <div class="text-right">
+                                <div class="text-sm text-gray-400">Gap to #1</div>
+                                <div class="text-2xl font-bold text-orange-400">$${(teamComparisonData[0].revenue - currentUserData.revenue).toFixed(0)}</div>
+                            </div>
+                        ` : `
+                            <div class="text-center p-4 bg-yellow-500/20 rounded-xl">
+                                <div class="text-2xl font-bold text-yellow-400">👑 Top Performer!</div>
+                            </div>
+                        `}
+                    </div>
+                    <div class="grid grid-cols-3 md:grid-cols-7 gap-4">
+                        ${renderMetricCard('Revenue', currentUserData.revenue, teamAvg.revenue, '$', 0)}
+                        ${renderMetricCard('Unlock %', currentUserData.unlockRate, teamAvg.unlockRate, '', 1, '%')}
+                        ${renderMetricCard('Response', currentUserData.responseTime, teamAvg.responseTime, '', 1, 'm', true)}
+                        ${renderMetricCard('Msgs/PPV', currentUserData.messagesPerPPV, teamAvg.messagesPerPPV, '', 1)}
+                        ${renderMetricCard('Overall', currentUserData.overallScore, teamAvg.overallScore, '', 0)}
+                        ${renderMetricCard('Grammar', currentUserData.grammarScore, teamAvg.grammarScore, '', 0)}
+                        ${renderMetricCard('Guidelines', currentUserData.guidelinesScore, teamAvg.guidelinesScore, '', 0)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Render table rows
+    tbody.innerHTML = teamComparisonData.map((chatter, index) => {
+        const rank = index + 1;
+        const isCurrentUser = chatter.chatterName === currentUser.chatterName || chatter.username === currentUser.username;
+        const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+
+        return `
+            <tr class="${isCurrentUser ? 'bg-cyan-500/10 border-l-4 border-cyan-400' : ''} hover:bg-gray-700/30 transition-colors">
+                <td class="px-4 py-4 text-left font-bold ${rank <= 3 ? 'text-yellow-400 text-xl' : 'text-gray-300'}">${rankIcon}</td>
+                <td class="px-4 py-4 text-left font-medium ${isCurrentUser ? 'text-cyan-400' : 'text-white'}">${chatter.chatterName || chatter.username}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.revenue, teamAvg.revenue)}">$${(chatter.revenue || 0).toFixed(0)}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.unlockRate, teamAvg.unlockRate)}">${(chatter.unlockRate || 0).toFixed(1)}%</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.responseTime, teamAvg.responseTime, true)}">${(chatter.responseTime || 0).toFixed(1)}m</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.messagesPerPPV, teamAvg.messagesPerPPV)}">${(chatter.messagesPerPPV || 0).toFixed(1)}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.overallScore, teamAvg.overallScore)}">${chatter.overallScore || '-'}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.grammarScore, teamAvg.grammarScore)}">${chatter.grammarScore || '-'}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.guidelinesScore, teamAvg.guidelinesScore)}">${chatter.guidelinesScore || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Render team average row
+    teamAverageRow.innerHTML = `
+        <div class="flex items-center justify-between">
+            <div class="text-lg font-bold text-gray-300">
+                <i class="fas fa-chart-line text-blue-400 mr-3"></i>Team Average
+            </div>
+            <div class="grid grid-cols-7 gap-6 text-right">
+                <div class="text-blue-400 font-bold">$${teamAvg.revenue.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.unlockRate.toFixed(1)}%</div>
+                <div class="text-blue-400 font-bold">${teamAvg.responseTime.toFixed(1)}m</div>
+                <div class="text-blue-400 font-bold">${teamAvg.messagesPerPPV.toFixed(1)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.overallScore.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.grammarScore.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.guidelinesScore.toFixed(0)}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMetricCard(label, value, avg, prefix = '', decimals = 0, suffix = '', lowerIsBetter = false) {
+    const numValue = parseFloat(value) || 0;
+    const numAvg = parseFloat(avg) || 0;
+    const isBetter = lowerIsBetter ? numValue < numAvg : numValue > numAvg;
+    const color = isBetter ? 'text-green-400' : numValue < numAvg ? 'text-red-400' : 'text-gray-300';
+
+    return `
+        <div class="text-center">
+            <div class="text-xs text-gray-400 mb-1">${label}</div>
+            <div class="text-lg font-bold ${color}">${prefix}${numValue.toFixed(decimals)}${suffix}</div>
+            <div class="text-xs text-gray-500">avg: ${prefix}${numAvg.toFixed(decimals)}${suffix}</div>
+        </div>
+    `;
+}
+
+function getMetricColor(value, avg, lowerIsBetter = false) {
+    const numValue = parseFloat(value) || 0;
+    const numAvg = parseFloat(avg) || 0;
+    
+    if (lowerIsBetter) {
+        return numValue < numAvg ? 'text-green-400 font-bold' : numValue > numAvg ? 'text-red-400' : 'text-gray-300';
+    }
+    return numValue > numAvg ? 'text-green-400 font-bold' : numValue < numAvg ? 'text-red-400' : 'text-gray-300';
 }
 
 // ==================== CUSTOM DATE PICKER FUNCTIONS ====================
@@ -7756,6 +7959,83 @@ function createTeamManagementSection() {
                     <tbody id="usersTableBody" class="divide-y divide-gray-700">
                     </tbody>
                 </table>
+            </div>
+        </div>
+    `;
+}
+
+function createTeamComparisonSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                        <i class="fas fa-trophy mr-3"></i>Team Leaderboard
+                    </h2>
+                    <p class="text-gray-400 text-lg">See how you stack up against the team</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Position Card -->
+        <div id="yourPositionCard" class="mb-8">
+            <!-- Will be populated dynamically -->
+        </div>
+
+        <!-- Team Leaderboard Table -->
+        <div class="glass-card rounded-2xl p-8 border-2 border-yellow-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white flex items-center">
+                    <i class="fas fa-users text-yellow-400 mr-3"></i>
+                    Full Team Rankings
+                </h3>
+                <div class="text-sm text-gray-400">
+                    Click any column header to sort
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-700">
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('rank')">
+                                <i class="fas fa-hashtag mr-2"></i>Rank
+                            </th>
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('name')">
+                                <i class="fas fa-user mr-2"></i>Chatter
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('revenue')">
+                                <i class="fas fa-dollar-sign mr-2"></i>Revenue
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('unlockRate')">
+                                <i class="fas fa-unlock mr-2"></i>Unlock %
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('responseTime')">
+                                <i class="fas fa-clock mr-2"></i>Avg Response
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('messagesPerPPV')">
+                                <i class="fas fa-comments mr-2"></i>Msgs/PPV
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('overallScore')">
+                                <i class="fas fa-star mr-2"></i>Overall
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('grammarScore')">
+                                <i class="fas fa-spell-check mr-2"></i>Grammar
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('guidelinesScore')">
+                                <i class="fas fa-clipboard-check mr-2"></i>Guidelines
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamComparisonTableBody" class="divide-y divide-gray-700">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Team Average Row -->
+            <div id="teamAverageRow" class="mt-6 pt-6 border-t-2 border-gray-700">
+                <!-- Will be populated dynamically -->
             </div>
         </div>
     `;
