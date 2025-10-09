@@ -458,6 +458,7 @@ let currentMarketingFilter = { type: null, week: null, month: null };
 let marketingDashboardData = null;
 
 async function loadMarketingDashboard() {
+    console.log('🚀 loadMarketingDashboard() called');
     try {
         // Populate selectors if not already done
         await loadAvailablePeriods();
@@ -475,15 +476,18 @@ async function loadMarketingDashboard() {
             params.append('monthEnd', currentMarketingFilter.month.end);
         }
         
+        console.log('📡 Fetching marketing dashboard from:', `/api/marketing/dashboard?${params}`);
         const response = await fetch(`/api/marketing/dashboard?${params}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         
+        console.log('📡 Response status:', response.status);
         if (response.ok) {
             marketingDashboardData = await response.json();
+            console.log('✅ Marketing data loaded:', marketingDashboardData);
             renderMarketingDashboard();
         } else {
-            console.error('Failed to load marketing dashboard');
+            console.error('❌ Failed to load marketing dashboard, status:', response.status);
             showNotification('Failed to load marketing dashboard', 'error');
         }
     } catch (error) {
