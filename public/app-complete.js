@@ -2095,29 +2095,37 @@ function initializeSidebar() {
     }
 
     function setCollapsedState(collapsed) {
+        console.log('🔄 Setting sidebar collapsed state:', collapsed);
         sidebar.classList.toggle('sidebar-hidden', collapsed);
-        floatingSidebarToggle.classList.toggle('hidden', !collapsed);
         
-        const toggleIcon = sidebarToggleIcon.querySelector('i');
-        if (toggleIcon) {
-            toggleIcon.className = collapsed
-                ? 'fas fa-angle-double-right text-xl'
-                : 'fas fa-angle-double-left text-xl';
+        if (floatingSidebarToggle) {
+            floatingSidebarToggle.classList.toggle('hidden', !collapsed);
+        }
+        
+        if (sidebarToggleIcon) {
+            const toggleIcon = sidebarToggleIcon.querySelector('i');
+            if (toggleIcon) {
+                toggleIcon.className = collapsed
+                    ? 'fas fa-angle-double-right'
+                    : 'fas fa-angle-double-left';
+            }
         }
 
         // Move content left to fill sidebar space when collapsed
         if (collapsed) {
-            // Sidebar is hidden, move content all the way left
             mainContent.style.marginLeft = '0';
         } else {
-            // Sidebar is visible, offset content by sidebar width
             mainContent.style.marginLeft = '288px';
         }
+        
+        console.log('✅ Sidebar state set. Collapsed:', collapsed);
     }
 
     function toggleSidebarState(forceState) {
+        console.log('🎯 toggleSidebarState called, forceState:', forceState);
         const isCollapsed = sidebar.classList.contains('sidebar-hidden');
         const nextState = typeof forceState === 'boolean' ? forceState : !isCollapsed;
+        console.log('  Current collapsed:', isCollapsed, '→ Next state:', nextState);
         setCollapsedState(nextState);
     }
 
