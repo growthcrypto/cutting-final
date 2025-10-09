@@ -10768,4 +10768,83 @@ function renderSophisticatedChatterAnalysis(data) {
     `;
 }
 
+// ==================== TEAM COMPARISON SECTION ====================
+
+function createTeamComparisonSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                        <i class="fas fa-trophy mr-3"></i>Team Leaderboard
+                    </h2>
+                    <p class="text-gray-400 text-lg">See how you stack up against the team</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Position Card -->
+        <div id="yourPositionCard" class="mb-8">
+            <!-- Will be populated dynamically -->
+        </div>
+
+        <!-- Team Leaderboard Table -->
+        <div class="glass-card rounded-2xl p-8 border-2 border-yellow-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white flex items-center">
+                    <i class="fas fa-users text-yellow-400 mr-3"></i>
+                    Full Team Rankings
+                </h3>
+                <div class="text-sm text-gray-400">
+                    Click any column header to sort
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-700">
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('rank')">
+                                <i class="fas fa-hashtag mr-2"></i>Rank
+                            </th>
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('name')">
+                                <i class="fas fa-user mr-2"></i>Chatter
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('revenue')">
+                                <i class="fas fa-dollar-sign mr-2"></i>Revenue
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('unlockRate')">
+                                <i class="fas fa-unlock mr-2"></i>Unlock %
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('responseTime')">
+                                <i class="fas fa-clock mr-2"></i>Avg Response
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('messagesPerPPV')">
+                                <i class="fas fa-comments mr-2"></i>Msgs/PPV
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('overallScore')">
+                                <i class="fas fa-star mr-2"></i>Overall
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('grammarScore')">
+                                <i class="fas fa-spell-check mr-2"></i>Grammar
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('guidelinesScore')">
+                                <i class="fas fa-clipboard-check mr-2"></i>Guidelines
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamComparisonTableBody" class="divide-y divide-gray-700">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Team Average Row -->
+            <div id="teamAverageRow" class="mt-6 pt-6 border-t-2 border-gray-700">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    `;
+}
+
 
