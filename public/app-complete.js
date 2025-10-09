@@ -545,10 +545,7 @@ function renderMarketingDashboard() {
     if (performanceGrid && data.sources && data.sources.length > 0) {
         const topSources = data.sources.slice(0, 6);
         
-        performanceGrid.innerHTML = `
-            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                ${topSources.map((source, index) => {
+        performanceGrid.innerHTML = topSources.map((source, index) => {
                     const qualityColor = source.qualityGrade >= 80 ? 'green' : source.qualityGrade >= 60 ? 'yellow' : source.qualityGrade >= 40 ? 'orange' : 'red';
                     
                     return `
@@ -597,9 +594,7 @@ function renderMarketingDashboard() {
                             </div>
                         </div>
                     `;
-                }).join('')}
-            </div>
-        `;
+                }).join('');
     } else if (performanceGrid) {
         performanceGrid.innerHTML = `
             <div class="text-center py-12">
@@ -5448,15 +5443,16 @@ function createMarketingDashboardSection() {
                         <tr class="border-b border-gray-700">
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Source</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender Rate</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Subscribers</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">VIPs</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">VIP Rate</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Buyer Rate</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Rev/Click</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">7-Day Retention</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Quality</th>
                         </tr>
                     </thead>
-                    <tbody id="marketingSourcesTableBody">
+                    <tbody id="marketingDetailedTableBody">
                         <!-- Will be populated dynamically -->
                     </tbody>
                 </table>
