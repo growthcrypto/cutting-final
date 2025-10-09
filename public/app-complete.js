@@ -1427,13 +1427,21 @@ function showMainApp() {
     document.getElementById('userWelcome').textContent = welcomeMsg;
 
     // Show appropriate navigation
+    const managerNav = document.getElementById('managerNav');
+    const chatterNav = document.getElementById('chatterNav');
+    const marketerNav = document.getElementById('marketerNav');
+    
+    // Hide all navs first
+    [managerNav, chatterNav, marketerNav].forEach(nav => nav?.classList.add('hidden'));
+    
     if (currentUser.role === 'manager') {
-        document.getElementById('managerNav').classList.remove('hidden');
-        document.getElementById('chatterNav').classList.add('hidden');
+        managerNav.classList.remove('hidden');
         showSection('dashboard');
+    } else if (currentUser.role === 'marketer') {
+        marketerNav.classList.remove('hidden');
+        showSection('marketing-dashboard');
     } else {
-        document.getElementById('chatterNav').classList.remove('hidden');
-        document.getElementById('managerNav').classList.add('hidden');
+        chatterNav.classList.remove('hidden');
         showSection('daily-report'); // Start chatters on daily report page
     }
 
@@ -7610,16 +7618,26 @@ function createTeamManagementSection() {
     return `
         <div class="mb-8">
             <h2 class="text-3xl font-bold mb-2">Team Management</h2>
-            <p class="text-gray-400">Manage chatter accounts and permissions</p>
+            <p class="text-gray-400">Manage team accounts and permissions</p>
         </div>
         <div class="glass-card rounded-xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-4">Create New Chatter Account</h3>
+            <h3 class="text-xl font-semibold mb-4">Create New Team Member</h3>
             <form id="createUserForm" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Chatter Name</label>
-                        <input type="text" id="createChatterName" required
+                        <label class="block text-sm font-medium mb-2">Role</label>
+                        <select id="createRole" required onchange="toggleChatterNameField()"
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Role...</option>
+                            <option value="chatter">Chatter</option>
+                            <option value="marketer">Marketer</option>
+                        </select>
+                    </div>
+                    <div id="chatterNameField">
+                        <label class="block text-sm font-medium mb-2">Chatter Name</label>
+                        <input type="text" id="createChatterName"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <p class="text-xs text-gray-400 mt-1">Only required for chatters</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Username</label>
@@ -8669,15 +8687,38 @@ function applyTeamCustomDateRange() {
 
 // ==================== END TEAM DASHBOARD FUNCTIONS ====================
 
+// Toggle chatter name field visibility based on role
+function toggleChatterNameField() {
+    const role = document.getElementById('createRole')?.value;
+    const chatterNameField = document.getElementById('chatterNameField');
+    const chatterNameInput = document.getElementById('createChatterName');
+    
+    if (chatterNameField) {
+        if (role === 'chatter') {
+            chatterNameField.style.display = 'block';
+            chatterNameInput.required = true;
+        } else {
+            chatterNameField.style.display = 'none';
+            chatterNameInput.required = false;
+            chatterNameInput.value = '';
+        }
+    }
+}
+
 // Form handlers
 async function handleCreateUser(event) {
+    const role = document.getElementById('createRole').value;
     const userData = {
         username: document.getElementById('createUsername').value,
         email: document.getElementById('createEmail').value,
         password: document.getElementById('createPassword').value,
-        role: 'chatter',
-        chatterName: document.getElementById('createChatterName').value
+        role: role
     };
+    
+    // Only add chatterName if role is chatter
+    if (role === 'chatter') {
+        userData.chatterName = document.getElementById('createChatterName').value;
+    }
 
     showLoading(true);
 
@@ -8697,7 +8738,7 @@ async function handleCreateUser(event) {
         console.log('Registration response:', result);
 
         if (response.ok) {
-            showNotification('User created successfully!', 'success');
+            showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} created successfully!`, 'success');
             document.getElementById('createUserForm').reset();
             loadUsers();
         } else {
