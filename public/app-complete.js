@@ -1934,7 +1934,7 @@ function loadSectionData(sectionId) {
             break;
         case 'analytics':
             setTimeout(() => {
-                loadAnalyticsCharts();
+                loadAnalyticsData();
             }, 100);
             break;
         case 'ai-analysis':
@@ -6162,6 +6162,224 @@ function createDataUploadSection() {
             </form>
         </div>
     `;
+}
+
+function createAnalyticsSection() {
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+            </h2>
+            <p class="text-gray-400">All your key metrics in one place</p>
+        </div>
+
+        <!-- Sales Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                Sales
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Net Revenue</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsNetRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPV Revenue</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsPPVRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Tip Revenue</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsTipRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg PPV Price</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsAvgPPV">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Spenders</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsTotalSpenders">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatting Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-comments text-blue-400 mr-3"></i>
+                Chatting
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Messages Sent</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Sent</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsPPVsSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsPPVsUnlocked">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Unlock Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsUnlockRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg Response Time</div>
+                    <div class="text-3xl font-bold text-orange-400" id="analyticsAvgResponse">0m</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketing Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                Marketing
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Clicks</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsLinkClicks">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Views</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsLinkViews">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Spender Rate</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsSpenderRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Revenue/Click</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRevenuePerClick">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Click-to-Sub Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsClickToSub">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscriber Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-3"></i>
+                Subscribers
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Subscribers</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsTotalSubs">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Active Fans</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsActiveFans">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Fans with Renew</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsFansWithRenew">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Renew Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRenewRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">New Subscribers</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsNewSubs">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Quality Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-star text-yellow-400 mr-3"></i>
+                Team Quality
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Overall Score</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Top Performer</div>
+                    <div class="text-2xl font-bold text-green-400" id="analyticsTopPerformer">-</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Load Analytics Data
+async function loadAnalyticsData() {
+    try {
+        // Use the same API as the manager dashboard
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange?.start || ''}&customEnd=${customDateRange?.end || ''}&_t=${Date.now()}`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Cache-Control': 'no-cache'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Sales Metrics
+            document.getElementById('analyticsNetRevenue').textContent = `$${(data.netRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsPPVRevenue').textContent = `$${(data.ppvRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsTipRevenue').textContent = `$${(data.tipRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsAvgPPV').textContent = `$${(data.avgPPVPrice || 0)}`;
+            document.getElementById('analyticsTotalSpenders').textContent = (data.uniqueSpenders || 0).toLocaleString();
+            
+            // Chatting Metrics
+            document.getElementById('analyticsMessagesSent').textContent = (data.messagesSent || 0).toLocaleString();
+            document.getElementById('analyticsPPVsSent').textContent = (data.ppvsSent || 0).toLocaleString();
+            document.getElementById('analyticsPPVsUnlocked').textContent = (data.ppvsUnlocked || 0).toLocaleString();
+            const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsUnlockRate').textContent = `${unlockRate}%`;
+            document.getElementById('analyticsAvgResponse').textContent = `${data.avgResponseTime || 0}m`;
+            
+            // Marketing Metrics
+            document.getElementById('analyticsLinkClicks').textContent = (data.linkClicks || 0).toLocaleString();
+            document.getElementById('analyticsLinkViews').textContent = (data.linkViews || 0).toLocaleString();
+            const spenderRate = data.linkClicks > 0 ? ((data.uniqueSpenders / data.linkClicks) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsSpenderRate').textContent = `${spenderRate}%`;
+            const revenuePerClick = data.linkClicks > 0 ? (data.netRevenue / data.linkClicks).toFixed(2) : '0.00';
+            document.getElementById('analyticsRevenuePerClick').textContent = `$${revenuePerClick}`;
+            const clickToSub = data.linkClicks > 0 ? ((data.newSubs / data.linkClicks) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsClickToSub').textContent = `${clickToSub}%`;
+            
+            // Subscriber Metrics
+            document.getElementById('analyticsTotalSubs').textContent = (data.totalSubs || 0).toLocaleString();
+            document.getElementById('analyticsActiveFans').textContent = data.activeFans > 0 ? data.activeFans.toLocaleString() : '-';
+            document.getElementById('analyticsFansWithRenew').textContent = data.fansWithRenew > 0 ? data.fansWithRenew.toLocaleString() : '-';
+            document.getElementById('analyticsRenewRate').textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
+            document.getElementById('analyticsNewSubs').textContent = (data.newSubs || 0).toLocaleString();
+            
+            // Team Quality Metrics
+            document.getElementById('analyticsOverallScore').textContent = data.avgOverallScore != null ? `${data.avgOverallScore}/100` : '-';
+            document.getElementById('analyticsGrammarScore').textContent = data.avgGrammarScore != null ? `${data.avgGrammarScore}/100` : '-';
+            document.getElementById('analyticsGuidelinesScore').textContent = data.avgGuidelinesScore != null ? `${data.avgGuidelinesScore}/100` : '-';
+            document.getElementById('analyticsTopPerformer').textContent = data.topPerformer || '-';
+        } else {
+            console.error('Failed to load analytics data');
+        }
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
 }
 
 function createGuidelinesSection() {
