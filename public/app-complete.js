@@ -598,13 +598,61 @@ function renderMarketingDashboard() {
         `;
     } else if (performanceGrid) {
         performanceGrid.innerHTML = `
-            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
             <div class="text-center py-12">
                 <i class="fas fa-chart-bar text-6xl text-gray-600 mb-4"></i>
                 <p class="text-gray-400 text-lg">No data yet</p>
                 <p class="text-gray-500 text-sm">Upload link tracking and log sales to see analytics</p>
             </div>
         `;
+    }
+    
+    // Render detailed table
+    const detailedTableBody = document.getElementById('marketingDetailedTableBody');
+    if (detailedTableBody && data.sources && data.sources.length > 0) {
+        detailedTableBody.innerHTML = data.sources.map(source => {
+            const qualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
+            const spenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
+            const retentionColor = source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400';
+            
+            return `
+                <tr class="border-b border-gray-800 hover:bg-gray-800/50 transition-all">
+                    <td class="px-4 py-4">
+                        <div class="font-semibold text-white">${source.name}</div>
+                    </td>
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 rounded-lg bg-gray-700 text-xs text-gray-300 capitalize">${source.category}</span>
+                    </td>
+                    <td class="px-4 py-4 text-right text-white">${source.linkClicks || 0}</td>
+                    <td class="px-4 py-4 text-right text-blue-400">${source.spenders || 0}</td>
+                    <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${source.spenderRate?.toFixed(1) || '0'}%</td>
+                    <td class="px-4 py-4 text-right text-green-400 font-bold">$${source.revenue?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right text-cyan-400">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${source.retentionRate?.toFixed(0) || '0'}%</td>
+                    <td class="px-4 py-4 text-center">
+                        <span class="font-bold ${qualityColor} text-lg">${source.qualityScore || 'N/A'}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } else if (detailedTableBody) {
+        detailedTableBody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">No data yet - upload link tracking and log sales</td></tr>';
+    }
+    
+    // Calculate and display avg spender rate in 4th card
+    if (overviewCards && data.sources && data.sources.length > 0) {
+        let totalSpenders = 0;
+        let totalClicks = 0;
+        data.sources.forEach(s => {
+            totalSpenders += (s.spenders || 0);
+            totalClicks += (s.linkClicks || 0);
+        });
+        const avgSpenderRate = totalClicks > 0 ? (totalSpenders / totalClicks) * 100 : 0;
+        
+        // Update the 4th card
+        const cards = overviewCards.querySelectorAll('.glass-card');
+        if (cards[3]) {
+            cards[3].querySelector('.text-3xl').textContent = `${avgSpenderRate.toFixed(1)}%`;
+        }
     }
 }
 
@@ -5958,34 +6006,75 @@ function createMarketingDashboardSection() {
         </div>
         
         <!-- Overview Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="marketingOverviewCards">
-            <div class="glass-card rounded-xl p-6 border border-green-500/30">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="marketingOverviewCards">
+            <div class="glass-card rounded-xl p-6 border border-green-500/30 hover:border-green-500/50 transition-all">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-semibold text-gray-400">Total Revenue</span>
                     <i class="fas fa-dollar-sign text-green-400 text-xl"></i>
                 </div>
                 <div class="text-3xl font-bold text-white">Loading...</div>
+                <div class="text-xs text-gray-400 mt-1">From all sources</div>
             </div>
-            <div class="glass-card rounded-xl p-6 border border-purple-500/30">
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 hover:border-purple-500/50 transition-all">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-semibold text-gray-400">VIP Fans</span>
                     <i class="fas fa-star text-purple-400 text-xl"></i>
                 </div>
                 <div class="text-3xl font-bold text-white">Loading...</div>
+                <div class="text-xs text-gray-400 mt-1">High-value customers</div>
             </div>
-            <div class="glass-card rounded-xl p-6 border border-blue-500/30">
+            <div class="glass-card rounded-xl p-6 border border-blue-500/30 hover:border-blue-500/50 transition-all">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-sm font-semibold text-gray-400">Total Spenders</span>
                     <i class="fas fa-users text-blue-400 text-xl"></i>
                 </div>
                 <div class="text-3xl font-bold text-white">Loading...</div>
+                <div class="text-xs text-gray-400 mt-1">Unique buyers</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 border border-cyan-500/30 hover:border-cyan-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Avg Spender Rate</span>
+                    <i class="fas fa-percentage text-cyan-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white">Loading...</div>
+                <div class="text-xs text-gray-400 mt-1">Conversion rate</div>
             </div>
         </div>
         
-        <!-- Top Sources -->
-        <div id="sourcePerformanceGrid" class="mb-8">
-            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
-            <div class="text-center py-12 text-gray-400">Loading...</div>
+        <!-- Top Sources Grid -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Performing Sources</h3>
+            <div id="sourcePerformanceGrid">
+                <div class="text-center py-12 text-gray-400">Loading...</div>
+            </div>
+        </div>
+        
+        <!-- Detailed Analytics Table -->
+        <div class="glass-card rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-table text-purple-400 mr-2"></i>
+                All Sources - Detailed View
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full" id="marketingDetailedTable">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Source</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender %</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">$/Click</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Retention</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marketingDetailedTableBody">
+                        <tr><td colspan="9" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <!-- Link Tracking Upload Modal -->
