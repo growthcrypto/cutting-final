@@ -5382,9 +5382,160 @@ function loadConversionFunnelChart(analytics) {
 
 // Section creation functions
 function createAnalyticsSection() {
-    // MOVED: See new Analytics section after createDataUploadSection (line ~6167)
-    // This placeholder redirects to the new clean version
-    return createNewAnalyticsSection();
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+            </h2>
+            <p class="text-gray-400">All your key metrics in one place</p>
+        </div>
+
+        <!-- Sales Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                Sales
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Net Revenue</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsNetRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPV Revenue</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsPPVRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Tip Revenue</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsTipRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg PPV Price</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsAvgPPV">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Spenders</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsTotalSpenders">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatting Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-comments text-blue-400 mr-3"></i>
+                Chatting
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Messages Sent</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Sent</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsPPVsSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsPPVsUnlocked">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Unlock Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsUnlockRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg Response Time</div>
+                    <div class="text-3xl font-bold text-orange-400" id="analyticsAvgResponse">0m</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketing Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                Marketing
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Clicks</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsLinkClicks">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Views</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsLinkViews">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Spender Rate</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsSpenderRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Revenue/Click</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRevenuePerClick">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Click-to-Sub Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsClickToSub">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscriber Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-3"></i>
+                Subscribers
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Subscribers</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsTotalSubs">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Active Fans</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsActiveFans">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Fans with Renew</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsFansWithRenew">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Renew Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRenewRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">New Subscribers</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsNewSubs">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Quality Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-star text-yellow-400 mr-3"></i>
+                Team Quality
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Overall Score</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Top Performer</div>
+                    <div class="text-2xl font-bold text-green-400" id="analyticsTopPerformer">-</div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function createAIAnalysisSection() {
