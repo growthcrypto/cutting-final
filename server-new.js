@@ -5797,6 +5797,51 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
   }
 });
 
+// WIPE DATA ENDPOINT (MANAGER ONLY)
+app.post('/api/admin/wipe-data', authenticateToken, requireManager, async (req, res) => {
+  try {
+    console.log('🗑️  WIPE DATA REQUEST from user:', req.user.userId);
+    
+    // Delete all data except Messages, Analysis, Users, Creators, Guidelines
+    const results = {
+      dailyReports: await DailyChatterReport.deleteMany({}),
+      accountData: await AccountData.deleteMany({}),
+      chatterPerformance: await ChatterPerformance.deleteMany({}),
+      trafficSources: await TrafficSource.deleteMany({}),
+      vipFans: await VIPFan.deleteMany({}),
+      fanPurchases: await FanPurchase.deleteMany({}),
+      trafficSourcePerformance: await TrafficSourcePerformance.deleteMany({}),
+      linkTracking: await LinkTrackingData.deleteMany({}),
+      dailySnapshots: await DailyAccountSnapshot.deleteMany({})
+    };
+    
+    const totalDeleted = Object.values(results).reduce((sum, r) => sum + r.deletedCount, 0);
+    
+    console.log('✅ Data wiped successfully. Total deleted:', totalDeleted);
+    
+    res.json({ 
+      success: true, 
+      message: 'Data wiped successfully',
+      deleted: {
+        dailyReports: results.dailyReports.deletedCount,
+        accountData: results.accountData.deletedCount,
+        chatterPerformance: results.chatterPerformance.deletedCount,
+        trafficSources: results.trafficSources.deletedCount,
+        vipFans: results.vipFans.deletedCount,
+        fanPurchases: results.fanPurchases.deletedCount,
+        trafficSourcePerformance: results.trafficSourcePerformance.deletedCount,
+        linkTracking: results.linkTracking.deletedCount,
+        dailySnapshots: results.dailySnapshots.deletedCount,
+        total: totalDeleted
+      },
+      preserved: ['Messages', 'Analysis', 'Users', 'Creators', 'Guidelines']
+    });
+  } catch (error) {
+    console.error('❌ Error wiping data:', error);
+    res.status(500).json({ error: 'Failed to wipe data', details: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);
