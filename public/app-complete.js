@@ -2032,6 +2032,41 @@ async function loadChattersForInfloww() {
     }
 }
 
+// Load chatters for AI Analysis dropdown
+async function loadChattersForAnalysis() {
+    try {
+        const chatterSelect = document.getElementById('chatterAnalysisSelect');
+        if (!chatterSelect) return;
+
+        // For chatters, only show their own account
+        if (currentUser && currentUser.role === 'chatter') {
+            chatterSelect.innerHTML = `<option value="${currentUser._id}" selected>${currentUser.chatterName || currentUser.username}</option>`;
+            // Automatically trigger analysis for their account
+            setTimeout(() => runChatterAnalysis(), 500);
+            return;
+        }
+
+        // For managers, show all chatters
+        const response = await fetch('/api/users', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const users = await response.json();
+            const chatters = users.filter(user => user.role === 'chatter');
+            
+            chatterSelect.innerHTML = '<option value="">Select Chatter...</option>' +
+                chatters.map(chatter => 
+                    `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
+                ).join('');
+        }
+    } catch (error) {
+        console.error('Error loading chatters for analysis:', error);
+    }
+}
+
 function toggleSidebar() {
     // No-op retained for legacy bindings
 }
@@ -6165,6 +6200,50 @@ function createAIAnalysisSection() {
 }
 
 function createAIAnalysisSection() {
+    const isChatter = currentUser && currentUser.role === 'chatter';
+    
+    // For chatters, show ONLY Individual Analysis
+    if (isChatter) {
+        return `
+            <div class="mb-8">
+                <div>
+                    <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                        <i class="fas fa-user-chart mr-3"></i>My Performance Analysis
+                    </h2>
+                    <p class="text-gray-400 text-lg">Deep insights into your individual performance</p>
+                </div>
+            </div>
+
+            <!-- Individual Chatter Analysis -->
+            <div class="glass-card rounded-xl p-8 mb-8 border-2 border-cyan-500/30">
+                <div class="flex items-center mb-6">
+                    <div class="w-16 h-16 bg-cyan-600/20 rounded-2xl flex items-center justify-center mr-4">
+                        <i class="fas fa-user-chart text-cyan-400 text-3xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-bold text-white">Your Performance Deep-Dive</h3>
+                        <p class="text-gray-400 text-lg">Select a time period to analyze your performance</p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Select Your Account</label>
+                    <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
+                        <option value="">Choose account to analyze...</option>
+                    </select>
+                </div>
+
+                <div id="chatterAnalysisResults" class="mt-6">
+                    <div class="text-center py-12">
+                        <i class="fas fa-user-times text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-400">Select your account above to see your detailed analysis</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // For managers, show both Agency and Individual Analysis options
     return `
         <div class="mb-8">
             <div class="flex items-center justify-between flex-wrap gap-4">
@@ -6206,7 +6285,7 @@ function createAIAnalysisSection() {
             </div>
         </div>
 
-        <!-- Chatter Analysis Section -->
+        <!-- Analysis Options (Manager only) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showAgencyAnalysis()">
                 <div class="flex items-center mb-6">
