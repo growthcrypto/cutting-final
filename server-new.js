@@ -1566,6 +1566,45 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       throw saveError;
     }
     
+    // Update VIP fan lastMessageDate for retention tracking
+    console.log('📝 Updating lastMessageDate for VIP fans from message data...');
+    const fanMessageDates = {};
+    
+    // Collect the most recent message date for each fan
+    messageRecords.forEach(record => {
+      const fanUsername = record.fanUsername;
+      const messageDate = new Date(`${record.date} ${record.timestamp}`);
+      
+      if (fanUsername && !isNaN(messageDate.getTime())) {
+        if (!fanMessageDates[fanUsername] || messageDate > fanMessageDates[fanUsername]) {
+          fanMessageDates[fanUsername] = messageDate;
+        }
+      }
+    });
+    
+    // Update VIP fans in database
+    let vipFansUpdated = 0;
+    for (const [fanUsername, lastMessageDate] of Object.entries(fanMessageDates)) {
+      try {
+        const result = await VIPFan.updateMany(
+          { username: fanUsername },
+          { 
+            $set: { 
+              lastMessageDate: lastMessageDate,
+              updatedAt: new Date()
+            }
+          }
+        );
+        if (result.modifiedCount > 0) {
+          vipFansUpdated++;
+        }
+      } catch (err) {
+        console.error(`Failed to update VIP fan ${fanUsername}:`, err);
+      }
+    }
+    
+    console.log(`✅ Updated lastMessageDate for ${vipFansUpdated} VIP fans`);
+    
     res.json({ 
       message: 'Messages analyzed and saved successfully',
       analysis: {
@@ -1573,7 +1612,8 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         overallScore: messageAnalysis.overallScore,
         grammarScore: messageAnalysis.grammarScore,
         guidelinesScore: messageAnalysis.guidelinesScore
-      }
+      },
+      vipFansUpdated: vipFansUpdated
     });
   } catch (error) {
     console.error('Message upload error:', error);

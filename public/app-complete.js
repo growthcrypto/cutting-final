@@ -605,7 +605,7 @@ function renderMarketingDashboard() {
         `;
     }
     
-    // Render detailed table
+    // Render detailed table with category grouping
     const detailedTableBody = document.getElementById('marketingDetailedTableBody');
     console.log('📊 Rendering detailed table:', {
         tableExists: !!detailedTableBody,
@@ -615,33 +615,95 @@ function renderMarketingDashboard() {
     
     if (detailedTableBody && data.sources && data.sources.length > 0) {
         console.log('✅ Populating detailed table with', data.sources.length, 'sources');
-        detailedTableBody.innerHTML = data.sources.map(source => {
-            const qualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
-            const spenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
-            const retentionColor = source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400';
+        
+        // Group sources by category
+        const categoryMap = {};
+        data.sources.forEach(source => {
+            if (!categoryMap[source.category]) {
+                categoryMap[source.category] = {
+                    sources: [],
+                    totalRevenue: 0,
+                    totalClicks: 0,
+                    totalSpenders: 0,
+                    avgRetention: 0,
+                    avgQualityGrade: 0
+                };
+            }
+            categoryMap[source.category].sources.push(source);
+            categoryMap[source.category].totalRevenue += source.revenue || 0;
+            categoryMap[source.category].totalClicks += source.linkClicks || 0;
+            categoryMap[source.category].totalSpenders += source.spenders || 0;
+        });
+        
+        // Calculate averages for each category
+        Object.keys(categoryMap).forEach(category => {
+            const cat = categoryMap[category];
+            const sourceCount = cat.sources.length;
+            cat.avgRetention = cat.sources.reduce((sum, s) => sum + (s.retentionRate || 0), 0) / sourceCount;
+            cat.avgQualityGrade = cat.sources.reduce((sum, s) => sum + (s.qualityGrade || 0), 0) / sourceCount;
+            cat.spenderRate = cat.totalClicks > 0 ? (cat.totalSpenders / cat.totalClicks) * 100 : 0;
+            cat.revenuePerClick = cat.totalClicks > 0 ? cat.totalRevenue / cat.totalClicks : 0;
+        });
+        
+        // Render rows
+        let html = '';
+        Object.keys(categoryMap).forEach(category => {
+            const cat = categoryMap[category];
+            const categoryId = category.replace(/\s+/g, '-');
+            const qualityColor = cat.avgQualityGrade >= 80 ? 'text-green-400' : cat.avgQualityGrade >= 60 ? 'text-yellow-400' : 'text-orange-400';
+            const spenderRateColor = cat.spenderRate >= 3 ? 'text-green-400' : cat.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
+            const retentionColor = cat.avgRetention >= 70 ? 'text-green-400' : cat.avgRetention >= 50 ? 'text-yellow-400' : 'text-red-400';
             
-            return `
-                <tr class="border-b border-gray-800 hover:bg-gray-800/50 transition-all">
+            // Category row (expandable)
+            html += `
+                <tr class="border-b border-gray-700 bg-gray-800/30 hover:bg-gray-800/50 transition-all cursor-pointer" onclick="toggleCategoryRow('${categoryId}')">
                     <td class="px-4 py-4">
-                        <div class="font-semibold text-white">${source.name}</div>
+                        <div class="flex items-center">
+                            <i id="icon-${categoryId}" class="fas fa-chevron-right text-gray-400 mr-3 transition-transform"></i>
+                            <span class="font-bold text-white uppercase">${category}</span>
+                            <span class="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded">${cat.sources.length} sources</span>
+                        </div>
                     </td>
-                    <td class="px-4 py-4">
-                        <span class="px-2 py-1 rounded-lg bg-gray-700 text-xs text-gray-300 capitalize">${source.category}</span>
-                    </td>
-                    <td class="px-4 py-4 text-right text-white">${source.linkClicks || 0}</td>
-                    <td class="px-4 py-4 text-right text-blue-400">${source.spenders || 0}</td>
-                    <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${source.spenderRate?.toFixed(1) || '0'}%</td>
-                    <td class="px-4 py-4 text-right text-green-400 font-bold">$${source.revenue?.toFixed(2) || '0.00'}</td>
-                    <td class="px-4 py-4 text-right text-cyan-400">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
-                    <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${source.retentionRate?.toFixed(0) || '0'}%</td>
+                    <td class="px-4 py-4 text-right text-white font-semibold">${cat.totalClicks}</td>
+                    <td class="px-4 py-4 text-right text-blue-400 font-semibold">${cat.totalSpenders}</td>
+                    <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${cat.spenderRate?.toFixed(1) || '0'}%</td>
+                    <td class="px-4 py-4 text-right text-green-400 font-bold">$${cat.totalRevenue?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right text-cyan-400 font-semibold">$${cat.revenuePerClick?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${cat.avgRetention?.toFixed(0) || '0'}%</td>
                     <td class="px-4 py-4 text-center">
-                        <span class="font-bold ${qualityColor} text-lg">${source.qualityScore || 'N/A'}</span>
+                        <span class="font-bold ${qualityColor} text-lg">${Math.round(cat.avgQualityGrade)}</span>
                     </td>
                 </tr>
             `;
-        }).join('');
+            
+            // Individual source rows (hidden by default)
+            cat.sources.forEach(source => {
+                const sourceQualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
+                const sourceSpenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
+                const sourceRetentionColor = source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400';
+                
+                html += `
+                    <tr class="category-${categoryId} border-b border-gray-800/50 bg-gray-900/50 hidden">
+                        <td class="px-4 py-3 pl-12">
+                            <div class="text-sm text-gray-300">${source.name}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-400">${source.linkClicks || 0}</td>
+                        <td class="px-4 py-3 text-right text-sm text-blue-300">${source.spenders || 0}</td>
+                        <td class="px-4 py-3 text-right text-sm ${sourceSpenderRateColor}">${source.spenderRate?.toFixed(1) || '0'}%</td>
+                        <td class="px-4 py-3 text-right text-sm text-green-300">$${source.revenue?.toFixed(2) || '0.00'}</td>
+                        <td class="px-4 py-3 text-right text-sm text-cyan-300">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
+                        <td class="px-4 py-3 text-right text-sm ${sourceRetentionColor}">${source.retentionRate?.toFixed(0) || '0'}%</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="text-sm font-semibold ${sourceQualityColor}">${source.qualityScore || 'N/A'}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+        
+        detailedTableBody.innerHTML = html;
     } else if (detailedTableBody) {
-        detailedTableBody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">No data yet - upload link tracking and log sales</td></tr>';
+        detailedTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">No data yet - upload link tracking and log sales</td></tr>';
     }
     
     // Calculate and display avg spender rate in 4th card
@@ -736,6 +798,22 @@ function showLinkTrackingModal() {
 
 function closeLinkTrackingModal() {
     document.getElementById('linkTrackingModal').style.display = 'none';
+}
+
+// Toggle category expansion in marketing table
+function toggleCategoryRow(categoryId) {
+    const rows = document.querySelectorAll(`.category-${categoryId}`);
+    const icon = document.getElementById(`icon-${categoryId}`);
+    
+    rows.forEach(row => {
+        row.classList.toggle('hidden');
+    });
+    
+    // Rotate icon
+    if (icon) {
+        icon.classList.toggle('fa-chevron-right');
+        icon.classList.toggle('fa-chevron-down');
+    }
 }
 
 // Handle link tracking form submission
@@ -5441,8 +5519,7 @@ function createMarketingDashboardSection() {
                 <table class="min-w-full" id="marketingSourcesTable">
                     <thead>
                         <tr class="border-b border-gray-700">
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Source</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category / Source</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender Rate</th>
