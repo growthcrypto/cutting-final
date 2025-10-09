@@ -4933,15 +4933,15 @@ function updateDashboardMetrics(data) {
         clicksEl.innerHTML = `${(data.linkClicks || 0).toLocaleString()}${renderChangeIndicator(changes.linkClicks)}`;
     }
     
-    // NEW: Update VIP metrics
+    // NEW: Update VIP & Retention metrics
     const vipRevenuePercentEl = document.getElementById('vipRevenuePercent');
     if (vipRevenuePercentEl) {
         vipRevenuePercentEl.textContent = data.vipRevenuePercent > 0 ? `${data.vipRevenuePercent.toFixed(1)}%` : '-';
     }
     
-    const avgVIPSpendEl = document.getElementById('avgVIPSpend');
-    if (avgVIPSpendEl) {
-        avgVIPSpendEl.textContent = data.avgVIPSpend > 0 ? `$${data.avgVIPSpend.toFixed(2)}` : '-';
+    const renewRateEl = document.getElementById('renewRate');
+    if (renewRateEl) {
+        renewRateEl.textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
     }
     
     const messagesEl = document.getElementById('messagesSent');
