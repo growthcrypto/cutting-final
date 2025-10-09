@@ -5382,11 +5382,17 @@ function loadConversionFunnelChart(analytics) {
 
 // Section creation functions
 function createAnalyticsSection() {
+    // MOVED: See new Analytics section after createDataUploadSection (line ~6167)
+    // This placeholder redirects to the new clean version
+    return createNewAnalyticsSection();
+}
+
+function createAIAnalysisSection() {
     return `
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
             <div>
-                <h2 class="text-3xl font-bold mb-2">Advanced Analytics</h2>
-                <p class="text-gray-400">Complete data visualization and intelligent metrics breakdown</p>
+                <h2 class="text-3xl font-bold mb-2">AI Analysis Center</h2>
+                <p class="text-gray-400">Deep performance insights with actionable recommendations</p>
             </div>
             
             <!-- Analytics Time Controls -->
@@ -6164,7 +6170,7 @@ function createDataUploadSection() {
     `;
 }
 
-function createAnalyticsSection() {
+function createNewAnalyticsSection() {
     return `
         <div class="mb-8">
             <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
