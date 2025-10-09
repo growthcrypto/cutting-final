@@ -691,33 +691,40 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       }))
     });
     
-    // Calculate metrics from daily reports (PPV sales and tips)
-    const totalPPVRevenue = dailyReports.reduce((sum, report) => sum + report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0), 0);
-    const totalTipRevenue = dailyReports.reduce((sum, report) => sum + report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0), 0);
+    // Calculate metrics from FanPurchase records (daily logs - single source of truth)
+    const fanPurchases = await FanPurchase.find(dateQuery);
+    
+    const totalPPVRevenue = fanPurchases
+      .filter(p => p.type === 'ppv')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    
+    const totalTipRevenue = fanPurchases
+      .filter(p => p.type === 'tip')
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    
     const totalRevenue = totalPPVRevenue + totalTipRevenue;
     
-    // Daily-average PPV price (average of each day's average), per timeframe
-    const dailyAvgPrices = dailyReports
-      .map(r => {
-        const cnt = (r.ppvSales || []).length;
-        if (!cnt) return null;
-        const sum = r.ppvSales.reduce((s, sale) => s + sale.amount, 0);
-        return sum / cnt;
-      })
-      .filter(v => v != null);
-    const avgPPVPriceDaily = dailyAvgPrices.length > 0 
-      ? Math.round((dailyAvgPrices.reduce((s, v) => s + v, 0) / dailyAvgPrices.length) * 100) / 100
+    console.log('💰 Revenue from FanPurchase records:', {
+      ppv: totalPPVRevenue,
+      tips: totalTipRevenue,
+      total: totalRevenue,
+      recordCount: fanPurchases.length
+    });
+    
+    // Average PPV price from FanPurchase records
+    const ppvPurchases = fanPurchases.filter(p => p.type === 'ppv');
+    const avgPPVPriceDaily = ppvPurchases.length > 0
+      ? Math.round((totalPPVRevenue / ppvPurchases.length) * 100) / 100
       : 0;
 
-    // Note: daily reports include only unlocked PPVs; 'sent' is tracked in chatter performance
-    const totalPPVsSent = 0;
+    // PPVs unlocked = count of PPV purchases from FanPurchase records
+    const totalPPVsUnlocked = ppvPurchases.length;
     
     // Add metrics from chatter performance data (only count non-null values)
     const chatterPPVsSent = chatterPerformance.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
     const chatterPPVsUnlocked = chatterPerformance.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
     const chatterMessagesSent = chatterPerformance.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
     const chatterFansChatted = chatterPerformance.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
-    const totalPPVsUnlocked = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0); // Assume sent = unlocked for now
     
     // Calculate response time from both sources (only count non-null values)
     const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
