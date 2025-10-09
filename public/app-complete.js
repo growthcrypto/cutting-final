@@ -2303,11 +2303,12 @@ function updateUsersTable(users) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">${user.username}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${user.chatterName || '-'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${user.email}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <span class="px-2 py-1 text-xs font-medium rounded-full ${
-                        user.role === 'manager' ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'
+                        user.role === 'manager' ? 'bg-red-900/30 text-red-400' : 
+                        user.role === 'marketer' ? 'bg-purple-900/30 text-purple-400' : 
+                        'bg-blue-900/30 text-blue-400'
                     }">
                         ${user.role}
                     </span>
@@ -7746,7 +7747,6 @@ function createTeamManagementSection() {
                     <thead>
                         <tr class="border-b border-gray-700">
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Chatter Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
