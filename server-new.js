@@ -5304,6 +5304,149 @@ app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => 
   }
 });
 
+// ==================== DATA MANAGEMENT APIs ====================
+
+// Get all messages for data management
+app.get('/api/data-management/messages', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const messages = await MessageAnalysis.find()
+      .select('chatterName weekStartDate weekEndDate totalMessages creatorAccount')
+      .sort({ weekStartDate: -1 })
+      .limit(100);
+    
+    res.json({ messages });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Delete message record
+app.delete('/api/data-management/messages/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const result = await MessageAnalysis.findByIdAndDelete(req.params.id);
+    if (!result) {
+      return res.status(404).json({ error: 'Message record not found' });
+    }
+    console.log(`🗑️ Deleted message record: ${result.chatterName}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ error: 'Failed to delete message record' });
+  }
+});
+
+// Get all daily reports for data management
+app.get('/api/data-management/daily-reports', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const reports = await DailyChatterReport.find()
+      .sort({ date: -1 })
+      .limit(100);
+    
+    res.json({ reports });
+  } catch (error) {
+    console.error('Error fetching daily reports:', error);
+    res.status(500).json({ error: 'Failed to fetch daily reports' });
+  }
+});
+
+// Delete daily report (also deletes associated FanPurchase records)
+app.delete('/api/data-management/daily-reports/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const report = await DailyChatterReport.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    // Delete associated FanPurchase records
+    const purchasesDeleted = await FanPurchase.deleteMany({ dailyReport: req.params.id });
+    console.log(`🗑️ Deleted ${purchasesDeleted.deletedCount} associated purchase records`);
+    
+    await DailyChatterReport.findByIdAndDelete(req.params.id);
+    console.log(`🗑️ Deleted daily report: ${report.chatterName} - ${report.date}`);
+    
+    res.json({ success: true, purchasesDeleted: purchasesDeleted.deletedCount });
+  } catch (error) {
+    console.error('Error deleting daily report:', error);
+    res.status(500).json({ error: 'Failed to delete daily report' });
+  }
+});
+
+// Get all link tracking data for data management
+app.get('/api/data-management/link-tracking', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const linkData = await LinkTrackingData.find()
+      .sort({ weekStartDate: -1 })
+      .limit(100);
+    
+    res.json({ linkData });
+  } catch (error) {
+    console.error('Error fetching link tracking data:', error);
+    res.status(500).json({ error: 'Failed to fetch link tracking data' });
+  }
+});
+
+// Delete link tracking data
+app.delete('/api/data-management/link-tracking/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const result = await LinkTrackingData.findByIdAndDelete(req.params.id);
+    if (!result) {
+      return res.status(404).json({ error: 'Link tracking data not found' });
+    }
+    console.log(`🗑️ Deleted link tracking data: ${result.category}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting link tracking data:', error);
+    res.status(500).json({ error: 'Failed to delete link tracking data' });
+  }
+});
+
+// Get all VIP fans for data management
+app.get('/api/data-management/vip-fans', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const fans = await VIPFan.find()
+      .populate('trafficSource', 'name')
+      .sort({ lifetimeSpend: -1 })
+      .limit(100);
+    
+    const fansWithSourceName = fans.map(fan => ({
+      _id: fan._id,
+      username: fan.username,
+      lifetimeSpend: fan.lifetimeSpend,
+      purchaseCount: fan.purchaseCount,
+      status: fan.status,
+      trafficSourceName: fan.trafficSource?.name || 'Unknown'
+    }));
+    
+    res.json({ fans: fansWithSourceName });
+  } catch (error) {
+    console.error('Error fetching VIP fans:', error);
+    res.status(500).json({ error: 'Failed to fetch VIP fans' });
+  }
+});
+
+// Delete VIP fan (also deletes associated purchase records)
+app.delete('/api/data-management/vip-fans/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const fan = await VIPFan.findById(req.params.id);
+    if (!fan) {
+      return res.status(404).json({ error: 'VIP fan not found' });
+    }
+    
+    // Delete associated FanPurchase records
+    const purchasesDeleted = await FanPurchase.deleteMany({ vipFan: req.params.id });
+    console.log(`🗑️ Deleted ${purchasesDeleted.deletedCount} purchase records for ${fan.username}`);
+    
+    await VIPFan.findByIdAndDelete(req.params.id);
+    console.log(`🗑️ Deleted VIP fan: ${fan.username}`);
+    
+    res.json({ success: true, purchasesDeleted: purchasesDeleted.deletedCount });
+  } catch (error) {
+    console.error('Error deleting VIP fan:', error);
+    res.status(500).json({ error: 'Failed to delete VIP fan' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);

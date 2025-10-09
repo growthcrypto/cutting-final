@@ -806,6 +806,359 @@ document.addEventListener('submit', async function(e) {
     }
 });
 
+// ==================== DATA MANAGEMENT FUNCTIONS ====================
+
+let currentDataTab = 'messages';
+
+async function loadDataManagement() {
+    showDataTab('messages');
+}
+
+function showDataTab(tabName) {
+    currentDataTab = tabName;
+    
+    // Update tab buttons
+    document.querySelectorAll('.data-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    event?.target.classList.remove('bg-gray-700', 'text-gray-300');
+    event?.target.classList.add('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white');
+    
+    // Show/hide tabs
+    document.querySelectorAll('.data-tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.getElementById(`dataTab-${tabName}`)?.classList.remove('hidden');
+    
+    // Load data
+    refreshDataTab(tabName);
+}
+
+async function refreshDataTab(tabName) {
+    switch(tabName) {
+        case 'messages':
+            await loadMessagesData();
+            break;
+        case 'daily-reports':
+            await loadDailyReportsData();
+            break;
+        case 'link-tracking':
+            await loadLinkTrackingData();
+            break;
+        case 'traffic-sources':
+            await loadTrafficSourcesDataTable();
+            break;
+        case 'vip-fans':
+            await loadVIPFansData();
+            break;
+    }
+}
+
+// Load Messages Data
+async function loadMessagesData() {
+    try {
+        const response = await fetch('/api/data-management/messages', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('messagesTableBody');
+        if (!tbody) return;
+        
+        if (!data.messages || data.messages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No messages uploaded yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.messages.map(msg => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${msg.chatterName}</td>
+                <td class="px-4 py-4 text-gray-300">${new Date(msg.weekStartDate).toLocaleDateString()} - ${new Date(msg.weekEndDate).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${msg.totalMessages || 0}</td>
+                <td class="px-4 py-4 text-right text-gray-300">${msg.creatorAccount || 'N/A'}</td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteMessageRecord('${msg._id}', '${msg.chatterName}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        showNotification('Failed to load messages', 'error');
+    }
+}
+
+// Load Daily Reports Data
+async function loadDailyReportsData() {
+    try {
+        const response = await fetch('/api/data-management/daily-reports', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('dailyReportsTableBody');
+        if (!tbody) return;
+        
+        if (!data.reports || data.reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No daily reports yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.reports.map(report => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all cursor-pointer" onclick="toggleReportDetails('${report._id}')">
+                <td class="px-4 py-4 text-white font-medium">${report.chatterName}</td>
+                <td class="px-4 py-4 text-gray-300">${new Date(report.date).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-gray-300 capitalize">${report.shift}</td>
+                <td class="px-4 py-4 text-right text-purple-400">${report.ppvSales?.length || 0}</td>
+                <td class="px-4 py-4 text-right text-green-400">${report.tips?.length || 0}</td>
+                <td class="px-4 py-4 text-right text-white font-bold">$${report.totalRevenue?.toFixed(2) || '0.00'}</td>
+                <td class="px-4 py-4 text-center" onclick="event.stopPropagation()">
+                    <button onclick="deleteReport('${report._id}', '${report.chatterName}', '${new Date(report.date).toLocaleDateString()}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+            <tr id="reportDetails-${report._id}" class="hidden bg-gray-900/50">
+                <td colspan="7" class="px-4 py-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="font-semibold text-purple-400 mb-2">PPV Sales:</div>
+                            ${(report.ppvSales || []).map((sale, i) => `
+                                <div class="pl-3 text-gray-300">
+                                    ${i+1}. $${sale.amount.toFixed(2)}
+                                    ${sale.vipFanUsername ? ` - <span class="text-yellow-400">${sale.vipFanUsername}</span>` : ''}
+                                </div>
+                            `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-green-400 mb-2">Tips:</div>
+                            ${(report.tips || []).map((tip, i) => `
+                                <div class="pl-3 text-gray-300">
+                                    ${i+1}. $${tip.amount.toFixed(2)}
+                                    ${tip.vipFanUsername ? ` - <span class="text-yellow-400">${tip.vipFanUsername}</span>` : ''}
+                                </div>
+                            `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
+                        </div>
+                    </div>
+                    ${report.notes ? `<div class="mt-3 text-gray-400"><strong>Notes:</strong> ${report.notes}</div>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading daily reports:', error);
+        showNotification('Failed to load daily reports', 'error');
+    }
+}
+
+// Load Link Tracking Data
+async function loadLinkTrackingData() {
+    try {
+        const response = await fetch('/api/data-management/link-tracking', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('linkTrackingTableBody');
+        if (!tbody) return;
+        
+        if (!data.linkData || data.linkData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No link tracking data yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.linkData.map(link => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4">
+                    <span class="px-3 py-1 rounded-lg bg-gray-700 text-sm capitalize font-medium">${link.category}</span>
+                </td>
+                <td class="px-4 py-4 text-gray-300">${new Date(link.weekStartDate).toLocaleDateString()} - ${new Date(link.weekEndDate).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${link.landingPageViews?.toLocaleString() || 0}</td>
+                <td class="px-4 py-4 text-right text-green-400">${link.onlyFansClicks?.toLocaleString() || 0}</td>
+                <td class="px-4 py-4 text-right text-cyan-400">${link.clickThroughRate?.toFixed(1) || 0}%</td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteLinkTracking('${link._id}', '${link.category}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading link tracking:', error);
+        showNotification('Failed to load link tracking data', 'error');
+    }
+}
+
+// Load Traffic Sources for Data Table
+async function loadTrafficSourcesDataTable() {
+    try {
+        await loadTrafficSources();
+        
+        const tbody = document.getElementById('trafficSourcesTableBody');
+        if (!tbody) return;
+        
+        if (!trafficSources || trafficSources.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No traffic sources created yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = trafficSources.map(source => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${source.name}</td>
+                <td class="px-4 py-4">
+                    <span class="px-3 py-1 rounded-lg bg-gray-700 text-xs capitalize">${source.category}</span>
+                </td>
+                <td class="px-4 py-4 text-gray-300">${source.subcategory || '-'}</td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs ${source.isActive ? 'text-green-400' : 'text-gray-500'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${source.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteTrafficSource('${source._id}', '${source.name}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        showNotification('Failed to load traffic sources', 'error');
+    }
+}
+
+// Load VIP Fans Data
+async function loadVIPFansData() {
+    try {
+        const response = await fetch('/api/data-management/vip-fans', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('vipFansTableBody');
+        if (!tbody) return;
+        
+        if (!data.fans || data.fans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No VIP fans yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.fans.map(fan => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${fan.username}</td>
+                <td class="px-4 py-4 text-gray-300">${fan.trafficSourceName || 'Unknown'}</td>
+                <td class="px-4 py-4 text-right text-green-400 font-bold">$${fan.lifetimeSpend?.toFixed(2) || '0.00'}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${fan.purchaseCount || 0}</td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs ${fan.status === 'active' ? 'text-green-400' : 'text-red-400'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${fan.status || 'active'}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteVIPFan('${fan._id}', '${fan.username}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading VIP fans:', error);
+        showNotification('Failed to load VIP fans', 'error');
+    }
+}
+
+// Toggle report details
+function toggleReportDetails(reportId) {
+    const detailsRow = document.getElementById(`reportDetails-${reportId}`);
+    if (detailsRow) {
+        detailsRow.classList.toggle('hidden');
+    }
+}
+
+// Delete functions
+async function deleteMessageRecord(id, chatterName) {
+    if (!confirm(`Delete message upload for ${chatterName}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/messages/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Message record deleted', 'success');
+            refreshDataTab('messages');
+        } else {
+            showNotification('Failed to delete message record', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        showNotification('Failed to delete message record', 'error');
+    }
+}
+
+async function deleteReport(id, chatterName, date) {
+    if (!confirm(`Delete daily report for ${chatterName} on ${date}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/daily-reports/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Daily report deleted', 'success');
+            refreshDataTab('daily-reports');
+        } else {
+            showNotification('Failed to delete report', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting report:', error);
+        showNotification('Failed to delete report', 'error');
+    }
+}
+
+async function deleteLinkTracking(id, category) {
+    if (!confirm(`Delete link tracking data for ${category}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/link-tracking/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Link tracking data deleted', 'success');
+            refreshDataTab('link-tracking');
+        } else {
+            showNotification('Failed to delete link tracking', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting link tracking:', error);
+        showNotification('Failed to delete link tracking', 'error');
+    }
+}
+
+async function deleteVIPFan(id, username) {
+    if (!confirm(`Delete VIP fan "${username}"? This will also delete their purchase history. This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/vip-fans/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('VIP fan deleted', 'success');
+            refreshDataTab('vip-fans');
+        } else {
+            showNotification('Failed to delete VIP fan', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting VIP fan:', error);
+        showNotification('Failed to delete VIP fan', 'error');
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -1431,6 +1784,9 @@ function createSection(sectionId) {
         case 'marketing-dashboard':
             section.innerHTML = createMarketingDashboardSection();
             break;
+        case 'data-management':
+            section.innerHTML = createDataManagementSection();
+            break;
         case 'settings':
             section.innerHTML = createSettingsSection();
             break;
@@ -1488,6 +1844,10 @@ function loadSectionData(sectionId) {
         case 'marketing-dashboard':
             // Load marketing dashboard data
             loadMarketingDashboard();
+            break;
+        case 'data-management':
+            // Load all data for management
+            loadDataManagement();
             break;
         default:
             break;
@@ -5174,6 +5534,197 @@ function createMarketingDashboardSection() {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== DATA MANAGEMENT SECTION ====================
+
+function createDataManagementSection() {
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                <i class="fas fa-database mr-2"></i>Data Management
+            </h2>
+            <p class="text-gray-400">View, verify, and delete all uploaded data</p>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="showDataTab('messages')" class="data-tab-btn active px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-comments mr-2"></i>Messages
+            </button>
+            <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-file-alt mr-2"></i>Daily Reports
+            </button>
+            <button onclick="showDataTab('link-tracking')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-link mr-2"></i>Link Tracking
+            </button>
+            <button onclick="showDataTab('traffic-sources')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-bullseye mr-2"></i>Traffic Sources
+            </button>
+            <button onclick="showDataTab('vip-fans')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-star mr-2"></i>VIP Fans
+            </button>
+        </div>
+        
+        <!-- Messages Tab -->
+        <div id="dataTab-messages" class="data-tab-content">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>
+                        Uploaded Messages
+                    </h3>
+                    <button onclick="refreshDataTab('messages')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Messages</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Creator</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Reports Tab -->
+        <div id="dataTab-daily-reports" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-file-alt text-purple-400 mr-2"></i>
+                        Daily Sales Reports
+                    </h3>
+                    <button onclick="refreshDataTab('daily-reports')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Shift</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">PPVs</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Tips</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyReportsTableBody">
+                            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Tracking Tab -->
+        <div id="dataTab-link-tracking" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-link text-cyan-400 mr-2"></i>
+                        Link Tracking Data
+                    </h3>
+                    <button onclick="refreshDataTab('link-tracking')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Views</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">CTR</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkTrackingTableBody">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Traffic Sources Tab -->
+        <div id="dataTab-traffic-sources" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-bullseye text-orange-400 mr-2"></i>
+                        Traffic Sources
+                    </h3>
+                    <button onclick="refreshDataTab('traffic-sources')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Name</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Subcategory</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Status</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trafficSourcesTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIP Fans Tab -->
+        <div id="dataTab-vip-fans" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>
+                        VIP Fans
+                    </h3>
+                    <button onclick="refreshDataTab('vip-fans')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Username</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Traffic Source</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Lifetime Spend</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Purchases</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Status</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vipFansTableBody">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
