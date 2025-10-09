@@ -616,6 +616,9 @@ function renderMarketingDashboard() {
     if (detailedTableBody && data.sources && data.sources.length > 0) {
         console.log('✅ Populating detailed table with', data.sources.length, 'sources');
         
+        // Calculate total agency revenue
+        const totalAgencyRevenue = data.sources.reduce((sum, s) => sum + (s.revenue || 0), 0);
+        
         // Group sources by category
         const categoryMap = {};
         data.sources.forEach(source => {
@@ -635,7 +638,7 @@ function renderMarketingDashboard() {
             categoryMap[source.category].totalSpenders += source.spenders || 0;
         });
         
-        // Calculate averages for each category
+        // Calculate averages and percentages for each category
         Object.keys(categoryMap).forEach(category => {
             const cat = categoryMap[category];
             const sourceCount = cat.sources.length;
@@ -643,6 +646,7 @@ function renderMarketingDashboard() {
             cat.avgQualityGrade = cat.sources.reduce((sum, s) => sum + (s.qualityGrade || 0), 0) / sourceCount;
             cat.spenderRate = cat.totalClicks > 0 ? (cat.totalSpenders / cat.totalClicks) * 100 : 0;
             cat.revenuePerClick = cat.totalClicks > 0 ? cat.totalRevenue / cat.totalClicks : 0;
+            cat.revenuePercent = totalAgencyRevenue > 0 ? (cat.totalRevenue / totalAgencyRevenue) * 100 : 0;
         });
         
         // Render rows
@@ -667,7 +671,7 @@ function renderMarketingDashboard() {
                     <td class="px-4 py-4 text-right text-white font-semibold">${cat.totalClicks}</td>
                     <td class="px-4 py-4 text-right text-blue-400 font-semibold">${cat.totalSpenders}</td>
                     <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${cat.spenderRate?.toFixed(1) || '0'}%</td>
-                    <td class="px-4 py-4 text-right text-green-400 font-bold">$${cat.totalRevenue?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right text-green-400 font-bold">${cat.revenuePercent?.toFixed(1) || '0'}%</td>
                     <td class="px-4 py-4 text-right text-cyan-400 font-semibold">$${cat.revenuePerClick?.toFixed(2) || '0.00'}</td>
                     <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${cat.avgRetention?.toFixed(0) || '0'}%</td>
                     <td class="px-4 py-4 text-center">
@@ -681,6 +685,7 @@ function renderMarketingDashboard() {
                 const sourceQualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
                 const sourceSpenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
                 const sourceRetentionColor = source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400';
+                const sourceRevenuePercent = totalAgencyRevenue > 0 ? (source.revenue / totalAgencyRevenue) * 100 : 0;
                 
                 html += `
                     <tr class="category-${categoryId} border-b border-gray-800/50 bg-gray-900/50 hidden">
@@ -690,7 +695,7 @@ function renderMarketingDashboard() {
                         <td class="px-4 py-3 text-right text-sm text-gray-400">${source.linkClicks || 0}</td>
                         <td class="px-4 py-3 text-right text-sm text-blue-300">${source.spenders || 0}</td>
                         <td class="px-4 py-3 text-right text-sm ${sourceSpenderRateColor}">${source.spenderRate?.toFixed(1) || '0'}%</td>
-                        <td class="px-4 py-3 text-right text-sm text-green-300">$${source.revenue?.toFixed(2) || '0.00'}</td>
+                        <td class="px-4 py-3 text-right text-sm text-green-300">${sourceRevenuePercent?.toFixed(1) || '0'}%</td>
                         <td class="px-4 py-3 text-right text-sm text-cyan-300">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
                         <td class="px-4 py-3 text-right text-sm ${sourceRetentionColor}">${source.retentionRate?.toFixed(0) || '0'}%</td>
                         <td class="px-4 py-3 text-center">
@@ -5523,7 +5528,7 @@ function createMarketingDashboardSection() {
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender Rate</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">% of Revenue</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Rev/Click</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">7-Day Retention</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Quality</th>
