@@ -1965,9 +1965,10 @@ function loadSectionData(sectionId) {
         case 'analytics':
             setTimeout(() => {
                 console.log('🔄 Initializing analytics with interval:', currentAnalyticsInterval);
+                console.log('🔍 Analytics buttons found:', document.querySelectorAll('.analytics-interval-btn').length);
                 // Just call setAnalyticsInterval - it will handle button styling AND data loading
                 setAnalyticsInterval(currentAnalyticsInterval);
-            }, 100);
+            }, 300);
             break;
         case 'ai-analysis':
             loadChattersForAnalysis();
