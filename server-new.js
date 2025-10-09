@@ -5818,6 +5818,215 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
   }
 });
 
+// ENHANCED INDIVIDUAL CHATTER ANALYSIS
+app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    const { filterType, customStart, customEnd, weekStart, weekEnd, monthStart, monthEnd } = req.query;
+    
+    console.log('🔍 Deep chatter analysis for:', chatterName);
+    
+    // Build date query
+    let start, end;
+    if (filterType === 'custom' && customStart && customEnd) {
+      start = new Date(customStart);
+      end = new Date(customEnd);
+    } else if (filterType === 'week' && weekStart && weekEnd) {
+      start = new Date(weekStart);
+      end = new Date(weekEnd);
+    } else {
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - 7);
+    }
+    
+    const dateQuery = { date: { $gte: start, $lte: end } };
+    
+    // Get this chatter's data
+    const chatterPurchases = await FanPurchase.find({
+      ...dateQuery,
+      chatterName: chatterName
+    }).populate('trafficSource').populate('vipFan');
+    
+    const chatterReports = await DailyChatterReport.find({
+      ...dateQuery,
+      chatterName: chatterName
+    });
+    
+    // Get ALL chatters' data for comparison
+    const allPurchases = await FanPurchase.find(dateQuery).populate('trafficSource');
+    const allReports = await DailyChatterReport.find(dateQuery);
+    
+    // Get message analysis for this chatter
+    const messageAnalysis = await MessageAnalysis.findOne({
+      chatterName: chatterName
+    }).sort({ createdAt: -1 });
+    
+    // Calculate this chatter's metrics
+    const chatterRevenue = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const chatterPPVRevenue = chatterPurchases.filter(p => p.type === 'ppv').reduce((sum, p) => sum + (p.amount || 0), 0);
+    const chatterPPVCount = chatterPurchases.filter(p => p.type === 'ppv').length;
+    const chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
+    
+    const chatterPPVsSent = chatterReports.reduce((sum, r) => sum + (r.ppvsSent || 0), 0);
+    const chatterPPVsUnlocked = chatterPPVCount; // From purchases
+    const chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
+    
+    const chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
+    const chatterMessagesSent = chatterFansChatted * 15; // Estimate
+    
+    // VIP metrics for this chatter
+    const chatterVIPs = await VIPFan.find({
+      createdAt: { $gte: start, $lte: end }
+    });
+    const chatterVIPsFromPurchases = chatterPurchases.filter(p => p.vipFan).length;
+    const chatterVIPRevenue = chatterPurchases.filter(p => p.vipFan).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const chatterAvgVIPSpend = chatterVIPsFromPurchases > 0 ? chatterVIPRevenue / chatterVIPsFromPurchases : 0;
+    
+    // Calculate TEAM averages
+    const teamChatters = {};
+    allPurchases.forEach(p => {
+      if (p.chatterName) {
+        if (!teamChatters[p.chatterName]) {
+          teamChatters[p.chatterName] = { revenue: 0, ppvCount: 0, ppvRevenue: 0 };
+        }
+        teamChatters[p.chatterName].revenue += p.amount || 0;
+        if (p.type === 'ppv') {
+          teamChatters[p.chatterName].ppvCount++;
+          teamChatters[p.chatterName].ppvRevenue += p.amount || 0;
+        }
+      }
+    });
+    
+    const teamReports = {};
+    allReports.forEach(r => {
+      if (r.chatterName) {
+        if (!teamReports[r.chatterName]) {
+          teamReports[r.chatterName] = { ppvsSent: 0, fansChatted: 0 };
+        }
+        teamReports[r.chatterName].ppvsSent += r.ppvsSent || 0;
+        teamReports[r.chatterName].fansChatted += r.fansChatted || 0;
+      }
+    });
+    
+    // Calculate team averages
+    const chatterCount = Object.keys(teamChatters).length || 1;
+    const teamAvgRevenue = Object.values(teamChatters).reduce((sum, c) => sum + c.revenue, 0) / chatterCount;
+    const teamAvgPPVPrice = Object.values(teamChatters).reduce((sum, c) => {
+      return sum + (c.ppvCount > 0 ? c.ppvRevenue / c.ppvCount : 0);
+    }, 0) / chatterCount;
+    const teamAvgUnlockRate = Object.values(teamReports).reduce((sum, c) => {
+      const unlockRate = c.ppvsSent > 0 ? ((teamChatters[Object.keys(teamReports).find(k => teamReports[k] === c)]?.ppvCount || 0) / c.ppvsSent) * 100 : 0;
+      return sum + unlockRate;
+    }, 0) / chatterCount;
+    
+    // Calculate rankings
+    const revenueRanking = Object.entries(teamChatters)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .findIndex(([name]) => name === chatterName) + 1;
+    
+    const unlockRateRanking = Object.entries(teamReports)
+      .map(([name, data]) => ({
+        name,
+        unlockRate: data.ppvsSent > 0 ? ((teamChatters[name]?.ppvCount || 0) / data.ppvsSent) * 100 : 0
+      }))
+      .sort((a, b) => b.unlockRate - a.unlockRate)
+      .findIndex(c => c.name === chatterName) + 1;
+    
+    // Traffic source performance for this chatter
+    const sourcePerformance = {};
+    chatterPurchases.forEach(p => {
+      if (p.trafficSource) {
+        const sourceName = p.trafficSource.name;
+        if (!sourcePerformance[sourceName]) {
+          sourcePerformance[sourceName] = {
+            revenue: 0,
+            count: 0,
+            category: p.trafficSource.category
+          };
+        }
+        sourcePerformance[sourceName].revenue += p.amount || 0;
+        sourcePerformance[sourceName].count++;
+      }
+    });
+    
+    const topSource = Object.entries(sourcePerformance)
+      .sort((a, b) => b[1].revenue - a[1].revenue)[0];
+    
+    // Pricing breakdown
+    const pricingBuckets = {
+      low: { count: 0, unlocked: 0 }, // $0-15
+      mid: { count: 0, unlocked: 0 }, // $15-25
+      high: { count: 0, unlocked: 0 } // $25+
+    };
+    
+    chatterReports.forEach(r => {
+      if (r.ppvSales) {
+        r.ppvSales.forEach(sale => {
+          const price = sale.amount || 0;
+          if (price < 15) {
+            pricingBuckets.low.count++;
+            pricingBuckets.low.unlocked++;
+          } else if (price < 25) {
+            pricingBuckets.mid.count++;
+            pricingBuckets.mid.unlocked++;
+          } else {
+            pricingBuckets.high.count++;
+            pricingBuckets.high.unlocked++;
+          }
+        });
+      }
+    });
+    
+    // Calculate unlock rates by price
+    const lowPriceUnlockRate = pricingBuckets.low.count > 0 ? (pricingBuckets.low.unlocked / pricingBuckets.low.count) * 100 : 0;
+    const midPriceUnlockRate = pricingBuckets.mid.count > 0 ? (pricingBuckets.mid.unlocked / pricingBuckets.mid.count) * 100 : 0;
+    const highPriceUnlockRate = pricingBuckets.high.count > 0 ? (pricingBuckets.high.unlocked / pricingBuckets.high.count) * 100 : 0;
+    
+    res.json({
+      chatter: {
+        name: chatterName,
+        revenue: chatterRevenue,
+        avgPPVPrice: chatterAvgPPVPrice,
+        unlockRate: chatterUnlockRate,
+        ppvsSent: chatterPPVsSent,
+        ppvsUnlocked: chatterPPVsUnlocked,
+        fansChatted: chatterFansChatted,
+        vipCount: chatterVIPsFromPurchases,
+        avgVIPSpend: chatterAvgVIPSpend,
+        grammarScore: messageAnalysis?.grammarScore || null,
+        guidelinesScore: messageAnalysis?.guidelinesScore || null,
+        overallScore: messageAnalysis?.overallScore || null
+      },
+      team: {
+        avgRevenue: teamAvgRevenue,
+        avgPPVPrice: teamAvgPPVPrice,
+        avgUnlockRate: teamAvgUnlockRate,
+        chatterCount: chatterCount
+      },
+      rankings: {
+        revenue: revenueRanking,
+        unlockRate: unlockRateRanking
+      },
+      trafficSources: sourcePerformance,
+      topSource: topSource ? {
+        name: topSource[0],
+        revenue: topSource[1].revenue,
+        count: topSource[1].count,
+        category: topSource[1].category
+      } : null,
+      pricing: {
+        low: { unlockRate: lowPriceUnlockRate, count: pricingBuckets.low.count },
+        mid: { unlockRate: midPriceUnlockRate, count: pricingBuckets.mid.count },
+        high: { unlockRate: highPriceUnlockRate, count: pricingBuckets.high.count }
+      }
+    });
+  } catch (error) {
+    console.error('Error in chatter deep analysis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // WIPE DATA ENDPOINT (MANAGER ONLY)
 app.post('/api/admin/wipe-data', authenticateToken, requireManager, async (req, res) => {
   try {

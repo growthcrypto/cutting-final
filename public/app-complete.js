@@ -4263,6 +4263,51 @@ function renderChatterAnalysisResults(data) {
                 </div>
             </div>
 
+            <!-- NEW: Team Comparison Rankings -->
+            ${data.rankings ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-900/20 to-blue-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-trophy text-cyan-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Your Team Rankings</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 rounded-xl border border-yellow-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Revenue Rank</span>
+                            <div class="text-4xl font-black ${data.rankings.revenue === 1 ? 'text-yellow-400' : data.rankings.revenue === 2 ? 'text-gray-300' : data.rankings.revenue === 3 ? 'text-orange-400' : 'text-gray-500'}">
+                                #${data.rankings.revenue || '-'}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            You: $${(data.chatter?.revenue || 0).toFixed(0)} vs Team: $${(data.team?.avgRevenue || 0).toFixed(0)}
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gradient-to-br from-green-900/20 to-emerald-900/10 rounded-xl border border-green-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Unlock Rate Rank</span>
+                            <div class="text-4xl font-black ${data.rankings.unlockRate === 1 ? 'text-yellow-400' : data.rankings.unlockRate === 2 ? 'text-gray-300' : data.rankings.unlockRate === 3 ? 'text-orange-400' : 'text-gray-500'}">
+                                #${data.rankings.unlockRate || '-'}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            You: ${(data.chatter?.unlockRate || 0).toFixed(1)}% vs Team: ${(data.team?.avgUnlockRate || 0).toFixed(1)}%
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/10 rounded-xl border border-purple-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Avg PPV Price</span>
+                            <div class="text-2xl font-bold text-purple-400">
+                                $${(data.chatter?.avgPPVPrice || 0).toFixed(0)}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            Team avg: $${(data.team?.avgPPVPrice || 0).toFixed(0)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
             <!-- Performance Breakdown -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Key Insights -->
@@ -4373,29 +4418,92 @@ function renderChatterAnalysisResults(data) {
             </div>
             ` : ''}
 
-            <!-- Performance Summary -->
-            <div class="glass-card rounded-xl p-8">
+            <!-- NEW: Traffic Source Performance -->
+            ${data.topSource ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-pink-900/10 mb-8">
                 <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
-                    <i class="fas fa-chart-line text-indigo-400 mr-4"></i>Performance Summary
+                    <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Your Traffic Source Performance</span>
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-xl border border-indigo-500/30">
-                        <div class="text-2xl font-bold text-indigo-400 mb-2">${data.fansChatted || 0}</div>
-                        <div class="text-sm text-gray-400">Fans Chatted</div>
-                        <div class="text-xs text-indigo-400 mt-1">Engagement Level</div>
+                <div class="p-6 bg-gray-800/50 rounded-xl border border-purple-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Your Best Source</div>
+                            <div class="text-2xl font-bold text-white">${data.topSource.name}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400 mb-1">Revenue</div>
+                            <div class="text-2xl font-bold text-green-400">$${data.topSource.revenue.toFixed(0)}</div>
+                        </div>
                     </div>
-                    <div class="text-center p-6 bg-gradient-to-br from-emerald-900/20 to-green-900/20 rounded-xl border border-emerald-500/30">
-                        <div class="text-2xl font-bold text-emerald-400 mb-2">${((data.messagesSent || 0) / (data.fansChatted || 1)).toFixed(1)}</div>
-                        <div class="text-sm text-gray-400">Messages per Fan</div>
-                        <div class="text-xs text-emerald-400 mt-1">Engagement Rate</div>
-                    </div>
-                    <div class="text-center p-6 bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-xl border border-amber-500/30">
-                        <div class="text-2xl font-bold text-amber-400 mb-2">${((data.ppvsUnlocked || 0) / (data.fansChatted || 1) * 100).toFixed(1)}%</div>
-                        <div class="text-sm text-gray-400">Conversion Rate</div>
-                        <div class="text-xs text-amber-400 mt-1">Fan to Sale</div>
+                    <div class="text-base text-purple-300 leading-relaxed">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                        When you talk to ${data.topSource.category} fans, they're ${(data.topSource.revenue / data.topSource.count).toFixed(0)}x more likely to spend
                     </div>
                 </div>
             </div>
+            ` : ''}
+
+            <!-- NEW: Pricing Intelligence -->
+            ${data.pricing && (data.pricing.low.count > 0 || data.pricing.mid.count > 0 || data.pricing.high.count > 0) ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-green-500/40 bg-gradient-to-br from-green-900/20 to-emerald-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">Your Pricing Strategy</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                        <div class="text-sm text-gray-400 mb-2">$0-15 PPVs</div>
+                        <div class="text-2xl font-bold text-red-400">${data.pricing.low.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.low.count} sent</div>
+                    </div>
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-yellow-500/30">
+                        <div class="text-sm text-gray-400 mb-2">$15-25 PPVs</div>
+                        <div class="text-2xl font-bold text-yellow-400">${data.pricing.mid.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.mid.count} sent</div>
+                    </div>
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-green-500/30">
+                        <div class="text-sm text-gray-400 mb-2">$25+ PPVs</div>
+                        <div class="text-2xl font-bold text-green-400">${data.pricing.high.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.high.count} sent</div>
+                    </div>
+                </div>
+                <div class="p-4 bg-green-900/20 rounded-lg border border-green-500/20">
+                    <p class="text-sm text-gray-300">
+                        <i class="fas fa-chart-line text-green-400 mr-2"></i>
+                        <strong>Insight:</strong> Your avg PPV price: $${(data.chatter?.avgPPVPrice || 0).toFixed(0)} vs Team: $${(data.team?.avgPPVPrice || 0).toFixed(0)}
+                        ${data.chatter?.avgPPVPrice < data.team?.avgPPVPrice ? ' - Consider raising prices!' : ' - Great pricing!'}
+                    </p>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- NEW: VIP Performance -->
+            ${data.chatter?.vipCount > 0 ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-crown text-yellow-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Your VIP Performance</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-yellow-900/20 rounded-xl border border-yellow-500/30">
+                        <div class="text-3xl font-bold text-yellow-400 mb-2">${data.chatter.vipCount}</div>
+                        <div class="text-sm text-gray-400">VIPs Created</div>
+                        <div class="text-xs text-yellow-400 mt-1">This period</div>
+                    </div>
+                    <div class="text-center p-6 bg-green-900/20 rounded-xl border border-green-500/30">
+                        <div class="text-3xl font-bold text-green-400 mb-2">$${data.chatter.avgVIPSpend.toFixed(0)}</div>
+                        <div class="text-sm text-gray-400">Avg VIP Spend</div>
+                        <div class="text-xs text-green-400 mt-1">Per VIP fan</div>
+                    </div>
+                    <div class="text-center p-6 bg-purple-900/20 rounded-xl border border-purple-500/30">
+                        <div class="text-3xl font-bold text-purple-400 mb-2">${((data.chatter.vipCount / (data.chatter.fansChatted || 1)) * 100).toFixed(1)}%</div>
+                        <div class="text-sm text-gray-400">VIP Conversion</div>
+                        <div class="text-xs text-purple-400 mt-1">Fans → VIPs</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
 
         </div>
     `;
