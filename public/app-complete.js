@@ -5382,7 +5382,8 @@ function loadConversionFunnelChart(analytics) {
 
 // Section creation functions
 function createAnalyticsSection() {
-    return `
+    console.log('🎯 createAnalyticsSection() called - returning new HTML');
+    const html = `
         <div class="mb-8">
             <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
                 <i class="fas fa-chart-line mr-2"></i>Analytics Overview
@@ -5536,6 +5537,8 @@ function createAnalyticsSection() {
             </div>
         </div>
     `;
+    console.log('✅ Analytics HTML generated, length:', html.length);
+    return html;
 }
 
 function createAIAnalysisSection() {
