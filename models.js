@@ -476,7 +476,7 @@ const trafficSourcePerformanceSchema = new mongoose.Schema({
 
 // Link Tracking Data - Weekly uploads from Bitly/Linktree
 const linkTrackingDataSchema = new mongoose.Schema({
-  trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource', required: true },
+  category: { type: String, enum: ['reddit', 'twitter', 'instagram', 'tiktok', 'youtube', 'other'], required: true }, // NEW: Track by category, not specific source
   creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
   
   weekStartDate: { type: Date, required: true },

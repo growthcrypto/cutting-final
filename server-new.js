@@ -5095,30 +5095,31 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       }
     });
     
-    // Get link tracking data for each source
+    // Get link tracking data BY CATEGORY (reddit, twitter, etc.)
     const linkTrackingMap = {};
-    const linkTracking = await LinkTrackingData.find(dateQuery).populate('trafficSource');
+    const linkTracking = await LinkTrackingData.find(dateQuery);
     linkTracking.forEach(lt => {
-      if (lt.trafficSource) {
-        const sourceId = lt.trafficSource._id.toString();
-        if (!linkTrackingMap[sourceId]) {
-          linkTrackingMap[sourceId] = {
+      if (lt.category) {
+        if (!linkTrackingMap[lt.category]) {
+          linkTrackingMap[lt.category] = {
             clicks: 0,
             views: 0
           };
         }
-        linkTrackingMap[sourceId].clicks += lt.onlyFansClicks || 0;
-        linkTrackingMap[sourceId].views += lt.landingPageViews || 0;
+        linkTrackingMap[lt.category].clicks += lt.onlyFansClicks || 0;
+        linkTrackingMap[lt.category].views += lt.landingPageViews || 0;
       }
     });
+    
+    console.log('🔗 Link tracking by category:', linkTrackingMap);
     
     // Convert to array and calculate ENHANCED metrics
     const sources = await Promise.all(Object.values(sourceMap).map(async (source) => {
       const vipCount = source.vipPurchases.size;
       const spenderCount = source.vipPurchases.size; // Unique spenders
       
-      // Get link tracking data for this source
-      const linkData = linkTrackingMap[source.id] || { clicks: 0, views: 0 };
+      // Get link tracking data for this source's CATEGORY
+      const linkData = linkTrackingMap[source.category] || { clicks: 0, views: 0 };
       const linkClicks = linkData.clicks;
       
       // Calculate spender rate (KEY NEW METRIC!)
@@ -5203,18 +5204,62 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     // Sort by quality grade (best sources first!)
     sources.sort((a, b) => b.qualityGrade - a.qualityGrade);
     
+    // ALSO: Aggregate by CATEGORY for category-level overview
+    const categoryMap = {};
+    sources.forEach(source => {
+      if (!categoryMap[source.category]) {
+        categoryMap[source.category] = {
+          category: source.category,
+          revenue: 0,
+          spenders: 0,
+          linkClicks: linkTrackingMap[source.category]?.clicks || 0,
+          linkViews: linkTrackingMap[source.category]?.views || 0,
+          subcategories: []
+        };
+      }
+      categoryMap[source.category].revenue += source.revenue;
+      categoryMap[source.category].spenders += source.spenders;
+      categoryMap[source.category].subcategories.push({
+        name: source.name,
+        revenue: source.revenue,
+        spenders: source.spenders,
+        revenuePercent: 0 // Will calculate after
+      });
+    });
+    
+    // Calculate percentages and metrics for each category
+    const categories = Object.values(categoryMap).map(cat => {
+      const revenuePerClick = cat.linkClicks > 0 ? cat.revenue / cat.linkClicks : 0;
+      const spenderRate = cat.linkClicks > 0 ? (cat.spenders / cat.linkClicks) * 100 : 0;
+      
+      // Calculate revenue % for each subcategory
+      cat.subcategories.forEach(sub => {
+        sub.revenuePercent = cat.revenue > 0 ? (sub.revenue / cat.revenue) * 100 : 0;
+      });
+      
+      return {
+        ...cat,
+        revenuePerClick,
+        spenderRate
+      };
+    });
+    
+    categories.sort((a, b) => b.revenue - a.revenue);
+    
     const aggregated = {
       totalRevenue,
-      totalSubscribers: 0, // Will need subscriber tracking
+      totalSubscribers: 0,
       totalVIPs: vipSet.size,
       avgRevenuePerSub: 0,
-      sources
+      sources, // Individual source data
+      categories // NEW: Category-level aggregated data
     };
     
     console.log('📊 Dashboard aggregated:', {
       totalRevenue,
       totalVIPs: vipSet.size,
-      sourcesCount: sources.length
+      sourcesCount: sources.length,
+      categoriesCount: categories.length
     });
     
     res.json(aggregated);
@@ -5224,12 +5269,12 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
   }
 });
 
-// Upload link tracking data
+// Upload link tracking data (by CATEGORY, not specific source)
 app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => {
   try {
-    const { trafficSourceId, weekStart, weekEnd, landingPageViews, onlyFansClicks, ...optionalData } = req.body;
+    const { category, weekStart, weekEnd, landingPageViews, onlyFansClicks, ...optionalData } = req.body;
     
-    if (!trafficSourceId || !weekStart || !weekEnd || !landingPageViews || !onlyFansClicks) {
+    if (!category || !weekStart || !weekEnd || !landingPageViews || !onlyFansClicks) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
@@ -5239,7 +5284,7 @@ app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => 
     const clickThroughRate = landingPageViews > 0 ? (onlyFansClicks / landingPageViews) * 100 : 0;
     
     const linkData = new LinkTrackingData({
-      trafficSource: trafficSourceId,
+      category, // NEW: Track by category (reddit, twitter, etc.)
       creatorAccount: creatorAccount._id,
       weekStartDate: new Date(weekStart),
       weekEndDate: new Date(weekEnd),
@@ -5251,7 +5296,7 @@ app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => 
     });
     
     await linkData.save();
-    console.log('✅ Saved link tracking data for week:', weekStart);
+    console.log(`✅ Saved link tracking data for ${category} - week: ${weekStart}`);
     res.json({ success: true, data: linkData });
   } catch (error) {
     console.error('Error saving link tracking data:', error);

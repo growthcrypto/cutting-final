@@ -770,7 +770,7 @@ document.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const data = {
-            trafficSourceId: document.getElementById('linkTrafficSource').value,
+            category: document.getElementById('linkCategory').value, // CHANGED: Use category instead of sourceId
             weekStart: document.getElementById('linkWeekStart').value,
             weekEnd: document.getElementById('linkWeekEnd').value,
             landingPageViews: parseInt(document.getElementById('linkLandingViews').value),
@@ -5127,10 +5127,18 @@ function createMarketingDashboardSection() {
                 </h3>
                 <form id="linkTrackingForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold mb-2 text-gray-300">Traffic Source</label>
-                        <select id="linkTrafficSource" required
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            Category <span class="text-xs text-gray-500">(One link per category)</span>
+                        </label>
+                        <select id="linkCategory" required
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                            <option value="">Select source...</option>
+                            <option value="">Select category...</option>
+                            <option value="reddit">📱 Reddit</option>
+                            <option value="twitter">🐦 Twitter</option>
+                            <option value="instagram">📸 Instagram</option>
+                            <option value="tiktok">🎵 TikTok</option>
+                            <option value="youtube">📺 YouTube</option>
+                            <option value="other">🌐 Other</option>
                         </select>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
