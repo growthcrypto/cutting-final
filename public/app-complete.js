@@ -452,16 +452,75 @@ document.addEventListener('click', function(e) {
 let currentMarketingFilter = { type: null, week: null, month: null };
 let marketingDashboardData = null;
 
+// Marketing Dashboard Custom Date Picker Functions
+function applyMarketingDateFilter() {
+    const startDate = document.getElementById('marketingStartDate').value;
+    const endDate = document.getElementById('marketingEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentMarketingFilter = {
+        type: 'custom',
+        customStart: startDate,
+        customEnd: endDate
+    };
+    
+    console.log('✅ Marketing custom date filter applied:', currentMarketingFilter);
+    loadMarketingDashboard();
+}
+
+function setMarketingQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('marketingStartDate').value = formatDate(startDate);
+    document.getElementById('marketingEndDate').value = formatDate(endDate);
+    
+    applyMarketingDateFilter();
+}
+
+function initializeMarketingDatePicker() {
+    setMarketingQuickFilter('week');
+}
+
 async function loadMarketingDashboard() {
     console.log('🚀 loadMarketingDashboard() called');
     try {
-        // Populate selectors if not already done
-        await loadAvailablePeriods();
-        populateMarketingSelectors();
-        
         // Build query params
         let params = new URLSearchParams();
-        if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
+        if (currentMarketingFilter.type === 'custom' && currentMarketingFilter.customStart && currentMarketingFilter.customEnd) {
+            // NEW: Custom date range
+            params.append('filterType', 'custom');
+            params.append('customStart', currentMarketingFilter.customStart);
+            params.append('customEnd', currentMarketingFilter.customEnd);
+        } else if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
             params.append('filterType', 'week');
             params.append('weekStart', currentMarketingFilter.week.start);
             params.append('weekEnd', currentMarketingFilter.week.end);
@@ -1899,8 +1958,8 @@ function loadSectionData(sectionId) {
             loadMyPerformanceData();
             break;
         case 'marketing-dashboard':
-            // Load marketing dashboard data
-            loadMarketingDashboard();
+            // Initialize date picker and load marketing dashboard data
+            initializeMarketingDatePicker();
             break;
         case 'data-management':
             // Load all data for management
@@ -6169,21 +6228,45 @@ function createMarketingDashboardSection() {
             </div>
         </div>
         
-        <!-- Date Filter -->
+        <!-- Custom Date Range Picker -->
         <div class="mb-6 glass-card rounded-xl p-4">
-            <div class="flex flex-wrap items-center gap-4">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-calendar text-blue-400"></i>
-                    <span class="text-sm font-semibold text-gray-300">Filter Period:</span>
+            <div class="flex items-center space-x-3 flex-wrap gap-2">
+                <span class="text-sm text-gray-400 mr-1">Date Range:</span>
+                
+                <!-- Start Date -->
+                <div class="flex items-center bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 rounded-xl px-3 py-2 shadow-lg">
+                    <i class="fas fa-calendar text-cyan-400 mr-2 text-sm"></i>
+                    <input type="date" id="marketingStartDate" 
+                           class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                           style="color-scheme: dark;">
                 </div>
-                <select id="marketingWeekSelector" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    <option value="">Select Week...</option>
-                </select>
-                <select id="marketingMonthSelector" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    <option value="">Select Month...</option>
-                </select>
-                <div id="marketingFilterDisplay" class="px-4 py-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg text-sm font-medium text-blue-300">
-                    Last 7 days
+                
+                <!-- To -->
+                <span class="text-gray-500 font-medium">→</span>
+                
+                <!-- End Date -->
+                <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
+                    <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
+                    <input type="date" id="marketingEndDate" 
+                           class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                           style="color-scheme: dark;">
+                </div>
+                
+                <!-- Apply Button -->
+                <button onclick="applyMarketingDateFilter()" 
+                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
+                    <i class="fas fa-check"></i>
+                    Apply
+                </button>
+                
+                <!-- Quick Filters -->
+                <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
+                    <button onclick="setMarketingQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-cyan-600/50 text-gray-300 hover:text-white transition-all">
+                        This Week
+                    </button>
+                    <button onclick="setMarketingQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                        This Month
+                    </button>
                 </div>
             </div>
         </div>
@@ -6782,24 +6865,44 @@ function createChatterDashboardSection() {
                     <p class="text-gray-400">Combined analytics across all chatters</p>
                 </div>
                 
-                <!-- Week/Month Selector (Shared with Manager Dashboard) -->
-                <div class="flex items-center space-x-3 mt-4 lg:mt-0">
-                    <span class="text-sm text-gray-400 mr-3">Filter by:</span>
+                <!-- Custom Date Range Picker -->
+                <div class="flex items-center space-x-3 mt-4 lg:mt-0 flex-wrap gap-2">
+                    <span class="text-sm text-gray-400 mr-1">Date Range:</span>
                     
-                    <!-- Week Selector -->
-                    <select id="teamWeekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-purple-600 to-pink-600 text-white border-0 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/50 cursor-pointer">
-                        <option value="">Select Week...</option>
-                    </select>
+                    <!-- Start Date -->
+                    <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
+                        <input type="date" id="teamStartDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
                     
-                    <!-- Month Selector -->
-                    <select id="teamMonthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-pink-600 to-rose-600 text-white border-0 hover:from-pink-500 hover:to-rose-500 shadow-lg shadow-pink-900/50 cursor-pointer">
-                        <option value="">Select Month...</option>
-                    </select>
+                    <!-- To -->
+                    <span class="text-gray-500 font-medium">→</span>
                     
-                    <!-- Current Filter Display -->
-                    <div id="teamCurrentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-200 border border-purple-500/30 flex items-center gap-2 shadow-inner">
-                        <i class="fas fa-calendar-check text-purple-400"></i>
-                        <span id="teamCurrentFilterText" class="font-medium"></span>
+                    <!-- End Date -->
+                    <div class="flex items-center bg-gradient-to-br from-pink-600/20 to-rose-600/20 border border-pink-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-pink-400 mr-2 text-sm"></i>
+                        <input type="date" id="teamEndDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    <button onclick="applyTeamDateFilter()" 
+                            class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        Apply
+                    </button>
+                    
+                    <!-- Quick Filters -->
+                    <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
+                        <button onclick="setTeamQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                            This Week
+                        </button>
+                        <button onclick="setTeamQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-pink-600/50 text-gray-300 hover:text-white transition-all">
+                            This Month
+                        </button>
                     </div>
                 </div>
             </div>
@@ -6968,6 +7071,66 @@ let currentTeamInterval = '7d';
 let currentTeamDateRange = null;
 let currentChatterTab = null;
 
+// Team Dashboard Custom Date Picker Functions
+function applyTeamDateFilter() {
+    const startDate = document.getElementById('teamStartDate').value;
+    const endDate = document.getElementById('teamEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentFilterType = 'custom';
+    currentWeekFilter = null;
+    currentMonthFilter = null;
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Team custom date filter applied:', customDateRange);
+    loadTeamDashboard();
+}
+
+function setTeamQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('teamStartDate').value = formatDate(startDate);
+    document.getElementById('teamEndDate').value = formatDate(endDate);
+    
+    applyTeamDateFilter();
+}
+
+function initializeTeamDatePicker() {
+    setTeamQuickFilter('week');
+}
+
 // Populate team week selector dropdown
 function populateTeamWeekSelector() {
     const selector = document.getElementById('teamWeekSelector');
@@ -7065,7 +7228,10 @@ async function loadTeamDashboard() {
     try {
         // Build URL based on filter type (use same filters as Manager Dashboard)
         let url;
-        if (currentFilterType === 'week' && currentWeekFilter) {
+        if (currentFilterType === 'custom' && customDateRange) {
+            // NEW: Custom date range
+            url = `/api/analytics/team-dashboard?filterType=custom&customStart=${customDateRange.start}&customEnd=${customDateRange.end}`;
+        } else if (currentFilterType === 'week' && currentWeekFilter) {
             url = `/api/analytics/team-dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}`;
         } else if (currentFilterType === 'month' && currentMonthFilter) {
             url = `/api/analytics/team-dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}`;

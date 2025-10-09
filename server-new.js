@@ -1009,16 +1009,23 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 // Team Dashboard API - Get combined team performance + individual chatter data
 app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
 
-    console.log('👥 Team Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
+    console.log('👥 Team Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd });
 
     // Define start and end dates based on filter type
     let start, end;
     let isWeekFilter = false;
     let isMonthFilter = false;
+    let isCustomFilter = false;
     
-    if (filterType === 'week' && weekStart && weekEnd) {
+    if (filterType === 'custom' && customStart && customEnd) {
+      // NEW: Custom date range filter
+      start = new Date(customStart);
+      end = new Date(customEnd);
+      isCustomFilter = true;
+      console.log('✅ Team using CUSTOM filter:', start.toISOString(), 'to', end.toISOString());
+    } else if (filterType === 'week' && weekStart && weekEnd) {
       // Exact week filter
       start = new Date(weekStart);
       end = new Date(weekEnd);
@@ -5295,12 +5302,19 @@ app.get('/api/marketing/vip-fans', authenticateToken, async (req, res) => {
 // Get marketing dashboard data
 app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
     
     let dateQuery = {};
     
     // Build date filter for FanPurchase
-    if (filterType === 'week' && weekStart && weekEnd) {
+    if (filterType === 'custom' && customStart && customEnd) {
+      // NEW: Custom date range
+      dateQuery.date = {
+        $gte: new Date(customStart),
+        $lte: new Date(customEnd)
+      };
+      console.log('📊 Marketing Dashboard using CUSTOM date range:', customStart, 'to', customEnd);
+    } else if (filterType === 'week' && weekStart && weekEnd) {
       dateQuery.date = {
         $gte: new Date(weekStart),
         $lte: new Date(weekEnd)
