@@ -492,6 +492,122 @@ async function loadMarketingDashboard() {
     }
 }
 
+function renderMarketingDashboard() {
+    if (!marketingDashboardData) return;
+    
+    const data = marketingDashboardData;
+    console.log('📊 Rendering marketing dashboard with data:', data);
+    
+    // Render overview cards
+    const overviewCards = document.getElementById('marketingOverviewCards');
+    if (overviewCards) {
+        let totalSpenders = 0;
+        if (data.sources) {
+            data.sources.forEach(s => totalSpenders += (s.spenders || 0));
+        }
+        
+        overviewCards.innerHTML = `
+            <div class="glass-card rounded-xl p-6 border border-green-500/30 hover:border-green-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Revenue</span>
+                    <i class="fas fa-dollar-sign text-green-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">$${data.totalRevenue?.toFixed(2) || '0.00'}</div>
+                <div class="text-xs text-gray-400">From all sources</div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">VIP Fans</span>
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${data.totalVIPs || 0}</div>
+                <div class="text-xs text-gray-400">High-value customers</div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 border border-blue-500/30 hover:border-blue-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Spenders</span>
+                    <i class="fas fa-users text-blue-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${totalSpenders}</div>
+                <div class="text-xs text-gray-400">Unique buyers</div>
+            </div>
+        `;
+    }
+    
+    // Render top sources
+    const performanceGrid = document.getElementById('sourcePerformanceGrid');
+    if (performanceGrid && data.sources && data.sources.length > 0) {
+        const topSources = data.sources.slice(0, 6);
+        
+        performanceGrid.innerHTML = `
+            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                ${topSources.map((source, index) => {
+                    const qualityColor = source.qualityGrade >= 80 ? 'green' : source.qualityGrade >= 60 ? 'yellow' : source.qualityGrade >= 40 ? 'orange' : 'red';
+                    
+                    return `
+                        <div class="glass-card rounded-xl p-6 border border-${qualityColor}-500/30 hover:border-${qualityColor}-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">${source.name}</h4>
+                                    <p class="text-xs text-gray-400 capitalize">${source.category}</p>
+                                </div>
+                                ${index === 0 ? '<i class="fas fa-trophy text-yellow-400 text-2xl"></i>' : ''}
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="p-3 bg-gray-800/30 rounded-lg">
+                                    <div class="text-xs font-semibold text-blue-300 mb-1">FUNNEL</div>
+                                    <div class="text-sm text-gray-300">
+                                        Clicks: <span class="font-bold text-white">${source.linkClicks || 0}</span> →
+                                        Spenders: <span class="font-bold text-green-400">${source.spenders || 0}</span>
+                                        (<span class="font-bold ${source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400'}">${source.spenderRate?.toFixed(1) || '0'}%</span>)
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div class="text-xs text-gray-400 mb-1">Revenue</div>
+                                        <div class="text-xl font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-400 mb-1">Per Click</div>
+                                        <div class="text-xl font-bold text-cyan-400">$${source.revenuePerClick?.toFixed(2) || '0.00'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-3 bg-gray-800/30 rounded-lg">
+                                    <div class="text-xs font-semibold text-purple-300 mb-1">7-DAY RETENTION</div>
+                                    <div class="text-sm text-gray-300">
+                                        <span class="font-bold ${source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400'}">${source.retentionRate?.toFixed(0) || '0'}%</span>
+                                        (${source.retainedCount || 0}/${source.totalTracked || 0})
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-3 border-t border-gray-700 flex items-center justify-between">
+                                    <span class="text-sm text-gray-400">Quality Score</span>
+                                    <div class="text-lg font-bold text-${qualityColor}-400">${source.qualityScore || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else if (performanceGrid) {
+        performanceGrid.innerHTML = `
+            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
+            <div class="text-center py-12">
+                <i class="fas fa-chart-bar text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400 text-lg">No data yet</p>
+                <p class="text-gray-500 text-sm">Upload link tracking and log sales to see analytics</p>
+            </div>
+        `;
+    }
+}
+
 function populateMarketingSelectors() {
     const weekSelector = document.getElementById('marketingWeekSelector');
     const monthSelector = document.getElementById('marketingMonthSelector');
@@ -5818,6 +5934,270 @@ function createTrafficSourcesSection() {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== MARKETING DASHBOARD HTML ====================
+
+function createMarketingDashboardSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        <i class="fas fa-rocket mr-2"></i>Marketing Analytics
+                    </h2>
+                    <p class="text-gray-400">Track traffic source performance and ROI</p>
+                </div>
+                <button onclick="showLinkTrackingModal()" class="premium-button text-white font-medium py-3 px-6 rounded-xl hover:scale-105 transition-transform">
+                    <i class="fas fa-upload mr-2"></i>Upload Link Data
+                </button>
+            </div>
+        </div>
+        
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="marketingOverviewCards">
+            <div class="glass-card rounded-xl p-6 border border-green-500/30">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Revenue</span>
+                    <i class="fas fa-dollar-sign text-green-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white">Loading...</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">VIP Fans</span>
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white">Loading...</div>
+            </div>
+            <div class="glass-card rounded-xl p-6 border border-blue-500/30">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Spenders</span>
+                    <i class="fas fa-users text-blue-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white">Loading...</div>
+            </div>
+        </div>
+        
+        <!-- Top Sources -->
+        <div id="sourcePerformanceGrid" class="mb-8">
+            <h3 class="text-2xl font-bold mb-4"><i class="fas fa-trophy text-yellow-400 mr-2"></i>Top Sources</h3>
+            <div class="text-center py-12 text-gray-400">Loading...</div>
+        </div>
+        
+        <!-- Link Tracking Upload Modal -->
+        <div id="linkTrackingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm items-center justify-center z-50" style="display: none;">
+            <div class="bg-gray-800 rounded-2xl p-8 max-w-lg w-full mx-4 border border-blue-500/30 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    <i class="fas fa-link mr-2"></i>Upload Link Tracking Data
+                </h3>
+                <form id="linkTrackingForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            Category <span class="text-xs text-gray-500">(One link per category)</span>
+                        </label>
+                        <select id="linkCategory" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                            <option value="">Select category...</option>
+                            <option value="reddit">📱 Reddit</option>
+                            <option value="twitter">🐦 Twitter</option>
+                            <option value="instagram">📸 Instagram</option>
+                            <option value="tiktok">🎵 TikTok</option>
+                            <option value="youtube">📺 YouTube</option>
+                            <option value="other">🌐 Other</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week Start</label>
+                            <input type="date" id="linkWeekStart" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week End</label>
+                            <input type="date" id="linkWeekEnd" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">Landing Page Views</label>
+                            <input type="number" id="linkLandingViews" required min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2 text-gray-300">OnlyFans Clicks</label>
+                            <input type="number" id="linkOFClicks" required min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 premium-button text-white font-medium py-3 px-6 rounded-xl">
+                            <i class="fas fa-check mr-2"></i>Upload
+                        </button>
+                        <button type="button" onclick="closeLinkTrackingModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+function showLinkTrackingModal() {
+    document.getElementById('linkTrackingModal').style.display = 'flex';
+}
+
+function closeLinkTrackingModal() {
+    document.getElementById('linkTrackingModal').style.display = 'none';
+}
+
+// ==================== DATA MANAGEMENT HTML ====================
+
+function createDataManagementSection() {
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                <i class="fas fa-database mr-2"></i>Data Management
+            </h2>
+            <p class="text-gray-400">View, verify, and delete all uploaded data</p>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="showDataTab('messages')" class="data-tab-btn active px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-comments mr-2"></i>Messages
+            </button>
+            <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-file-alt mr-2"></i>Daily Reports
+            </button>
+            <button onclick="showDataTab('link-tracking')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-link mr-2"></i>Link Tracking
+            </button>
+            <button onclick="showDataTab('vip-fans')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-star mr-2"></i>VIP Fans
+            </button>
+        </div>
+        
+        <!-- Messages Tab -->
+        <div id="dataTab-messages" class="data-tab-content">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>Uploaded Messages
+                    </h3>
+                    <button onclick="refreshDataTab('messages')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Messages</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <tr><td colspan="4" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Reports Tab -->
+        <div id="dataTab-daily-reports" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-file-alt text-purple-400 mr-2"></i>Daily Sales Reports
+                    </h3>
+                    <button onclick="refreshDataTab('daily-reports')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Shift</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyReportsTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Tracking Tab -->
+        <div id="dataTab-link-tracking" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-link text-cyan-400 mr-2"></i>Link Tracking Data
+                    </h3>
+                    <button onclick="refreshDataTab('link-tracking')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Views</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkTrackingTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIP Fans Tab -->
+        <div id="dataTab-vip-fans" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>VIP Fans
+                    </h3>
+                    <button onclick="refreshDataTab('vip-fans')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Username</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Lifetime</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Purchases</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vipFansTableBody">
+                            <tr><td colspan="4" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
