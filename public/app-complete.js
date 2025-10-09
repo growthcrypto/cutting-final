@@ -4312,68 +4312,6 @@ async function runChatterAnalysis() {
 }
 
 // Load analytics data for analytics page
-async function loadAnalyticsData() {
-    try {
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentAnalyticsInterval}&_t=${Date.now()}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Cache-Control': 'no-cache'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            updateAnalyticsPageData(data);
-        }
-    } catch (error) {
-        console.error('Error loading analytics data:', error);
-    }
-}
-
-function updateAnalyticsPageData(data) {
-    console.log('Analytics page data received:', data);
-    console.log('Analytics changes object:', data.changes);
-    
-    const changes = data.changes || {};
-    
-    // Update core metrics from real data with change indicators
-    const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked || 0) / data.ppvsSent * 100).toFixed(1) : 0;
-    const conversionRate = data.profileClicks > 0 ? ((data.newSubs || 0) / data.profileClicks * 100).toFixed(1) : 0;
-    const messagesPerPPV = data.ppvsSent > 0 ? ((data.messagesSent || 0) / data.ppvsSent).toFixed(1) : 0;
-    
-    const elements = {
-        'analytics-revenue': { value: `$${data.totalRevenue?.toLocaleString() || '0'}`, change: changes.totalRevenue },
-        'analytics-net-revenue': { value: `$${data.netRevenue?.toLocaleString() || '0'}`, change: changes.netRevenue },
-        'analytics-subs': { value: data.totalSubs?.toLocaleString() || '0', change: changes.totalSubs },
-        'analytics-clicks': { value: data.profileClicks?.toLocaleString() || '0', change: changes.profileClicks },
-        'analytics-ppvs': { value: data.ppvsSent?.toLocaleString() || '0', change: changes.ppvsSent },
-        'analytics-ppv-unlocked': { value: data.ppvsUnlocked?.toLocaleString() || '0', change: changes.ppvsUnlocked },
-        'analytics-messages': { value: data.messagesSent?.toLocaleString() || '0', change: changes.messagesSent },
-        'analytics-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true },
-        'analytics-click-to-sub': { value: `${conversionRate}%`, change: changes.conversionRate },
-        'analytics-ppv-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
-        'analytics-revenue-per-sub': { value: data.totalSubs > 0 ? `$${(data.totalRevenue / data.totalSubs).toFixed(2)}` : '$0', change: null },
-        'analytics-messages-per-ppv': { value: messagesPerPPV, change: changes.messagesPerPPV },
-        'analytics-conversion-rate': { value: `${conversionRate}%`, change: changes.conversionRate },
-        'analytics-revenue-per-chatter': { value: data.totalRevenue > 0 ? `$${Math.round(data.totalRevenue / 4).toLocaleString()}` : '$0', change: null },
-        'analytics-ppv-success-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
-        'analytics-avg-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true }
-    };
-    
-    Object.entries(elements).forEach(([id, config]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.innerHTML = config.value + (config.change ? renderChangeIndicator(config.change, config.reversed) : '');
-        }
-    });
-    
-    // Update creator performance table
-    updateCreatorPerformanceTable(data);
-    
-    // Update top performing chatters
-    updateTopPerformingChatters(data);
-}
-
 function updateCreatorPerformanceTable(data) {
     const tableBody = document.getElementById('creator-performance-table');
     if (!tableBody) return;
