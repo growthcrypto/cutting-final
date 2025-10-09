@@ -3207,7 +3207,6 @@ function updateTeamInsight(intelligent) {
 
 // AI Analysis Time Interval Management
 let currentAIAnalysisInterval = '7d';
-let currentAnalyticsInterval = '7d';
 
 function setAIAnalysisInterval(interval) {
     if (interval === 'custom') {
