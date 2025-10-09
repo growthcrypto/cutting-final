@@ -1964,20 +1964,9 @@ function loadSectionData(sectionId) {
             break;
         case 'analytics':
             setTimeout(() => {
-                console.log('🔄 Restoring analytics interval:', currentAnalyticsInterval);
-                // Restore button states
-                document.querySelectorAll('.analytics-interval-btn').forEach(btn => {
-                    if (btn.getAttribute('data-interval') === currentAnalyticsInterval) {
-                        btn.classList.remove('bg-gray-700', 'text-gray-300');
-                        btn.classList.add('bg-blue-600', 'text-white');
-                    }
-                });
-                // Load data with current interval if not already loaded
-                if (!customDateRange) {
-                    setAnalyticsInterval(currentAnalyticsInterval);
-                } else {
-                    loadAnalyticsData();
-                }
+                console.log('🔄 Initializing analytics with interval:', currentAnalyticsInterval);
+                // Just call setAnalyticsInterval - it will handle button styling AND data loading
+                setAnalyticsInterval(currentAnalyticsInterval);
             }, 100);
             break;
         case 'ai-analysis':
