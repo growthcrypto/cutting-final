@@ -5983,7 +5983,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     const midPriceUnlockRate = pricingBuckets.mid.count > 0 ? (pricingBuckets.mid.unlocked / pricingBuckets.mid.count) * 100 : 0;
     const highPriceUnlockRate = pricingBuckets.high.count > 0 ? (pricingBuckets.high.unlocked / pricingBuckets.high.count) * 100 : 0;
     
-    res.json({
+    // Build response with both nested AND flat structure for compatibility
+    const response = {
+      // Nested structure
       chatter: {
         name: chatterName,
         revenue: chatterRevenue,
@@ -6019,8 +6021,21 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
         low: { unlockRate: lowPriceUnlockRate, count: pricingBuckets.low.count },
         mid: { unlockRate: midPriceUnlockRate, count: pricingBuckets.mid.count },
         high: { unlockRate: highPriceUnlockRate, count: pricingBuckets.high.count }
-      }
-    });
+      },
+      
+      // Flat properties for frontend compatibility
+      overallScore: messageAnalysis?.overallScore || null,
+      grammarScore: messageAnalysis?.grammarScore || null,
+      guidelinesScore: messageAnalysis?.guidelinesScore || null,
+      revenue: chatterRevenue,
+      ppvsSent: chatterPPVsSent,
+      ppvsUnlocked: chatterPPVsUnlocked,
+      messagesSent: chatterReports.reduce((sum, r) => sum + (r.messagesSent || 0), 0),
+      avgResponseTime: chatterReports.length > 0 ? chatterReports.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0) / chatterReports.length : 0,
+      fansChatted: chatterFansChatted
+    };
+    
+    res.json(response);
   } catch (error) {
     console.error('Error in chatter deep analysis:', error);
     res.status(500).json({ error: error.message });
