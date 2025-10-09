@@ -2366,11 +2366,11 @@ function updateIntelligentMetrics(analytics, intelligent) {
         // Conversion intelligence
         clickToSubRate: `${intelligent.clickToSubRate}%`,
         ppvUnlockRate: `${intelligent.ppvUnlockRate}%`,
-        revenuePerSub: `$${intelligent.revenuePerSub}`,
+        revenuePerSub: `$${intelligent.revenuePerSub.toFixed(2)}`,
         
         // Efficiency metrics - NEW
         avgPPVPrice: `$${analytics.avgPPVPrice || 0}`,
-        spenderConvRate: `${analytics.spenderConversionRate || 0}%`,
+        clickThroughRate: analytics.linkClicks > 0 ? `${((analytics.newSubs / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
         messagesPerPPV: intelligent.messagesPerPPV,
         
         // Team quality - NEW

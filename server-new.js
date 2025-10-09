@@ -740,8 +740,8 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Use response time from either source, preferring daily reports if available
     const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : chatterPerformanceResponseTime;
 
-    // Get real data from OF Account data
-    const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
+    // Get recurring revenue from OF Account data, but use totalRevenue for netRevenue (from daily logs)
+    const netRevenue = totalRevenue; // NOW: Use daily logs as source of truth
     const recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
     
     // Total subs should be averaged (it's a snapshot, not cumulative)
@@ -773,8 +773,11 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     }
     
     const linkTrackingData = await LinkTrackingData.find(linkTrackingQuery);
+    console.log('🔗 Link tracking query:', linkTrackingQuery);
+    console.log('🔗 Link tracking data found:', linkTrackingData.length, 'records');
     const totalLinkClicks = linkTrackingData.reduce((sum, lt) => sum + (lt.onlyFansClicks || 0), 0);
     const totalLinkViews = linkTrackingData.reduce((sum, lt) => sum + (lt.landingPageViews || 0), 0);
+    console.log('🔗 Total link clicks:', totalLinkClicks, 'Total views:', totalLinkViews);
     
     // Calculate combined fans chatted (needed for spender conversion)
     const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
@@ -815,6 +818,16 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const avgGuidelinesScore = guidelineScores.length > 0
       ? Math.round(guidelineScores.reduce((s, v) => s + v, 0) / guidelineScores.length)
       : null;
+    
+    console.log('📊 Analysis scores:', {
+      latestAnalysesCount: latestAnalyses.length,
+      avgOverallScore,
+      avgGrammarScore,
+      avgGuidelinesScore,
+      overallScoresFound: overallScores.length,
+      grammarScoresFound: grammarScores.length,
+      guidelineScoresFound: guidelineScores.length
+    });
     
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
