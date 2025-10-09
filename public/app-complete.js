@@ -2568,9 +2568,21 @@ function applyCustomDateFilter() {
 
 function setQuickFilter(type) {
     const today = new Date();
-    let startDate, endDate;
+    let startDate, endDate = new Date();
     
-    if (type === 'week') {
+    if (type === '24h') {
+        // Last 24 hours
+        startDate = new Date(today);
+        startDate.setHours(today.getHours() - 24);
+    } else if (type === '7d') {
+        // Last 7 days
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7);
+    } else if (type === '30d') {
+        // Last 30 days
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+    } else if (type === 'week') {
         // Get start of this week (Sunday)
         const dayOfWeek = today.getDay();
         startDate = new Date(today);

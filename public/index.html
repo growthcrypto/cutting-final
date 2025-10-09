@@ -554,11 +554,14 @@
                             
                             <!-- Quick Filters -->
                             <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
-                                <button onclick="setQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-blue-600/50 text-gray-300 hover:text-white transition-all">
-                                    This Week
+                                <button onclick="setQuickFilter('24h')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-green-600/50 text-gray-300 hover:text-white transition-all">
+                                    24 Hours
                                 </button>
-                                <button onclick="setQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
-                                    This Month
+                                <button onclick="setQuickFilter('7d')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-blue-600/50 text-gray-300 hover:text-white transition-all">
+                                    7 Days
+                                </button>
+                                <button onclick="setQuickFilter('30d')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                                    30 Days
                                 </button>
                             </div>
                         </div>
@@ -1194,6 +1197,7 @@
                         <!-- Analytics Time Controls -->
                         <div class="flex items-center space-x-2 mt-4 lg:mt-0">
                             <span class="text-sm text-gray-400 mr-3">Data Period:</span>
+                            <button onclick="setAnalyticsInterval('24h')" class="analytics-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24 Hours</button>
                             <button onclick="setAnalyticsInterval('7d')" class="analytics-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
                             <button onclick="setAnalyticsInterval('30d')" class="analytics-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
                             <button onclick="setAnalyticsInterval('custom')" class="analytics-time-btn px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
@@ -1502,6 +1506,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760260000000"></script>
+        <script src="app-complete.js?v=1760265000000"></script>
 </body>
 </html>
