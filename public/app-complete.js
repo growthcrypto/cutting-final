@@ -3052,175 +3052,388 @@ function generateAnalysisFromRealData(analyticsData, interval) {
     };
 }
 
+// DEEP INSIGHTS GENERATION - The Brain of the System
+function generateDeepInsights(data) {
+    const insights = {
+        critical: [],    // 🔴 Critical problems
+        opportunities: [], // 🟡 Revenue opportunities
+        strengths: [],   // 🟢 What's working
+        predictions: []  // 💎 Predictive insights
+    };
+    
+    // Calculate key ratios
+    const revenuePerSub = data.totalSubs > 0 ? data.netRevenue / data.totalSubs : 0;
+    const unlockRate = data.ppvsSent > 0 ? (data.ppvsUnlocked / data.ppvsSent) * 100 : 0;
+    const spenderRate = data.linkClicks > 0 ? (data.uniqueSpenders / data.linkClicks) * 100 : 0;
+    const clickToSubRate = data.linkClicks > 0 ? (data.newSubs / data.linkClicks) * 100 : 0;
+    const vipDependency = data.vipRevenuePercent || 0;
+    
+    // 🔴 CRITICAL PROBLEMS
+    if (vipDependency > 70) {
+        const risk = ((vipDependency - 70) / 30 * 100).toFixed(0);
+        insights.critical.push({
+            title: 'SEVERE Revenue Concentration Risk',
+            description: `${vipDependency.toFixed(1)}% of revenue from VIPs - if top 3 VIPs churn, you lose ${(vipDependency * 0.6).toFixed(0)}% of income`,
+            impact: '$' + (data.netRevenue * (vipDependency * 0.006)).toFixed(0) + ' at risk',
+            severity: 'CRITICAL',
+            action: 'Diversify: Focus on converting more regular fans to consistent spenders'
+        });
+    }
+    
+    if (unlockRate < 35 && data.ppvsSent > 20) {
+        const potential = ((45 - unlockRate) / 100 * data.ppvsSent * (data.avgPPVPrice || 10)).toFixed(0);
+        insights.critical.push({
+            title: 'PPV Unlock Rate Bottleneck',
+            description: `Only ${unlockRate.toFixed(1)}% unlock rate - chatters sending low-value PPVs or poor timing`,
+            impact: '+$' + potential + '/week potential',
+            severity: 'HIGH',
+            action: 'Audit PPV quality: Check prices, preview appeal, and send timing'
+        });
+    }
+    
+    if (data.avgResponseTime > 5) {
+        insights.critical.push({
+            title: 'Response Time Killing Conversions',
+            description: `${data.avgResponseTime}min average - fans lose interest after 3min`,
+            impact: 'Losing 15-25% potential sales',
+            severity: 'HIGH',
+            action: 'Implement response templates and set 2min response time target'
+        });
+    }
+    
+    if (spenderRate < 2 && data.linkClicks > 50) {
+        const wasted = (data.linkClicks * (1 - spenderRate/100)).toFixed(0);
+        insights.critical.push({
+            title: 'Traffic Conversion Crisis',
+            description: `${spenderRate.toFixed(1)}% spender rate - ${wasted} clicks produced no revenue`,
+            impact: '${((3 - spenderRate) / 100 * data.linkClicks * 50).toFixed(0)} weekly revenue missed',
+            severity: 'CRITICAL',
+            action: 'Fix: Landing page → First message flow is broken. Review welcome scripts'
+        });
+    }
+    
+    // 🟡 OPPORTUNITIES (Hidden money on the table)
+    if (data.avgPPVPrice && data.avgPPVPrice < 15 && data.ppvsUnlocked > 10) {
+        const gain = ((20 - data.avgPPVPrice) * data.ppvsUnlocked).toFixed(0);
+        insights.opportunities.push({
+            title: 'PPV Pricing Leaving Money on Table',
+            description: `Avg PPV price $${data.avgPPVPrice} - premium content sells for $20-30`,
+            potential: '+$' + gain + '/week',
+            confidence: '85%',
+            action: 'Test $20-25 PPVs with exclusive content angles'
+        });
+    }
+    
+    if (clickToSubRate < 5 && data.linkClicks > 100) {
+        const potentialSubs = (data.linkClicks * 0.05 - data.newSubs).toFixed(0);
+        insights.opportunities.push({
+            title: 'Link Click → Subscriber Conversion Gap',
+            description: `${clickToSubRate.toFixed(1)}% conversion - ${potentialSubs} more subs available from existing traffic`,
+            potential: '+$' + (potentialSubs * revenuePerSub).toFixed(0) + '/week',
+            confidence: '90%',
+            action: 'Optimize: Free trial offers, profile appeal, subscription price testing'
+        });
+    }
+    
+    if (data.renewRate && data.renewRate < 50 && data.activeFans > 50) {
+        const churning = (data.activeFans * (1 - data.renewRate/100)).toFixed(0);
+        insights.opportunities.push({
+            title: 'Retention Leakage',
+            description: `${data.renewRate.toFixed(1)}% renew rate - ${churning} fans will churn next month`,
+            potential: '+$' + (churning * 10).toFixed(0) + '/month saved',
+            confidence: '95%',
+            action: 'Launch re-engagement campaign 3 days before renewal dates'
+        });
+    }
+    
+    // 🟢 STRENGTHS (What to double down on)
+    if (unlockRate >= 40) {
+        insights.strengths.push({
+            title: 'PPV Conversion Excellence',
+            description: `${unlockRate.toFixed(1)}% unlock rate - your chatters know how to sell`,
+            impact: 'Keep this quality as you scale',
+            action: 'Document what works: PPV types, timing, messaging style'
+        });
+    }
+    
+    if (spenderRate >= 3) {
+        insights.strengths.push({
+            title: 'Traffic Quality is Premium',
+            description: `${spenderRate.toFixed(1)}% of clicks become buyers - your sources are gold`,
+            impact: 'Traffic → Revenue machine working',
+            action: 'Double marketing budget on current best-performing sources'
+        });
+    }
+    
+    if (data.vipRevenuePercent > 0 && data.vipRevenuePercent < 60 && data.avgVIPSpend > 200) {
+        insights.strengths.push({
+            title: 'Balanced Revenue + Strong VIPs',
+            description: `${data.vipRevenuePercent.toFixed(1)}% from VIPs with $${data.avgVIPSpend.toFixed(0)} avg spend - healthy mix`,
+            impact: 'Low risk, high stability',
+            action: 'Maintain: Keep cultivating VIPs while growing regular fan base'
+        });
+    }
+    
+    // 💎 PREDICTIVE INSIGHTS
+    if (data.ppvsUnlocked > 0 && unlockRate < 45) {
+        const currentRevenue = data.ppvsUnlocked * (data.avgPPVPrice || 10);
+        const targetRevenue = data.ppvsSent * 0.45 * (data.avgPPVPrice || 10);
+        const gain = (targetRevenue - currentRevenue).toFixed(0);
+        insights.predictions.push({
+            title: 'Unlock Rate Optimization',
+            current: `${unlockRate.toFixed(1)}% → $${currentRevenue.toFixed(0)}/week`,
+            target: `45% → $${targetRevenue.toFixed(0)}/week`,
+            gain: '+$' + gain + '/week',
+            timeframe: '2-3 weeks',
+            action: 'Improve PPV preview quality + timing optimization'
+        });
+    }
+    
+    if (data.linkClicks > 100 && spenderRate < 4) {
+        const currentSpenders = data.uniqueSpenders;
+        const targetSpenders = data.linkClicks * 0.04;
+        const gain = ((targetSpenders - currentSpenders) * (data.avgPPVPrice || 15)).toFixed(0);
+        insights.predictions.push({
+            title: 'Traffic Conversion Upside',
+            current: `${spenderRate.toFixed(1)}% spender rate → ${currentSpenders} buyers`,
+            target: `4% → ${targetSpenders.toFixed(0)} buyers`,
+            gain: '+$' + gain + '/week',
+            timeframe: '1-2 weeks',
+            action: 'Fix first message + faster response times'
+        });
+    }
+    
+    return insights;
+}
+
+// Render Agency Insights with BEAUTIFUL UI
+function renderAgencyInsights(insights) {
+    const criticalHTML = insights.critical.map(c => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-red-500/40 bg-gradient-to-br from-red-900/20 to-red-800/10 hover:border-red-500/60 transition-all">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">${c.title}</h4>
+                        <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">${c.severity}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Impact</div>
+                    <div class="text-lg font-bold text-red-400">${c.impact}</div>
+                </div>
+            </div>
+            <p class="text-gray-300 mb-4 text-base leading-relaxed">${c.description}</p>
+            <div class="pt-4 border-t border-red-500/20">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-lightbulb text-yellow-400 mt-1"></i>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">ACTION REQUIRED</div>
+                        <div class="text-sm font-medium text-white">${c.action}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const opportunitiesHTML = insights.opportunities.map(o => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-900/20 to-yellow-800/10 hover:border-yellow-500/60 transition-all">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                        <i class="fas fa-treasure-chest text-yellow-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">${o.title}</h4>
+                        <span class="px-3 py-1 bg-yellow-500/80 text-gray-900 text-xs font-bold rounded-full">${o.confidence} CONFIDENCE</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Potential</div>
+                    <div class="text-2xl font-bold text-green-400">${o.potential}</div>
+                </div>
+            </div>
+            <p class="text-gray-300 mb-4 text-base leading-relaxed">${o.description}</p>
+            <div class="pt-4 border-t border-yellow-500/20">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-rocket text-green-400 mt-1"></i>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">HOW TO CAPTURE</div>
+                        <div class="text-sm font-medium text-white">${o.action}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const strengthsHTML = insights.strengths.map(s => `
+        <div class="glass-card rounded-xl p-5 border border-green-500/30 bg-gradient-to-br from-green-900/10 to-green-800/5">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-bold text-white mb-1">${s.title}</h5>
+                    <p class="text-sm text-gray-300 mb-2">${s.description}</p>
+                    <div class="flex items-center gap-4 text-xs">
+                        <span class="text-green-400">✓ ${s.impact}</span>
+                        <span class="text-gray-500">→ ${s.action}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const predictionsHTML = insights.predictions.map(p => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-pink-900/10">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-crystal-ball text-purple-400 text-xl"></i>
+                </div>
+                <h4 class="text-xl font-bold text-white">${p.title}</h4>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="p-3 bg-gray-800/50 rounded-lg">
+                    <div class="text-xs text-gray-500 mb-1">CURRENT STATE</div>
+                    <div class="text-sm font-medium text-gray-300">${p.current}</div>
+                </div>
+                <div class="p-3 bg-purple-900/30 rounded-lg border border-purple-500/30">
+                    <div class="text-xs text-purple-400 mb-1">TARGET STATE</div>
+                    <div class="text-sm font-medium text-white">${p.target}</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-purple-500/20">
+                <div>
+                    <div class="text-xs text-gray-500">PROJECTED GAIN</div>
+                    <div class="text-2xl font-bold text-green-400">${p.gain}</div>
+                    <div class="text-xs text-gray-400">in ${p.timeframe}</div>
+                </div>
+                <div class="text-right flex-1 ml-4">
+                    <div class="text-xs text-gray-500 mb-1">ACTION PLAN</div>
+                    <div class="text-sm text-white">${p.action}</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    return `
+        <div class="mb-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-2xl font-bold text-white">Analysis Complete</h3>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg">${insights.critical.length} Critical</span>
+                    <span class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg">${insights.opportunities.length} Opportunities</span>
+                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg">${insights.strengths.length} Strengths</span>
+                </div>
+            </div>
+        </div>
+        
+        ${insights.critical.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">Critical Issues</span>
+                </h3>
+                <div class="space-y-4">
+                    ${criticalHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.opportunities.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-gem text-yellow-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-yellow-400 to-green-500 bg-clip-text text-transparent">Revenue Opportunities</span>
+                </h3>
+                <div class="space-y-4">
+                    ${opportunitiesHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.predictions.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-purple-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Predictive Models</span>
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    ${predictionsHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.strengths.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-trophy text-green-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">Core Strengths</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${strengthsHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.critical.length === 0 && insights.opportunities.length === 0 ? `
+            <div class="text-center py-16 glass-card rounded-2xl border-2 border-green-500/30">
+                <i class="fas fa-check-circle text-6xl text-green-400 mb-4"></i>
+                <h3 class="text-3xl font-bold text-white mb-3">Agency Running Optimally</h3>
+                <p class="text-gray-400 text-lg">No critical issues or major opportunities detected. Keep executing!</p>
+            </div>
+        ` : ''}
+    `;
+}
+
 // Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
-    const resultsContainer = document.getElementById('agencyAnalysisResults');
+    const resultsContainer = document.getElementById('aiAnalysisResults');
     if (!resultsContainer) return;
     
-    // Show loading state
+    // Show loading state with beautiful animation
     resultsContainer.innerHTML = `
-        <div class="flex items-center justify-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
-            <span class="ml-4 text-lg text-gray-300">Analyzing agency performance...</span>
+        <div class="flex flex-col items-center justify-center py-20">
+            <div class="relative w-32 h-32 mb-8">
+                <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
+                <div class="absolute inset-4 rounded-full border-4 border-transparent border-t-pink-500 animate-spin" style="animation-duration: 1.5s;"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i class="fas fa-brain text-3xl text-purple-400"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Deep Analysis in Progress</h3>
+            <p class="text-gray-400">Processing metrics, identifying patterns, calculating opportunities...</p>
         </div>
     `;
     
     try {
-        // Call real AI analysis endpoint
-        const authToken = localStorage.getItem('authToken');
-        if (!authToken) {
-            throw new Error('Not authenticated');
-        }
-
-        // Prepare request body for AI analysis (use shared week/month filter)
-        const requestBody = {
-            analysisType: 'agency',
-            interval: '7d' // Default fallback
-        };
-
-        // Use shared week/month filter if available
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            requestBody.startDate = currentWeekFilter.start;
-            requestBody.endDate = currentWeekFilter.end;
-            console.log('Using week filter for AI analysis:', currentWeekFilter);
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            requestBody.startDate = currentMonthFilter.firstDay;
-            requestBody.endDate = currentMonthFilter.lastDay;
-            console.log('Using month filter for AI analysis:', currentMonthFilter);
-        } else if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
-            requestBody.startDate = window.customDateRange.start;
-            requestBody.endDate = window.customDateRange.end;
-        } else {
-            requestBody.interval = currentAIAnalysisInterval || '7d';
-        }
-
-        console.log('Sending AI analysis request:', requestBody);
+        // Get dashboard data for analysis
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange?.start || ''}&customEnd=${customDateRange?.end || ''}&_t=${Date.now()}`;
         
-        const response = await fetch(`/api/ai/analysis?_t=${Date.now()}` , {
-            method: 'POST',
+        const response = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+                'Authorization': 'Bearer ' + authToken,
+                'Cache-Control': 'no-cache'
+            }
         });
 
         console.log('AI analysis response status:', response.status);
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI analysis error response:', errorText);
-            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
+            throw new Error('Failed to fetch data');
         }
 
-        const analysis = await response.json();
-
-        resultsContainer.innerHTML = `
-            <div class="space-y-8">
-                <!-- Overall Performance -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center p-6 bg-green-900/20 rounded-xl border border-green-500/30">
-                        <div class="text-4xl font-bold text-green-400 mb-2">${analysis.overallScore}</div>
-                        <div class="text-lg text-gray-300 mb-1">Overall Score</div>
-                        <div class="text-sm text-green-400">Above Average (75+)</div>
-                    </div>
-                    <div class="text-center p-6 bg-blue-900/20 rounded-xl border border-blue-500/30">
-                        <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.conversionRate}%</div>
-                        <div class="text-lg text-gray-300 mb-1">Conversion Rate</div>
-                        <div class="text-sm text-blue-400">Above Industry Avg</div>
-                    </div>
-                    <div class="text-center p-6 bg-purple-900/20 rounded-xl border border-purple-500/30">
-                        <div class="text-3xl font-bold text-purple-400 mb-2">$${(analysis.totalRevenue/analysis.totalSubs).toFixed(2)}</div>
-                        <div class="text-lg text-gray-300 mb-1">Revenue per Sub</div>
-                        <div class="text-sm text-yellow-400">Below Target ($12.50)</div>
-                    </div>
-                </div>
-
-                <!-- Performance Insights -->
-                <div class="bg-gray-800/30 rounded-xl p-8 border border-gray-600/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
-                        <i class="fas fa-chart-line mr-3 text-xl"></i>Performance Insights
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${analysis.insights.map(insight => 
-                            `<div class="text-base text-gray-300 flex items-start p-3 bg-gray-700/30 rounded-lg">
-                                <i class="fas fa-check-circle text-green-400 mr-3 mt-1 text-lg"></i>
-                                <span>${insight}</span>
-                            </div>`
-                        ).join('')}
-                    </div>
-                </div>
-
-                <!-- Areas for Improvement -->
-                <div class="bg-red-900/10 rounded-xl p-8 border border-red-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-red-400 flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>Areas for Improvement
-                    </h4>
-                    <div class="space-y-4">
-                        ${analysis.weakPoints.map(point => 
-                            `<div class="text-base text-gray-300 flex items-start p-4 bg-red-900/20 rounded-lg">
-                                <i class="fas fa-arrow-down text-red-400 mr-3 mt-1 text-lg"></i>
-                                <span>${point}</span>
-                            </div>`
-                        ).join('')}
-                    </div>
-                </div>
-
-                <!-- Growth Opportunities & ROI -->
-                <div class="bg-green-900/10 rounded-xl p-8 border border-green-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-green-400 flex items-center">
-                        <i class="fas fa-rocket mr-3 text-xl"></i>Growth Opportunities & ROI
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h5 class="text-xl font-medium text-yellow-400 mb-4">Opportunities:</h5>
-                            <div class="space-y-3">
-                                ${analysis.opportunities.map(opp => 
-                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-yellow-900/20 rounded-lg">
-                                        <i class="fas fa-lightbulb text-yellow-400 mr-3 mt-1 text-lg"></i>
-                                        <span>${opp}</span>
-                                    </div>`
-                                ).join('')}
-                            </div>
-                        </div>
-                        <div>
-                            <h5 class="text-xl font-medium text-green-400 mb-4">ROI Calculations:</h5>
-                            <div class="space-y-3">
-                                ${analysis.roiCalculations.map(calc => 
-                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
-                                        <i class="fas fa-dollar-sign text-green-400 mr-3 mt-1 text-lg"></i>
-                                        <span>${calc}</span>
-                                    </div>`
-                                ).join('')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- Recommended Actions -->
-                <div class="bg-blue-900/10 rounded-xl p-8 border border-blue-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
-                        <i class="fas fa-tasks mr-3 text-xl"></i>Recommended Actions (Priority Order)
-                    </h4>
-                    <div class="space-y-4">
-                        ${analysis.recommendations.map((rec, index) => {
-                            const priority = index === 0 ? 'HIGH' : index === 1 ? 'MED' : 'LOW';
-                            const bgColor = index === 0 ? 'red' : index === 1 ? 'yellow' : 'green';
-                            const textColor = index === 1 ? 'black' : 'white';
-                            return `
-                            <div class="flex items-start p-6 bg-${bgColor}-900/20 rounded-xl border border-${bgColor}-500/30">
-                                <span class="bg-${bgColor}-500 text-${textColor} text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">${priority}</span>
-                                <div>
-                                    <span class="text-lg font-medium text-white">${rec}</span>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
+        const data = await response.json();
+        console.log('📊 Data for AI analysis:', data);
+        
+        // DEEP ANALYSIS LOGIC - Calculate insights
+        const insights = generateDeepInsights(data);
+        
+        // Render STUNNING results
+        resultsContainer.innerHTML = renderAgencyInsights(insights);
         
     } catch (error) {
         console.error('Agency analysis error:', error);
@@ -5831,24 +6044,47 @@ function createAIAnalysisSection() {
 
 function createAIAnalysisSection() {
     return `
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div>
-                <h2 class="text-3xl font-bold mb-2">AI Analysis Center</h2>
-                <p class="text-gray-400">Deep performance insights with actionable recommendations</p>
-            </div>
-            
-            <!-- AI Analysis Time Controls -->
-            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                <span class="text-sm text-gray-400 mr-3">Analysis Period:</span>
-                <button onclick="setAIAnalysisInterval('7d')" class="ai-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
-                <button onclick="setAIAnalysisInterval('30d')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
-                <button onclick="setAIAnalysisInterval('custom')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
+        <div class="mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                        <i class="fas fa-brain mr-3"></i>AI Intelligence Hub
+                    </h2>
+                    <p class="text-gray-400 text-lg">Deep insights only AI can see</p>
+                </div>
+                <button onclick="runAgencyAnalysis()" class="premium-button text-white font-bold py-4 px-8 rounded-xl text-lg hover:scale-105 transition-transform shadow-2xl">
+                    <i class="fas fa-bolt mr-2"></i>Run Deep Analysis
                 </button>
             </div>
         </div>
 
-        <!-- Analysis Type Selection -->
+        <!-- AI Analysis Results Container -->
+        <div id="aiAnalysisResults" class="space-y-6">
+            <!-- Results will be dynamically inserted here -->
+            <div class="text-center py-20">
+                <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-3xl flex items-center justify-center border-2 border-purple-500/30">
+                    <i class="fas fa-brain text-5xl text-purple-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Ready for Deep Analysis</h3>
+                <p class="text-gray-400 mb-6">Click "Run Deep Analysis" to uncover hidden insights, revenue opportunities, and critical weaknesses</p>
+                <div class="flex items-center justify-center gap-8 text-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="text-gray-300">Revenue Optimization</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="text-gray-300">Performance Gaps</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        <span class="text-gray-300">Growth Opportunities</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatter Analysis Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showAgencyAnalysis()">
                 <div class="flex items-center mb-6">
