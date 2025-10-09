@@ -7351,7 +7351,7 @@ function addPPVSaleField() {
                 <label class="block text-xs font-semibold mb-1.5 text-purple-300">
                     <i class="fas fa-dollar-sign mr-1"></i>Amount
                 </label>
-                <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
+                <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00"
                        class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
             </div>
             
@@ -7403,7 +7403,7 @@ function addTipField() {
                 <label class="block text-xs font-semibold mb-1.5 text-green-300">
                     <i class="fas fa-dollar-sign mr-1"></i>Amount
                 </label>
-                <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00" required
+                <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00"
                        class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
             </div>
             
