@@ -2370,7 +2370,7 @@ function updateIntelligentMetrics(analytics, intelligent) {
         
         // Efficiency metrics - NEW
         avgPPVPrice: `$${analytics.avgPPVPrice || 0}`,
-        clickThroughRate: analytics.linkClicks > 0 ? `${((analytics.newSubs / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
+        clicksToSpenders: analytics.linkClicks > 0 ? `${((analytics.uniqueSpenders / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
         messagesPerPPV: intelligent.messagesPerPPV,
         
         // Team quality - NEW
@@ -4515,106 +4515,119 @@ function loadActionOpportunities(analytics, intelligent) {
     
     // Generate REAL actionable opportunities with calculations
     const opportunities = [];
+    const avgPrice = analytics.avgPPVPrice || 0;
     
     // 1. IMPROVE PPV UNLOCK RATE
     if (analytics.ppvsSent > 0 && intelligent.ppvUnlockRate < 40) {
         const currentUnlocked = analytics.ppvsUnlocked;
         const targetUnlocked = Math.ceil(analytics.ppvsSent * 0.40);
         const additionalUnlocks = targetUnlocked - currentUnlocked;
-        const revenueGain = additionalUnlocks * (analytics.avgPPVPrice || 20);
+        const revenueGain = additionalUnlocks * avgPrice;
         
-        opportunities.push({
-            title: 'Improve PPV Unlock Rate',
-            urgency: 'high',
-            impact: `+$${revenueGain.toFixed(0)}/period`,
-            description: `Increase unlock rate from ${intelligent.ppvUnlockRate.toFixed(1)}% to 40% = ${additionalUnlocks} more sales`,
-            action: 'Train chatters on message quality and timing',
-            calculation: `${targetUnlocked} unlocks × $${analytics.avgPPVPrice || 20} - current revenue`
-        });
-    }
-    
-    // 2. INCREASE PPV SEND RATE
-    if (analytics.ppvsSent > 0 && analytics.fansChatted > 0) {
-        const ppvSendRate = (analytics.ppvsSent / analytics.fansChatted) * 100;
-        if (ppvSendRate < 30) {
-            const targetPPVs = Math.ceil(analytics.fansChatted * 0.35);
-            const additionalPPVs = targetPPVs - analytics.ppvsSent;
-            const additionalUnlocks = Math.ceil(additionalPPVs * (intelligent.ppvUnlockRate / 100));
-            const revenueGain = additionalUnlocks * (analytics.avgPPVPrice || 20);
-            
+        if (revenueGain > 50) { // Only show if meaningful
             opportunities.push({
-                title: 'Increase PPV Send Frequency',
-                urgency: 'medium',
-                impact: `+$${revenueGain.toFixed(0)}/period`,
-                description: `Send ${additionalPPVs} more PPVs to hit 35% send rate (currently ${ppvSendRate.toFixed(1)}%)`,
-                action: 'Send PPVs to more qualified fans',
-                calculation: `${additionalPPVs} PPVs × ${intelligent.ppvUnlockRate.toFixed(0)}% unlock × $${analytics.avgPPVPrice || 20}`
+                title: 'Improve PPV Unlock Rate',
+                urgency: 'high',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Get ${additionalUnlocks} more fans to unlock PPVs (raise rate from ${intelligent.ppvUnlockRate.toFixed(1)}% to 40%)`,
+                action: 'Train chatters on message quality and timing',
+                calculation: `${additionalUnlocks} more unlocks × $${avgPrice.toFixed(0)} avg PPV`
             });
         }
     }
     
-    // 3. IMPROVE SPENDER CONVERSION
+    // 2. IMPROVE BUYER CONVERSION
     if (analytics.fansChatted > 0 && analytics.uniqueSpenders != null) {
         const convRate = analytics.spenderConversionRate;
         if (convRate < 8) {
             const targetSpenders = Math.ceil(analytics.fansChatted * 0.10);
             const additionalSpenders = targetSpenders - analytics.uniqueSpenders;
-            const revenueGain = additionalSpenders * (analytics.avgPPVPrice || 20);
+            const revenuePerBuyer = analytics.uniqueSpenders > 0 ? analytics.totalRevenue / analytics.uniqueSpenders : avgPrice;
+            const revenueGain = additionalSpenders * revenuePerBuyer;
             
-            opportunities.push({
-                title: 'Boost Spender Conversion Rate',
-                urgency: 'high',
-                impact: `+$${revenueGain.toFixed(0)}/period`,
-                description: `Convert ${additionalSpenders} more fans from chatters to buyers (target: 10%)`,
-                action: 'Focus on high-intent fans and improve qualification',
-                calculation: `${additionalSpenders} new spenders × $${analytics.avgPPVPrice || 20} avg purchase`
-            });
+            if (revenueGain > 50) {
+                opportunities.push({
+                    title: 'Convert More Fans to Buyers',
+                    urgency: 'high',
+                    impact: `+$${revenueGain.toFixed(0)}/week`,
+                    description: `Turn ${additionalSpenders} more chatted fans into paying customers (current: ${analytics.uniqueSpenders} buyers from ${analytics.fansChatted} fans)`,
+                    action: 'Focus on fans showing buying signals',
+                    calculation: `${additionalSpenders} new buyers × $${revenuePerBuyer.toFixed(0)} avg per buyer`
+                });
+            }
         }
     }
     
-    // 4. OPTIMIZE RESPONSE TIME
+    // 3. OPTIMIZE RESPONSE TIME
     if (analytics.avgResponseTime > 5 && analytics.totalRevenue > 0) {
         const revenueLoss = analytics.totalRevenue * 0.12; // 12% loss from slow responses
         const revenueGain = revenueLoss * 0.8; // 80% recoverable
         
-        opportunities.push({
-            title: 'Reduce Response Time',
-            urgency: 'high',
-            impact: `+$${revenueGain.toFixed(0)}/period`,
-            description: `Reduce avg response time from ${analytics.avgResponseTime}min to <5min`,
-            action: 'Set response time alerts and team targets',
-            calculation: `Recover 80% of ${revenueLoss.toFixed(0)} estimated loss from slow responses`
-        });
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Speed Up Response Times',
+                urgency: 'high',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Reduce avg response time from ${analytics.avgResponseTime}min to under 5min (recover lost conversions)`,
+                action: 'Set response time alerts and team targets',
+                calculation: `Recover 80% of estimated $${revenueLoss.toFixed(0)} loss from delays`
+            });
+        }
     }
     
-    // 5. INCREASE AVG PPV PRICE
-    if (analytics.avgPPVPrice > 0 && analytics.avgPPVPrice < 20 && analytics.ppvsUnlocked > 10) {
+    // 4. INCREASE AVG PPV PRICE
+    if (avgPrice > 0 && avgPrice < 25 && analytics.ppvsUnlocked > 10) {
         const priceIncrease = 5;
         const revenueGain = analytics.ppvsUnlocked * priceIncrease;
         
-        opportunities.push({
-            title: 'Test Higher PPV Pricing',
-            urgency: 'medium',
-            impact: `+$${revenueGain.toFixed(0)}/period`,
-            description: `Increase avg PPV from $${analytics.avgPPVPrice} to $${analytics.avgPPVPrice + priceIncrease}`,
-            action: 'Test $5 price increase with high-engagement fans first',
-            calculation: `${analytics.ppvsUnlocked} sales × $${priceIncrease} increase`
-        });
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Raise PPV Prices',
+                urgency: 'medium',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Test increasing avg PPV price from $${avgPrice.toFixed(0)} to $${(avgPrice + priceIncrease).toFixed(0)}`,
+                action: 'Start with high-engagement fans, monitor unlock rate',
+                calculation: `${analytics.ppvsUnlocked} unlocked PPVs × $${priceIncrease} increase`
+            });
+        }
     }
     
-    // 6. IMPROVE REVENUE PER SUB
+    // 5. IMPROVE REVENUE PER SUB
     if (analytics.totalSubs > 0 && intelligent.revenuePerSub < 12) {
         const target = 15;
         const revenueGain = analytics.totalSubs * (target - intelligent.revenuePerSub);
         
-        opportunities.push({
-            title: 'Increase Revenue per Subscriber',
-            urgency: 'medium',
-            impact: `+$${revenueGain.toFixed(0)}/period`,
-            description: `Raise revenue/sub from $${intelligent.revenuePerSub.toFixed(2)} to $${target}`,
-            action: 'Increase PPV sends and improve content quality',
-            calculation: `${analytics.totalSubs} subs × $${(target - intelligent.revenuePerSub).toFixed(2)} increase`
-        });
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Increase Revenue per Subscriber',
+                urgency: 'medium',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Raise revenue per sub from $${intelligent.revenuePerSub.toFixed(2)} to $${target} target`,
+                action: 'Send more PPVs and improve upselling',
+                calculation: `${analytics.totalSubs} subs × $${(target - intelligent.revenuePerSub).toFixed(2)} gap`
+            });
+        }
+    }
+    
+    // 6. IMPROVE LINK-TO-SUB CONVERSION
+    if (analytics.linkClicks > 50 && analytics.newSubs > 0) {
+        const linkToSubRate = (analytics.newSubs / analytics.linkClicks) * 100;
+        if (linkToSubRate < 4) {
+            const targetSubs = Math.ceil(analytics.linkClicks * 0.05);
+            const additionalSubs = targetSubs - analytics.newSubs;
+            const revenueGain = additionalSubs * intelligent.revenuePerSub;
+            
+            if (revenueGain > 50) {
+                opportunities.push({
+                    title: 'Improve Link Conversion',
+                    urgency: 'medium',
+                    impact: `+$${revenueGain.toFixed(0)}/week`,
+                    description: `Get ${additionalSubs} more subs from your ${analytics.linkClicks} link clicks (raise rate from ${linkToSubRate.toFixed(1)}% to 5%)`,
+                    action: 'Optimize OnlyFans profile and landing pages',
+                    calculation: `${additionalSubs} more subs × $${intelligent.revenuePerSub.toFixed(0)} revenue/sub`
+                });
+            }
+        }
     }
     
     // Sort by impact (highest revenue first)
@@ -4649,8 +4662,8 @@ function loadActionOpportunities(analytics, intelligent) {
                         <span class="px-2 py-1 rounded-lg text-xs font-bold ${urgencyClass} ml-2">${opp.urgency.toUpperCase()}</span>
                     </div>
                     <div class="mb-3">
-                        <div class="text-2xl font-bold text-green-400 mb-1">${opp.impact}</div>
-                        <p class="text-gray-300 text-xs leading-relaxed">${opp.description}</p>
+                        <div class="text-lg font-bold text-green-400 mb-2">${opp.impact}</div>
+                        <p class="text-gray-300 text-sm leading-relaxed">${opp.description}</p>
                     </div>
                     <div class="mb-3 p-2 bg-gray-800/50 rounded-lg">
                         <div class="text-xs text-gray-400 mb-1">Calculation:</div>
