@@ -2818,11 +2818,14 @@ function setTeamDashInterval(interval) {
             return `${year}-${month}-${day}`;
         };
         
+        // Set filter type and date range for Team Dashboard API
+        currentFilterType = 'custom';
         customDateRange = {
             start: formatDate(startDate),
             end: formatDate(today)
         };
         
+        console.log('🔄 Team Dashboard interval set:', interval, customDateRange);
         loadTeamDashboard();
     }
 }
@@ -6322,8 +6325,8 @@ function createAnalyticsSection() {
                 <!-- Time Period Selector -->
                 <div class="flex flex-wrap gap-2 items-center">
                     <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
-                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
-                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
                     <button onclick="setAnalyticsInterval('30d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
                     <button onclick="setAnalyticsInterval('custom')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
                         <i class="fas fa-calendar mr-1 text-xs"></i>Custom
