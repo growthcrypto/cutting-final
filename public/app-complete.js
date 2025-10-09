@@ -1875,7 +1875,12 @@ function createSection(sectionId) {
     
     switch(sectionId) {
         case 'analytics':
-            section.innerHTML = createAnalyticsSection();
+            const analyticsHTML = createAnalyticsSection();
+            console.log('📝 Analytics HTML to insert:', analyticsHTML.substring(0, 200));
+            section.innerHTML = analyticsHTML;
+            console.log('✅ Analytics HTML inserted into section');
+            console.log('📍 Section element:', section);
+            console.log('📍 First element check:', document.getElementById('analyticsNetRevenue'));
             break;
         case 'ai-analysis':
             section.innerHTML = createAIAnalysisSection();
