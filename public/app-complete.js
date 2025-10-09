@@ -445,11 +445,6 @@ document.addEventListener('click', function(e) {
     if (modal && e.target === modal) {
         closeTrafficSourceModal();
     }
-    
-    const linkModal = document.getElementById('linkTrackingModal');
-    if (linkModal && e.target === linkModal) {
-        closeLinkTrackingModal();
-    }
 });
 
 // ==================== MARKETING DASHBOARD FUNCTIONS ====================
@@ -800,17 +795,7 @@ function updateMarketingFilterDisplay() {
 
 function showLinkTrackingModal() {
     // Populate traffic sources
-    const select = document.getElementById('linkTrafficSource');
-    if (select && trafficSources.length > 0) {
-        select.innerHTML = '<option value="">Select source...</option>' + 
-            trafficSources.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
-    }
-    
-    document.getElementById('linkTrackingModal').style.display = 'flex';
-}
-
-function closeLinkTrackingModal() {
-    document.getElementById('linkTrackingModal').style.display = 'none';
+    // Link tracking modal functions removed - form now in Data Upload section
 }
 
 // Toggle category expansion in marketing table
@@ -853,8 +838,7 @@ document.addEventListener('submit', async function(e) {
             });
             
             if (response.ok) {
-                showNotification('Link tracking data uploaded successfully', 'success');
-                closeLinkTrackingModal();
+                showNotification('Link tracking data uploaded successfully!', 'success');
                 e.target.reset();
                 // Reload dashboard if on marketing page
                 if (document.getElementById('marketing-dashboard')?.classList.contains('hidden') === false) {
@@ -1402,7 +1386,7 @@ function showMainApp() {
         clearDashboardToZero();
         // Aggressively clear specific metrics immediately
         forceClearSpecificMetrics();
-        loadDashboardData();
+        initializeDatePicker(); // NEW: Set date picker to current week
         loadAIRecommendations();
         
         // Also clear again after a short delay to override any cached values
@@ -2230,11 +2214,85 @@ function updateUsersTable(users) {
     }
 }
 
+// ==================== CUSTOM DATE PICKER FUNCTIONS ====================
+
+function applyCustomDateFilter() {
+    const startDate = document.getElementById('dashboardStartDate').value;
+    const endDate = document.getElementById('dashboardEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentFilterType = 'custom';
+    currentWeekFilter = null;
+    currentMonthFilter = null;
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Custom date filter applied:', customDateRange);
+    loadDashboardData();
+}
+
+function setQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        // Get start of this week (Sunday)
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        
+        // Get end of this week (Saturday)
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        // First day of current month
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // Last day of current month
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    // Set input values
+    document.getElementById('dashboardStartDate').value = formatDate(startDate);
+    document.getElementById('dashboardEndDate').value = formatDate(endDate);
+    
+    // Apply filter
+    applyCustomDateFilter();
+}
+
+// Initialize with current week on load
+function initializeDatePicker() {
+    setQuickFilter('week');
+}
+
 async function loadDashboardData() {
     try {
         // Build URL based on filter type
         let url;
-        if (currentFilterType === 'week' && currentWeekFilter) {
+        if (currentFilterType === 'custom' && customDateRange) {
+            // NEW: Custom date range
+            url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange.start}&customEnd=${customDateRange.end}&_t=${Date.now()}`;
+        } else if (currentFilterType === 'week' && currentWeekFilter) {
             url = `/api/analytics/dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}&_t=${Date.now()}`;
         } else if (currentFilterType === 'month' && currentMonthFilter) {
             url = `/api/analytics/dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}&_t=${Date.now()}`;
@@ -5963,6 +6021,86 @@ function createDataUploadSection() {
                 </button>
             </form>
         </div>
+
+        <!-- Link Tracking Data Upload (MOVED from Marketing Dashboard) -->
+        <div class="glass-card rounded-xl p-6 border-2 border-blue-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-link text-blue-400 mr-2"></i>
+                        Link Tracking Data
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Upload clicks and views per traffic category (weekly)</p>
+                </div>
+            </div>
+            <div class="mb-4 p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                <h4 class="font-medium text-blue-400 mb-2 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>How it works:
+                </h4>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• One link per <strong>category</strong> (e.g., one Reddit link for all subreddits)</li>
+                    <li>• Use link shortener analytics (bit.ly, Linktree, etc.)</li>
+                    <li>• Upload weekly to track performance over time</li>
+                    <li>• Connects to sales logs for ROI calculation</li>
+                </ul>
+            </div>
+            <form id="linkTrackingForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-300">
+                        <i class="fas fa-tag mr-1"></i>Category <span class="text-xs text-gray-500">(One link per category)</span>
+                    </label>
+                    <select id="linkCategory" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        <option value="">Select category...</option>
+                        <option value="reddit">📱 Reddit</option>
+                        <option value="twitter">🐦 Twitter</option>
+                        <option value="instagram">📸 Instagram</option>
+                        <option value="tiktok">🎵 TikTok</option>
+                        <option value="youtube">📺 YouTube</option>
+                        <option value="other">🌐 Other</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-calendar mr-1"></i>Week Start
+                        </label>
+                        <input type="date" id="linkWeekStart" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-calendar mr-1"></i>Week End
+                        </label>
+                        <input type="date" id="linkWeekEnd" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-eye mr-1"></i>Landing Page Views
+                        </label>
+                        <input type="number" id="linkLandingViews" required min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                               placeholder="How many saw your link?">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-mouse-pointer mr-1"></i>OnlyFans Clicks
+                        </label>
+                        <input type="number" id="linkOFClicks" required min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                               placeholder="How many clicked to OF?">
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-upload mr-2"></i>Upload Link Data
+                    </button>
+                </div>
+            </form>
+        </div>
     `;
 }
 
@@ -6028,9 +6166,6 @@ function createMarketingDashboardSection() {
                     </h2>
                     <p class="text-gray-400">Track traffic source performance and ROI</p>
                 </div>
-                <button onclick="showLinkTrackingModal()" class="premium-button text-white font-medium py-3 px-6 rounded-xl hover:scale-105 transition-transform">
-                    <i class="fas fa-upload mr-2"></i>Upload Link Data
-                </button>
             </div>
         </div>
         
@@ -6093,64 +6228,6 @@ function createMarketingDashboardSection() {
                         <!-- Will be populated dynamically -->
                     </tbody>
                 </table>
-            </div>
-        </div>
-        
-        <!-- Link Tracking Upload Modal -->
-        <div id="linkTrackingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50" style="display: none;">
-            <div class="bg-gray-800 rounded-2xl p-8 max-w-lg w-full mx-4 border border-blue-500/30 shadow-2xl">
-                <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                    <i class="fas fa-link mr-2"></i>Upload Link Tracking Data
-                </h3>
-                <form id="linkTrackingForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-2 text-gray-300">
-                            Category <span class="text-xs text-gray-500">(One link per category)</span>
-                        </label>
-                        <select id="linkCategory" required
-                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                            <option value="">Select category...</option>
-                            <option value="reddit">📱 Reddit</option>
-                            <option value="twitter">🐦 Twitter</option>
-                            <option value="instagram">📸 Instagram</option>
-                            <option value="tiktok">🎵 TikTok</option>
-                            <option value="youtube">📺 YouTube</option>
-                            <option value="other">🌐 Other</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week Start</label>
-                            <input type="date" id="linkWeekStart" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold mb-2 text-gray-300">Week End</label>
-                            <input type="date" id="linkWeekEnd" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold mb-2 text-gray-300">Landing Page Views</label>
-                            <input type="number" id="linkLandingViews" required min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold mb-2 text-gray-300">OnlyFans Clicks</label>
-                            <input type="number" id="linkOFClicks" required min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
-                        </div>
-                    </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 premium-button text-white font-medium py-3 px-6 rounded-xl">
-                            <i class="fas fa-check mr-2"></i>Upload
-                        </button>
-                        <button type="button" onclick="closeLinkTrackingModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-all">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     `;

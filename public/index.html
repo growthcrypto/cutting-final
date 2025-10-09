@@ -506,24 +506,44 @@
                             <p class="text-gray-400">AI-powered insights that drive growth and optimize performance</p>
                         </div>
 
-                        <!-- Week/Month Selector -->
-                        <div class="flex items-center space-x-3 mt-4 lg:mt-0">
-                            <span class="text-sm text-gray-400 mr-3">Filter by:</span>
+                        <!-- Custom Date Range Picker -->
+                        <div class="flex items-center space-x-3 mt-4 lg:mt-0 flex-wrap gap-2">
+                            <span class="text-sm text-gray-400 mr-1">Date Range:</span>
                             
-                            <!-- Week Selector -->
-                            <select id="weekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-blue-600 to-indigo-600 text-white border-0 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-900/50 cursor-pointer">
-                                <option value="">Select Week...</option>
-                            </select>
+                            <!-- Start Date -->
+                            <div class="flex items-center bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl px-3 py-2 shadow-lg">
+                                <i class="fas fa-calendar text-blue-400 mr-2 text-sm"></i>
+                                <input type="date" id="dashboardStartDate" 
+                                       class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                                       style="color-scheme: dark;">
+                            </div>
                             
-                            <!-- Month Selector -->
-                            <select id="monthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-purple-600 to-pink-600 text-white border-0 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/50 cursor-pointer">
-                                <option value="">Select Month...</option>
-                            </select>
+                            <!-- To -->
+                            <span class="text-gray-500 font-medium">→</span>
                             
-                            <!-- Current Filter Display -->
-                            <div id="currentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-200 border border-blue-500/30 flex items-center gap-2 shadow-inner">
-                                <i class="fas fa-calendar-check text-blue-400"></i>
-                                <span id="currentFilterText" class="font-medium"></span>
+                            <!-- End Date -->
+                            <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
+                                <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
+                                <input type="date" id="dashboardEndDate" 
+                                       class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                                       style="color-scheme: dark;">
+                            </div>
+                            
+                            <!-- Apply Button -->
+                            <button id="applyDateFilter" onclick="applyCustomDateFilter()" 
+                                    class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
+                                <i class="fas fa-check"></i>
+                                Apply
+                            </button>
+                            
+                            <!-- Quick Filters -->
+                            <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
+                                <button onclick="setQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-blue-600/50 text-gray-300 hover:text-white transition-all">
+                                    This Week
+                                </button>
+                                <button onclick="setQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                                    This Month
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1413,6 +1433,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760105000000"></script>
+        <script src="app-complete.js?v=1760110000000"></script>
 </body>
 </html>

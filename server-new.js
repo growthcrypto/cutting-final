@@ -593,16 +593,23 @@ app.get('/api/analytics/available-periods', checkDatabaseConnection, authenticat
 // Get dashboard analytics
 app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
 
-    console.log('📊 Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
+    console.log('📊 Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd });
 
     // Define start and end dates based on filter type
     let start, end;
     let isWeekFilter = false;
     let isMonthFilter = false;
+    let isCustomFilter = false;
     
-    if (filterType === 'week' && weekStart && weekEnd) {
+    if (filterType === 'custom' && customStart && customEnd) {
+      // NEW: Custom date range filter
+      start = new Date(customStart);
+      end = new Date(customEnd);
+      isCustomFilter = true;
+      console.log('✅ Using CUSTOM filter:', start.toISOString(), 'to', end.toISOString());
+    } else if (filterType === 'week' && weekStart && weekEnd) {
       // Exact week filter
       start = new Date(weekStart);
       end = new Date(weekEnd);
@@ -625,7 +632,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Build queries based on filter type
     let accountDataQuery, chatterPerformanceQuery, dateQuery;
     
-    if (isWeekFilter) {
+    if (isCustomFilter) {
+      // NEW: Custom date range - query daily data directly
+      accountDataQuery = {}; // Don't use weekly OF data for custom ranges
+      chatterPerformanceQuery = {}; // Don't use weekly chatter data
+      dateQuery = { date: { $gte: start, $lte: end } };
+      console.log('📅 Using custom date range query (daily data only)');
+    } else if (isWeekFilter) {
       // EXACT WEEK MATCH
       accountDataQuery = {
         weekStartDate: start,
