@@ -1126,22 +1126,26 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     });
 
     // Aggregate scores from AI analyses
+    let grammarCount = 0, guidelinesCount = 0, overallCount = 0;
+    
     chatterAnalyses.forEach(({ analysis }) => {
       if (analysis) {
         if (analysis.grammarScore != null) {
           teamMetrics.totalGrammarScore += analysis.grammarScore;
-          teamMetrics.scoreCount++;
+          grammarCount++;
         }
         if (analysis.guidelinesScore != null) {
           teamMetrics.totalGuidelinesScore += analysis.guidelinesScore;
+          guidelinesCount++;
         }
         if (analysis.overallScore != null) {
           teamMetrics.totalOverallScore += analysis.overallScore;
+          overallCount++;
         }
       }
     });
 
-    // Calculate averages
+    // Calculate averages with separate counters for each score type
     const unlockRate = teamMetrics.ppvsSent > 0 
       ? Math.round((teamMetrics.ppvsUnlocked / teamMetrics.ppvsSent) * 100 * 10) / 10
       : 0;
@@ -1150,16 +1154,16 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       ? Math.round((teamMetrics.responseTimesSum / teamMetrics.responseTimeCount) * 10) / 10
       : 0;
     
-    const avgGrammarScore = teamMetrics.scoreCount > 0
-      ? Math.round(teamMetrics.totalGrammarScore / teamMetrics.scoreCount)
+    const avgGrammarScore = grammarCount > 0
+      ? Math.round(teamMetrics.totalGrammarScore / grammarCount)
       : 0;
     
-    const avgGuidelinesScore = teamMetrics.scoreCount > 0
-      ? Math.round(teamMetrics.totalGuidelinesScore / teamMetrics.scoreCount)
+    const avgGuidelinesScore = guidelinesCount > 0
+      ? Math.round(teamMetrics.totalGuidelinesScore / guidelinesCount)
       : 0;
     
-    const avgOverallScore = teamMetrics.scoreCount > 0
-      ? Math.round(teamMetrics.totalOverallScore / teamMetrics.scoreCount)
+    const avgOverallScore = overallCount > 0
+      ? Math.round(teamMetrics.totalOverallScore / overallCount)
       : 0;
     
     const avgPPVPrice = teamMetrics.ppvsUnlocked > 0
