@@ -28,7 +28,8 @@ const {
   VIPFan,
   FanPurchase,
   TrafficSourcePerformance,
-  LinkTrackingData
+  LinkTrackingData,
+  DailyAccountSnapshot
 } = require('./models');
 
 const app = express();
@@ -665,6 +666,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Fetch data
     const dailyReports = await DailyChatterReport.find(dateQuery);
     const ofAccountData = await AccountData.find(accountDataQuery);
+    const dailySnapshots = await DailyAccountSnapshot.find(dateQuery); // NEW: Daily snapshots for custom dates
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
     console.log('=== DASHBOARD QUERY DEBUG ===');
@@ -672,6 +674,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     console.log('Dashboard data query results:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
+      dailySnapshots: dailySnapshots.length,
       chatterPerformance: chatterPerformance.length
     });
     console.log('ChatterPerformance data found:', JSON.stringify(chatterPerformance, null, 2));
@@ -679,6 +682,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     console.log('Dashboard query:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
+      dailySnapshots: dailySnapshots.length,
       chatterPerformance: chatterPerformance.length,
       dateQuery,
       chatterPerformanceQuery,
@@ -742,15 +746,42 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 
     // Get recurring revenue from OF Account data, but use totalRevenue for netRevenue (from daily logs)
     const netRevenue = totalRevenue; // NOW: Use daily logs as source of truth
-    const recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
     
-    // Total subs should be averaged (it's a snapshot, not cumulative)
-    const totalSubs = ofAccountData.length > 0 
-      ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
-      : 0;
+    // PRIORITIZE Daily Snapshots over old OF Account data
+    let totalSubs, activeFans, fansWithRenew, renewRate, newSubs, recurringRevenue;
     
-    // New subs and clicks are cumulative (sum them)
-    const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
+    if (dailySnapshots.length > 0) {
+      // NEW: Use daily snapshots (better granularity)
+      console.log('📊 Using DailyAccountSnapshot data');
+      
+      // Average snapshot metrics (they're point-in-time values)
+      totalSubs = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.totalSubs || 0), 0) / dailySnapshots.length);
+      activeFans = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.activeFans || 0), 0) / dailySnapshots.length);
+      fansWithRenew = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.fansWithRenew || 0), 0) / dailySnapshots.length);
+      renewRate = dailySnapshots.reduce((sum, s) => sum + (s.renewRate || 0), 0) / dailySnapshots.length;
+      
+      // Sum new subs (cumulative)
+      newSubs = dailySnapshots.reduce((sum, s) => sum + (s.newSubsToday || 0), 0);
+      
+      // Calculate recurring revenue: fans with renew × avg sub price
+      // Assuming $10/month subscription (you can make this configurable)
+      recurringRevenue = fansWithRenew * 10;
+    } else {
+      // FALLBACK: Use old OF Account data
+      console.log('📊 Falling back to OF Account data (upload daily snapshots for better metrics!)');
+      
+      recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
+      totalSubs = ofAccountData.length > 0 
+        ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
+        : 0;
+      newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
+      
+      // Old data doesn't have these metrics
+      activeFans = 0;
+      fansWithRenew = 0;
+      renewRate = 0;
+    }
+    
     const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
     // Get link clicks from LinkTrackingData (uses weekStartDate/weekEndDate)
@@ -867,6 +898,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       profileClicks: Math.round(profileClicks),
       linkClicks: Math.round(totalLinkClicks), // NEW: Link clicks from tracking data
       linkViews: Math.round(totalLinkViews),
+      // NEW METRICS from Daily Account Snapshots
+      activeFans: Math.round(activeFans || 0), // Active subscriber count
+      fansWithRenew: Math.round(fansWithRenew || 0), // Fans with auto-renew enabled
+      renewRate: Math.round(renewRate * 10) / 10, // % of active fans with renew on
       messagesSent: combinedMessagesSent,
       ppvsSent: combinedPPVsSent,
       ppvsUnlocked: combinedPPVsUnlocked,
@@ -1384,6 +1419,70 @@ app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken
     res.json({ message: 'OF Account data saved successfully', data: accountData });
   } catch (error) {
     console.error('OF Account data submission error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit Daily Account Snapshot (NEW - for custom date ranges)
+app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    console.log('📊 Daily Account Snapshot submission:', req.body);
+    
+    // Find the creator account
+    let creatorAccount = await CreatorAccount.findOne({ name: req.body.creator });
+    
+    if (!creatorAccount) {
+      try {
+        creatorAccount = await CreatorAccount.findById(req.body.creator);
+      } catch (e) {
+        creatorAccount = await CreatorAccount.findOne({ 
+          name: new RegExp(`^${req.body.creator}$`, 'i') 
+        });
+      }
+    }
+    
+    if (!creatorAccount) {
+      console.error('Creator account not found for:', req.body.creator);
+      return res.status(400).json({ error: `Creator account not found: ${req.body.creator}` });
+    }
+    
+    console.log('Found creator account:', creatorAccount.name);
+    
+    // Check if snapshot already exists for this date
+    const existingSnapshot = await DailyAccountSnapshot.findOne({
+      creatorAccount: creatorAccount._id,
+      date: new Date(req.body.date)
+    });
+    
+    if (existingSnapshot) {
+      // Update existing
+      existingSnapshot.totalSubs = req.body.totalSubs || 0;
+      existingSnapshot.activeFans = req.body.activeFans || 0;
+      existingSnapshot.fansWithRenew = req.body.fansWithRenew || 0;
+      existingSnapshot.newSubsToday = req.body.newSubsToday || 0;
+      existingSnapshot.uploadedBy = req.user.userId;
+      
+      await existingSnapshot.save();
+      console.log('📊 Updated existing snapshot:', existingSnapshot._id);
+      return res.json({ message: 'Daily snapshot updated successfully', data: existingSnapshot });
+    }
+    
+    // Create new snapshot
+    const snapshot = new DailyAccountSnapshot({
+      creatorAccount: creatorAccount._id,
+      date: new Date(req.body.date),
+      totalSubs: req.body.totalSubs || 0,
+      activeFans: req.body.activeFans || 0,
+      fansWithRenew: req.body.fansWithRenew || 0,
+      newSubsToday: req.body.newSubsToday || 0,
+      uploadedBy: req.user.userId
+    });
+    
+    await snapshot.save();
+    console.log('📊 Daily snapshot saved:', snapshot._id, 'Renew rate:', snapshot.renewRate + '%');
+    res.json({ message: 'Daily snapshot saved successfully', data: snapshot });
+  } catch (error) {
+    console.error('Daily snapshot submission error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -5316,6 +5415,15 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       
       const retentionRate = totalTracked > 0 ? (retainedCount / totalTracked) * 100 : 0;
       
+      // NEW: Calculate renew rate (% of VIP fans with auto-renew enabled)
+      let renewCount = 0;
+      vipFans.forEach(fan => {
+        if (fan.hasRenewOn) {
+          renewCount++;
+        }
+      });
+      const renewRate = vipFans.length > 0 ? (renewCount / vipFans.length) * 100 : 0;
+      
       // ENHANCED QUALITY SCORE (0-100)
       const spenderRateScore = Math.min(spenderRate * 6, 30); // 30 points max (5% = 30pts)
       const revenuePerClickScore = Math.min(revenuePerClick * 10, 20); // 20 points max ($2 = 20pts)
@@ -5352,6 +5460,9 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
         retentionRate: retentionRate, // KEY METRIC!
         retainedCount: retainedCount,
         totalTracked: totalTracked,
+        // NEW: Renew rate
+        renewRate: renewRate, // KEY METRIC! % with auto-renew on
+        renewCount: renewCount,
         // VIP tracking
         vips: vipCount,
         // Quality

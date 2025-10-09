@@ -587,6 +587,14 @@ function renderMarketingDashboard() {
                                     </div>
                                 </div>
                                 
+                                <div class="p-3 bg-gray-800/30 rounded-lg border border-green-500/20">
+                                    <div class="text-xs font-semibold text-green-300 mb-1">RENEW RATE</div>
+                                    <div class="text-sm text-gray-300">
+                                        <span class="font-bold ${source.renewRate >= 60 ? 'text-green-400' : source.renewRate >= 40 ? 'text-yellow-400' : 'text-red-400'}">${source.renewRate?.toFixed(0) || '0'}%</span>
+                                        (${source.renewCount || 0}/${source.vips || 0} with auto-renew)
+                                    </div>
+                                </div>
+                                
                                 <div class="pt-3 border-t border-gray-700 flex items-center justify-between">
                                     <span class="text-sm text-gray-400">Quality Score</span>
                                     <div class="text-lg font-bold text-${qualityColor}-400">${source.qualityScore || 'N/A'}</div>
@@ -1527,6 +1535,9 @@ function setupEventListeners() {
         } else if (e.target.id === 'ofAccountDataForm') {
             e.preventDefault();
             handleOFAccountDataSubmit(e);
+        } else if (e.target.id === 'dailySnapshotForm') {
+            e.preventDefault();
+            handleDailySnapshotSubmit(e);
         } else if (e.target.id === 'chatterDataForm') {
             e.preventDefault();
             handleChatterDataSubmit(e);
@@ -4787,6 +4798,22 @@ function updateDashboardMetrics(data) {
         clicksEl.innerHTML = `${(data.linkClicks || 0).toLocaleString()}${renderChangeIndicator(changes.linkClicks)}`;
     }
     
+    // NEW: Update subscriber quality metrics
+    const activeFansEl = document.getElementById('activeFans');
+    if (activeFansEl) {
+        activeFansEl.textContent = data.activeFans > 0 ? data.activeFans.toLocaleString() : '-';
+    }
+    
+    const fansWithRenewEl = document.getElementById('fansWithRenew');
+    if (fansWithRenewEl) {
+        fansWithRenewEl.textContent = data.fansWithRenew > 0 ? data.fansWithRenew.toLocaleString() : '-';
+    }
+    
+    const renewRateEl = document.getElementById('renewRate');
+    if (renewRateEl) {
+        renewRateEl.textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
+    }
+    
     const messagesEl = document.getElementById('messagesSent');
     if (messagesEl) {
         messagesEl.innerHTML = `${data.messagesSent.toLocaleString()}${renderChangeIndicator(changes.messagesSent)}`;
@@ -5728,6 +5755,89 @@ function createDataUploadSection() {
                 <div class="flex justify-end">
                     <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Submit OF Account Data
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Daily Account Snapshot Form (NEW - for custom date ranges) -->
+        <div class="glass-card rounded-xl p-6 mb-8 border-2 border-purple-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-calendar-day text-purple-400 mr-2"></i>
+                        Daily Account Snapshot
+                        <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">NEW - Upload Daily!</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Upload daily for custom date range support</p>
+                </div>
+            </div>
+            <form id="dailySnapshotForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" id="snapshotDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Creator Account</label>
+                        <select id="snapshotCreator" required
+                                  class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                              <option value="">Select Creator...</option>
+                              <option value="arya">Arya</option>
+                              <option value="iris">Iris</option>
+                              <option value="lilla">Lilla</option>
+                          </select>
+                    </div>
+                </div>
+
+                <div class="border-t border-purple-700/30 pt-6">
+                    <h4 class="text-lg font-medium mb-4 text-purple-400">Subscriber Metrics</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Total Subscribers
+                                <span class="text-xs text-gray-500 block">All current subs</span>
+                            </label>
+                            <input type="number" id="snapshotTotalSubs" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Active Fans
+                                <span class="text-xs text-gray-500 block">Fans currently active</span>
+                            </label>
+                            <input type="number" id="snapshotActiveFans" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Fans with Renew ON
+                                <span class="text-xs text-gray-500 block">Auto-renew enabled</span>
+                            </label>
+                            <input type="number" id="snapshotFansWithRenew" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                New Subs Today
+                                <span class="text-xs text-gray-500 block">Just today</span>
+                            </label>
+                            <input type="number" id="snapshotNewSubs" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+                        <p class="text-xs text-purple-300">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Renew rate will be auto-calculated: (Fans with Renew / Active Fans) × 100
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-save mr-2"></i>Save Daily Snapshot
                     </button>
                 </div>
             </form>
@@ -7645,6 +7755,64 @@ async function handleOFAccountDataSubmit(event) {
             showError(result.error || 'Failed to submit data');
         }
     } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleDailySnapshotSubmit(event) {
+    console.log('📊 Daily Snapshot form submit triggered');
+    
+    const formData = {
+        date: document.getElementById('snapshotDate').value,
+        creator: document.getElementById('snapshotCreator').value,
+        totalSubs: parseInt(document.getElementById('snapshotTotalSubs').value) || 0,
+        activeFans: parseInt(document.getElementById('snapshotActiveFans').value) || 0,
+        fansWithRenew: parseInt(document.getElementById('snapshotFansWithRenew').value) || 0,
+        newSubsToday: parseInt(document.getElementById('snapshotNewSubs').value) || 0
+    };
+    
+    console.log('📊 Daily Snapshot form data:', formData);
+
+    if (!formData.date || !formData.creator) {
+        showError('Please fill in Date and Creator Account');
+        return;
+    }
+    
+    if (!formData.totalSubs || !formData.activeFans || !formData.fansWithRenew) {
+        showError('Please fill in all subscriber metrics');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/daily-snapshot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            const renewRate = result.data.renewRate || 0;
+            showNotification(`Daily snapshot saved! Renew rate: ${renewRate}%`, 'success');
+            document.getElementById('dailySnapshotForm').reset();
+            
+            // Update dashboards if we're on them
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit snapshot');
+        }
+    } catch (error) {
+        console.error('Daily snapshot error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);

@@ -579,6 +579,54 @@
                         </div>
                     </div>
 
+                    <!-- NEW: Subscriber Quality Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="metric-card glass-card rounded-xl p-6 border border-purple-500/20">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium tooltip" data-tooltip="Fans currently active on OnlyFans">Active Fans</p>
+                                    <p class="text-3xl font-bold text-purple-400" id="activeFans">-</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-fire text-purple-400"></i>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                <span>Currently engaged subscribers</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card glass-card rounded-xl p-6 border border-green-500/20">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium tooltip" data-tooltip="Fans with auto-renew enabled">Fans with Renew ON</p>
+                                    <p class="text-3xl font-bold text-green-400" id="fansWithRenew">-</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-sync text-green-400"></i>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                <span>Recurring subscribers</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card glass-card rounded-xl p-6 border border-yellow-500/20">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="text-gray-400 text-sm font-medium tooltip" data-tooltip="% of active fans with auto-renew enabled">Renew Rate</p>
+                                    <p class="text-3xl font-bold text-yellow-400" id="renewRate">-</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-600/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-percentage text-yellow-400"></i>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-400">
+                                <span>Retention quality</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Intelligent Analytics Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         <!-- Conversion Intelligence -->
@@ -1365,6 +1413,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760100000000"></script>
+        <script src="app-complete.js?v=1760105000000"></script>
 </body>
 </html>

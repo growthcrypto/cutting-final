@@ -401,6 +401,10 @@ const vipFanSchema = new mongoose.Schema({
   firstResponseDate: { type: Date },
   lastMessageDate: { type: Date }, // NEW: Last time they messaged (for retention tracking)
   
+  // Subscription Status (NEW for Marketing Analytics)
+  hasRenewOn: { type: Boolean, default: false }, // Auto-renew enabled
+  lastRenewCheckDate: { type: Date }, // When we last checked their renew status
+  
   // Metadata
   notes: { type: String },
   tags: [{ type: String }],
@@ -504,6 +508,34 @@ const FanPurchase = mongoose.model('FanPurchase', fanPurchaseSchema);
 const TrafficSourcePerformance = mongoose.model('TrafficSourcePerformance', trafficSourcePerformanceSchema);
 const LinkTrackingData = mongoose.model('LinkTrackingData', linkTrackingDataSchema);
 
+// Daily Account Snapshot - Daily subscriber metrics for custom date ranges
+const dailyAccountSnapshotSchema = new mongoose.Schema({
+  creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  date: { type: Date, required: true }, // Exact date (not week range!)
+  
+  // Subscriber Metrics
+  totalSubs: { type: Number, required: true }, // Total subscriber count
+  activeFans: { type: Number, required: true }, // Fans who are currently active
+  fansWithRenew: { type: Number, required: true }, // Fans with auto-renew enabled
+  newSubsToday: { type: Number, default: 0 }, // New subscribers on this day
+  
+  // Calculated Fields
+  renewRate: { type: Number, default: 0 }, // % of active fans with renew on
+  
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Calculate renew rate before saving
+dailyAccountSnapshotSchema.pre('save', function(next) {
+  if (this.activeFans > 0) {
+    this.renewRate = Math.round((this.fansWithRenew / this.activeFans) * 100 * 10) / 10;
+  }
+  next();
+});
+
+const DailyAccountSnapshot = mongoose.model('DailyAccountSnapshot', dailyAccountSnapshotSchema);
+
 module.exports = {
   User,
   CreatorAccount,
@@ -520,5 +552,6 @@ module.exports = {
   VIPFan,
   FanPurchase,
   TrafficSourcePerformance,
-  LinkTrackingData
+  LinkTrackingData,
+  DailyAccountSnapshot
 };
