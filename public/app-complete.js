@@ -2086,7 +2086,12 @@ function initializeSidebar() {
     const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
     const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
 
-    if (!sidebar || !mainContent || !sidebarToggle || !sidebarToggleIcon || !floatingSidebarToggle) return;
+    console.log('🔧 Initializing sidebar:', { sidebar: !!sidebar, mainContent: !!mainContent, sidebarToggle: !!sidebarToggle, sidebarToggleIcon: !!sidebarToggleIcon, floatingSidebarToggle: !!floatingSidebarToggle });
+    
+    if (!sidebar || !mainContent) {
+        console.error('❌ Sidebar or mainContent not found');
+        return;
+    }
 
     function setCollapsedState(collapsed) {
         sidebar.classList.toggle('sidebar-hidden', collapsed);
@@ -2119,9 +2124,24 @@ function initializeSidebar() {
     window.toggleSidebarState = toggleSidebarState;
     window.setCollapsedState = setCollapsedState;
 
-    sidebarToggle.addEventListener('click', () => toggleSidebarState());
-    sidebarToggleIcon.addEventListener('click', () => toggleSidebarState());
-    floatingSidebarToggle.addEventListener('click', () => toggleSidebarState(false));
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            console.log('📱 Mobile sidebar toggle clicked');
+            toggleSidebarState();
+        });
+    }
+    if (sidebarToggleIcon) {
+        sidebarToggleIcon.addEventListener('click', () => {
+            console.log('🔲 Sidebar collapse button clicked');
+            toggleSidebarState();
+        });
+    }
+    if (floatingSidebarToggle) {
+        floatingSidebarToggle.addEventListener('click', () => {
+            console.log('🔵 Floating button clicked');
+            toggleSidebarState(false);
+        });
+    }
 
     document.addEventListener('click', (event) => {
         if (window.innerWidth >= 1024) return;
@@ -2545,7 +2565,7 @@ let currentDashboardInterval = '7d';
 let currentAnalyticsInterval = '7d';
 let currentModalContext = null; // Track which page opened the modal
 
-function setDashboardInterval(interval) {
+window.setDashboardInterval = function(interval) {
     currentDashboardInterval = interval;
     
     // Update button styles
@@ -2596,7 +2616,7 @@ function setDashboardInterval(interval) {
     }
 }
 
-function setAnalyticsInterval(interval) {
+window.setAnalyticsInterval = function(interval) {
     console.log('🎯 setAnalyticsInterval called with:', interval);
     
     // Store the selected interval
@@ -2654,7 +2674,7 @@ function setAnalyticsInterval(interval) {
     }
 }
 
-function setMarketingInterval(interval) {
+window.setMarketingInterval = function(interval) {
     // Update button styles
     document.querySelectorAll('.marketing-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2700,7 +2720,7 @@ function setMarketingInterval(interval) {
     }
 }
 
-function setTeamComparisonInterval(interval) {
+window.setTeamComparisonInterval = function(interval) {
     // Update button styles
     document.querySelectorAll('.team-comparison-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2746,7 +2766,7 @@ function setTeamComparisonInterval(interval) {
     }
 }
 
-function setAIInterval(interval) {
+window.setAIInterval = function(interval) {
     // Update button styles
     document.querySelectorAll('.ai-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2796,7 +2816,7 @@ function setAIInterval(interval) {
     }
 }
 
-function setTeamDashInterval(interval) {
+window.setTeamDashInterval = function(interval) {
     // Update button styles
     document.querySelectorAll('.team-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
