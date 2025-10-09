@@ -2540,6 +2540,7 @@ function getMetricColor(value, avg, lowerIsBetter = false) {
 // ==================== CUSTOM DATE PICKER FUNCTIONS ====================
 
 let currentDashboardInterval = '7d';
+let currentAnalyticsInterval = '7d';
 let currentModalContext = null; // Track which page opened the modal
 
 function setDashboardInterval(interval) {
@@ -2594,6 +2595,9 @@ function setDashboardInterval(interval) {
 }
 
 function setAnalyticsInterval(interval) {
+    // Store the selected interval
+    currentAnalyticsInterval = interval;
+    
     // Update button styles
     document.querySelectorAll('.analytics-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -6325,10 +6329,10 @@ function createAnalyticsSection() {
                 <!-- Time Period Selector -->
                 <div class="flex flex-wrap gap-2 items-center">
                     <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
-                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
-                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
-                    <button onclick="setAnalyticsInterval('30d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
-                    <button onclick="setAnalyticsInterval('custom')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn ${currentAnalyticsInterval === '24h' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'} px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn ${currentAnalyticsInterval === '7d' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'} px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setAnalyticsInterval('30d')" class="analytics-interval-btn ${currentAnalyticsInterval === '30d' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'} px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setAnalyticsInterval('custom')" class="analytics-interval-btn ${currentAnalyticsInterval === 'custom' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'} px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
                         <i class="fas fa-calendar mr-1 text-xs"></i>Custom
                     </button>
                 </div>
