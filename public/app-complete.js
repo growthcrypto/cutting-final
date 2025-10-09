@@ -1269,8 +1269,9 @@ async function deleteVIPFan(id, username) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    
+    console.log('🚀 App initializing...');
     checkAuthStatus();
+    initializeSidebar();
     setupEventListeners();
     setDefaultDate();
     // loadEmployees() will be called after authentication in checkAuthStatus()
