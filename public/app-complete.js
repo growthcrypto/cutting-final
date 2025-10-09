@@ -2597,14 +2597,23 @@ function setDashboardInterval(interval) {
 }
 
 function setAnalyticsInterval(interval) {
+    console.log('🎯 setAnalyticsInterval called with:', interval);
+    
     // Store the selected interval
     currentAnalyticsInterval = interval;
     
     // Update button styles
-    document.querySelectorAll('.analytics-interval-btn').forEach(btn => {
-        if (btn.getAttribute('data-interval') === interval) {
+    const buttons = document.querySelectorAll('.analytics-interval-btn');
+    console.log('📊 Found', buttons.length, 'analytics buttons');
+    
+    buttons.forEach(btn => {
+        const btnInterval = btn.getAttribute('data-interval');
+        console.log('  Button:', btnInterval, 'Match:', btnInterval === interval);
+        
+        if (btnInterval === interval) {
             btn.classList.remove('bg-gray-700', 'text-gray-300');
             btn.classList.add('bg-blue-600', 'text-white');
+            console.log('  ✅ Highlighted button:', btnInterval);
         } else {
             btn.classList.remove('bg-blue-600', 'text-white');
             btn.classList.add('bg-gray-700', 'text-gray-300');
