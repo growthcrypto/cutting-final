@@ -3658,28 +3658,43 @@ async function runChatterAnalysis() {
             console.log('⚠️ AI Analysis using interval fallback:', requestBody.interval);
         }
 
-        console.log('Sending AI analysis request:', requestBody);
+        console.log('Sending enhanced chatter analysis request');
         
-        const response = await fetch('/api/ai/analysis', {
-            method: 'POST',
+        // Get chatter name from select
+        const chatterName = select.options[select.selectedIndex].text;
+        
+        // Build query params for date range
+        let params = new URLSearchParams();
+        if (currentFilterType === 'custom' && customDateRange) {
+            params.append('filterType', 'custom');
+            params.append('customStart', customDateRange.start);
+            params.append('customEnd', customDateRange.end);
+        } else if (currentFilterType === 'week' && currentWeekFilter) {
+            params.append('filterType', 'week');
+            params.append('weekStart', currentWeekFilter.start);
+            params.append('weekEnd', currentWeekFilter.end);
+        } else if (currentFilterType === 'month' && currentMonthFilter) {
+            params.append('filterType', 'month');
+            params.append('monthStart', currentMonthFilter.firstDay);
+            params.append('monthEnd', currentMonthFilter.lastDay);
+        }
+        
+        // Call NEW enhanced API
+        const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
             headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+                'Authorization': `Bearer ${authToken}`
+            }
         });
 
-        console.log('AI analysis response status:', response.status);
+        console.log('Enhanced chatter analysis response status:', response.status);
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI analysis error response:', errorText);
-            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
+            throw new Error(`Failed to get enhanced analysis: ${response.status}`);
         }
 
         const analysisData = await response.json();
-        console.log('AI analysis data:', analysisData);
-        renderSophisticatedChatterAnalysis(analysisData);
+        console.log('✅ Enhanced chatter analysis data:', analysisData);
+        renderChatterAnalysisResults(analysisData);
         
         // Load performance trends for this chatter
         const selectedUser = await fetch(`/api/users/${select.value}`, {
@@ -4217,16 +4232,7 @@ function renderAgencyAnalysisResults(data) {
     `;
 }
 
-// Render Chatter Analysis Results
-function renderChatterAnalysisResults(data) {
-    const container = document.getElementById('chatterAnalysisResults');
-    if (!container) return;
-    
-    // Call the sophisticated analysis function instead
-    renderSophisticatedChatterAnalysis(data);
-}
-
-// Render Chatter Analysis Results
+// Render Chatter Analysis Results (ENHANCED with new sections)
 function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
