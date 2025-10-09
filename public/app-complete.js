@@ -645,22 +645,37 @@ function renderMarketingDashboard() {
                         ${index === 0 ? '<i class="fas fa-trophy text-yellow-400 text-2xl"></i>' : ''}
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">Revenue</div>
-                            <div class="text-xl font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</div>
+                    <div class="space-y-3 mb-4">
+                        <!-- Funnel Efficiency -->
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs font-semibold text-blue-300 mb-2">FUNNEL EFFICIENCY</div>
+                            <div class="text-sm text-gray-300">
+                                Link Clicks: <span class="font-bold text-white">${source.linkClicks || 0}</span> →
+                                Spenders: <span class="font-bold text-green-400">${source.spenders || 0}</span>
+                                (<span class="font-bold ${source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400'}">${source.spenderRate?.toFixed(1) || '0'}%</span>)
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">Subscribers</div>
-                            <div class="text-xl font-bold text-blue-400">${source.subscribers || 0}</div>
+                        
+                        <!-- Revenue & ROI -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">Revenue</div>
+                                <div class="text-xl font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">Per Click</div>
+                                <div class="text-xl font-bold text-cyan-400">$${source.revenuePerClick?.toFixed(2) || '0.00'}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">VIPs</div>
-                            <div class="text-xl font-bold text-purple-400">${source.vips || 0}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-400 mb-1">VIP Rate</div>
-                            <div class="text-xl font-bold text-cyan-400">${source.vipRate?.toFixed(1) || '0'}%</div>
+                        
+                        <!-- Retention -->
+                        <div class="p-3 bg-gray-800/30 rounded-lg">
+                            <div class="text-xs font-semibold text-purple-300 mb-2">7-DAY RETENTION</div>
+                            <div class="text-sm text-gray-300">
+                                <span class="font-bold text-white">${source.retainedCount || 0}</span> of
+                                <span class="font-bold text-white">${source.totalTracked || 0}</span> tracked
+                                (<span class="font-bold ${source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400'}">${source.retentionRate?.toFixed(0) || '0'}%</span>)
+                            </div>
                         </div>
                     </div>
                     

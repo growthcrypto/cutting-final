@@ -382,6 +382,7 @@ const vipFanSchema = new mongoose.Schema({
   
   // Fan Details
   joinDate: { type: Date, required: true },
+  firstSeenDate: { type: Date }, // NEW: When we first tracked this fan
   status: { 
     type: String, 
     enum: ['active', 'churned'], 

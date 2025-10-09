@@ -4742,6 +4742,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
             creatorAccount: creatorAccount?._id,
             trafficSource: sale.trafficSource,
             joinDate: reportDate,
+            firstSeenDate: reportDate, // NEW: Track when we first saw this fan
             lifetimeSpend: sale.amount,
             lastPurchaseDate: reportDate,
             purchaseCount: 1,
@@ -4798,6 +4799,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
             creatorAccount: creatorAccount?._id,
             trafficSource: tip.trafficSource,
             joinDate: reportDate,
+            firstSeenDate: reportDate, // NEW: Track when we first saw this fan
             lifetimeSpend: tip.amount,
             lastPurchaseDate: reportDate,
             purchaseCount: 1,
@@ -5093,43 +5095,113 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       }
     });
     
-    // Convert to array and calculate metrics
-    const sources = Object.values(sourceMap).map(source => {
+    // Get link tracking data for each source
+    const linkTrackingMap = {};
+    const linkTracking = await LinkTrackingData.find(dateQuery).populate('trafficSource');
+    linkTracking.forEach(lt => {
+      if (lt.trafficSource) {
+        const sourceId = lt.trafficSource._id.toString();
+        if (!linkTrackingMap[sourceId]) {
+          linkTrackingMap[sourceId] = {
+            clicks: 0,
+            views: 0
+          };
+        }
+        linkTrackingMap[sourceId].clicks += lt.onlyFansClicks || 0;
+        linkTrackingMap[sourceId].views += lt.landingPageViews || 0;
+      }
+    });
+    
+    // Convert to array and calculate ENHANCED metrics
+    const sources = await Promise.all(Object.values(sourceMap).map(async (source) => {
       const vipCount = source.vipPurchases.size;
-      const buyerCount = source.buyers.size;
-      const vipRate = buyerCount > 0 ? (vipCount / buyerCount) * 100 : 0;
-      const buyerRate = source.purchaseCount > 0 ? (buyerCount / source.purchaseCount) * 100 : 0;
+      const spenderCount = source.vipPurchases.size; // Unique spenders
       
-      // Simple quality score based on revenue and VIP rate
-      const revenueScore = Math.min(source.revenue / 100, 50); // Up to 50 points for revenue
-      const vipScore = vipRate * 0.5; // Up to 50 points for VIP rate
-      const qualityGrade = Math.min(revenueScore + vipScore, 100);
+      // Get link tracking data for this source
+      const linkData = linkTrackingMap[source.id] || { clicks: 0, views: 0 };
+      const linkClicks = linkData.clicks;
+      
+      // Calculate spender rate (KEY NEW METRIC!)
+      const spenderRate = linkClicks > 0 ? (spenderCount / linkClicks) * 100 : 0;
+      
+      // Calculate revenue per click (ROI metric)
+      const revenuePerClick = linkClicks > 0 ? source.revenue / linkClicks : 0;
+      
+      // Calculate avg per spender
+      const avgPerSpender = spenderCount > 0 ? source.revenue / spenderCount : 0;
+      
+      // Calculate 7-day retention
+      const vipFans = await VIPFan.find({
+        _id: { $in: Array.from(source.vipPurchases) },
+        trafficSource: source.id
+      });
+      
+      let retainedCount = 0;
+      let totalTracked = 0;
+      
+      vipFans.forEach(fan => {
+        if (fan.firstSeenDate) {
+          totalTracked++;
+          const daysSinceFirstSeen = (new Date() - fan.firstSeenDate) / (1000 * 60 * 60 * 24);
+          if (daysSinceFirstSeen >= 7) {
+            // Check if they purchased in last 7 days from first seen
+            const sevenDaysAfterFirst = new Date(fan.firstSeenDate);
+            sevenDaysAfterFirst.setDate(sevenDaysAfterFirst.getDate() + 7);
+            if (fan.lastPurchaseDate >= fan.firstSeenDate && fan.lastPurchaseDate <= sevenDaysAfterFirst) {
+              retainedCount++;
+            }
+          }
+        }
+      });
+      
+      const retentionRate = totalTracked > 0 ? (retainedCount / totalTracked) * 100 : 0;
+      
+      // ENHANCED QUALITY SCORE (0-100)
+      const spenderRateScore = Math.min(spenderRate * 6, 30); // 30 points max (5% = 30pts)
+      const revenuePerClickScore = Math.min(revenuePerClick * 10, 20); // 20 points max ($2 = 20pts)
+      const retentionScore = retentionRate * 0.3; // 30 points max (100% = 30pts)
+      const avgSpenderScore = Math.min(avgPerSpender / 2, 20); // 20 points max ($40 = 20pts)
+      
+      const qualityGrade = Math.min(
+        spenderRateScore + revenuePerClickScore + retentionScore + avgSpenderScore,
+        100
+      );
       
       let qualityScore = 'N/A';
-      if (qualityGrade >= 80) qualityScore = 'A+';
-      else if (qualityGrade >= 70) qualityScore = 'A';
-      else if (qualityGrade >= 60) qualityScore = 'B';
-      else if (qualityGrade >= 50) qualityScore = 'C';
-      else if (qualityGrade >= 40) qualityScore = 'D';
+      if (qualityGrade >= 90) qualityScore = 'A+';
+      else if (qualityGrade >= 80) qualityScore = 'A';
+      else if (qualityGrade >= 70) qualityScore = 'B';
+      else if (qualityGrade >= 60) qualityScore = 'C';
+      else if (qualityGrade >= 50) qualityScore = 'D';
       else qualityScore = 'F';
       
       return {
         id: source.id,
         name: source.name,
         category: source.category,
+        // Revenue metrics
         revenue: source.revenue,
-        subscribers: 0, // Will be calculated when we have subscriber data
+        // NEW: Link & conversion metrics
+        linkClicks: linkClicks,
+        linkViews: linkData.views,
+        spenders: spenderCount,
+        spenderRate: spenderRate, // KEY METRIC!
+        revenuePerClick: revenuePerClick, // KEY METRIC!
+        avgPerSpender: avgPerSpender,
+        // Retention
+        retentionRate: retentionRate, // KEY METRIC!
+        retainedCount: retainedCount,
+        totalTracked: totalTracked,
+        // VIP tracking
         vips: vipCount,
-        vipRate: vipRate,
-        ghostRate: 0,
-        buyerRate: buyerRate,
+        // Quality
         qualityScore,
         qualityGrade: Math.round(qualityGrade)
       };
-    });
+    }));
     
-    // Sort by revenue
-    sources.sort((a, b) => b.revenue - a.revenue);
+    // Sort by quality grade (best sources first!)
+    sources.sort((a, b) => b.qualityGrade - a.qualityGrade);
     
     const aggregated = {
       totalRevenue,
