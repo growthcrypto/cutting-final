@@ -399,6 +399,7 @@ const vipFanSchema = new mongoose.Schema({
   isEngaged: { type: Boolean, default: false }, // Has responded to messages
   isGhost: { type: Boolean, default: false }, // Never responds
   firstResponseDate: { type: Date },
+  lastMessageDate: { type: Date }, // NEW: Last time they messaged (for retention tracking)
   
   // Metadata
   notes: { type: String },

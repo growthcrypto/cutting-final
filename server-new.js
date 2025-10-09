@@ -5131,7 +5131,9 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       // Calculate avg per spender
       const avgPerSpender = spenderCount > 0 ? source.revenue / spenderCount : 0;
       
-      // Calculate 7-day retention
+      // Calculate 7-day retention (based on messaging activity)
+      // TODO: This requires message data from OnlyFans exports or manual updates
+      // For now, we check if lastMessageDate exists and is within 7 days
       const vipFans = await VIPFan.find({
         _id: { $in: Array.from(source.vipPurchases) },
         trafficSource: source.id
@@ -5140,17 +5142,17 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       let retainedCount = 0;
       let totalTracked = 0;
       
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
       vipFans.forEach(fan => {
         if (fan.firstSeenDate) {
           totalTracked++;
-          const daysSinceFirstSeen = (new Date() - fan.firstSeenDate) / (1000 * 60 * 60 * 24);
-          if (daysSinceFirstSeen >= 7) {
-            // Check if they purchased in last 7 days from first seen
-            const sevenDaysAfterFirst = new Date(fan.firstSeenDate);
-            sevenDaysAfterFirst.setDate(sevenDaysAfterFirst.getDate() + 7);
-            if (fan.lastPurchaseDate >= fan.firstSeenDate && fan.lastPurchaseDate <= sevenDaysAfterFirst) {
-              retainedCount++;
-            }
+          // Retained if they have messaged in the last 7 days
+          // If lastMessageDate not set, use lastPurchaseDate as fallback (purchase = activity)
+          const lastActivity = fan.lastMessageDate || fan.lastPurchaseDate;
+          if (lastActivity && lastActivity >= sevenDaysAgo) {
+            retainedCount++;
           }
         }
       });
@@ -5444,6 +5446,59 @@ app.delete('/api/data-management/vip-fans/:id', authenticateToken, requireManage
   } catch (error) {
     console.error('Error deleting VIP fan:', error);
     res.status(500).json({ error: 'Failed to delete VIP fan' });
+  }
+});
+
+// Update VIP fan message activity (for retention tracking)
+// Call this when you have message data (from CSV or manual entry)
+app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req, res) => {
+  try {
+    const { updates } = req.body; // Array of { username, creatorAccount, lastMessageDate }
+    
+    if (!updates || !Array.isArray(updates)) {
+      return res.status(400).json({ error: 'updates array is required' });
+    }
+    
+    let updatedCount = 0;
+    let notFoundCount = 0;
+    
+    for (const update of updates) {
+      const { username, creatorAccount, lastMessageDate } = update;
+      
+      if (!username || !creatorAccount || !lastMessageDate) {
+        continue; // Skip invalid entries
+      }
+      
+      const result = await VIPFan.updateOne(
+        { 
+          username: username,
+          creatorAccount: creatorAccount
+        },
+        { 
+          $set: { 
+            lastMessageDate: new Date(lastMessageDate),
+            updatedAt: new Date()
+          } 
+        }
+      );
+      
+      if (result.modifiedCount > 0) {
+        updatedCount++;
+      } else if (result.matchedCount === 0) {
+        notFoundCount++;
+      }
+    }
+    
+    console.log(`✅ Updated lastMessageDate for ${updatedCount} VIP fans (${notFoundCount} not found)`);
+    res.json({ 
+      success: true, 
+      updatedCount,
+      notFoundCount,
+      message: `Updated ${updatedCount} VIP fans, ${notFoundCount} not found`
+    });
+  } catch (error) {
+    console.error('Error updating VIP fan message activity:', error);
+    res.status(500).json({ error: 'Failed to update message activity' });
   }
 });
 
