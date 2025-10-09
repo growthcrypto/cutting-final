@@ -9395,33 +9395,39 @@ async function loadMyMessageAnalysis() {
             const analysis = analyses && analyses.length > 0 ? analyses[0] : null;
             
             if (analysis) {
-                document.getElementById('myMessageScore').textContent = analysis.overallScore ? `${analysis.overallScore}/100` : 'No Data';
-                document.getElementById('myGrammarScore').textContent = analysis.grammarScore ? `${analysis.grammarScore}/100` : 'No Data';
-                document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore ? `${analysis.guidelinesScore}/100` : 'No Data';
+                document.getElementById('myMessageScore').textContent = analysis.overallScore || '0';
+                document.getElementById('myGrammarScore').textContent = analysis.grammarScore || '0';
+                document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore || '0';
             } else {
-                document.getElementById('myMessageScore').textContent = 'No Data';
-                document.getElementById('myGrammarScore').textContent = 'No Data';
-                document.getElementById('myGuidelinesScore').textContent = 'No Data';
+                document.getElementById('myMessageScore').textContent = '0';
+                document.getElementById('myGrammarScore').textContent = '0';
+                document.getElementById('myGuidelinesScore').textContent = '0';
             }
 
-            // Update strengths and weaknesses
+            // Update strengths and weaknesses with enhanced styling
             const strengthsDiv = document.getElementById('myMessageStrengths');
             const weaknessesDiv = document.getElementById('myMessageWeaknesses');
 
             if (analysis && analysis.strengths && analysis.strengths.length > 0) {
                 strengthsDiv.innerHTML = analysis.strengths.map(strength => 
-                    `<div class="text-green-300 text-sm">• ${strength}</div>`
+                    `<div class="flex items-start p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <i class="fas fa-check text-green-400 mr-3 mt-0.5 text-sm"></i>
+                        <span class="text-gray-300 text-sm leading-relaxed">${strength}</span>
+                    </div>`
                 ).join('');
             } else {
-                strengthsDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+                strengthsDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
             }
             
             if (analysis && analysis.weaknesses && analysis.weaknesses.length > 0) {
                 weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => 
-                    `<div class="text-red-300 text-sm">• ${weakness}</div>`
+                    `<div class="flex items-start p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <i class="fas fa-arrow-up text-red-400 mr-3 mt-0.5 text-sm"></i>
+                        <span class="text-gray-300 text-sm leading-relaxed">${weakness}</span>
+                    </div>`
                 ).join('');
             } else {
-                weaknessesDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+                weaknessesDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
             }
         }
     } catch (error) {
