@@ -2731,6 +2731,102 @@ function setTeamComparisonInterval(interval) {
     }
 }
 
+function setAIInterval(interval) {
+    // Update button styles
+    document.querySelectorAll('.ai-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'ai-analysis';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        // Reload chatter analysis if one is selected
+        const chatterSelect = document.getElementById('chatterAnalysisSelect');
+        if (chatterSelect && chatterSelect.value) {
+            runChatterAnalysis();
+        }
+    }
+}
+
+function setTeamDashInterval(interval) {
+    // Update button styles
+    document.querySelectorAll('.team-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'team';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        loadTeamDashboard();
+    }
+}
+
 function closeCustomDateModal() {
     document.getElementById('customDateModal').classList.add('hidden');
     currentModalContext = null;
@@ -6216,10 +6312,24 @@ function createAnalyticsSection() {
     console.log('🎯 createAnalyticsSection() called - returning new HTML');
     const html = `
         <div class="mb-8">
-            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
-                <i class="fas fa-chart-line mr-2"></i>Analytics Overview
-            </h2>
-            <p class="text-gray-400">All your key metrics in one place</p>
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+                    </h2>
+                    <p class="text-gray-400">All your key metrics in one place</p>
+                </div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setAnalyticsInterval('30d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setAnalyticsInterval('custom')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Sales Metrics -->
@@ -6373,293 +6483,29 @@ function createAnalyticsSection() {
 }
 
 function createAIAnalysisSection() {
-    return `
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div>
-                <h2 class="text-3xl font-bold mb-2">AI Analysis Center</h2>
-                <p class="text-gray-400">Deep performance insights with actionable recommendations</p>
-            </div>
-            
-            <!-- Analytics Time Controls -->
-            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                <span class="text-sm text-gray-400 mr-3">Data Period:</span>
-                <button onclick="setAnalyticsInterval('7d')" class="analytics-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
-                <button onclick="setAnalyticsInterval('30d')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
-                <button onclick="setAnalyticsInterval('custom')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
-                </button>
-            </div>
-        </div>
-
-        <!-- Core Infloww Data -->
-        <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-database text-blue-400 mr-3"></i>
-                Core Performance Data
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Combined revenue from PPVs, tips, and subscriptions">Total Revenue</p>
-                            <p class="text-2xl font-bold text-green-400" id="analytics-revenue">$0</p>
-                        </div>
-                        <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">All revenue sources combined</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Revenue after OnlyFans platform fees are deducted">Net Revenue</p>
-                            <p class="text-2xl font-bold text-cyan-400" id="analytics-net-revenue">$0</p>
-                        </div>
-                        <i class="fas fa-chart-line text-cyan-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">After platform fees</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Total number of active paying subscribers across all creators">Total Subscribers</p>
-                            <p class="text-2xl font-bold text-blue-400" id="analytics-subs">0</p>
-                        </div>
-                        <i class="fas fa-users text-blue-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Active subscriber base</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Number of users who clicked through to OnlyFans profiles from marketing">Profile Clicks</p>
-                            <p class="text-2xl font-bold text-purple-400" id="analytics-clicks">3,421</p>
-                        </div>
-                        <i class="fas fa-mouse-pointer text-purple-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Marketing funnel entry</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPVs Sent</p>
-                            <p class="text-2xl font-bold text-yellow-400" id="analytics-ppvs">156</p>
-                        </div>
-                        <i class="fas fa-paper-plane text-yellow-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Pay-per-view messages</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPVs Unlocked</p>
-                            <p class="text-2xl font-bold text-orange-400" id="analytics-ppv-unlocked">89</p>
-                        </div>
-                        <i class="fas fa-unlock text-orange-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Successfully converted</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">Messages Sent</p>
-                            <p class="text-2xl font-bold text-pink-400" id="analytics-messages">892</p>
-                        </div>
-                        <i class="fas fa-comments text-pink-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Total conversations</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">Avg Response Time</p>
-                            <p class="text-2xl font-bold text-red-400" id="analytics-response-time">2.3m</p>
-                        </div>
-                        <i class="fas fa-clock text-red-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Team efficiency metric</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Intelligent Combined Metrics -->
-        <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-brain text-purple-400 mr-3"></i>
-                Intelligent Combined Metrics
-                <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">SMART</span>
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="glass-card rounded-xl p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Percentage of profile clicks that convert to paying subscribers">Click-to-Subscriber Rate</p>
-                            <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">0%</p>
-                        </div>
-                        <i class="fas fa-funnel-dollar text-yellow-400 text-2xl"></i>
-                    </div>
-                    <div class="w-full bg-gray-700/50 rounded-full h-3 mb-3">
-                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-3 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div class="text-sm text-gray-400">Profile clicks → subscribers conversion</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPV Unlock Rate</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-ppv-rate">0%</p>
-                        </div>
-                        <i class="fas fa-key text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
-                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div class="text-xs text-gray-500">PPV sent → unlocked conversion</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Revenue per Subscriber</p>
-                            <p class="text-3xl font-bold text-blue-400" id="analytics-revenue-per-sub">$0</p>
-                        </div>
-                        <i class="fas fa-user-dollar text-blue-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Average subscriber lifetime value</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Revenue per Hour</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-revenue-per-hour">$0</p>
-                        </div>
-                        <i class="fas fa-stopwatch text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Operational efficiency rate</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Messages per PPV</p>
-                            <p class="text-3xl font-bold text-purple-400" id="analytics-messages-per-ppv">0</p>
-                        </div>
-                        <i class="fas fa-exchange-alt text-purple-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Conversation-to-sale efficiency</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Platform Fee Impact</p>
-                            <p class="text-3xl font-bold text-red-400" id="analytics-fee-impact">0%</p>
-                        </div>
-                        <i class="fas fa-percentage text-red-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Revenue lost to platform fees</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance Breakdown Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Revenue Breakdown by Creator</h3>
-                <canvas id="revenueBreakdownChart" width="400" height="200"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Chatter Performance Comparison</h3>
-                <canvas id="chatterComparisonChart" width="400" height="200"></canvas>
-            </div>
-        </div>
-
-        <!-- Detailed Tables -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Creator Performance -->
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Creator Performance</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Creator</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Revenue</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Subscribers</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-700">
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Arya</td>
-                                <td class="px-4 py-3 text-green-400">$4,850</td>
-                                <td class="px-4 py-3 text-blue-400">445</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Iris</td>
-                                <td class="px-4 py-3 text-green-400">$4,200</td>
-                                <td class="px-4 py-3 text-blue-400">398</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Lilla</td>
-                                <td class="px-4 py-3 text-green-400">$3,400</td>
-                                <td class="px-4 py-3 text-blue-400">391</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Top Performing Chatters -->
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Top Performing Chatters</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm">1</div>
-                            <span class="text-white font-medium">Sarah M.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$3,240</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-black font-bold text-sm">2</div>
-                            <span class="text-white font-medium">Alex K.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$2,890</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold text-sm">3</div>
-                            <span class="text-white font-medium">Jamie L.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$2,650</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createAIAnalysisSection() {
     const isChatter = currentUser && currentUser.role === 'chatter';
     
     // For chatters, show ONLY Individual Analysis
     if (isChatter) {
         return `
             <div class="mb-8">
-                <div>
-                    <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-                        <i class="fas fa-user-chart mr-3"></i>My Performance Analysis
-                    </h2>
-                    <p class="text-gray-400 text-lg">Deep insights into your individual performance</p>
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                            <i class="fas fa-user-chart mr-3"></i>My Performance Analysis
+                        </h2>
+                        <p class="text-gray-400 text-lg">Deep insights into your individual performance</p>
+                    </div>
+                    <!-- Time Period Selector -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                        <button onclick="setAIInterval('24h')" class="ai-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                        <button onclick="setAIInterval('7d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                        <button onclick="setAIInterval('30d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                        <button onclick="setAIInterval('custom')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                            <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -6702,9 +6548,21 @@ function createAIAnalysisSection() {
                     </h2>
                     <p class="text-gray-400 text-lg">Deep insights only AI can see</p>
                 </div>
-                <button onclick="runAgencyAnalysis()" class="premium-button text-white font-bold py-4 px-8 rounded-xl text-lg hover:scale-105 transition-transform shadow-2xl">
-                    <i class="fas fa-bolt mr-2"></i>Run Deep Analysis
-                </button>
+                <div class="flex items-center gap-4">
+                    <!-- Time Period Selector -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-sm font-medium text-gray-400 mr-2">Period:</span>
+                        <button onclick="setAIInterval('24h')" class="ai-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                        <button onclick="setAIInterval('7d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                        <button onclick="setAIInterval('30d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                        <button onclick="setAIInterval('custom')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                            <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                        </button>
+                    </div>
+                    <button onclick="runAgencyAnalysis()" class="premium-button text-white font-bold py-4 px-8 rounded-xl text-lg hover:scale-105 transition-transform shadow-2xl">
+                        <i class="fas fa-bolt mr-2"></i>Run Deep Analysis
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -8297,45 +8155,15 @@ function createChatterDashboardSection() {
                     <p class="text-gray-400">Combined analytics across all chatters</p>
                 </div>
                 
-                <!-- Custom Date Range Picker -->
-                <div class="flex items-center space-x-3 mt-4 lg:mt-0 flex-wrap gap-2">
-                    <span class="text-sm text-gray-400 mr-1">Date Range:</span>
-                    
-                    <!-- Start Date -->
-                    <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
-                        <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
-                        <input type="date" id="teamStartDate" 
-                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
-                               style="color-scheme: dark;">
-                    </div>
-                    
-                    <!-- To -->
-                    <span class="text-gray-500 font-medium">→</span>
-                    
-                    <!-- End Date -->
-                    <div class="flex items-center bg-gradient-to-br from-pink-600/20 to-rose-600/20 border border-pink-500/30 rounded-xl px-3 py-2 shadow-lg">
-                        <i class="fas fa-calendar text-pink-400 mr-2 text-sm"></i>
-                        <input type="date" id="teamEndDate" 
-                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
-                               style="color-scheme: dark;">
-                    </div>
-                    
-                    <!-- Apply Button -->
-                    <button onclick="applyTeamDateFilter()" 
-                            class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
-                        <i class="fas fa-check"></i>
-                        Apply
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setTeamDashInterval('24h')" class="team-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setTeamDashInterval('7d')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setTeamDashInterval('30d')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setTeamDashInterval('custom')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
                     </button>
-                    
-                    <!-- Quick Filters -->
-                    <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
-                        <button onclick="setTeamQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
-                            This Week
-                        </button>
-                        <button onclick="setTeamQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-pink-600/50 text-gray-300 hover:text-white transition-all">
-                            This Month
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
