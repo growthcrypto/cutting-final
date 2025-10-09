@@ -2327,10 +2327,11 @@ function calculateIntelligentMetrics(analytics) {
     const revenuePerHour = analytics.totalRevenue / timePeriodHours;
     const messagesPerPPV = analytics.ppvsSent > 0 ? (analytics.messagesSent / analytics.ppvsSent) : 0;
     
-    // Team performance calculations - empty until real data uploaded
-    const topPerformer = analytics.totalRevenue > 0 ? 'Calculating from data...' : 'No data uploaded';
-    const performanceGap = 0; // Will be calculated from real chatter data
-    const teamConsistency = 0; // Will be calculated from real data
+    // Team performance calculations
+    // Top performer will be set from backend data if available, otherwise show message
+    const topPerformer = 'See Team Dashboard';
+    const performanceGap = 0;
+    const teamConsistency = 0;
     const synergyScore = 0; // Will be calculated from real team data
     
     // Growth calculations - empty until historical data available
@@ -2374,7 +2375,7 @@ function updateIntelligentMetrics(analytics, intelligent) {
         messagesPerPPV: intelligent.messagesPerPPV,
         
         // Team quality - NEW
-        topPerformer: intelligent.topPerformer,
+        topPerformer: analytics.topPerformer || 'No data',
         avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/10` : '-',
         avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/10` : '-',
         avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/10` : '-'

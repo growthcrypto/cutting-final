@@ -829,6 +829,27 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       guidelineScoresFound: guidelineScores.length
     });
     
+    // Calculate top performer from FanPurchase records
+    const chatterRevenue = {};
+    fanPurchases.forEach(purchase => {
+      const chatter = purchase.chatterName || 'Unknown';
+      if (!chatterRevenue[chatter]) {
+        chatterRevenue[chatter] = 0;
+      }
+      chatterRevenue[chatter] += purchase.amount || 0;
+    });
+    
+    let topPerformer = null;
+    let topRevenue = 0;
+    Object.entries(chatterRevenue).forEach(([name, revenue]) => {
+      if (revenue > topRevenue) {
+        topRevenue = revenue;
+        topPerformer = name;
+      }
+    });
+    
+    console.log('🏆 Top performer:', topPerformer, 'with $', topRevenue);
+    
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
     const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
@@ -857,6 +878,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       avgOverallScore: avgOverallScore, // NEW: For Team Dynamics
       avgGrammarScore: avgGrammarScore, // NEW: For Team Dynamics
       avgGuidelinesScore: avgGuidelinesScore, // NEW: For Team Dynamics
+      topPerformer: topPerformer || 'No data', // NEW: Top revenue generator
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
     
