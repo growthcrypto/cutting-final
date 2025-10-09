@@ -2374,11 +2374,11 @@ function updateIntelligentMetrics(analytics, intelligent) {
         clicksToSpenders: analytics.linkClicks > 0 ? `${((analytics.uniqueSpenders / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
         messagesPerPPV: intelligent.messagesPerPPV,
         
-        // Team quality - NEW (scores are already 0-10 from backend)
+        // Team quality - NEW (scores are 0-100 scale)
         topPerformer: analytics.topPerformer || 'No data',
-        avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/10` : '-',
-        avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/10` : '-',
-        avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/10` : '-'
+        avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/100` : '-',
+        avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/100` : '-',
+        avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/100` : '-'
     };
 
     // Update all elements
@@ -4265,31 +4265,31 @@ function loadLiveAIInsights(analytics, intelligent) {
         }
     }
     
-    // 2. ANALYSIS SCORE TREND (scores are 0-10 scale)
+    // 2. ANALYSIS SCORE TREND (scores are 0-100 scale)
     if (analytics.avgOverallScore != null || analytics.avgGrammarScore != null || analytics.avgGuidelinesScore != null) {
         const lowestScore = Math.min(
-            analytics.avgOverallScore || 10,
-            analytics.avgGrammarScore || 10,
-            analytics.avgGuidelinesScore || 10
+            analytics.avgOverallScore || 100,
+            analytics.avgGrammarScore || 100,
+            analytics.avgGuidelinesScore || 100
         );
         const lowestCategory = lowestScore === analytics.avgGrammarScore ? 'Grammar' :
                                lowestScore === analytics.avgGuidelinesScore ? 'Guidelines' : 'Overall';
         
-        if (lowestScore < 6) { // Below 6/10
+        if (lowestScore < 60) { // Below 60/100
             insights.push({
                 type: 'critical',
                 icon: 'fa-exclamation-circle',
                 title: `Critical: ${lowestCategory} Score Low`,
-                value: `${lowestScore}/10`,
+                value: `${lowestScore}/100`,
                 message: `Team ${lowestCategory.toLowerCase()} score is below acceptable. This impacts fan experience and revenue.`,
                 action: `Immediate training session on ${lowestCategory.toLowerCase()} improvement needed`
             });
-        } else if (lowestScore >= 8) { // 8/10 or higher
+        } else if (lowestScore >= 80) { // 80/100 or higher
             insights.push({
                 type: 'strength',
                 icon: 'fa-star',
                 title: 'Strength: High Quality Messaging',
-                value: `${Math.max(analytics.avgOverallScore || 0, analytics.avgGrammarScore || 0, analytics.avgGuidelinesScore || 0)}/10`,
+                value: `${Math.max(analytics.avgOverallScore || 0, analytics.avgGrammarScore || 0, analytics.avgGuidelinesScore || 0)}/100`,
                 message: 'Team maintaining excellent messaging standards across all categories.',
                 action: 'Keep current training and quality standards'
             });
@@ -6940,22 +6940,22 @@ function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
-    // Homogeneous color scheme - slate/purple/blue only (0-10 scale)
+    // Homogeneous color scheme - slate/purple/blue only (0-100 scale)
     const getScoreColor = (score) => {
-        if (score >= 8) return 'text-blue-400'; // 8+/10
-        if (score >= 6) return 'text-purple-400'; // 6-7/10
-        return 'text-slate-400'; // Below 6/10
+        if (score >= 80) return 'text-blue-400'; // 80+/100
+        if (score >= 60) return 'text-purple-400'; // 60-79/100
+        return 'text-slate-400'; // Below 60/100
     };
     
     const getScoreBg = (score) => {
-        if (score >= 8) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
-        if (score >= 6) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
+        if (score >= 80) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
+        if (score >= 60) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
         return 'from-slate-500/10 to-slate-600/10 border-slate-500/20';
     };
     
     const getScoreGradient = (score) => {
-        if (score >= 8) return 'from-blue-500 to-blue-600';
-        if (score >= 6) return 'from-purple-500 to-purple-600';
+        if (score >= 80) return 'from-blue-500 to-blue-600';
+        if (score >= 60) return 'from-purple-500 to-purple-600';
         return 'from-slate-500 to-slate-600';
     };
     
@@ -7031,7 +7031,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-spell-check ${getScoreColor(metrics.avgGrammarScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/10</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Grammar Score</div>
             </div>
         </div>
@@ -7044,7 +7044,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-clipboard-check ${getScoreColor(metrics.avgGuidelinesScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/10</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Guidelines Score</div>
             </div>
         </div>
@@ -7057,7 +7057,7 @@ function renderTeamMetrics(metrics) {
                         <i class="fas fa-star ${getScoreColor(metrics.avgOverallScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/10</span></div>
+                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Overall Score</div>
             </div>
         </div>
@@ -7180,16 +7180,16 @@ function renderChatterContent(chatter) {
     
     const getScoreColor = (score) => {
         if (score === null || score === undefined) return 'text-gray-400';
-        if (score >= 8) return 'text-emerald-400'; // 8+/10
-        if (score >= 6) return 'text-yellow-400'; // 6-7/10
-        return 'text-red-400'; // Below 6/10
+        if (score >= 85) return 'text-emerald-400'; // 85+/100
+        if (score >= 70) return 'text-yellow-400'; // 70-84/100
+        return 'text-red-400'; // Below 70/100
     };
     
     const getScoreBadge = (score) => {
         if (score === null || score === undefined) return '⚪';
-        if (score >= 8) return '✨'; // 8+/10
-        if (score >= 6) return '⚡'; // 6-7/10
-        return '🔴'; // Below 6/10
+        if (score >= 85) return '✨'; // 85+/100
+        if (score >= 70) return '⚡'; // 70-84/100
+        return '🔴'; // Below 70/100
     };
     
     const formatScore = (score) => {
@@ -7252,7 +7252,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.grammarScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.grammarScore)} mb-1">${formatScore(chatter.grammarScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.grammarScore ? '/10' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.grammarScore ? '/100' : ''}</div>
             </div>
             <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -7260,7 +7260,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.guidelinesScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.guidelinesScore)} mb-1">${formatScore(chatter.guidelinesScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.guidelinesScore ? '/10' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.guidelinesScore ? '/100' : ''}</div>
             </div>
             <div class="relative overflow-hidden p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all">
                 <div class="flex items-center justify-between mb-3">
@@ -7268,7 +7268,7 @@ function renderChatterContent(chatter) {
                     <div class="text-2xl">${getScoreBadge(chatter.overallScore)}</div>
                 </div>
                 <div class="text-3xl font-black ${getScoreColor(chatter.overallScore)} mb-1">${formatScore(chatter.overallScore)}</div>
-                <div class="text-[10px] text-gray-500 uppercase">${chatter.overallScore ? '/10' : ''}</div>
+                <div class="text-[10px] text-gray-500 uppercase">${chatter.overallScore ? '/100' : ''}</div>
             </div>
         </div>
         
