@@ -7052,7 +7052,67 @@ function createSettingsSection() {
                 </div>
             </div>
         </div>
+        
+        <!-- Danger Zone -->
+        <div class="glass-card rounded-xl p-6 mt-8 border-2 border-red-500/30">
+            <h3 class="text-xl font-semibold mb-4 text-red-400">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-red-900/20 rounded-lg">
+                    <div>
+                        <h4 class="font-medium text-red-300">Wipe All Data</h4>
+                        <p class="text-sm text-gray-400">Delete all operational data (keeps Messages, Analysis, Users, Creators)</p>
+                    </div>
+                    <button onclick="wipeProductionData()" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-xl transition-all">
+                        <i class="fas fa-trash mr-2"></i>Wipe Data
+                    </button>
+                </div>
+            </div>
+        </div>
     `;
+}
+
+// Wipe Production Data Function
+async function wipeProductionData() {
+    if (!confirm('⚠️ WARNING: This will delete ALL operational data!\n\nThis will DELETE:\n- Daily Reports\n- Account Data\n- Traffic Sources\n- VIP Fans\n- Fan Purchases\n- Link Tracking\n- Daily Snapshots\n\nThis will KEEP:\n- Messages & Analysis\n- Users & Chatters\n- Creator Accounts\n\nAre you sure?')) {
+        return;
+    }
+    
+    if (!confirm('🚨 FINAL WARNING: This cannot be undone!\n\nClick OK to proceed with data wipe.')) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch('/api/admin/wipe-data', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('✅ Data wiped successfully! Deleted ' + result.deleted.total + ' documents', 'success');
+            console.log('📊 Wipe Results:', result);
+            
+            // Reload page after 2 seconds
+            setTimeout(function() {
+                location.reload();
+            }, 2000);
+        } else {
+            showError(result.error || 'Failed to wipe data');
+        }
+    } catch (error) {
+        console.error('❌ Wipe error:', error);
+        showError('Connection error: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
 }
 
 function createChatterDashboardSection() {
