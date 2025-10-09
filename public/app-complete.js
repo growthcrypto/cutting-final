@@ -1939,8 +1939,9 @@ function loadSectionData(sectionId) {
             break;
         case 'analytics':
             setTimeout(() => {
+                console.log('🔄 Attempting to load analytics data...');
                 loadAnalyticsData();
-            }, 100);
+            }, 500);
             break;
         case 'ai-analysis':
             loadChattersForAnalysis();
@@ -6482,6 +6483,7 @@ function createNewAnalyticsSection() {
 }
 
 // Load Analytics Data
+let analyticsLoadAttempts = 0;
 async function loadAnalyticsData() {
     try {
         // Use the same API as the manager dashboard
@@ -6500,10 +6502,18 @@ async function loadAnalyticsData() {
             // Sales Metrics - check if elements exist first
             const netRevEl = document.getElementById('analyticsNetRevenue');
             if (!netRevEl) {
-                console.error('Analytics elements not found in DOM yet - waiting...');
-                setTimeout(() => loadAnalyticsData(), 200);
+                analyticsLoadAttempts++;
+                if (analyticsLoadAttempts > 10) {
+                    console.error('❌ Analytics elements never appeared after 10 attempts - giving up');
+                    return;
+                }
+                console.log(`Analytics elements not found (attempt ${analyticsLoadAttempts}/10) - waiting...`);
+                setTimeout(() => loadAnalyticsData(), 300);
                 return;
             }
+            
+            analyticsLoadAttempts = 0; // Reset counter
+            console.log('✅ Analytics elements found! Loading data...');
             
             netRevEl.textContent = `$${(data.netRevenue || 0).toLocaleString()}`;
             document.getElementById('analyticsPPVRevenue').textContent = `$${(data.ppvRevenue || 0).toLocaleString()}`;
