@@ -1748,11 +1748,11 @@ function showSection(sectionId) {
         section.classList.add('hidden');
     });
 
-    // SPECIAL: Always recreate analytics section to ensure fresh HTML
-    if (sectionId === 'analytics') {
-        const existingSection = document.getElementById('analytics');
+    // SPECIAL: Always recreate these sections to ensure fresh HTML
+    if (sectionId === 'analytics' || sectionId === 'ai-analysis') {
+        const existingSection = document.getElementById(sectionId);
         if (existingSection) {
-            console.log('🗑️ Removing old analytics section');
+            console.log('🗑️ Removing old section:', sectionId);
             existingSection.remove();
         }
     }
