@@ -2539,6 +2539,239 @@ function getMetricColor(value, avg, lowerIsBetter = false) {
 
 // ==================== CUSTOM DATE PICKER FUNCTIONS ====================
 
+let currentDashboardInterval = '7d';
+let currentModalContext = null; // Track which page opened the modal
+
+function setDashboardInterval(interval) {
+    currentDashboardInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.dashboard-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        // Show custom date picker popup
+        currentModalContext = 'dashboard';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Calculate date range based on interval
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        currentFilterType = 'custom';
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        loadDashboardData();
+    }
+}
+
+function setAnalyticsInterval(interval) {
+    // Update button styles
+    document.querySelectorAll('.analytics-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'analytics';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        loadAnalyticsData();
+    }
+}
+
+function setMarketingInterval(interval) {
+    // Update button styles
+    document.querySelectorAll('.marketing-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'marketing';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        loadMarketingDashboard();
+    }
+}
+
+function setTeamComparisonInterval(interval) {
+    // Update button styles
+    document.querySelectorAll('.team-comparison-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'team-comparison';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        const today = new Date();
+        let startDate;
+        
+        if (interval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (interval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (interval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        }
+        
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        customDateRange = {
+            start: formatDate(startDate),
+            end: formatDate(today)
+        };
+        
+        loadTeamComparisonData();
+    }
+}
+
+function closeCustomDateModal() {
+    document.getElementById('customDateModal').classList.add('hidden');
+    currentModalContext = null;
+}
+
+function applyModalDateFilter() {
+    const startDate = document.getElementById('modalStartDate').value;
+    const endDate = document.getElementById('modalEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    currentFilterType = 'custom';
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    closeCustomDateModal();
+    
+    // Load data based on context
+    if (currentModalContext === 'dashboard') {
+        loadDashboardData();
+    } else if (currentModalContext === 'analytics') {
+        loadAnalyticsData();
+    } else if (currentModalContext === 'marketing') {
+        loadMarketingDashboard();
+    } else if (currentModalContext === 'team') {
+        loadTeamDashboard();
+    } else if (currentModalContext === 'team-comparison') {
+        loadTeamComparisonData();
+    }
+}
+
 function applyCustomDateFilter() {
     const startDate = document.getElementById('dashboardStartDate').value;
     const endDate = document.getElementById('dashboardEndDate').value;
@@ -7387,46 +7620,16 @@ function createMarketingDashboardSection() {
             </div>
         </div>
         
-        <!-- Custom Date Range Picker -->
+        <!-- Time Period Selector -->
         <div class="mb-6 glass-card rounded-xl p-4">
-            <div class="flex items-center space-x-3 flex-wrap gap-2">
-                <span class="text-sm text-gray-400 mr-1">Date Range:</span>
-                
-                <!-- Start Date -->
-                <div class="flex items-center bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 rounded-xl px-3 py-2 shadow-lg">
-                    <i class="fas fa-calendar text-cyan-400 mr-2 text-sm"></i>
-                    <input type="date" id="marketingStartDate" 
-                           class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
-                           style="color-scheme: dark;">
-                </div>
-                
-                <!-- To -->
-                <span class="text-gray-500 font-medium">→</span>
-                
-                <!-- End Date -->
-                <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
-                    <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
-                    <input type="date" id="marketingEndDate" 
-                           class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
-                           style="color-scheme: dark;">
-                </div>
-                
-                <!-- Apply Button -->
-                <button onclick="applyMarketingDateFilter()" 
-                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
-                    <i class="fas fa-check"></i>
-                    Apply
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                <button onclick="setMarketingInterval('24h')" class="marketing-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                <button onclick="setMarketingInterval('7d')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                <button onclick="setMarketingInterval('30d')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                <button onclick="setMarketingInterval('custom')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                    <i class="fas fa-calendar mr-1 text-xs"></i>Custom
                 </button>
-                
-                <!-- Quick Filters -->
-                <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
-                    <button onclick="setMarketingQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-cyan-600/50 text-gray-300 hover:text-white transition-all">
-                        This Week
-                    </button>
-                    <button onclick="setMarketingQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
-                        This Month
-                    </button>
-                </div>
             </div>
         </div>
         
@@ -7976,82 +8179,6 @@ function createTeamManagementSection() {
     `;
 }
 
-function createTeamComparisonSection() {
-    return `
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                        <i class="fas fa-trophy mr-3"></i>Team Leaderboard
-                    </h2>
-                    <p class="text-gray-400 text-lg">See how you stack up against the team</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Your Position Card -->
-        <div id="yourPositionCard" class="mb-8">
-            <!-- Will be populated dynamically -->
-        </div>
-
-        <!-- Team Leaderboard Table -->
-        <div class="glass-card rounded-2xl p-8 border-2 border-yellow-500/30">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold text-white flex items-center">
-                    <i class="fas fa-users text-yellow-400 mr-3"></i>
-                    Full Team Rankings
-                </h3>
-                <div class="text-sm text-gray-400">
-                    Click any column header to sort
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="border-b-2 border-gray-700">
-                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('rank')">
-                                <i class="fas fa-hashtag mr-2"></i>Rank
-                            </th>
-                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('name')">
-                                <i class="fas fa-user mr-2"></i>Chatter
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('revenue')">
-                                <i class="fas fa-dollar-sign mr-2"></i>Revenue
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('unlockRate')">
-                                <i class="fas fa-unlock mr-2"></i>Unlock %
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('responseTime')">
-                                <i class="fas fa-clock mr-2"></i>Avg Response
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('messagesPerPPV')">
-                                <i class="fas fa-comments mr-2"></i>Msgs/PPV
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('overallScore')">
-                                <i class="fas fa-star mr-2"></i>Overall
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('grammarScore')">
-                                <i class="fas fa-spell-check mr-2"></i>Grammar
-                            </th>
-                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('guidelinesScore')">
-                                <i class="fas fa-clipboard-check mr-2"></i>Guidelines
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="teamComparisonTableBody" class="divide-y divide-gray-700">
-                        <!-- Will be populated dynamically -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Team Average Row -->
-            <div id="teamAverageRow" class="mt-6 pt-6 border-t-2 border-gray-700">
-                <!-- Will be populated dynamically -->
-            </div>
-        </div>
-    `;
-}
 
 function createSettingsSection() {
     return `
@@ -8342,33 +8469,6 @@ function createMyPerformanceSection() {
     `;
 }
 
-function createTeamComparisonSection() {
-    return `
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">Team Comparison</h2>
-            <p class="text-gray-400">See how you compare with other team members</p>
-        </div>
-        <div class="glass-card rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-4">Team Leaderboard</h3>
-            <div id="teamLeaderboard" class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-sm font-bold text-black">1</div>
-                        <span>Top Performer</span>
-                    </div>
-                    <span class="text-green-400">$2,450</span>
-                </div>
-                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-sm font-bold">2</div>
-                        <span>You</span>
-                    </div>
-                    <span class="text-blue-400">$1,850</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 // ==================== TEAM DASHBOARD FUNCTIONS ====================
 
@@ -10785,12 +10885,22 @@ function renderSophisticatedChatterAnalysis(data) {
 function createTeamComparisonSection() {
     return `
         <div class="mb-8">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
                         <i class="fas fa-trophy mr-3"></i>Team Leaderboard
                     </h2>
                     <p class="text-gray-400 text-lg">See how you stack up against the team</p>
+                </div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setTeamComparisonInterval('24h')" class="team-comparison-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setTeamComparisonInterval('7d')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setTeamComparisonInterval('30d')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setTeamComparisonInterval('custom')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                    </button>
                 </div>
             </div>
         </div>
