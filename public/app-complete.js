@@ -1950,8 +1950,8 @@ function loadSectionData(sectionId) {
             break;
         case 'analytics':
             setTimeout(() => {
-                console.log('🔄 Attempting to load analytics data...');
-                loadAnalyticsData();
+                console.log('🔄 Initializing analytics date picker...');
+                setAnalyticsQuickFilter('week'); // Auto-set to current week
             }, 500);
             break;
         case 'ai-analysis':
@@ -5445,8 +5445,8 @@ function createAnalyticsSection() {
                     <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
-                    <div class="text-sm text-gray-400 mb-2">PPVs Sent</div>
-                    <div class="text-3xl font-bold text-purple-400" id="analyticsPPVsSent">0</div>
+                    <div class="text-sm text-gray-400 mb-2">Response Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsResponseRate">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
@@ -6339,10 +6339,55 @@ function createDataUploadSection() {
 function createNewAnalyticsSection() {
     return `
         <div class="mb-8">
-            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
-                <i class="fas fa-chart-line mr-2"></i>Analytics Overview
-            </h2>
-            <p class="text-gray-400">All your key metrics in one place</p>
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+                    </h2>
+                    <p class="text-gray-400">All your key metrics in one place</p>
+                </div>
+                
+                <!-- Custom Date Range Picker -->
+                <div class="flex items-center space-x-3 flex-wrap gap-2">
+                    <span class="text-sm text-gray-400 mr-1">Date Range:</span>
+                    
+                    <!-- Start Date -->
+                    <div class="flex items-center bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-blue-400 mr-2 text-sm"></i>
+                        <input type="date" id="analyticsStartDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- To -->
+                    <span class="text-gray-500 font-medium">→</span>
+                    
+                    <!-- End Date -->
+                    <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
+                        <input type="date" id="analyticsEndDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    <button onclick="applyAnalyticsDateFilter()" 
+                            class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        Apply
+                    </button>
+                    
+                    <!-- Quick Filters -->
+                    <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
+                        <button onclick="setAnalyticsQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-blue-600/50 text-gray-300 hover:text-white transition-all">
+                            This Week
+                        </button>
+                        <button onclick="setAnalyticsQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                            This Month
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Sales Metrics -->
@@ -6387,8 +6432,8 @@ function createNewAnalyticsSection() {
                     <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
-                    <div class="text-sm text-gray-400 mb-2">PPVs Sent</div>
-                    <div class="text-3xl font-bold text-purple-400" id="analyticsPPVsSent">0</div>
+                    <div class="text-sm text-gray-400 mb-2">Response Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsResponseRate">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
@@ -6493,6 +6538,59 @@ function createNewAnalyticsSection() {
     `;
 }
 
+// Analytics Date Picker Functions
+function applyAnalyticsDateFilter() {
+    const startDate = document.getElementById('analyticsStartDate').value;
+    const endDate = document.getElementById('analyticsEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Analytics date filter applied:', customDateRange);
+    analyticsLoadAttempts = 0; // Reset attempts
+    loadAnalyticsData();
+}
+
+function setAnalyticsQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('analyticsStartDate').value = formatDate(startDate);
+    document.getElementById('analyticsEndDate').value = formatDate(endDate);
+    
+    applyAnalyticsDateFilter();
+}
+
 // Load Analytics Data
 let analyticsLoadAttempts = 0;
 async function loadAnalyticsData() {
@@ -6534,7 +6632,8 @@ async function loadAnalyticsData() {
             
             // Chatting Metrics
             document.getElementById('analyticsMessagesSent').textContent = (data.messagesSent || 0).toLocaleString();
-            document.getElementById('analyticsPPVsSent').textContent = (data.ppvsSent || 0).toLocaleString();
+            // Response Rate: Calculate from message analysis data (placeholder for now)
+            document.getElementById('analyticsResponseRate').textContent = '-';
             document.getElementById('analyticsPPVsUnlocked').textContent = (data.ppvsUnlocked || 0).toLocaleString();
             const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : '0';
             document.getElementById('analyticsUnlockRate').textContent = `${unlockRate}%`;
