@@ -6494,8 +6494,15 @@ async function loadAnalyticsData() {
         if (response.ok) {
             const data = await response.json();
             
-            // Sales Metrics
-            document.getElementById('analyticsNetRevenue').textContent = `$${(data.netRevenue || 0).toLocaleString()}`;
+            // Sales Metrics - check if elements exist first
+            const netRevEl = document.getElementById('analyticsNetRevenue');
+            if (!netRevEl) {
+                console.error('Analytics elements not found in DOM yet - waiting...');
+                setTimeout(() => loadAnalyticsData(), 200);
+                return;
+            }
+            
+            netRevEl.textContent = `$${(data.netRevenue || 0).toLocaleString()}`;
             document.getElementById('analyticsPPVRevenue').textContent = `$${(data.ppvRevenue || 0).toLocaleString()}`;
             document.getElementById('analyticsTipRevenue').textContent = `$${(data.tipRevenue || 0).toLocaleString()}`;
             document.getElementById('analyticsAvgPPV').textContent = `$${(data.avgPPVPrice || 0)}`;
