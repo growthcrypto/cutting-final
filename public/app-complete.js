@@ -2445,7 +2445,8 @@ async function loadDashboardData() {
 
 // Calculate intelligent metrics not available in Infloww
 function calculateIntelligentMetrics(analytics) {
-    const clickToSubRate = analytics.profileClicks > 0 ? (analytics.newSubs / analytics.profileClicks * 100) : 0;
+    // FIXED: Use linkClicks instead of profileClicks for Click-to-Sub Rate
+    const clickToSubRate = analytics.linkClicks > 0 ? (analytics.newSubs / analytics.linkClicks * 100) : 0;
     const ppvUnlockRate = analytics.ppvsSent > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
     const revenuePerSub = analytics.totalSubs > 0 ? (analytics.totalRevenue / analytics.totalSubs) : 0;
     // Calculate revenue per hour based on actual time period
@@ -2498,9 +2499,9 @@ function updateIntelligentMetrics(analytics, intelligent) {
         revenuePerSub: `$${intelligent.revenuePerSub.toFixed(2)}`,
         
         // Efficiency metrics - NEW
-        avgPPVPrice: `$${analytics.avgPPVPrice || 0}`,
+        effActiveFans: analytics.activeFans > 0 ? analytics.activeFans.toLocaleString() : '-',
+        effFansWithRenew: analytics.fansWithRenew > 0 ? analytics.fansWithRenew.toLocaleString() : '-',
         clicksToSpenders: analytics.linkClicks > 0 ? `${((analytics.uniqueSpenders / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
-        messagesPerPPV: intelligent.messagesPerPPV,
         
         // Team quality - NEW (scores are 0-100 scale)
         topPerformer: analytics.topPerformer || 'No data',
