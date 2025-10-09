@@ -608,7 +608,14 @@ function renderMarketingDashboard() {
     
     // Render detailed table
     const detailedTableBody = document.getElementById('marketingDetailedTableBody');
+    console.log('📊 Rendering detailed table:', {
+        tableExists: !!detailedTableBody,
+        sourcesExist: !!data.sources,
+        sourcesLength: data.sources?.length
+    });
+    
     if (detailedTableBody && data.sources && data.sources.length > 0) {
+        console.log('✅ Populating detailed table with', data.sources.length, 'sources');
         detailedTableBody.innerHTML = data.sources.map(source => {
             const qualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
             const spenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
