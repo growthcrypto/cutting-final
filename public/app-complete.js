@@ -4921,20 +4921,15 @@ function updateDashboardMetrics(data) {
         clicksEl.innerHTML = `${(data.linkClicks || 0).toLocaleString()}${renderChangeIndicator(changes.linkClicks)}`;
     }
     
-    // NEW: Update subscriber quality metrics
-    const activeFansEl = document.getElementById('activeFans');
-    if (activeFansEl) {
-        activeFansEl.textContent = data.activeFans > 0 ? data.activeFans.toLocaleString() : '-';
+    // NEW: Update VIP metrics
+    const vipRevenuePercentEl = document.getElementById('vipRevenuePercent');
+    if (vipRevenuePercentEl) {
+        vipRevenuePercentEl.textContent = data.vipRevenuePercent > 0 ? `${data.vipRevenuePercent.toFixed(1)}%` : '-';
     }
     
-    const fansWithRenewEl = document.getElementById('fansWithRenew');
-    if (fansWithRenewEl) {
-        fansWithRenewEl.textContent = data.fansWithRenew > 0 ? data.fansWithRenew.toLocaleString() : '-';
-    }
-    
-    const renewRateEl = document.getElementById('renewRate');
-    if (renewRateEl) {
-        renewRateEl.textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
+    const avgVIPSpendEl = document.getElementById('avgVIPSpend');
+    if (avgVIPSpendEl) {
+        avgVIPSpendEl.textContent = data.avgVIPSpend > 0 ? `$${data.avgVIPSpend.toFixed(2)}` : '-';
     }
     
     const messagesEl = document.getElementById('messagesSent');

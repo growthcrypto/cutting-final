@@ -895,6 +895,23 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     
     console.log('🏆 Top performer:', topPerformer, 'with $', topRevenue);
     
+    // Calculate VIP metrics
+    const allVIPFans = await VIPFan.find({ status: 'active' });
+    const vipRevenue = fanPurchases
+      .filter(p => p.vipFan != null)
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    const vipRevenuePercent = totalRevenue > 0 ? (vipRevenue / totalRevenue) * 100 : 0;
+    const avgVIPSpend = allVIPFans.length > 0 
+      ? allVIPFans.reduce((sum, vip) => sum + (vip.lifetimeSpend || 0), 0) / allVIPFans.length
+      : 0;
+    
+    console.log('⭐ VIP Metrics:', {
+      vipCount: allVIPFans.length,
+      vipRevenue,
+      vipRevenuePercent: vipRevenuePercent.toFixed(1) + '%',
+      avgVIPSpend: avgVIPSpend.toFixed(2)
+    });
+    
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
     const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
@@ -915,6 +932,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       activeFans: Math.round(activeFans || 0), // Active subscriber count
       fansWithRenew: Math.round(fansWithRenew || 0), // Fans with auto-renew enabled
       renewRate: Math.round(renewRate * 10) / 10, // % of active fans with renew on
+      // VIP Fan Metrics
+      vipRevenuePercent: Math.round(vipRevenuePercent * 10) / 10, // % of revenue from VIPs
+      avgVIPSpend: Math.round(avgVIPSpend * 100) / 100, // Avg lifetime spend per VIP
+      vipCount: allVIPFans.length, // Total VIP fans
       messagesSent: combinedMessagesSent,
       ppvsSent: combinedPPVsSent,
       ppvsUnlocked: combinedPPVsUnlocked,
