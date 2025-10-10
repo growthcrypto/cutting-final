@@ -2160,9 +2160,9 @@ function initializeSidebar() {
     document.addEventListener('click', (event) => {
         if (window.innerWidth >= 1024) return;
         const isClickInsideSidebar = sidebar.contains(event.target);
-        const isClickOnControl = sidebarToggle.contains(event.target)
-            || sidebarToggleIcon.contains(event.target)
-            || floatingSidebarToggle.contains(event.target);
+        const isClickOnControl = (sidebarToggle && sidebarToggle.contains(event.target))
+            || (sidebarToggleIcon && sidebarToggleIcon.contains(event.target))
+            || (floatingSidebarToggle && floatingSidebarToggle.contains(event.target));
 
         if (!isClickInsideSidebar && !isClickOnControl) {
             toggleSidebarState(true);
