@@ -4182,11 +4182,42 @@ async function runAgencyAnalysis() {
         const data = await response.json();
         console.log('📊 Data for AI analysis:', data);
         
-        // DEEP ANALYSIS LOGIC - Calculate insights
-        const insights = generateDeepInsights(data);
-        
-        // Render STUNNING results
-        resultsContainer.innerHTML = renderAgencyInsights(insights);
+        // Show simple team overview for now
+        resultsContainer.innerHTML = `
+            <div class="glass-card rounded-xl p-6 mb-6">
+                <h3 class="text-2xl font-bold text-white mb-4">
+                    <i class="fas fa-chart-bar text-purple-400 mr-3"></i>
+                    Team Performance Summary
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gray-700/50 rounded-xl p-6">
+                        <div class="text-gray-400 text-sm mb-2">Total Revenue</div>
+                        <div class="text-3xl font-bold text-white">$${data.totalRevenue || 0}</div>
+                        <div class="text-sm text-gray-400 mt-2">${data.chatterPerformance?.length || 0} chatters active</div>
+                    </div>
+                    
+                    <div class="bg-gray-700/50 rounded-xl p-6">
+                        <div class="text-gray-400 text-sm mb-2">Average Unlock Rate</div>
+                        <div class="text-3xl font-bold text-white">${data.avgUnlockRate || 0}%</div>
+                        <div class="text-sm text-gray-400 mt-2">Across all PPVs sent</div>
+                    </div>
+                    
+                    <div class="bg-gray-700/50 rounded-xl p-6">
+                        <div class="text-gray-400 text-sm mb-2">Average Quality Score</div>
+                        <div class="text-3xl font-bold text-white">${data.avgOverallScore || 0}/100</div>
+                        <div class="text-sm text-gray-400 mt-2">Team message quality</div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                    <p class="text-blue-300">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Note:</strong> Upload data for multiple chatters and periods to see team-wide pattern analysis, correlations, and recommendations.
+                    </p>
+                </div>
+            </div>
+        `;
         
     } catch (error) {
         console.error('Agency analysis error:', error);
