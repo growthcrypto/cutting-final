@@ -1403,8 +1403,8 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
 });
 
 // Submit OF Account data
-// Delete all OF Account Data (manager only)
-app.delete('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+// Delete all OF Account Data
+app.delete('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const result = await AccountData.deleteMany({});
     console.log('🗑️ Deleted all OF Account Data:', result.deletedCount, 'records');
