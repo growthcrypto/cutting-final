@@ -1458,7 +1458,8 @@ function showMainApp() {
         clearDashboardToZero();
         // Aggressively clear specific metrics immediately
         forceClearSpecificMetrics();
-        initializeDatePicker(); // NEW: Set date picker to current week
+        // Initialize dashboard with default 7d interval
+        setDashboardInterval('7d');
         loadAIRecommendations();
         
         // Also clear again after a short delay to override any cached values
