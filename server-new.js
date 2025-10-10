@@ -2684,10 +2684,69 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       analysisResult.grammarScore = grammarScore;
       analysisResult.guidelinesScore = guidelinesScore;
       
+      // GENERATE strengths, weaknesses, and recommendations from the analysis data
+      const strengths = [];
+      const weaknesses = [];
+      const recommendations = [];
+      
+      // From grammar breakdown
+      if (analysisResult.grammarBreakdown) {
+        if (grammarScore >= 85) {
+          strengths.push("Excellent grammar quality with minimal errors");
+        } else if (grammarScore >= 70) {
+          strengths.push("Good grammar foundation");
+        }
+        
+        if (grammarScore < 85) {
+          if (analysisResult.grammarBreakdown.spellingErrors && !analysisResult.grammarBreakdown.spellingErrors.includes('No spelling') && !analysisResult.grammarBreakdown.spellingErrors.includes('Found 0')) {
+            weaknesses.push("Grammar: " + analysisResult.grammarBreakdown.spellingErrors);
+            recommendations.push("Review messages for spelling accuracy before sending");
+          }
+          if (analysisResult.grammarBreakdown.punctuationProblems && !analysisResult.grammarBreakdown.punctuationProblems.includes('No punctuation') && !analysisResult.grammarBreakdown.punctuationProblems.includes('Found 0')) {
+            weaknesses.push("Punctuation: " + analysisResult.grammarBreakdown.punctuationProblems);
+            recommendations.push("Keep messages informal - avoid periods and formal commas");
+          }
+        }
+      }
+      
+      // From guidelines breakdown
+      if (analysisResult.guidelinesBreakdown) {
+        Object.entries(analysisResult.guidelinesBreakdown).forEach(([category, data]) => {
+          if (data.items && Array.isArray(data.items)) {
+            data.items.forEach(item => {
+              if (item.count > 0) {
+                weaknesses.push(`${item.title}: ${item.count} violations - ${item.description}`);
+                recommendations.push(`Focus on improving: ${item.title}`);
+              } else if (item.count === 0) {
+                strengths.push(`Perfect compliance with: ${item.title}`);
+              }
+            });
+          }
+        });
+      }
+      
+      // Add defaults if empty
+      if (strengths.length === 0) {
+        strengths.push("Analysis complete - review detailed breakdowns below");
+      }
+      if (weaknesses.length === 0) {
+        weaknesses.push("No major issues detected - great work!");
+      }
+      if (recommendations.length === 0) {
+        recommendations.push("Continue current approach and monitor performance");
+      }
+      
+      analysisResult.strengths = strengths;
+      analysisResult.weaknesses = weaknesses;
+      analysisResult.recommendations = recommendations;
+      
       console.log('📊 Final scores:', {
         grammar: analysisResult.grammarScore,
         guidelines: analysisResult.guidelinesScore,
-        overall: analysisResult.overallScore
+        overall: analysisResult.overallScore,
+        strengthsCount: strengths.length,
+        weaknessesCount: weaknesses.length,
+        recommendationsCount: recommendations.length
       });
       
       return analysisResult;
