@@ -2614,7 +2614,9 @@ window.setDashboardInterval = function(interval) {
     });
     
     if (interval === 'custom') {
-        // Show custom date picker popup
+        // Clear modal inputs and show popup
+        document.getElementById('modalStartDate').value = '';
+        document.getElementById('modalEndDate').value = '';
         currentModalContext = 'dashboard';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
@@ -3047,7 +3049,7 @@ async function loadDashboardData() {
         }
         
         const formatDate = (d) => d.toISOString().split('T')[0];
-        const url = `/api/analytics/dashboard?interval=${currentDashboardInterval}&startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&_t=${Date.now()}`;
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
         
         console.log('Loading dashboard with URL:', url);
         console.log('Dashboard interval:', currentDashboardInterval);
