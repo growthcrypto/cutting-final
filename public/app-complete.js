@@ -1583,8 +1583,10 @@ function setupEventListeners() {
 
     // Form submissions
     document.addEventListener('submit', function(e) {
+        console.log('📝 Form submitted:', e.target.id);
         if (e.target.id === 'createUserForm') {
             e.preventDefault();
+            console.log('✅ Create user form detected, calling handler...');
             handleCreateUser(e);
         } else if (e.target.id === 'addGuidelineForm') {
             e.preventDefault();
