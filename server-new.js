@@ -5862,6 +5862,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     }
     
     const dateQuery = { date: { $gte: start, $lte: end } };
+    const performanceQuery = {
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start },
+      chatterName: chatterName
+    };
     
     // Get this chatter's data
     const chatterPurchases = await FanPurchase.find({
@@ -5874,6 +5879,14 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterName: chatterName
     });
     
+    // FALLBACK: Get ChatterPerformance data if no daily reports
+    const chatterPerformance = await ChatterPerformance.find(performanceQuery);
+    console.log('📊 Chatter data found:', {
+      purchases: chatterPurchases.length,
+      dailyReports: chatterReports.length,
+      performanceRecords: chatterPerformance.length
+    });
+    
     // Get ALL chatters' data for comparison
     const allPurchases = await FanPurchase.find(dateQuery).populate('trafficSource');
     const allReports = await DailyChatterReport.find(dateQuery);
@@ -5883,18 +5896,50 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterName: chatterName
     }).sort({ createdAt: -1 });
     
-    // Calculate this chatter's metrics
-    const chatterRevenue = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const chatterPPVRevenue = chatterPurchases.filter(p => p.type === 'ppv').reduce((sum, p) => sum + (p.amount || 0), 0);
-    const chatterPPVCount = chatterPurchases.filter(p => p.type === 'ppv').length;
-    const chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
+    // Calculate this chatter's metrics (use ChatterPerformance as fallback)
+    let chatterRevenue, chatterPPVRevenue, chatterPPVCount, chatterAvgPPVPrice;
+    let chatterPPVsSent, chatterPPVsUnlocked, chatterUnlockRate;
+    let chatterFansChatted, chatterMessagesSent, chatterAvgResponseTime;
     
-    const chatterPPVsSent = chatterReports.reduce((sum, r) => sum + (r.ppvsSent || 0), 0);
-    const chatterPPVsUnlocked = chatterPPVCount; // From purchases
-    const chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
-    
-    const chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
-    const chatterMessagesSent = chatterFansChatted * 15; // Estimate
+    if (chatterReports.length > 0) {
+      // Use DailyChatterReport (preferred)
+      chatterRevenue = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+      chatterPPVRevenue = chatterPurchases.filter(p => p.type === 'ppv').reduce((sum, p) => sum + (p.amount || 0), 0);
+      chatterPPVCount = chatterPurchases.filter(p => p.type === 'ppv').length;
+      chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
+      chatterPPVsSent = chatterReports.reduce((sum, r) => sum + (r.ppvsSent || 0), 0);
+      chatterPPVsUnlocked = chatterPPVCount;
+      chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
+      chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
+      chatterMessagesSent = chatterFansChatted * 15;
+      chatterAvgResponseTime = 0;
+    } else if (chatterPerformance.length > 0) {
+      // FALLBACK: Use ChatterPerformance (weekly data)
+      console.log('📊 Using ChatterPerformance fallback for', chatterName);
+      const perf = chatterPerformance[0]; // Use first record if multiple
+      chatterRevenue = perf.netSales || 0;
+      chatterPPVRevenue = perf.ppvRevenue || 0;
+      chatterPPVsSent = perf.ppvsSent || 0;
+      chatterPPVsUnlocked = perf.ppvsUnlocked || 0;
+      chatterPPVCount = chatterPPVsUnlocked;
+      chatterAvgPPVPrice = perf.avgPPVPrice || 0;
+      chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
+      chatterFansChatted = perf.fansChattedWith || 0;
+      chatterMessagesSent = perf.messagesSent || 0;
+      chatterAvgResponseTime = perf.avgResponseTime || 0;
+    } else {
+      // No data at all
+      chatterRevenue = 0;
+      chatterPPVRevenue = 0;
+      chatterPPVCount = 0;
+      chatterAvgPPVPrice = 0;
+      chatterPPVsSent = 0;
+      chatterPPVsUnlocked = 0;
+      chatterUnlockRate = 0;
+      chatterFansChatted = 0;
+      chatterMessagesSent = 0;
+      chatterAvgResponseTime = 0;
+    }
     
     // VIP metrics for this chatter
     const chatterVIPs = await VIPFan.find({
