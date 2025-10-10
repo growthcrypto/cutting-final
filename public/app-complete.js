@@ -1588,14 +1588,7 @@ function setupEventListeners() {
         }
     });
 
-    // Chatter selection for AI analysis
-    document.addEventListener('change', function(event) {
-        if (event.target.id === 'chatterAnalysisSelect') {
-            if (event.target.value) {
-                runChatterAnalysis();
-            }
-        }
-    });
+    // Chatter selection for AI analysis (removed auto-trigger - now use "Start Analysis" button)
 
     // Daily report form
     const dailyReportForm = document.getElementById('dailyReportForm');
@@ -2871,16 +2864,7 @@ window.setAIInterval = function(interval) {
         aiAnalysisCustomDates = null;
         
         console.log('✅ AI Analysis interval set to:', interval);
-        
-        // Reload appropriate analysis based on what's visible
-        const agencySection = document.getElementById('agencyAnalysisSection');
-        const chatterSelect = document.getElementById('chatterAnalysisSelect');
-        
-        if (agencySection && !agencySection.classList.contains('hidden')) {
-            runAgencyAnalysis();
-        } else if (chatterSelect && chatterSelect.value) {
-            runChatterAnalysis();
-        }
+        // Don't auto-run - wait for "Start Analysis" button click
     }
 }
 
@@ -7143,34 +7127,40 @@ function createAIAnalysisSection() {
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Select Your Account</label>
-                        <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
-                            <option value="">Choose account to analyze...</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Time Period</label>
-                        <div class="flex gap-2">
-                            <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d" id="aiInterval7d">
-                                <i class="fas fa-calendar-week mr-2"></i>7 Days
-                            </button>
-                            <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d" id="aiInterval30d">
-                                <i class="fas fa-calendar-alt mr-2"></i>30 Days
-                            </button>
-                            <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom" id="aiIntervalCustom">
-                                <i class="fas fa-calendar mr-2"></i>Custom
-                            </button>
+                <div class="space-y-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Select Your Account</label>
+                            <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
+                                <option value="">Choose account to analyze...</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Time Period</label>
+                            <div class="flex gap-2">
+                                <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d" id="aiInterval7d">
+                                    <i class="fas fa-calendar-week mr-2"></i>7 Days
+                                </button>
+                                <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d" id="aiInterval30d">
+                                    <i class="fas fa-calendar-alt mr-2"></i>30 Days
+                                </button>
+                                <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom" id="aiIntervalCustom">
+                                    <i class="fas fa-calendar mr-2"></i>Custom
+                                </button>
+                            </div>
                         </div>
                     </div>
+                    
+                    <button onclick="runChatterAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg">
+                        <i class="fas fa-brain mr-2"></i>Start Analysis
+                    </button>
                 </div>
 
                 <div id="chatterAnalysisResults" class="mt-6">
                     <div class="text-center py-12">
                         <i class="fas fa-user-times text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-400">Select your account above to see your detailed analysis</p>
+                        <p class="text-gray-400">Select your account and time period above, then click "Start Analysis"</p>
                     </div>
                 </div>
             </div>
@@ -7257,38 +7247,51 @@ function createAIAnalysisSection() {
 
         <!-- Agency Analysis Results (Hidden by default) -->
         <div id="agencyAnalysisSection" class="hidden">
-            <div class="glass-card rounded-xl p-8 mb-8">
+            <div class="glass-card rounded-xl p-8 mb-8 border-2 border-purple-500/30">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
-                        <h3 class="text-2xl font-bold text-white flex items-center">
-                            <i class="fas fa-building text-purple-400 mr-3"></i>
-                            Agency Performance Analysis
-                            <span class="ml-3 px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-medium rounded-full">COMPREHENSIVE</span>
-                        </h3>
+                        <div class="w-16 h-16 bg-purple-600/20 rounded-2xl flex items-center justify-center mr-4">
+                            <i class="fas fa-building text-purple-400 text-3xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-bold text-white">Agency Performance Analysis</h3>
+                            <p class="text-gray-400 text-lg">Select a time period to analyze team performance</p>
+                        </div>
                     </div>
                     <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition">
-                        <i class="fas fa-times text-lg"></i>
+                        <i class="fas fa-times text-2xl"></i>
                     </button>
                 </div>
                 
-                <!-- Date Filter -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium mb-2">Time Period</label>
-                    <div class="flex gap-2">
-                        <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d">
-                            <i class="fas fa-calendar-week mr-2"></i>7 Days
-                        </button>
-                        <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d">
-                            <i class="fas fa-calendar-alt mr-2"></i>30 Days
-                        </button>
-                        <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom">
-                            <i class="fas fa-calendar mr-2"></i>Custom
+                <!-- Date Filter + Run Button -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Time Period</label>
+                        <div class="flex gap-2">
+                            <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d">
+                                <i class="fas fa-calendar-week mr-2"></i>7 Days
+                            </button>
+                            <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d">
+                                <i class="fas fa-calendar-alt mr-2"></i>30 Days
+                            </button>
+                            <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom">
+                                <i class="fas fa-calendar mr-2"></i>Custom
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-end">
+                        <button onclick="runAgencyAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg">
+                            <i class="fas fa-brain mr-2"></i>Start Analysis
                         </button>
                     </div>
                 </div>
                 
-                <div id="agencyAnalysisResults" class="space-y-6">
-                    <!-- Agency analysis results will be loaded here -->
+                <div id="agencyAnalysisResults" class="mt-6">
+                    <div class="text-center py-12">
+                        <i class="fas fa-brain text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-400">Click "Start Analysis" above to analyze your team's performance</p>
+                    </div>
                 </div>
             </div>
         </div>
