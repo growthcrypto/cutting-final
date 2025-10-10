@@ -513,24 +513,39 @@ function initializeMarketingDatePicker() {
 async function loadMarketingDashboard() {
     console.log('🚀 loadMarketingDashboard() called');
     try {
-        // Build query params
-        let params = new URLSearchParams();
-        if (currentMarketingFilter.type === 'custom' && currentMarketingFilter.customStart && currentMarketingFilter.customEnd) {
-            // NEW: Custom date range
-            params.append('filterType', 'custom');
-            params.append('customStart', currentMarketingFilter.customStart);
-            params.append('customEnd', currentMarketingFilter.customEnd);
-        } else if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
-            params.append('filterType', 'week');
-            params.append('weekStart', currentMarketingFilter.week.start);
-            params.append('weekEnd', currentMarketingFilter.week.end);
-        } else if (currentMarketingFilter.type === 'month' && currentMarketingFilter.month) {
-            params.append('filterType', 'month');
-            params.append('monthStart', currentMarketingFilter.month.start);
-            params.append('monthEnd', currentMarketingFilter.month.end);
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentMarketingInterval === 'custom' && marketingCustomDates) {
+            startDate = new Date(marketingCustomDates.start);
+            endDate = new Date(marketingCustomDates.end);
+        } else if (currentMarketingInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentMarketingInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentMarketingInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
         }
         
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        
+        // Build query params
+        let params = new URLSearchParams();
+        params.append('filterType', 'custom');
+        params.append('customStart', formatDate(startDate));
+        params.append('customEnd', formatDate(endDate));
+        
         console.log('📡 Fetching marketing dashboard from:', `/api/marketing/dashboard?${params}`);
+        console.log('Marketing interval:', currentMarketingInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         const response = await fetch(`/api/marketing/dashboard?${params}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
@@ -2435,8 +2450,37 @@ let currentSortOrder = 'desc';
 
 async function loadTeamComparisonData() {
     try {
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentTeamComparisonInterval === 'custom' && teamComparisonCustomDates) {
+            startDate = new Date(teamComparisonCustomDates.start);
+            endDate = new Date(teamComparisonCustomDates.end);
+        } else if (currentTeamComparisonInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentTeamComparisonInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentTeamComparisonInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/team-dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
+        console.log('Team Comparison URL:', url);
+        console.log('Team Comparison interval:', currentTeamComparisonInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
         // Get all chatter performance data from team dashboard API
-        const response = await fetch('/api/analytics/team-dashboard?filterType=week', {
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -2711,37 +2755,17 @@ window.setAnalyticsInterval = function(interval) {
         currentModalContext = 'analytics';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        const today = new Date();
-        let startDate;
+        // Clear custom dates when selecting a preset interval
+        analyticsCustomDates = null;
         
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
-        
+        console.log('✅ Analytics interval set to:', interval);
         loadAnalyticsData();
     }
 }
 
 window.setMarketingInterval = function(interval) {
+    currentMarketingInterval = interval;
+    
     // Update button styles
     document.querySelectorAll('.marketing-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2757,37 +2781,17 @@ window.setMarketingInterval = function(interval) {
         currentModalContext = 'marketing';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        const today = new Date();
-        let startDate;
+        // Clear custom dates when selecting a preset interval
+        marketingCustomDates = null;
         
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
-        
+        console.log('✅ Marketing interval set to:', interval);
         loadMarketingDashboard();
     }
 }
 
 window.setTeamComparisonInterval = function(interval) {
+    currentTeamComparisonInterval = interval;
+    
     // Update button styles
     document.querySelectorAll('.team-comparison-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2803,37 +2807,17 @@ window.setTeamComparisonInterval = function(interval) {
         currentModalContext = 'team-comparison';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        const today = new Date();
-        let startDate;
+        // Clear custom dates when selecting a preset interval
+        teamComparisonCustomDates = null;
         
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
-        
+        console.log('✅ Team Comparison interval set to:', interval);
         loadTeamComparisonData();
     }
 }
 
 window.setAIInterval = function(interval) {
+    currentAIInterval = interval;
+    
     // Update button styles
     document.querySelectorAll('.ai-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
@@ -2849,31 +2833,10 @@ window.setAIInterval = function(interval) {
         currentModalContext = 'ai-analysis';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        const today = new Date();
-        let startDate;
+        // Clear custom dates when selecting a preset interval
+        aiAnalysisCustomDates = null;
         
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
+        console.log('✅ AI Analysis interval set to:', interval);
         
         // Reload chatter analysis if one is selected
         const chatterSelect = document.getElementById('chatterAnalysisSelect');
@@ -4354,19 +4317,44 @@ async function runChatterAnalysis() {
             throw new Error('Not authenticated');
         }
 
-        // Prepare request body for AI analysis (use shared week/month filter)
+        // Calculate date range based on current AI interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentAIInterval === 'custom' && aiAnalysisCustomDates) {
+            startDate = new Date(aiAnalysisCustomDates.start);
+            endDate = new Date(aiAnalysisCustomDates.end);
+        } else if (currentAIInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentAIInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentAIInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        
+        // Prepare request body for AI analysis
         const requestBody = {
             analysisType: 'individual',
-            interval: '7d', // Default fallback
-            chatterId: select.value
+            interval: currentAIInterval || '7d',
+            chatterId: select.value,
+            startDate: formatDate(startDate),
+            endDate: formatDate(endDate)
         };
-
-        // Use shared week/month filter if available
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            requestBody.startDate = currentWeekFilter.start;
-            requestBody.endDate = currentWeekFilter.end;
-            console.log('✅ AI Analysis using WEEK filter:', currentWeekFilter);
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
+        
+        console.log('✅ AI Analysis using interval:', currentAIInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
+        // OLD CODE - Remove this
+        if (false && currentFilterType === 'month' && currentMonthFilter) {
             requestBody.startDate = currentMonthFilter.firstDay;
             requestBody.endDate = currentMonthFilter.lastDay;
             console.log('✅ AI Analysis using MONTH filter:', currentMonthFilter);
@@ -7422,8 +7410,34 @@ function setAnalyticsQuickFilter(type) {
 let analyticsLoadAttempts = 0;
 async function loadAnalyticsData() {
     try {
-        // Use the same API as the manager dashboard
-        const url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange?.start || ''}&customEnd=${customDateRange?.end || ''}&_t=${Date.now()}`;
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentAnalyticsInterval === 'custom' && analyticsCustomDates) {
+            startDate = new Date(analyticsCustomDates.start);
+            endDate = new Date(analyticsCustomDates.end);
+        } else if (currentAnalyticsInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentAnalyticsInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentAnalyticsInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
+        console.log('Analytics URL:', url);
+        console.log('Analytics interval:', currentAnalyticsInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         
         const response = await fetch(url, {
             headers: {
