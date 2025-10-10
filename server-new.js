@@ -7095,6 +7095,785 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
   }
 });
 
+// ==================== AGENCY INTELLIGENCE GENERATOR ====================
+async function generateAgencyIntelligence(data) {
+  const intelligence = {
+    executive: {},
+    revenue: {},
+    traffic: {},
+    retention: {},
+    team: {},
+    patterns: [],
+    recommendations: []
+  };
+  
+  const { current, previous } = data;
+  
+  // ========================================
+  // 1. EXECUTIVE SUMMARY
+  // ========================================
+  const currentRevenue = current.purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const prevRevenue = previous.purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const revenueChange = currentRevenue - prevRevenue;
+  const revenueChangePercent = prevRevenue > 0 ? ((revenueChange / prevRevenue) * 100).toFixed(1) : 0;
+  
+  const currentPPVs = current.purchases.filter(p => p.type === 'ppv').length;
+  const currentPPVsSent = current.performance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+  const unlockRate = currentPPVsSent > 0 ? ((currentPPVs / currentPPVsSent) * 100).toFixed(1) : 0;
+  
+  const activeChatterCount = current.performance.length;
+  const avgQuality = current.analyses.length > 0
+    ? (current.analyses.reduce((sum, a) => sum + (a.overallScore || 0), 0) / current.analyses.length).toFixed(0)
+    : 0;
+  
+  intelligence.executive = {
+    period: { start: current.start, end: current.end },
+    revenue: {
+      current: currentRevenue,
+      previous: prevRevenue,
+      change: revenueChange,
+      changePercent: revenueChangePercent
+    },
+    team: {
+      activeChatters: activeChatterCount,
+      avgQualityScore: avgQuality,
+      unlockRate: unlockRate
+    },
+    status: revenueChange > 0 ? 'growing' : revenueChange < 0 ? 'declining' : 'stable'
+  };
+  
+  // ========================================
+  // 2. TRAFFIC SOURCE INTELLIGENCE
+  // ========================================
+  const trafficAnalysis = analyzeTrafficSources(current, previous);
+  intelligence.traffic = trafficAnalysis;
+  
+  // ========================================
+  // 3. RETENTION & CHURN ANALYSIS
+  // ========================================
+  const retentionAnalysis = analyzeRetention(current, previous);
+  intelligence.retention = retentionAnalysis;
+  
+  // ========================================
+  // 4. TEAM PERFORMANCE MATRIX
+  // ========================================
+  const teamMatrix = analyzeTeamPerformance(current, previous);
+  intelligence.team = teamMatrix;
+  
+  // ========================================
+  // 5. REVENUE BREAKDOWN
+  // ========================================
+  const revenueBreakdown = analyzeRevenueMechanics(current, previous);
+  intelligence.revenue = revenueBreakdown;
+  
+  // ========================================
+  // 6. PATTERN DETECTION & CORRELATIONS
+  // ========================================
+  intelligence.patterns = detectPatterns(current, previous);
+  
+  // ========================================
+  // 7. STRATEGIC RECOMMENDATIONS
+  // ========================================
+  intelligence.recommendations = generateStrategicRecommendations(intelligence);
+  
+  console.log('✅ Agency Intelligence generated:', {
+    trafficSources: Object.keys(intelligence.traffic.sources || {}).length,
+    patterns: intelligence.patterns.length,
+    recommendations: intelligence.recommendations.length
+  });
+  
+  return intelligence;
+}
+
+// Traffic Source Analysis
+function analyzeTrafficSources(current, previous) {
+  const sourceMetrics = {};
+  
+  // Aggregate current period by source
+  current.purchases.forEach(purchase => {
+    if (!purchase.trafficSource) return;
+    
+    const sourceName = purchase.trafficSource.name;
+    if (!sourceMetrics[sourceName]) {
+      sourceMetrics[sourceName] = {
+        name: sourceName,
+        category: purchase.trafficSource.category,
+        revenue: 0,
+        count: 0,
+        vipRevenue: 0,
+        vipCount: 0,
+        buyers: new Set()
+      };
+    }
+    
+    sourceMetrics[sourceName].revenue += purchase.amount || 0;
+    sourceMetrics[sourceName].count++;
+    if (purchase.fanUsername) {
+      sourceMetrics[sourceName].buyers.add(purchase.fanUsername);
+    }
+    if (purchase.vipFan) {
+      sourceMetrics[sourceName].vipRevenue += purchase.amount || 0;
+      sourceMetrics[sourceName].vipCount++;
+    }
+  });
+  
+  // Convert sets to counts
+  Object.values(sourceMetrics).forEach(source => {
+    source.buyerCount = source.buyers.size;
+    delete source.buyers;
+    source.avgPurchaseValue = source.count > 0 ? (source.revenue / source.count).toFixed(2) : 0;
+    source.vipRate = source.buyerCount > 0 ? ((source.vipCount / source.buyerCount) * 100).toFixed(1) : 0;
+  });
+  
+  // Previous period
+  const prevSourceMetrics = {};
+  previous.purchases.forEach(purchase => {
+    if (!purchase.trafficSource) return;
+    const sourceName = purchase.trafficSource.name;
+    if (!prevSourceMetrics[sourceName]) {
+      prevSourceMetrics[sourceName] = { revenue: 0, count: 0 };
+    }
+    prevSourceMetrics[sourceName].revenue += purchase.amount || 0;
+    prevSourceMetrics[sourceName].count++;
+  });
+  
+  // Calculate changes
+  Object.keys(sourceMetrics).forEach(sourceName => {
+    const curr = sourceMetrics[sourceName];
+    const prev = prevSourceMetrics[sourceName] || { revenue: 0, count: 0 };
+    
+    curr.revenueChange = curr.revenue - prev.revenue;
+    curr.revenueChangePercent = prev.revenue > 0 
+      ? ((curr.revenueChange / prev.revenue) * 100).toFixed(1)
+      : 0;
+  });
+  
+  // Sort by revenue
+  const sortedSources = Object.values(sourceMetrics).sort((a, b) => b.revenue - a.revenue);
+  
+  // Calculate concentration
+  const totalRevenue = sortedSources.reduce((sum, s) => sum + s.revenue, 0);
+  const topSourceRevenue = sortedSources[0]?.revenue || 0;
+  const concentration = totalRevenue > 0 ? ((topSourceRevenue / totalRevenue) * 100).toFixed(1) : 0;
+  
+  return {
+    sources: sourceMetrics,
+    sortedSources,
+    totalRevenue,
+    topSource: sortedSources[0] || null,
+    concentration,
+    diversityScore: sortedSources.length >= 3 ? 100 : sortedSources.length * 33
+  };
+}
+
+// Retention & Churn Analysis
+function analyzeRetention(current, previous) {
+  const now = current.end;
+  const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+  const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+  const ninetyDaysAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+  
+  // Active VIPs
+  const activeVIPs = current.vips.filter(v => v.status === 'active');
+  const churnedVIPs = current.vips.filter(v => v.status === 'churned');
+  
+  // Calculate retention by last message date
+  const vipsWithMessages = activeVIPs.filter(v => v.lastMessageDate);
+  
+  const active30Day = vipsWithMessages.filter(v => 
+    v.lastMessageDate && new Date(v.lastMessageDate) >= thirtyDaysAgo
+  ).length;
+  
+  const active60Day = vipsWithMessages.filter(v => 
+    v.lastMessageDate && new Date(v.lastMessageDate) >= sixtyDaysAgo
+  ).length;
+  
+  const active90Day = vipsWithMessages.filter(v => 
+    v.lastMessageDate && new Date(v.lastMessageDate) >= ninetyDaysAgo
+  ).length;
+  
+  // Fans created in each period
+  const fansFrom30Days = current.vips.filter(v => {
+    const joinDate = new Date(v.joinDate || v.firstSeenDate);
+    return joinDate >= thirtyDaysAgo && joinDate <= now;
+  }).length;
+  
+  const fansFrom60Days = current.vips.filter(v => {
+    const joinDate = new Date(v.joinDate || v.firstSeenDate);
+    return joinDate >= sixtyDaysAgo && joinDate < thirtyDaysAgo;
+  }).length;
+  
+  const fansFrom90Days = current.vips.filter(v => {
+    const joinDate = new Date(v.joinDate || v.firstSeenDate);
+    return joinDate >= ninetyDaysAgo && joinDate < sixtyDaysAgo;
+  }).length;
+  
+  // Retention rates
+  const retention30Day = fansFrom30Days > 0 ? ((active30Day / fansFrom30Days) * 100).toFixed(1) : 0;
+  const retention60Day = fansFrom60Days > 0 ? ((active60Day / fansFrom60Days) * 100).toFixed(1) : 0;
+  const retention90Day = fansFrom90Days > 0 ? ((active90Day / fansFrom90Days) * 100).toFixed(1) : 0;
+  
+  // At-risk fans (no message in 15+ days)
+  const fifteenDaysAgo = new Date(now.getTime() - (15 * 24 * 60 * 60 * 1000));
+  const atRiskFans = activeVIPs.filter(v => 
+    v.lastMessageDate && new Date(v.lastMessageDate) < fifteenDaysAgo
+  );
+  
+  // Likely churned (no message in 30+ days)
+  const likelyChurned = activeVIPs.filter(v => 
+    v.lastMessageDate && new Date(v.lastMessageDate) < thirtyDaysAgo
+  );
+  
+  // Retention by traffic source
+  const retentionBySource = {};
+  current.vips.forEach(vip => {
+    if (!vip.trafficSource) return;
+    
+    const sourceName = vip.trafficSource.name || 'Unknown';
+    if (!retentionBySource[sourceName]) {
+      retentionBySource[sourceName] = {
+        total: 0,
+        active30: 0,
+        active90: 0
+      };
+    }
+    
+    retentionBySource[sourceName].total++;
+    if (vip.lastMessageDate && new Date(vip.lastMessageDate) >= thirtyDaysAgo) {
+      retentionBySource[sourceName].active30++;
+    }
+    if (vip.lastMessageDate && new Date(vip.lastMessageDate) >= ninetyDaysAgo) {
+      retentionBySource[sourceName].active90++;
+    }
+  });
+  
+  // Calculate rates
+  Object.keys(retentionBySource).forEach(sourceName => {
+    const data = retentionBySource[sourceName];
+    data.retention30 = data.total > 0 ? ((data.active30 / data.total) * 100).toFixed(1) : 0;
+    data.retention90 = data.total > 0 ? ((data.active90 / data.total) * 100).toFixed(1) : 0;
+  });
+  
+  return {
+    overall: {
+      retention30Day,
+      retention60Day,
+      retention90Day,
+      activeVIPs: activeVIPs.length,
+      churnedVIPs: churnedVIPs.length,
+      churnRate: (current.vips.length > 0 ? ((churnedVIPs.length / current.vips.length) * 100).toFixed(1) : 0)
+    },
+    atRisk: {
+      count: atRiskFans.length,
+      fans: atRiskFans.slice(0, 10).map(f => ({ username: f.username, lastMessage: f.lastMessageDate }))
+    },
+    likelyChurned: {
+      count: likelyChurned.length,
+      fans: likelyChurned.slice(0, 10).map(f => ({ username: f.username, lastMessage: f.lastMessageDate }))
+    },
+    bySource: retentionBySource
+  };
+}
+
+// Team Performance Matrix
+function analyzeTeamPerformance(current, previous) {
+  // Group by chatter
+  const chatterStats = {};
+  
+  current.performance.forEach(perf => {
+    if (!chatterStats[perf.chatterName]) {
+      chatterStats[perf.chatterName] = {
+        name: perf.chatterName,
+        revenue: 0,
+        ppvsSent: 0,
+        ppvsUnlocked: 0,
+        messagesSent: perf.messagesSent || 0,
+        fansChatted: perf.fansChattedWith || 0,
+        analysis: null
+      };
+    }
+    
+    chatterStats[perf.chatterName].ppvsSent += perf.ppvsSent || 0;
+    chatterStats[perf.chatterName].ppvsUnlocked += perf.ppvsUnlocked || 0;
+  });
+  
+  // Add revenue from purchases
+  current.purchases.forEach(purchase => {
+    if (chatterStats[purchase.chatterName]) {
+      chatterStats[purchase.chatterName].revenue += purchase.amount || 0;
+    }
+  });
+  
+  // Add analysis scores
+  current.analyses.forEach(analysis => {
+    if (chatterStats[analysis.chatterName]) {
+      chatterStats[analysis.chatterName].analysis = {
+        grammarScore: analysis.grammarScore,
+        guidelinesScore: analysis.guidelinesScore,
+        overallScore: analysis.overallScore,
+        punctuationCount: analysis.grammarBreakdown 
+          ? parseInt(analysis.grammarBreakdown.punctuationProblems?.match(/(\d+)/)?.[1] || '0')
+          : 0
+      };
+    }
+  });
+  
+  // Calculate derived metrics
+  Object.values(chatterStats).forEach(chatter => {
+    chatter.unlockRate = chatter.ppvsSent > 0 
+      ? ((chatter.ppvsUnlocked / chatter.ppvsSent) * 100).toFixed(1)
+      : 0;
+    chatter.revenuePerFan = chatter.fansChatted > 0
+      ? (chatter.revenue / chatter.fansChatted).toFixed(2)
+      : 0;
+    chatter.ppvsPerFan = chatter.fansChatted > 0
+      ? (chatter.ppvsSent / chatter.fansChatted).toFixed(2)
+      : 0;
+  });
+  
+  const chatters = Object.values(chatterStats);
+  
+  // Rankings
+  const byRevenue = [...chatters].sort((a, b) => b.revenue - a.revenue);
+  const byUnlockRate = [...chatters].filter(c => parseFloat(c.unlockRate) > 0)
+    .sort((a, b) => parseFloat(b.unlockRate) - parseFloat(a.unlockRate));
+  const byQuality = [...chatters].filter(c => c.analysis?.overallScore)
+    .sort((a, b) => b.analysis.overallScore - a.analysis.overallScore);
+  
+  // Calculate averages
+  const avgRevenue = chatters.length > 0
+    ? (chatters.reduce((sum, c) => sum + c.revenue, 0) / chatters.length).toFixed(0)
+    : 0;
+  const avgUnlockRate = chatters.length > 0
+    ? (chatters.reduce((sum, c) => sum + parseFloat(c.unlockRate || 0), 0) / chatters.length).toFixed(1)
+    : 0;
+  
+  // Quality score correlation with unlock rate
+  const qualityUnlockCorrelation = analyzeQualityUnlockCorrelation(chatters);
+  
+  return {
+    chatters,
+    count: chatters.length,
+    rankings: {
+      revenue: byRevenue.slice(0, 5),
+      unlockRate: byUnlockRate.slice(0, 5),
+      quality: byQuality.slice(0, 5)
+    },
+    averages: {
+      revenue: avgRevenue,
+      unlockRate: avgUnlockRate
+    },
+    correlations: {
+      qualityUnlockRate: qualityUnlockCorrelation
+    }
+  };
+}
+
+// Quality vs Unlock Rate Correlation
+function analyzeQualityUnlockCorrelation(chatters) {
+  const withScores = chatters.filter(c => 
+    c.analysis?.guidelinesScore !== null && 
+    c.analysis?.guidelinesScore !== undefined &&
+    parseFloat(c.unlockRate) > 0
+  );
+  
+  if (withScores.length < 3) {
+    return null;
+  }
+  
+  const high = withScores.filter(c => c.analysis.guidelinesScore >= 90);
+  const mid = withScores.filter(c => c.analysis.guidelinesScore >= 70 && c.analysis.guidelinesScore < 90);
+  const low = withScores.filter(c => c.analysis.guidelinesScore < 70);
+  
+  const avgUnlock = (group) => {
+    if (group.length === 0) return null;
+    return (group.reduce((sum, c) => sum + parseFloat(c.unlockRate), 0) / group.length).toFixed(1);
+  };
+  
+  const result = {
+    high: { count: high.length, avgUnlockRate: avgUnlock(high), chatters: high.map(c => c.name) },
+    mid: { count: mid.length, avgUnlockRate: avgUnlock(mid), chatters: mid.map(c => c.name) },
+    low: { count: low.length, avgUnlockRate: avgUnlock(low), chatters: low.map(c => c.name) }
+  };
+  
+  // Determine if correlation is strong
+  if (result.high.avgUnlockRate && result.mid.avgUnlockRate) {
+    const diff = parseFloat(result.high.avgUnlockRate) - parseFloat(result.mid.avgUnlockRate);
+    result.isSignificant = Math.abs(diff) > 8;
+    result.direction = diff > 0 ? 'positive' : 'negative';
+    result.strength = Math.abs(diff);
+  }
+  
+  return result;
+}
+
+// Revenue Mechanics Analysis
+function analyzeRevenueMechanics(current, previous) {
+  const currentRevenue = current.purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const prevRevenue = previous.purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+  
+  const currentPPVs = current.purchases.filter(p => p.type === 'ppv');
+  const prevPPVs = previous.purchases.filter(p => p.type === 'ppv');
+  
+  const currentPPVCount = currentPPVs.length;
+  const prevPPVCount = prevPPVs.length;
+  
+  const currentAvgPrice = currentPPVCount > 0
+    ? (currentPPVs.reduce((sum, p) => sum + p.amount, 0) / currentPPVCount).toFixed(0)
+    : 0;
+  const prevAvgPrice = prevPPVCount > 0
+    ? (prevPPVs.reduce((sum, p) => sum + p.amount, 0) / prevPPVCount).toFixed(0)
+    : 0;
+  
+  const currentPPVsSent = current.performance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+  const prevPPVsSent = previous.performance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+  
+  const currentUnlockRate = currentPPVsSent > 0
+    ? ((currentPPVCount / currentPPVsSent) * 100).toFixed(1)
+    : 0;
+  const prevUnlockRate = prevPPVsSent > 0
+    ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1)
+    : 0;
+  
+  // Calculate contribution of each factor
+  const volumeContribution = (currentPPVCount - prevPPVCount) * parseFloat(prevAvgPrice);
+  const priceContribution = currentPPVCount * (parseFloat(currentAvgPrice) - parseFloat(prevAvgPrice));
+  const unlockRateImpact = parseFloat(currentUnlockRate) - parseFloat(prevUnlockRate);
+  
+  return {
+    current: {
+      revenue: currentRevenue,
+      ppvCount: currentPPVCount,
+      ppvsSent: currentPPVsSent,
+      avgPrice: currentAvgPrice,
+      unlockRate: currentUnlockRate
+    },
+    previous: {
+      revenue: prevRevenue,
+      ppvCount: prevPPVCount,
+      ppvsSent: prevPPVsSent,
+      avgPrice: prevAvgPrice,
+      unlockRate: prevUnlockRate
+    },
+    changes: {
+      revenue: currentRevenue - prevRevenue,
+      revenuePercent: prevRevenue > 0 ? (((currentRevenue - prevRevenue) / prevRevenue) * 100).toFixed(1) : 0,
+      ppvCount: currentPPVCount - prevPPVCount,
+      ppvsSent: currentPPVsSent - prevPPVsSent,
+      avgPrice: parseFloat(currentAvgPrice) - parseFloat(prevAvgPrice),
+      unlockRate: unlockRateImpact
+    },
+    drivers: {
+      volumeContribution: Math.round(volumeContribution),
+      priceContribution: Math.round(priceContribution),
+      primaryDriver: Math.abs(volumeContribution) > Math.abs(priceContribution) ? 'volume' : 'price'
+    }
+  };
+}
+
+// Pattern Detection Engine
+function detectPatterns(current, previous) {
+  const patterns = [];
+  
+  // Pattern: Traffic source quality correlation
+  const sourceQualityPattern = analyzeSourceQualityPattern(current);
+  if (sourceQualityPattern) patterns.push(sourceQualityPattern);
+  
+  // Pattern: Retention vs revenue correlation
+  const retentionRevenuePattern = analyzeRetentionRevenuePattern(current);
+  if (retentionRevenuePattern) patterns.push(retentionRevenuePattern);
+  
+  // Pattern: Quality score impact across team
+  const qualityImpactPattern = analyzeQualityImpactPattern(current);
+  if (qualityImpactPattern) patterns.push(qualityImpactPattern);
+  
+  // Pattern: PPV saturation detection
+  const saturationPattern = analyzeSaturationPattern(current, previous);
+  if (saturationPattern) patterns.push(saturationPattern);
+  
+  return patterns;
+}
+
+// Analyze if certain sources produce higher quality fans
+function analyzeSourceQualityPattern(current) {
+  // Group VIPs by source and calculate LTV
+  const sourceData = {};
+  
+  current.vips.forEach(vip => {
+    if (!vip.trafficSource) return;
+    
+    const sourceName = vip.trafficSource.name;
+    if (!sourceData[sourceName]) {
+      sourceData[sourceName] = {
+        fans: [],
+        totalSpend: 0,
+        count: 0
+      };
+    }
+    
+    sourceData[sourceName].fans.push(vip);
+    sourceData[sourceName].totalSpend += vip.lifetimeSpend || 0;
+    sourceData[sourceName].count++;
+  });
+  
+  // Calculate LTV per source
+  Object.keys(sourceData).forEach(sourceName => {
+    const data = sourceData[sourceName];
+    data.avgLTV = data.count > 0 ? (data.totalSpend / data.count).toFixed(0) : 0;
+  });
+  
+  const sources = Object.entries(sourceData);
+  if (sources.length < 2) return null;
+  
+  // Sort by LTV
+  sources.sort((a, b) => parseFloat(b[1].avgLTV) - parseFloat(a[1].avgLTV));
+  
+  const topSource = sources[0];
+  const bottomSource = sources[sources.length - 1];
+  const ltvGap = parseFloat(topSource[1].avgLTV) - parseFloat(bottomSource[1].avgLTV);
+  
+  if (ltvGap > 20) {
+    return {
+      type: 'traffic_quality',
+      title: 'Traffic Source Quality Variance Detected',
+      insight: `${topSource[0]} fans have ${ltvGap.toFixed(0)}% higher lifetime value ($${topSource[1].avgLTV} vs $${bottomSource[1].avgLTV}). Some sources produce better long-term fans.`,
+      data: { sources: Object.fromEntries(sources.map(([name, data]) => [name, data.avgLTV])) },
+      action: `Focus acquisition efforts on ${topSource[0]} - highest quality fans`
+    };
+  }
+  
+  return null;
+}
+
+// Analyze retention impact on revenue
+function analyzeRetentionRevenuePattern(current) {
+  // This requires historical data - placeholder for now
+  return null;
+}
+
+// Analyze quality score impact on team metrics
+function analyzeQualityImpactPattern(current) {
+  // Already covered in team matrix correlation
+  return null;
+}
+
+// Detect PPV saturation across team
+function analyzeSaturationPattern(current, previous) {
+  const currentPerf = current.performance;
+  const prevPerf = previous.performance;
+  
+  if (currentPerf.length === 0 || prevPerf.length === 0) return null;
+  
+  // Calculate team-wide PPV frequency change
+  const currentPPVsPerFan = currentPerf.reduce((sum, p) => {
+    return sum + (p.fansChattedWith > 0 ? (p.ppvsSent / p.fansChattedWith) : 0);
+  }, 0) / currentPerf.length;
+  
+  const prevPPVsPerFan = prevPerf.reduce((sum, p) => {
+    return sum + (p.fansChattedWith > 0 ? (p.ppvsSent / p.fansChattedWith) : 0);
+  }, 0) / prevPerf.length;
+  
+  const ppvFreqChange = currentPPVsPerFan - prevPPVsPerFan;
+  
+  // Calculate team unlock rate
+  const currentUnlockRate = currentPerf.reduce((sum, p) => {
+    return sum + (p.ppvsSent > 0 ? (p.ppvsUnlocked / p.ppvsSent) * 100 : 0);
+  }, 0) / currentPerf.length;
+  
+  const prevUnlockRate = prevPerf.reduce((sum, p) => {
+    return sum + (p.ppvsSent > 0 ? (p.ppvsUnlocked / p.ppvsSent) * 100 : 0);
+  }, 0) / prevPerf.length;
+  
+  const unlockRateChange = currentUnlockRate - prevUnlockRate;
+  
+  // Saturation detected if: PPV frequency increased significantly but unlock rate dropped
+  if (ppvFreqChange > 0.15 && unlockRateChange < -5) {
+    return {
+      type: 'saturation',
+      title: 'Team-Wide PPV Saturation Detected',
+      insight: `PPV frequency increased from ${prevPPVsPerFan.toFixed(2)} to ${currentPPVsPerFan.toFixed(2)} PPVs/fan (+${(ppvFreqChange * 100).toFixed(0)}%), but unlock rate dropped from ${prevUnlockRate.toFixed(1)}% to ${currentUnlockRate.toFixed(1)}% (${unlockRateChange.toFixed(1)}%). The team may be over-sending PPVs.`,
+      data: {
+        ppvFreqChange,
+        unlockRateChange,
+        currentPPVsPerFan: currentPPVsPerFan.toFixed(2),
+        currentUnlockRate: currentUnlockRate.toFixed(1)
+      },
+      action: 'Reduce PPV frequency across team to recover unlock rate'
+    };
+  }
+  
+  return null;
+}
+
+// Strategic Recommendations Generator
+function generateStrategicRecommendations(intelligence) {
+  const recommendations = [];
+  
+  // Traffic source recommendations
+  if (intelligence.traffic.concentration > 70) {
+    recommendations.push({
+      priority: 'high',
+      category: 'traffic',
+      title: 'Diversify Traffic Sources',
+      issue: `${intelligence.traffic.concentration}% of revenue comes from ${intelligence.traffic.topSource?.name}`,
+      impact: 'High risk if source performance degrades',
+      action: 'Invest in developing 2-3 additional traffic sources to reduce concentration risk',
+      timeframe: '30 days'
+    });
+  }
+  
+  // Retention recommendations
+  if (intelligence.retention.atRisk.count > 10) {
+    const potentialLoss = intelligence.retention.atRisk.count * 50; // Estimate
+    recommendations.push({
+      priority: 'high',
+      category: 'retention',
+      title: 'Re-engage At-Risk Fans',
+      issue: `${intelligence.retention.atRisk.count} fans haven't messaged in 15+ days`,
+      impact: `Potential ${potentialLoss} revenue loss if they churn`,
+      action: 'Send targeted re-engagement PPVs to at-risk fans within 48 hours',
+      timeframe: '48 hours'
+    });
+  }
+  
+  // Team performance recommendations
+  if (intelligence.team.correlations.qualityUnlockRate?.isSignificant) {
+    const correlation = intelligence.team.correlations.qualityUnlockRate;
+    recommendations.push({
+      priority: 'medium',
+      category: 'quality',
+      title: 'Quality Training for Low-Scoring Chatters',
+      issue: `${correlation.strength.toFixed(1)}% unlock rate gap between high and mid-tier quality chatters`,
+      impact: `Improving quality scores could boost team unlock rate`,
+      action: `Train ${correlation.mid.chatters.join(', ')} on guidelines to improve unlock rates`,
+      timeframe: '14 days'
+    });
+  }
+  
+  // Pattern-based recommendations
+  intelligence.patterns.forEach(pattern => {
+    if (pattern.type === 'saturation') {
+      recommendations.push({
+        priority: 'high',
+        category: 'strategy',
+        title: pattern.title,
+        issue: pattern.insight.split('.')[0],
+        impact: `Lost revenue due to oversaturation`,
+        action: pattern.action,
+        timeframe: 'Immediate'
+      });
+    }
+  });
+  
+  return recommendations.sort((a, b) => {
+    const priority = { high: 1, medium: 2, low: 3 };
+    return priority[a.priority] - priority[b.priority];
+  });
+}
+
+// ==================== AGENCY INTELLIGENCE ENGINE ====================
+app.get('/api/analytics/agency-intelligence', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+  try {
+    const { filterType, customStart, customEnd } = req.query;
+    
+    console.log('🧠 AGENCY INTELLIGENCE ENGINE ACTIVATED');
+    
+    // Build date query
+    let start, end;
+    if (filterType === 'custom' && customStart && customEnd) {
+      start = new Date(customStart);
+      end = new Date(customEnd);
+    } else {
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - 7);
+    }
+    
+    console.log('📅 Analysis period:', { start, end });
+    
+    // Calculate previous period
+    const periodDuration = end - start;
+    const prevStart = new Date(start.getTime() - periodDuration);
+    const prevEnd = new Date(start.getTime());
+    
+    const dateQuery = { date: { $gte: start, $lte: end } };
+    const prevDateQuery = { date: { $gte: prevStart, $lte: prevEnd } };
+    const performanceQuery = {
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start }
+    };
+    const prevPerformanceQuery = {
+      weekStartDate: { $lte: prevEnd },
+      weekEndDate: { $gte: prevStart }
+    };
+    
+    // ==================== DATA COLLECTION ====================
+    console.log('📊 Fetching comprehensive team data...');
+    
+    // Current period data
+    const [
+      allPurchases,
+      allPerformance,
+      allMessageAnalyses,
+      allVIPFans,
+      trafficSources,
+      trafficSourcePerformance
+    ] = await Promise.all([
+      FanPurchase.find(dateQuery).populate('trafficSource').populate('vipFan'),
+      ChatterPerformance.find(performanceQuery),
+      MessageAnalysis.find({}).sort({ createdAt: -1 }).limit(50),
+      VIPFan.find({}),
+      TrafficSource.find({ isActive: true }),
+      TrafficSourcePerformance.find(performanceQuery)
+    ]);
+    
+    // Previous period data
+    const [
+      prevPurchases,
+      prevPerformance
+    ] = await Promise.all([
+      FanPurchase.find(prevDateQuery),
+      ChatterPerformance.find(prevPerformanceQuery)
+    ]);
+    
+    console.log('📊 Data collected:', {
+      purchases: allPurchases.length,
+      performance: allPerformance.length,
+      analyses: allMessageAnalyses.length,
+      vips: allVIPFans.length,
+      sources: trafficSources.length,
+      prevPurchases: prevPurchases.length,
+      prevPerformance: prevPerformance.length
+    });
+    
+    // ==================== ANALYSIS ENGINE ====================
+    const intelligence = await generateAgencyIntelligence({
+      current: {
+        purchases: allPurchases,
+        performance: allPerformance,
+        analyses: allMessageAnalyses,
+        vips: allVIPFans,
+        sources: trafficSources,
+        sourcePerformance: trafficSourcePerformance,
+        start,
+        end
+      },
+      previous: {
+        purchases: prevPurchases,
+        performance: prevPerformance,
+        start: prevStart,
+        end: prevEnd
+      }
+    });
+    
+    res.json(intelligence);
+    
+  } catch (error) {
+    console.error('❌ Agency Intelligence error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // WIPE DATA ENDPOINT (MANAGER ONLY)
 app.post('/api/admin/wipe-data', authenticateToken, requireManager, async (req, res) => {
   try {

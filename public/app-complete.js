@@ -4110,6 +4110,523 @@ function renderAgencyInsights(insights) {
     `;
 }
 
+// Render Agency Intelligence Dashboard
+function renderAgencyIntelligence(intel) {
+    const exec = intel.executive || {};
+    const revenue = intel.revenue || {};
+    const traffic = intel.traffic || {};
+    const retention = intel.retention || {};
+    const team = intel.team || {};
+    const patterns = intel.patterns || [];
+    const recommendations = intel.recommendations || [];
+    
+    const statusColor = {
+        growing: 'text-green-400',
+        declining: 'text-red-400',
+        stable: 'text-yellow-400'
+    }[exec.status] || 'text-gray-400';
+    
+    const statusIcon = {
+        growing: 'fa-arrow-trend-up',
+        declining: 'fa-arrow-trend-down',
+        stable: 'fa-minus'
+    }[exec.status] || 'fa-minus';
+    
+    return `
+        <!-- Executive Summary -->
+        <div class="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-2xl p-8 border-2 border-purple-500/40 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-crown text-yellow-400 mr-3"></i>
+                        Executive Intelligence Report
+                    </h2>
+                    <p class="text-gray-300">
+                        ${new Date(exec.period?.start).toLocaleDateString()} - ${new Date(exec.period?.end).toLocaleDateString()}
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400 mb-1">Status</div>
+                    <div class="${statusColor} text-2xl font-bold flex items-center justify-end">
+                        <i class="fas ${statusIcon} mr-2"></i>
+                        ${exec.status?.toUpperCase() || 'ANALYZING'}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-black/30 rounded-xl p-6 border border-purple-500/20">
+                    <div class="text-purple-300 text-sm font-medium mb-2">REVENUE</div>
+                    <div class="text-4xl font-bold text-white mb-2">$${exec.revenue?.current || 0}</div>
+                    <div class="flex items-center text-sm ${exec.revenue?.change >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        <i class="fas ${exec.revenue?.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'} mr-2"></i>
+                        ${exec.revenue?.changePercent >= 0 ? '+' : ''}${exec.revenue?.changePercent || 0}% vs last period
+                    </div>
+                </div>
+                
+                <div class="bg-black/30 rounded-xl p-6 border border-cyan-500/20">
+                    <div class="text-cyan-300 text-sm font-medium mb-2">TEAM UNLOCK RATE</div>
+                    <div class="text-4xl font-bold text-white mb-2">${exec.team?.unlockRate || 0}%</div>
+                    <div class="text-sm text-gray-400">${exec.team?.activeChatters || 0} active chatters</div>
+                </div>
+                
+                <div class="bg-black/30 rounded-xl p-6 border border-pink-500/20">
+                    <div class="text-pink-300 text-sm font-medium mb-2">AVG QUALITY</div>
+                    <div class="text-4xl font-bold text-white mb-2">${exec.team?.avgQualityScore || 0}/100</div>
+                    <div class="text-sm text-gray-400">Message quality score</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Strategic Recommendations -->
+        ${recommendations.length > 0 ? `
+            <div class="glass-card rounded-2xl p-8 mb-8 border-2 border-red-500/40">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                    Strategic Priorities
+                </h3>
+                <div class="space-y-4">
+                    ${recommendations.map((rec, idx) => `
+                        <div class="bg-gradient-to-r ${rec.priority === 'high' ? 'from-red-900/40 to-red-800/20 border-red-500/40' : rec.priority === 'medium' ? 'from-yellow-900/40 to-yellow-800/20 border-yellow-500/40' : 'from-blue-900/40 to-blue-800/20 border-blue-500/40'} border-2 rounded-xl p-6">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg ${rec.priority === 'high' ? 'bg-red-500' : rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'} text-white flex items-center justify-center font-bold mr-3">
+                                        ${idx + 1}
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-white">${rec.title}</div>
+                                        <div class="text-xs ${rec.priority === 'high' ? 'text-red-400' : rec.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'} font-bold uppercase">${rec.priority} PRIORITY • ${rec.category}</div>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-1 rounded-full text-xs font-bold ${rec.priority === 'high' ? 'bg-red-500/20 text-red-300' : rec.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-blue-500/20 text-blue-300'}">
+                                    ${rec.timeframe}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-sm text-gray-400 mb-1">Issue:</div>
+                                <div class="text-white">${rec.issue}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-sm text-gray-400 mb-1">Impact:</div>
+                                <div class="text-white">${rec.impact}</div>
+                            </div>
+                            <div class="bg-black/30 rounded-lg p-4 border border-white/10">
+                                <div class="text-sm font-bold text-green-400 mb-2">
+                                    <i class="fas fa-lightbulb mr-2"></i>ACTION PLAN:
+                                </div>
+                                <div class="text-white">${rec.action}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        <!-- Revenue Analysis -->
+        ${revenue.current ? `
+            <div class="glass-card rounded-2xl p-8 mb-8">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-chart-line text-green-400 mr-3"></i>
+                    Revenue Mechanical Breakdown
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
+                        <div class="text-green-300 text-sm font-bold mb-4">CURRENT PERIOD</div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Revenue:</span>
+                                <span class="text-white font-bold">$${revenue.current.revenue}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">PPVs Unlocked:</span>
+                                <span class="text-white font-bold">${revenue.current.ppvCount}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">PPVs Sent:</span>
+                                <span class="text-white font-bold">${revenue.current.ppvsSent}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Avg PPV Price:</span>
+                                <span class="text-white font-bold">$${revenue.current.avgPrice}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Unlock Rate:</span>
+                                <span class="text-white font-bold">${revenue.current.unlockRate}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-6 border border-gray-600/30">
+                        <div class="text-gray-400 text-sm font-bold mb-4">PREVIOUS PERIOD</div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Revenue:</span>
+                                <span class="text-gray-300">$${revenue.previous.revenue}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">PPVs Unlocked:</span>
+                                <span class="text-gray-300">${revenue.previous.ppvCount}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">PPVs Sent:</span>
+                                <span class="text-gray-300">${revenue.previous.ppvsSent}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Avg PPV Price:</span>
+                                <span class="text-gray-300">$${revenue.previous.avgPrice}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Unlock Rate:</span>
+                                <span class="text-gray-300">${revenue.previous.unlockRate}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-500/10 rounded-xl p-6 border border-blue-500/30">
+                    <div class="text-blue-300 font-bold mb-4">
+                        <i class="fas fa-calculator mr-2"></i>WHAT DROVE THE CHANGE:
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-400">Volume Impact</div>
+                            <div class="text-2xl font-bold ${revenue.drivers?.volumeContribution >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${revenue.drivers?.volumeContribution >= 0 ? '+' : ''}$${revenue.drivers?.volumeContribution || 0}
+                            </div>
+                            <div class="text-xs text-gray-500">${revenue.changes?.ppvCount >= 0 ? '+' : ''}${revenue.changes?.ppvCount || 0} PPVs</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-400">Pricing Impact</div>
+                            <div class="text-2xl font-bold ${revenue.drivers?.priceContribution >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${revenue.drivers?.priceContribution >= 0 ? '+' : ''}$${revenue.drivers?.priceContribution || 0}
+                            </div>
+                            <div class="text-xs text-gray-500">${revenue.changes?.avgPrice >= 0 ? '+' : ''}$${revenue.changes?.avgPrice || 0} avg price</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-400">Unlock Rate Impact</div>
+                            <div class="text-2xl font-bold ${revenue.changes?.unlockRate >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${revenue.changes?.unlockRate >= 0 ? '+' : ''}${revenue.changes?.unlockRate || 0}%
+                            </div>
+                            <div class="text-xs text-gray-500">${revenue.current.unlockRate}% current</div>
+                        </div>
+                    </div>
+                    <div class="text-center text-white">
+                        <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                        Primary driver: <span class="font-bold">${revenue.drivers?.primaryDriver === 'volume' ? 'PPV Volume' : 'Price Changes'}</span>
+                    </div>
+                </div>
+            </div>
+        ` : ''}
+        
+        <!-- Traffic Source Intelligence -->
+        ${traffic.sortedSources && traffic.sortedSources.length > 0 ? `
+            <div class="glass-card rounded-2xl p-8 mb-8">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-route text-blue-400 mr-3"></i>
+                    Traffic Source Intelligence
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 rounded-xl p-6 border border-blue-500/30">
+                        <div class="text-blue-300 text-sm font-bold mb-3">TOP SOURCE</div>
+                        <div class="text-3xl font-bold text-white mb-2">${traffic.topSource?.name || 'N/A'}</div>
+                        <div class="text-gray-300 mb-3">$${traffic.topSource?.revenue || 0} revenue (${traffic.concentration}% of total)</div>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <div class="text-gray-400">Buyers:</div>
+                                <div class="text-white font-bold">${traffic.topSource?.buyerCount || 0}</div>
+                            </div>
+                            <div>
+                                <div class="text-gray-400">VIP Rate:</div>
+                                <div class="text-white font-bold">${traffic.topSource?.vipRate || 0}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl p-6 border border-purple-500/30">
+                        <div class="text-purple-300 text-sm font-bold mb-3">DIVERSITY ANALYSIS</div>
+                        <div class="text-3xl font-bold text-white mb-2">${traffic.sortedSources.length} Sources</div>
+                        <div class="text-gray-300 mb-3">Diversity Score: ${traffic.diversityScore}/100</div>
+                        ${parseFloat(traffic.concentration) > 70 ? `
+                            <div class="flex items-start bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                                <i class="fas fa-exclamation-triangle text-red-400 mt-1 mr-2"></i>
+                                <div class="text-xs text-red-300">High concentration risk - diversify sources</div>
+                            </div>
+                        ` : `
+                            <div class="flex items-start bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                                <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                                <div class="text-xs text-green-300">Well-diversified traffic portfolio</div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Source Breakdown -->
+                <div class="space-y-3">
+                    ${traffic.sortedSources.map(source => {
+                        const percentOfTotal = traffic.totalRevenue > 0 ? ((source.revenue / traffic.totalRevenue) * 100).toFixed(1) : 0;
+                        return `
+                            <div class="bg-gray-700/30 rounded-xl p-4 border border-gray-600/30 hover:border-cyan-500/50 transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-lg bg-${source.category === 'reddit' ? 'orange' : source.category === 'twitter' ? 'blue' : source.category === 'instagram' ? 'pink' : 'purple'}-500/20 flex items-center justify-center mr-3">
+                                            <i class="fab fa-${source.category} text-${source.category === 'reddit' ? 'orange' : source.category === 'twitter' ? 'blue' : source.category === 'instagram' ? 'pink' : 'purple'}-400"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-white font-bold">${source.name}</div>
+                                            <div class="text-xs text-gray-400 uppercase">${source.category}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-2xl font-bold text-white">$${source.revenue}</div>
+                                        <div class="text-xs text-gray-400">${percentOfTotal}% of total</div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center">
+                                    <div>
+                                        <div class="text-xs text-gray-400">Buyers</div>
+                                        <div class="text-white font-bold">${source.buyerCount}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">VIP Rate</div>
+                                        <div class="text-white font-bold">${source.vipRate}%</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">Avg Purchase</div>
+                                        <div class="text-white font-bold">$${source.avgPurchaseValue}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">Growth</div>
+                                        <div class="font-bold ${source.revenueChangePercent >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                            ${source.revenueChangePercent >= 0 ? '+' : ''}${source.revenueChangePercent}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        <!-- Retention & Churn -->
+        ${retention.overall ? `
+            <div class="glass-card rounded-2xl p-8 mb-8">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-users text-cyan-400 mr-3"></i>
+                    Retention & Churn Intelligence
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-xl p-6 border border-cyan-500/30">
+                        <div class="text-cyan-300 text-sm font-bold mb-2">30-DAY RETENTION</div>
+                        <div class="text-4xl font-bold text-white">${retention.overall.retention30Day}%</div>
+                        <div class="text-xs text-gray-400 mt-2">Short-term health</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-900/20 to-indigo-900/20 rounded-xl p-6 border border-blue-500/30">
+                        <div class="text-blue-300 text-sm font-bold mb-2">60-DAY RETENTION</div>
+                        <div class="text-4xl font-bold text-white">${retention.overall.retention60Day}%</div>
+                        <div class="text-xs text-gray-400 mt-2">Medium-term health</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-xl p-6 border border-indigo-500/30">
+                        <div class="text-indigo-300 text-sm font-bold mb-2">90-DAY RETENTION</div>
+                        <div class="text-4xl font-bold text-white">${retention.overall.retention90Day}%</div>
+                        <div class="text-xs text-gray-400 mt-2">Long-term health</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-900/20 to-orange-900/20 rounded-xl p-6 border border-red-500/30">
+                        <div class="text-red-300 text-sm font-bold mb-2">CHURN RATE</div>
+                        <div class="text-4xl font-bold text-white">${retention.overall.churnRate}%</div>
+                        <div class="text-xs text-gray-400 mt-2">${retention.overall.churnedVIPs} churned VIPs</div>
+                    </div>
+                </div>
+                
+                ${retention.atRisk.count > 0 ? `
+                    <div class="bg-yellow-500/10 border-2 border-yellow-500/40 rounded-xl p-6 mb-6">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-exclamation-circle text-yellow-400 text-2xl mr-3"></i>
+                            <div>
+                                <div class="text-lg font-bold text-white">${retention.atRisk.count} At-Risk Fans</div>
+                                <div class="text-sm text-yellow-300">No message in 15+ days - immediate action needed</div>
+                            </div>
+                        </div>
+                        ${retention.atRisk.fans.slice(0, 5).map(fan => `
+                            <div class="text-sm text-gray-300 mb-1">
+                                <i class="fas fa-user text-yellow-400 mr-2"></i>
+                                ${fan.username} - Last message: ${new Date(fan.lastMessage).toLocaleDateString()}
+                            </div>
+                        `).join('')}
+                        ${retention.atRisk.count > 5 ? `<div class="text-xs text-gray-500 mt-2">...and ${retention.atRisk.count - 5} more</div>` : ''}
+                    </div>
+                ` : ''}
+                
+                ${retention.bySource && Object.keys(retention.bySource).length > 0 ? `
+                    <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-600/30">
+                        <div class="text-white font-bold mb-4">Retention by Traffic Source:</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${Object.entries(retention.bySource).map(([source, data]) => `
+                                <div class="bg-gray-700/50 rounded-lg p-4">
+                                    <div class="text-sm text-gray-400 mb-2">${source}</div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-300">30-day:</span>
+                                        <span class="text-white font-bold">${data.retention30}%</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-300">90-day:</span>
+                                        <span class="text-white font-bold">${data.retention90}%</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        ` : ''}
+        
+        <!-- Team Performance Matrix -->
+        ${team.chatters && team.chatters.length > 0 ? `
+            <div class="glass-card rounded-2xl p-8 mb-8">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-users-cog text-purple-400 mr-3"></i>
+                    Team Performance Matrix
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    ${team.rankings?.revenue?.slice(0, 3).map((chatter, idx) => `
+                        <div class="bg-gradient-to-br ${idx === 0 ? 'from-yellow-900/30 to-amber-900/30 border-yellow-500/40' : 'from-gray-800/30 to-gray-900/30 border-gray-600/30'} rounded-xl p-6 border-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    ${idx === 0 ? '<i class="fas fa-crown text-yellow-400 text-2xl mr-3"></i>' : `<div class="w-8 h-8 rounded-full bg-gray-600 text-white flex items-center justify-center font-bold mr-3">${idx + 1}</div>`}
+                                    <div>
+                                        <div class="text-white font-bold text-lg">${chatter.name}</div>
+                                        <div class="text-xs text-gray-400">Revenue Leader</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-white">$${chatter.revenue}</div>
+                                    <div class="text-xs text-gray-400">${chatter.unlockRate}% unlock</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div class="bg-black/30 rounded p-2">
+                                    <div class="text-gray-400">Per Fan</div>
+                                    <div class="text-white font-bold">$${chatter.revenuePerFan}</div>
+                                </div>
+                                <div class="bg-black/30 rounded p-2">
+                                    <div class="text-gray-400">Quality</div>
+                                    <div class="text-white font-bold">${chatter.analysis?.overallScore || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <!-- Quality Correlation -->
+                ${team.correlations?.qualityUnlockRate?.isSignificant ? `
+                    <div class="bg-gradient-to-r from-green-900/20 to-emerald-900/20 border-2 border-green-500/40 rounded-xl p-6">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-link text-green-400 text-2xl mr-3"></i>
+                            <div>
+                                <div class="text-lg font-bold text-white">Strong Correlation Detected</div>
+                                <div class="text-sm text-green-300">Guidelines Score ↔ Unlock Rate</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            ${team.correlations.qualityUnlockRate.high.count > 0 ? `
+                                <div class="text-center">
+                                    <div class="text-xs text-gray-400 mb-1">High Quality (90-100)</div>
+                                    <div class="text-2xl font-bold text-green-400">${team.correlations.qualityUnlockRate.high.avgUnlockRate}%</div>
+                                    <div class="text-xs text-gray-500">${team.correlations.qualityUnlockRate.high.count} chatters</div>
+                                </div>
+                            ` : ''}
+                            ${team.correlations.qualityUnlockRate.mid.count > 0 ? `
+                                <div class="text-center">
+                                    <div class="text-xs text-gray-400 mb-1">Mid Quality (70-89)</div>
+                                    <div class="text-2xl font-bold text-yellow-400">${team.correlations.qualityUnlockRate.mid.avgUnlockRate}%</div>
+                                    <div class="text-xs text-gray-500">${team.correlations.qualityUnlockRate.mid.count} chatters</div>
+                                </div>
+                            ` : ''}
+                            ${team.correlations.qualityUnlockRate.low.count > 0 ? `
+                                <div class="text-center">
+                                    <div class="text-xs text-gray-400 mb-1">Low Quality (<70)</div>
+                                    <div class="text-2xl font-bold text-red-400">${team.correlations.qualityUnlockRate.low.avgUnlockRate}%</div>
+                                    <div class="text-xs text-gray-500">${team.correlations.qualityUnlockRate.low.count} chatters</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="text-white text-sm">
+                            <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                            <strong>Insight:</strong> ${team.correlations.qualityUnlockRate.strength.toFixed(1)}% unlock rate difference between quality tiers. Improving message quality directly boosts conversions.
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        ` : ''}
+        
+        <!-- Pattern Detection -->
+        ${patterns.length > 0 ? `
+            <div class="glass-card rounded-2xl p-8 mb-8">
+                <h3 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-brain text-pink-400 mr-3"></i>
+                    Pattern Detection & Insights
+                </h3>
+                <div class="space-y-4">
+                    ${patterns.map(pattern => `
+                        <div class="bg-gradient-to-r from-pink-900/30 to-purple-900/30 rounded-xl p-6 border border-pink-500/30">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-xl bg-pink-500/20 flex items-center justify-center mr-4">
+                                        <i class="fas ${pattern.type === 'saturation' ? 'fa-exclamation-triangle' : 'fa-chart-line'} text-pink-400 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-white">${pattern.title}</div>
+                                        <div class="text-xs text-pink-300 uppercase font-bold">${pattern.type.replace('_', ' ')}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-gray-300 mb-4">${pattern.insight}</div>
+                            <div class="bg-black/30 rounded-lg p-4 border border-pink-500/20">
+                                <div class="text-sm text-pink-300 font-bold mb-2">
+                                    <i class="fas fa-bullseye mr-2"></i>RECOMMENDED ACTION:
+                                </div>
+                                <div class="text-white">${pattern.action}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${team.count === 0 && traffic.sortedSources.length === 0 && retention.overall === null ? `
+            <div class="glass-card rounded-2xl p-12 text-center border-2 border-yellow-500/40">
+                <i class="fas fa-database text-yellow-400 text-5xl mb-6"></i>
+                <h3 class="text-2xl font-bold text-white mb-4">Insufficient Data for Intelligence Analysis</h3>
+                <p class="text-gray-300 mb-6 max-w-2xl mx-auto">
+                    To generate comprehensive agency intelligence with traffic source analysis, retention metrics, 
+                    team correlations, and strategic recommendations, please upload:
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                    <div class="bg-gray-700/30 rounded-xl p-4">
+                        <i class="fas fa-users text-cyan-400 text-2xl mb-2"></i>
+                        <div class="text-white font-bold">2+ Chatters</div>
+                        <div class="text-xs text-gray-400">For team correlations</div>
+                    </div>
+                    <div class="bg-gray-700/30 rounded-xl p-4">
+                        <i class="fas fa-calendar text-purple-400 text-2xl mb-2"></i>
+                        <div class="text-white font-bold">2+ Periods</div>
+                        <div class="text-xs text-gray-400">For trend analysis</div>
+                    </div>
+                    <div class="bg-gray-700/30 rounded-xl p-4">
+                        <i class="fas fa-route text-blue-400 text-2xl mb-2"></i>
+                        <div class="text-white font-bold">Traffic Sources</div>
+                        <div class="text-xs text-gray-400">For source analysis</div>
+                    </div>
+                </div>
+            </div>
+        ` : ''}
+    `;
+}
+
 // Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
     const resultsContainer = document.getElementById('agencyAnalysisResults');
@@ -4179,83 +4696,25 @@ async function runAgencyAnalysis() {
             throw new Error('Failed to fetch data');
         }
 
-        const data = await response.json();
-        console.log('📊 Data for AI analysis:', data);
+        // Call the NEW intelligence endpoint
+        const intelligenceUrl = `/api/analytics/agency-intelligence?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
         
-        // Calculate unlock rate
-        const unlockRate = data.ppvsSent > 0 
-            ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1)
-            : 0;
+        const intelligenceResponse = await fetch(intelligenceUrl, {
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Cache-Control': 'no-cache'
+            }
+        });
         
-        // Get active chatters count
-        const activeChatterCount = data.chatterPerformance?.length || 0;
+        if (!intelligenceResponse.ok) {
+            throw new Error('Failed to fetch intelligence data');
+        }
         
-        // Show simple team overview for now
-        resultsContainer.innerHTML = `
-            <div class="glass-card rounded-xl p-6 mb-6">
-                <h3 class="text-2xl font-bold text-white mb-4">
-                    <i class="fas fa-chart-bar text-purple-400 mr-3"></i>
-                    Team Performance Summary
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Total Revenue</div>
-                        <div class="text-3xl font-bold text-white">$${data.totalRevenue || 0}</div>
-                        <div class="text-sm text-gray-400 mt-2">This period</div>
-                    </div>
-                    
-                    <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Team Unlock Rate</div>
-                        <div class="text-3xl font-bold text-white">${unlockRate}%</div>
-                        <div class="text-sm text-gray-400 mt-2">${data.ppvsUnlocked || 0}/${data.ppvsSent || 0} PPVs</div>
-                    </div>
-                    
-                    <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Avg Quality Score</div>
-                        <div class="text-3xl font-bold text-white">${data.avgOverallScore || 0}/100</div>
-                        <div class="text-sm text-gray-400 mt-2">Message quality</div>
-                    </div>
-                    
-                    <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Active Chatters</div>
-                        <div class="text-3xl font-bold text-white">${activeChatterCount}</div>
-                        <div class="text-sm text-gray-400 mt-2">This period</div>
-                    </div>
-                </div>
-                
-                ${activeChatterCount < 2 ? `
-                    <div class="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                        <p class="text-yellow-300">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Limited Insights:</strong> Only ${activeChatterCount} chatter has data. Upload performance data for multiple chatters to see team-wide correlations, benchmarks, and recommendations.
-                        </p>
-                    </div>
-                ` : ''}
-                
-                ${data.avgOverallScore ? `
-                    <div class="mt-6 space-y-4">
-                        <h4 class="text-lg font-bold text-white">Team Insights</h4>
-                        <div class="bg-gray-700/30 rounded-xl p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="text-sm text-gray-400">Grammar Score</div>
-                                    <div class="text-xl font-bold text-white">${data.avgGrammarScore !== null ? data.avgGrammarScore : 'N/A'}/100</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-400">Guidelines Score</div>
-                                    <div class="text-xl font-bold text-white">${data.avgGuidelinesScore || 'N/A'}/100</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-400">Overall Score</div>
-                                    <div class="text-xl font-bold text-white">${data.avgOverallScore || 0}/100</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+        const intelligence = await intelligenceResponse.json();
+        console.log('🧠 Agency Intelligence:', intelligence);
+        
+        // Render comprehensive intelligence dashboard
+        resultsContainer.innerHTML = renderAgencyIntelligence(intelligence);
         
     } catch (error) {
         console.error('Agency analysis error:', error);
