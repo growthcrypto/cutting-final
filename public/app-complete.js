@@ -9827,9 +9827,13 @@ async function handleMessagesUpload(event) {
 }
 
 // Daily report functions
-function addPPVSaleField() {
+window.addPPVSaleField = function() {
+    console.log('🎯 addPPVSaleField called!');
     const container = document.getElementById('ppvSalesContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('ppvSalesContainer not found!');
+        return;
+    }
 
     const index = container.children.length;
 
@@ -9881,9 +9885,13 @@ function addPPVSaleField() {
     populateTrafficSourceDropdowns();
 }
 
-function addTipField() {
+window.addTipField = function() {
+    console.log('🎯 addTipField called!');
     const container = document.getElementById('tipsContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('tipsContainer not found!');
+        return;
+    }
 
     const tipDiv = document.createElement('div');
     tipDiv.className = 'tip-entry p-4 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl hover:border-green-500/50 transition-all';
@@ -9933,11 +9941,13 @@ function addTipField() {
     populateTrafficSourceDropdowns();
 }
 
-function removePPVSale(button) {
+window.removePPVSale = function(button) {
+    console.log('🎯 removePPVSale called!');
     button.closest('.ppv-sale-entry').remove();
 }
 
-function removeTip(button) {
+window.removeTip = function(button) {
+    console.log('🎯 removeTip called!');
     button.closest('.tip-entry').remove();
 }
 
