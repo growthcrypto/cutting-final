@@ -3488,14 +3488,20 @@ function applyCustomDateRange(context) {
 
 // Show Agency Analysis
 function showAgencyAnalysis() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Hide selection cards
+    if (cards) cards.classList.add('hidden');
+    
+    // Show agency section and run analysis
     if (agencySection) {
         agencySection.classList.remove('hidden');
         runAgencyAnalysis();
     }
     
+    // Hide individual section
     if (chatterSection) {
         chatterSection.classList.add('hidden');
     }
@@ -3538,14 +3544,20 @@ function showChatterAnalysisAuto() {
 
 // Show Chatter Analysis
 function showChatterAnalysis() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Hide selection cards
+    if (cards) cards.classList.add('hidden');
+    
+    // Show individual section
     if (chatterSection) {
         chatterSection.classList.remove('hidden');
         loadChattersForAnalysis();
     }
     
+    // Hide agency section
     if (agencySection) {
         agencySection.classList.add('hidden');
     }
@@ -3553,9 +3565,14 @@ function showChatterAnalysis() {
 
 // Hide Analysis Results
 function hideAnalysisResults() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Show selection cards again
+    if (cards) cards.classList.remove('hidden');
+    
+    // Hide both analysis sections
     if (agencySection) {
         agencySection.classList.add('hidden');
     }
@@ -6689,59 +6706,14 @@ function createAIAnalysisSection() {
     // For managers, show both Agency and Individual Analysis options
     return `
         <div class="mb-8">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
-                        <i class="fas fa-brain mr-3"></i>AI Intelligence Hub
-                    </h2>
-                    <p class="text-gray-400 text-lg">Deep insights only AI can see</p>
-                </div>
-                <div class="flex items-center gap-4">
-                    <!-- Time Period Selector -->
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <span class="text-sm font-medium text-gray-400 mr-2">Period:</span>
-                        <button onclick="setAIInterval('24h')" class="ai-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
-                        <button onclick="setAIInterval('7d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
-                        <button onclick="setAIInterval('30d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
-                        <button onclick="setAIInterval('custom')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                            <i class="fas fa-calendar mr-1 text-xs"></i>Custom
-                        </button>
-                    </div>
-                    <button onclick="runAgencyAnalysis()" class="premium-button text-white font-bold py-4 px-8 rounded-xl text-lg hover:scale-105 transition-transform shadow-2xl">
-                        <i class="fas fa-bolt mr-2"></i>Run Deep Analysis
-                    </button>
-                </div>
-            </div>
+            <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                <i class="fas fa-brain mr-3"></i>AI Intelligence Hub
+            </h2>
+            <p class="text-gray-400 text-lg">Choose an analysis type to get started</p>
         </div>
 
-        <!-- AI Analysis Results Container -->
-        <div id="aiAnalysisResults" class="space-y-6">
-            <!-- Results will be dynamically inserted here -->
-            <div class="text-center py-20">
-                <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-3xl flex items-center justify-center border-2 border-purple-500/30">
-                    <i class="fas fa-brain text-5xl text-purple-400"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-white mb-3">Ready for Deep Analysis</h3>
-                <p class="text-gray-400 mb-6">Click "Run Deep Analysis" to uncover hidden insights, revenue opportunities, and critical weaknesses</p>
-                <div class="flex items-center justify-center gap-8 text-sm">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle text-green-400"></i>
-                        <span class="text-gray-300">Revenue Optimization</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle text-green-400"></i>
-                        <span class="text-gray-300">Performance Gaps</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle text-green-400"></i>
-                        <span class="text-gray-300">Growth Opportunities</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Analysis Options (Manager only) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Analysis Type Selection Cards -->
+        <div id="analysisTypeCards" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showAgencyAnalysis()">
                 <div class="flex items-center mb-6">
                     <div class="w-16 h-16 bg-purple-600/20 rounded-2xl flex items-center justify-center mr-4">
