@@ -23,13 +23,7 @@ const {
   AIAnalysis,
   PerformanceHistory,
   Chatter,
-  Analytics,
-  TrafficSource,
-  VIPFan,
-  FanPurchase,
-  TrafficSourcePerformance,
-  LinkTrackingData,
-  DailyAccountSnapshot
+  Analytics
 } = require('./models');
 
 const app = express();
@@ -460,7 +454,28 @@ app.get('/api/auth/me', checkDatabaseConnection, authenticateToken, async (req, 
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const chatters = await User.find({ role: 'chatter' }, { password: 0 });
-    res.json(chatters);
+    
+    // If no chatters exist, create some test users
+    if (chatters.length === 0) {
+      console.log('No chatters found, creating test users...');
+      const testChatters = [
+        { username: 'Agile', email: 'agile@agency.com', role: 'chatter', chatterName: 'Agile', password: 'password123' },
+        { username: 'gypsy', email: 'gypsy@agency.com', role: 'chatter', chatterName: 'gypsy', password: 'password123' },
+        { username: 'John', email: 'john@agency.com', role: 'chatter', chatterName: 'John', password: 'password123' },
+        { username: 'ceejay', email: 'ceejay@agency.com', role: 'chatter', chatterName: 'ceejay', password: 'password123' }
+      ];
+      
+      for (const chatter of testChatters) {
+        const newUser = new User(chatter);
+        await newUser.save();
+      }
+      
+      console.log('Test chatters created successfully');
+      const updatedChatters = await User.find({ role: 'chatter' }, { password: 0 });
+      res.json(updatedChatters);
+    } else {
+      res.json(chatters);
+    }
   } catch (error) {
     console.error('Error fetching chatters:', error);
     res.status(500).json({ error: 'Failed to fetch chatters' });
@@ -572,23 +587,16 @@ app.get('/api/analytics/available-periods', checkDatabaseConnection, authenticat
 // Get dashboard analytics
 app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
 
-    console.log('📊 Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd });
+    console.log('📊 Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
 
     // Define start and end dates based on filter type
     let start, end;
     let isWeekFilter = false;
     let isMonthFilter = false;
-    let isCustomFilter = false;
     
-    if (filterType === 'custom' && customStart && customEnd) {
-      // NEW: Custom date range filter
-      start = new Date(customStart);
-      end = new Date(customEnd);
-      isCustomFilter = true;
-      console.log('✅ Using CUSTOM filter:', start.toISOString(), 'to', end.toISOString());
-    } else if (filterType === 'week' && weekStart && weekEnd) {
+    if (filterType === 'week' && weekStart && weekEnd) {
       // Exact week filter
       start = new Date(weekStart);
       end = new Date(weekEnd);
@@ -611,19 +619,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Build queries based on filter type
     let accountDataQuery, chatterPerformanceQuery, dateQuery;
     
-    if (isCustomFilter) {
-      // NEW: Custom date range - query daily data AND OF account data that overlaps
-      accountDataQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
-      };
-      chatterPerformanceQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
-      };
-      dateQuery = { date: { $gte: start, $lte: end } };
-      console.log('📅 Using custom date range query with overlap for weekly data');
-    } else if (isWeekFilter) {
+    if (isWeekFilter) {
       // EXACT WEEK MATCH
       accountDataQuery = {
         weekStartDate: start,
@@ -664,7 +660,6 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Fetch data
     const dailyReports = await DailyChatterReport.find(dateQuery);
     const ofAccountData = await AccountData.find(accountDataQuery);
-    const dailySnapshots = await DailyAccountSnapshot.find(dateQuery); // NEW: Daily snapshots for custom dates
     const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQuery);
     
     console.log('=== DASHBOARD QUERY DEBUG ===');
@@ -672,7 +667,6 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     console.log('Dashboard data query results:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
-      dailySnapshots: dailySnapshots.length,
       chatterPerformance: chatterPerformance.length
     });
     console.log('ChatterPerformance data found:', JSON.stringify(chatterPerformance, null, 2));
@@ -680,7 +674,6 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     console.log('Dashboard query:', {
       dailyReports: dailyReports.length,
       ofAccountData: ofAccountData.length,
-      dailySnapshots: dailySnapshots.length,
       chatterPerformance: chatterPerformance.length,
       dateQuery,
       chatterPerformanceQuery,
@@ -693,40 +686,33 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       }))
     });
     
-    // Calculate metrics from FanPurchase records (daily logs - single source of truth)
-    const fanPurchases = await FanPurchase.find(dateQuery);
-    
-    const totalPPVRevenue = fanPurchases
-      .filter(p => p.type === 'ppv')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    
-    const totalTipRevenue = fanPurchases
-      .filter(p => p.type === 'tip')
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    
+    // Calculate metrics from daily reports (PPV sales and tips)
+    const totalPPVRevenue = dailyReports.reduce((sum, report) => sum + report.ppvSales.reduce((ppvSum, sale) => ppvSum + sale.amount, 0), 0);
+    const totalTipRevenue = dailyReports.reduce((sum, report) => sum + report.tips.reduce((tipSum, tip) => tipSum + tip.amount, 0), 0);
     const totalRevenue = totalPPVRevenue + totalTipRevenue;
     
-    console.log('💰 Revenue from FanPurchase records:', {
-      ppv: totalPPVRevenue,
-      tips: totalTipRevenue,
-      total: totalRevenue,
-      recordCount: fanPurchases.length
-    });
-    
-    // Average PPV price from FanPurchase records
-    const ppvPurchases = fanPurchases.filter(p => p.type === 'ppv');
-    const avgPPVPriceDaily = ppvPurchases.length > 0
-      ? Math.round((totalPPVRevenue / ppvPurchases.length) * 100) / 100
+    // Daily-average PPV price (average of each day's average), per timeframe
+    const dailyAvgPrices = dailyReports
+      .map(r => {
+        const cnt = (r.ppvSales || []).length;
+        if (!cnt) return null;
+        const sum = r.ppvSales.reduce((s, sale) => s + sale.amount, 0);
+        return sum / cnt;
+      })
+      .filter(v => v != null);
+    const avgPPVPriceDaily = dailyAvgPrices.length > 0 
+      ? Math.round((dailyAvgPrices.reduce((s, v) => s + v, 0) / dailyAvgPrices.length) * 100) / 100
       : 0;
 
-    // PPVs unlocked = count of PPV purchases from FanPurchase records
-    const totalPPVsUnlocked = ppvPurchases.length;
+    // Note: daily reports include only unlocked PPVs; 'sent' is tracked in chatter performance
+    const totalPPVsSent = 0;
     
     // Add metrics from chatter performance data (only count non-null values)
     const chatterPPVsSent = chatterPerformance.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
     const chatterPPVsUnlocked = chatterPerformance.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
     const chatterMessagesSent = chatterPerformance.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
     const chatterFansChatted = chatterPerformance.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
+    const totalPPVsUnlocked = dailyReports.reduce((sum, report) => sum + (report.ppvSales?.length || 0), 0); // Assume sent = unlocked for now
     
     // Calculate response time from both sources (only count non-null values)
     const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
@@ -742,165 +728,24 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     // Use response time from either source, preferring daily reports if available
     const avgResponseTime = dailyReportsResponseTime > 0 ? dailyReportsResponseTime : chatterPerformanceResponseTime;
 
-    // Get recurring revenue from OF Account data, but use totalRevenue for netRevenue (from daily logs)
-    const netRevenue = totalRevenue; // NOW: Use daily logs as source of truth
+    // Get real data from OF Account data
+    const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
+    const recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
     
-    // PRIORITIZE Daily Snapshots over old OF Account data
-    let totalSubs, activeFans, fansWithRenew, renewRate, newSubs, recurringRevenue;
-    
-    if (dailySnapshots.length > 0) {
-      // NEW: Use daily snapshots (better granularity)
-      console.log('📊 Using DailyAccountSnapshot data');
-      
-      // Average snapshot metrics (they're point-in-time values)
-      totalSubs = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.totalSubs || 0), 0) / dailySnapshots.length);
-      activeFans = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.activeFans || 0), 0) / dailySnapshots.length);
-      fansWithRenew = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.fansWithRenew || 0), 0) / dailySnapshots.length);
-      renewRate = dailySnapshots.reduce((sum, s) => sum + (s.renewRate || 0), 0) / dailySnapshots.length;
-      
-      // Sum new subs (cumulative)
-      newSubs = dailySnapshots.reduce((sum, s) => sum + (s.newSubsToday || 0), 0);
-      
-      // Calculate recurring revenue: fans with renew × avg sub price
-      // Assuming $10/month subscription (you can make this configurable)
-      recurringRevenue = fansWithRenew * 10;
-    } else {
-      // FALLBACK: Use old OF Account data
-      console.log('📊 Falling back to OF Account data (upload daily snapshots for better metrics!)');
-      
-      recurringRevenue = ofAccountData.reduce((sum, data) => sum + (data.recurringRevenue || 0), 0);
-      totalSubs = ofAccountData.length > 0 
-        ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
-        : 0;
-      newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
-      
-      // Old data doesn't have these metrics
-      activeFans = 0;
-      fansWithRenew = 0;
-      renewRate = 0;
-    }
-    
-    const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
-
-    // Get link clicks from LinkTrackingData (uses weekStartDate/weekEndDate)
-    let linkTrackingQuery = {};
-    if (isWeekFilter) {
-      linkTrackingQuery = {
-        weekStartDate: start,
-        weekEndDate: end
-      };
-    } else if (isMonthFilter) {
-      linkTrackingQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
-      };
-    } else {
-      linkTrackingQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
-      };
-    }
-    
-    const linkTrackingData = await LinkTrackingData.find(linkTrackingQuery);
-    console.log('🔗 Link tracking query:', linkTrackingQuery);
-    console.log('🔗 Link tracking data found:', linkTrackingData.length, 'records');
-    const totalLinkClicks = linkTrackingData.reduce((sum, lt) => sum + (lt.onlyFansClicks || 0), 0);
-    const totalLinkViews = linkTrackingData.reduce((sum, lt) => sum + (lt.landingPageViews || 0), 0);
-    console.log('🔗 Total link clicks:', totalLinkClicks, 'Total views:', totalLinkViews);
-    
-    // Calculate combined fans chatted (needed for spender conversion)
-    const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
-    
-    // Calculate spender conversion rate (fans who became buyers)
-    const uniqueSpenders = new Set(fanPurchases.map(p => p.fanUsername).filter(u => u)).size;
-    const spenderConversionRate = combinedFansChatted > 0 ? (uniqueSpenders / combinedFansChatted) * 100 : 0;
-    
-    // Get latest analysis scores for each chatter
-    const latestAnalyses = await MessageAnalysis.aggregate([
-      {
-        $sort: { weekEndDate: -1 }
-      },
-      {
-        $group: {
-          _id: '$chatterName',
-          latestAnalysis: { $first: '$$ROOT' }
-        }
-      }
-    ]);
-    
-    const overallScores = latestAnalyses
-      .map(a => a.latestAnalysis.overallScore)
-      .filter(s => s != null && s > 0);
-    const grammarScores = latestAnalyses
-      .map(a => a.latestAnalysis.grammarScore)
-      .filter(s => s != null && s > 0);
-    const guidelineScores = latestAnalyses
-      .map(a => a.latestAnalysis.guidelinesScore)
-      .filter(s => s != null && s > 0);
-    
-    // Average scores (0-100 scale)
-    const avgOverallScore = overallScores.length > 0 
-      ? Math.round(overallScores.reduce((s, v) => s + v, 0) / overallScores.length) 
-      : null;
-    const avgGrammarScore = grammarScores.length > 0
-      ? Math.round(grammarScores.reduce((s, v) => s + v, 0) / grammarScores.length)
-      : null;
-    const avgGuidelinesScore = guidelineScores.length > 0
-      ? Math.round(guidelineScores.reduce((s, v) => s + v, 0) / guidelineScores.length)
-      : null;
-    
-    console.log('📊 Analysis scores:', {
-      latestAnalysesCount: latestAnalyses.length,
-      avgOverallScore,
-      avgGrammarScore,
-      avgGuidelinesScore,
-      overallScoresFound: overallScores.length,
-      grammarScoresFound: grammarScores.length,
-      guidelineScoresFound: guidelineScores.length
-    });
-    
-    // Calculate top performer from FanPurchase records
-    const chatterRevenue = {};
-    fanPurchases.forEach(purchase => {
-      const chatter = purchase.chatterName || 'Unknown';
-      if (!chatterRevenue[chatter]) {
-        chatterRevenue[chatter] = 0;
-      }
-      chatterRevenue[chatter] += purchase.amount || 0;
-    });
-    
-    let topPerformer = null;
-    let topRevenue = 0;
-    Object.entries(chatterRevenue).forEach(([name, revenue]) => {
-      if (revenue > topRevenue) {
-        topRevenue = revenue;
-        topPerformer = name;
-      }
-    });
-    
-    console.log('🏆 Top performer:', topPerformer, 'with $', topRevenue);
-    
-    // Calculate VIP metrics
-    const allVIPFans = await VIPFan.find({ status: 'active' });
-    const vipRevenue = fanPurchases
-      .filter(p => p.vipFan != null)
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    const vipRevenuePercent = totalRevenue > 0 ? (vipRevenue / totalRevenue) * 100 : 0;
-    const avgVIPSpend = allVIPFans.length > 0 
-      ? allVIPFans.reduce((sum, vip) => sum + (vip.lifetimeSpend || 0), 0) / allVIPFans.length
+    // Total subs should be averaged (it's a snapshot, not cumulative)
+    const totalSubs = ofAccountData.length > 0 
+      ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
       : 0;
     
-    console.log('⭐ VIP Metrics:', {
-      vipCount: allVIPFans.length,
-      vipRevenue,
-      vipRevenuePercent: vipRevenuePercent.toFixed(1) + '%',
-      avgVIPSpend: avgVIPSpend.toFixed(2)
-    });
-    
+    // New subs and clicks are cumulative (sum them)
+    const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
+    const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
+
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
     const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
     const combinedMessagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0) + chatterMessagesSent;
+    const combinedFansChatted = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0), 0) + chatterFansChatted;
 
     const analytics = {
       totalRevenue: Math.round(totalRevenue),
@@ -911,29 +756,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       totalSubs: Math.round(totalSubs),
       newSubs: Math.round(newSubs),
       profileClicks: Math.round(profileClicks),
-      linkClicks: Math.round(totalLinkClicks), // NEW: Link clicks from tracking data
-      linkViews: Math.round(totalLinkViews),
-      // NEW METRICS from Daily Account Snapshots
-      activeFans: Math.round(activeFans || 0), // Active subscriber count
-      fansWithRenew: Math.round(fansWithRenew || 0), // Fans with auto-renew enabled
-      renewRate: Math.round(renewRate * 10) / 10, // % of active fans with renew on
-      // VIP Fan Metrics
-      vipRevenuePercent: Math.round(vipRevenuePercent * 10) / 10, // % of revenue from VIPs
-      avgVIPSpend: Math.round(avgVIPSpend * 100) / 100, // Avg lifetime spend per VIP
-      vipCount: allVIPFans.length, // Total VIP fans
       messagesSent: combinedMessagesSent,
       ppvsSent: combinedPPVsSent,
       ppvsUnlocked: combinedPPVsUnlocked,
       fansChatted: combinedFansChatted,
       avgResponseTime: Math.round(avgResponseTime * 10) / 10,
-      avgPPVPrice: avgPPVPriceDaily, // NEW: For Efficiency Matrix card
-      spenderConversionRate: Math.round(spenderConversionRate * 10) / 10, // NEW: For Efficiency Matrix
-      uniqueSpenders: uniqueSpenders, // NEW: For calculations
-      // Analysis scores
-      avgOverallScore: avgOverallScore, // NEW: For Team Dynamics
-      avgGrammarScore: avgGrammarScore, // NEW: For Team Dynamics
-      avgGuidelinesScore: avgGuidelinesScore, // NEW: For Team Dynamics
-      topPerformer: topPerformer || 'No data', // NEW: Top revenue generator
+      // Average PPV price: average of each day's average PPV price within the timeframe
+      avgPPVPrice: avgPPVPriceDaily,
       conversionRate: profileClicks > 0 ? Math.round((newSubs / profileClicks) * 100) : 0
     };
     
@@ -980,7 +809,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       netRevenue: sumField(prevAccountData, 'netRevenue'),
       newSubs: sumField(prevAccountData, 'newSubs'),
       profileClicks: sumField(prevAccountData, 'profileClicks'),
-      totalSubs: Math.round(avgField(prevAccountData, 'totalSubs'))
+      totalSubs: sumField(prevAccountData, 'totalSubs')
     };
     
     prevMetrics.unlockRate = prevMetrics.ppvsSent > 0 ? (prevMetrics.ppvsUnlocked / prevMetrics.ppvsSent * 100) : 0;
@@ -1015,23 +844,16 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
 // Team Dashboard API - Get combined team performance + individual chatter data
 app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd } = req.query;
 
-    console.log('👥 Team Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd });
+    console.log('👥 Team Dashboard API called with:', { filterType, weekStart, weekEnd, monthStart, monthEnd });
 
     // Define start and end dates based on filter type
     let start, end;
     let isWeekFilter = false;
     let isMonthFilter = false;
-    let isCustomFilter = false;
     
-    if (filterType === 'custom' && customStart && customEnd) {
-      // NEW: Custom date range filter
-      start = new Date(customStart);
-      end = new Date(customEnd);
-      isCustomFilter = true;
-      console.log('✅ Team using CUSTOM filter:', start.toISOString(), 'to', end.toISOString());
-    } else if (filterType === 'week' && weekStart && weekEnd) {
+    if (filterType === 'week' && weekStart && weekEnd) {
       // Exact week filter
       start = new Date(weekStart);
       end = new Date(weekEnd);
@@ -1186,49 +1008,23 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       }
     });
 
-    // ALSO get revenue from Daily Chatter Reports (daily sales logs)
-    const dailyReportsQuery = {
-      date: { $gte: start, $lte: end }
-    };
-    const dailyReports = await DailyChatterReport.find(dailyReportsQuery);
-    console.log('📊 Team Dashboard - DailyChatterReport found:', dailyReports.length, 'records');
-    
-    dailyReports.forEach(report => {
-      // Add revenue from daily sales logs
-      const ppvRevenue = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
-      const tipRevenue = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
-      teamMetrics.totalRevenue += ppvRevenue + tipRevenue;
-      
-      // Also count messages and fans if available
-      if (report.messagesSent) teamMetrics.messagesSent += report.messagesSent;
-      if (report.fansChatted) teamMetrics.fansChatted += report.fansChatted;
-      if (report.avgResponseTime && report.avgResponseTime > 0) {
-        teamMetrics.responseTimesSum += report.avgResponseTime;
-        teamMetrics.responseTimeCount++;
-      }
-    });
-
     // Aggregate scores from AI analyses
-    let grammarCount = 0, guidelinesCount = 0, overallCount = 0;
-    
     chatterAnalyses.forEach(({ analysis }) => {
       if (analysis) {
         if (analysis.grammarScore != null) {
           teamMetrics.totalGrammarScore += analysis.grammarScore;
-          grammarCount++;
+          teamMetrics.scoreCount++;
         }
         if (analysis.guidelinesScore != null) {
           teamMetrics.totalGuidelinesScore += analysis.guidelinesScore;
-          guidelinesCount++;
         }
         if (analysis.overallScore != null) {
           teamMetrics.totalOverallScore += analysis.overallScore;
-          overallCount++;
         }
       }
     });
 
-    // Calculate averages with separate counters for each score type
+    // Calculate averages
     const unlockRate = teamMetrics.ppvsSent > 0 
       ? Math.round((teamMetrics.ppvsUnlocked / teamMetrics.ppvsSent) * 100 * 10) / 10
       : 0;
@@ -1237,16 +1033,16 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       ? Math.round((teamMetrics.responseTimesSum / teamMetrics.responseTimeCount) * 10) / 10
       : 0;
     
-    const avgGrammarScore = grammarCount > 0
-      ? Math.round(teamMetrics.totalGrammarScore / grammarCount)
+    const avgGrammarScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalGrammarScore / teamMetrics.scoreCount)
       : 0;
     
-    const avgGuidelinesScore = guidelinesCount > 0
-      ? Math.round(teamMetrics.totalGuidelinesScore / guidelinesCount)
+    const avgGuidelinesScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalGuidelinesScore / teamMetrics.scoreCount)
       : 0;
     
-    const avgOverallScore = overallCount > 0
-      ? Math.round(teamMetrics.totalOverallScore / overallCount)
+    const avgOverallScore = teamMetrics.scoreCount > 0
+      ? Math.round(teamMetrics.totalOverallScore / teamMetrics.scoreCount)
       : 0;
     
     const avgPPVPrice = teamMetrics.ppvsUnlocked > 0
@@ -1257,23 +1053,14 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       ? Math.round((teamMetrics.totalRevenue / teamMetrics.messagesSent) * 100) / 100
       : 0;
 
-    // Find top performer (include both ChatterPerformance and DailyChatterReport revenue)
-    const chatterRevenues = {};
-    
-    // Add revenue from ChatterPerformance
-    chatterPerformance.forEach(data => {
+    // Find top performer
+    const chatterRevenues = chatterPerformance.reduce((acc, data) => {
       const revenue = (data.ppvRevenue || 0) + (data.tipRevenue || 0);
-      if (!chatterRevenues[data.chatterName]) chatterRevenues[data.chatterName] = 0;
-      chatterRevenues[data.chatterName] += revenue;
-    });
-    
-    // Add revenue from DailyChatterReport
-    dailyReports.forEach(report => {
-      const ppvRev = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
-      const tipRev = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
-      if (!chatterRevenues[report.chatterName]) chatterRevenues[report.chatterName] = 0;
-      chatterRevenues[report.chatterName] += ppvRev + tipRev;
-    });
+      if (!acc[data.chatterName] || acc[data.chatterName] < revenue) {
+        acc[data.chatterName] = revenue;
+      }
+      return acc;
+    }, {});
     
     const topPerformer = Object.entries(chatterRevenues).sort((a, b) => b[1] - a[1])[0];
 
@@ -1281,28 +1068,12 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     const chatterData = chatterNames.map(name => {
       const perfData = chatterPerformance.filter(p => p.chatterName === name);
       const analysisData = chatterAnalyses.find(a => a.chatterName === name)?.analysis;
-      const chatterDailyReports = dailyReports.filter(r => r.chatterName === name);
       
-      // Revenue from ChatterPerformance
-      let chatterRevenue = perfData.reduce((sum, p) => sum + (p.ppvRevenue || 0) + (p.tipRevenue || 0), 0);
-      
-      // ALSO add revenue from daily reports
-      chatterDailyReports.forEach(report => {
-        const ppvRev = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
-        const tipRev = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
-        chatterRevenue += ppvRev + tipRev;
-      });
-      
+      const chatterRevenue = perfData.reduce((sum, p) => sum + (p.ppvRevenue || 0) + (p.tipRevenue || 0), 0);
       const chatterPPVsSent = perfData.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
       const chatterPPVsUnlocked = perfData.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
-      let chatterMessages = perfData.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
-      let chatterFans = perfData.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
-      
-      // Add messages/fans from daily reports
-      chatterDailyReports.forEach(report => {
-        if (report.messagesSent) chatterMessages += report.messagesSent;
-        if (report.fansChatted) chatterFans += report.fansChatted;
-      });
+      const chatterMessages = perfData.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+      const chatterFans = perfData.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
       
       const responseTimes = perfData.filter(p => p.avgResponseTime && p.avgResponseTime > 0).map(p => p.avgResponseTime);
       const chatterAvgResponseTime = responseTimes.length > 0
@@ -1450,18 +1221,6 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
 });
 
 // Submit OF Account data
-// Delete all OF Account Data
-app.delete('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
-  try {
-    const result = await AccountData.deleteMany({});
-    console.log('🗑️ Deleted all OF Account Data:', result.deletedCount, 'records');
-    res.json({ message: 'All OF Account Data deleted successfully', deletedCount: result.deletedCount });
-  } catch (error) {
-    console.error('Error deleting OF Account Data:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     console.log('OF Account data submission:', req.body);
@@ -1504,92 +1263,6 @@ app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken
     res.json({ message: 'OF Account data saved successfully', data: accountData });
   } catch (error) {
     console.error('OF Account data submission error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Submit Daily Account Snapshot (NEW - for custom date ranges)
-app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateToken, async (req, res) => {
-  try {
-    console.log('📊 Daily Account Snapshot submission:', req.body);
-    
-    // Find the creator account
-    let creatorAccount = await CreatorAccount.findOne({ name: req.body.creator });
-    
-    if (!creatorAccount) {
-      try {
-        creatorAccount = await CreatorAccount.findById(req.body.creator);
-      } catch (e) {
-        creatorAccount = await CreatorAccount.findOne({ 
-          name: new RegExp(`^${req.body.creator}$`, 'i') 
-        });
-      }
-    }
-    
-    if (!creatorAccount) {
-      console.error('Creator account not found for:', req.body.creator);
-      return res.status(400).json({ error: `Creator account not found: ${req.body.creator}` });
-    }
-    
-    console.log('Found creator account:', creatorAccount.name);
-    
-    // Check if snapshot already exists for this date
-    const existingSnapshot = await DailyAccountSnapshot.findOne({
-      creatorAccount: creatorAccount._id,
-      date: new Date(req.body.date)
-    });
-    
-    if (existingSnapshot) {
-      // Update existing
-      existingSnapshot.totalSubs = req.body.totalSubs || 0;
-      existingSnapshot.activeFans = req.body.activeFans || 0;
-      existingSnapshot.fansWithRenew = req.body.fansWithRenew || 0;
-      existingSnapshot.newSubsToday = req.body.newSubsToday || 0;
-      existingSnapshot.uploadedBy = req.user.userId;
-      
-      // Only set renewRate if provided (otherwise it will auto-calculate)
-      if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
-        existingSnapshot.renewRate = req.body.renewRate;
-      }
-      
-      // Only set recurringRevenue if provided
-      if (req.body.recurringRevenue !== undefined && req.body.recurringRevenue !== null) {
-        existingSnapshot.recurringRevenue = req.body.recurringRevenue;
-      }
-      
-      await existingSnapshot.save();
-      console.log('📊 Updated existing snapshot:', existingSnapshot._id);
-      return res.json({ message: 'Daily snapshot updated successfully', data: existingSnapshot });
-    }
-    
-    // Create new snapshot
-    const snapshotData = {
-      creatorAccount: creatorAccount._id,
-      date: new Date(req.body.date),
-      totalSubs: req.body.totalSubs || 0,
-      activeFans: req.body.activeFans || 0,
-      fansWithRenew: req.body.fansWithRenew || 0,
-      newSubsToday: req.body.newSubsToday || 0,
-      uploadedBy: req.user.userId
-    };
-    
-    // Only set renewRate if provided (otherwise it will auto-calculate)
-    if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
-      snapshotData.renewRate = req.body.renewRate;
-    }
-    
-    // Only set recurringRevenue if provided
-    if (req.body.recurringRevenue !== undefined && req.body.recurringRevenue !== null) {
-      snapshotData.recurringRevenue = req.body.recurringRevenue;
-    }
-    
-    const snapshot = new DailyAccountSnapshot(snapshotData);
-    
-    await snapshot.save();
-    console.log('📊 Daily snapshot saved:', snapshot._id, 'Renew rate:', snapshot.renewRate + '%');
-    res.json({ message: 'Daily snapshot saved successfully', data: snapshot });
-  } catch (error) {
-    console.error('Daily snapshot submission error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1888,45 +1561,6 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       throw saveError;
     }
     
-    // Update VIP fan lastMessageDate for retention tracking
-    console.log('📝 Updating lastMessageDate for VIP fans from message data...');
-    const fanMessageDates = {};
-    
-    // Collect the most recent message date for each fan
-    messageRecords.forEach(record => {
-      const fanUsername = record.fanUsername;
-      const messageDate = new Date(`${record.date} ${record.timestamp}`);
-      
-      if (fanUsername && !isNaN(messageDate.getTime())) {
-        if (!fanMessageDates[fanUsername] || messageDate > fanMessageDates[fanUsername]) {
-          fanMessageDates[fanUsername] = messageDate;
-        }
-      }
-    });
-    
-    // Update VIP fans in database
-    let vipFansUpdated = 0;
-    for (const [fanUsername, lastMessageDate] of Object.entries(fanMessageDates)) {
-      try {
-        const result = await VIPFan.updateMany(
-          { username: fanUsername },
-          { 
-            $set: { 
-              lastMessageDate: lastMessageDate,
-              updatedAt: new Date()
-            }
-          }
-        );
-        if (result.modifiedCount > 0) {
-          vipFansUpdated++;
-        }
-      } catch (err) {
-        console.error(`Failed to update VIP fan ${fanUsername}:`, err);
-      }
-    }
-    
-    console.log(`✅ Updated lastMessageDate for ${vipFansUpdated} VIP fans`);
-    
     res.json({ 
       message: 'Messages analyzed and saved successfully',
       analysis: {
@@ -1934,75 +1568,10 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
         overallScore: messageAnalysis.overallScore,
         grammarScore: messageAnalysis.grammarScore,
         guidelinesScore: messageAnalysis.guidelinesScore
-      },
-      vipFansUpdated: vipFansUpdated
-    });
-  } catch (error) {
-    console.error('Message upload error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// RE-ANALYZE existing messages (triggered by "Run Analysis" button)
-app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateToken, async (req, res) => {
-  try {
-    const messageAnalysisId = req.params.id;
-    console.log('🔄 RE-ANALYZING MessageAnalysis:', messageAnalysisId);
-    
-    // Get the existing MessageAnalysis record
-    const existingAnalysis = await MessageAnalysis.findById(messageAnalysisId);
-    if (!existingAnalysis) {
-      return res.status(404).json({ error: 'Message analysis not found' });
-    }
-    
-    console.log('Found existing analysis:', {
-      chatterName: existingAnalysis.chatterName,
-      totalMessages: existingAnalysis.totalMessages,
-      hasMessageRecords: !!existingAnalysis.messageRecords,
-      messageRecordsLength: existingAnalysis.messageRecords?.length || 0
-    });
-    
-    // Check if we have message records to analyze
-    if (!existingAnalysis.messageRecords || existingAnalysis.messageRecords.length === 0) {
-      return res.status(400).json({ error: 'No message records found in this analysis. Please re-upload the messages.' });
-    }
-    
-    // Extract message text from records
-    const messages = existingAnalysis.messageRecords.map(record => record.messageText);
-    console.log('📧 Extracted', messages.length, 'messages for re-analysis');
-    
-    // Run AI analysis
-    const analysisResult = await analyzeMessages(messages, existingAnalysis.chatterName);
-    console.log('✅ Re-analysis complete:', {
-      overallScore: analysisResult.overallScore,
-      grammarScore: analysisResult.grammarScore,
-      guidelinesScore: analysisResult.guidelinesScore
-    });
-    
-    // Update the existing record
-    existingAnalysis.overallScore = analysisResult.overallScore || null;
-    existingAnalysis.grammarScore = analysisResult.grammarScore || null;
-    existingAnalysis.guidelinesScore = analysisResult.guidelinesScore || null;
-    existingAnalysis.strengths = analysisResult.strengths || [];
-    existingAnalysis.weaknesses = analysisResult.weaknesses || [];
-    existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
-    existingAnalysis.chattingStyle = analysisResult.chattingStyle || null;
-    existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
-    existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
-    
-    await existingAnalysis.save();
-    console.log('✅ Updated MessageAnalysis saved');
-    
-    res.json({
-      message: 'Messages re-analyzed successfully',
-      analysis: {
-        overallScore: existingAnalysis.overallScore,
-        grammarScore: existingAnalysis.grammarScore,
-        guidelinesScore: existingAnalysis.guidelinesScore
       }
     });
   } catch (error) {
-    console.error('Re-analysis error:', error);
+    console.error('Message upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -2622,132 +2191,20 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       analysisResult._rawResponse = responseText;  // Use full raw text, not just jsonText
       console.log(`📋 Attached raw response to batch result (${responseText.length} chars)`);
       
-      // EXTRACT SCORES from grammarBreakdown and guidelinesBreakdown
-      let grammarScore = null;
-      let guidelinesScore = null;
-      
-      // Extract grammar score from scoreExplanation
-      if (analysisResult.grammarBreakdown && analysisResult.grammarBreakdown.scoreExplanation) {
-        const grammarScoreMatch = analysisResult.grammarBreakdown.scoreExplanation.match(/Grammar score:\s*(\d+)/i);
-        if (grammarScoreMatch) {
-          grammarScore = parseInt(grammarScoreMatch[1]);
-          console.log('✅ Extracted grammar score:', grammarScore);
-        }
-      }
-      
-      // Extract guidelines score from GUIDELINES_V2_JSON section
-      if (responseText.includes('GUIDELINES_V2_JSON')) {
-        const guidelinesJsonStart = responseText.indexOf('GUIDELINES_V2_JSON');
-        const guidelinesJsonText = responseText.substring(guidelinesJsonStart);
-        const guidelinesMatch = guidelinesJsonText.match(/\{[\s\S]*\}/);
-        
-        if (guidelinesMatch) {
-          try {
-            const guidelinesData = JSON.parse(guidelinesMatch[0]);
-            analysisResult.guidelinesBreakdown = guidelinesData;
-            
-            // Calculate guidelines score from violation counts
-            let totalGuidelines = 0;
-            let totalViolations = 0;
-            
-            Object.values(guidelinesData).forEach(category => {
-              if (category.items && Array.isArray(category.items)) {
-                category.items.forEach(item => {
-                  totalGuidelines++;
-                  totalViolations += (item.count || 0);
-                });
-              }
-            });
-            
-            // Score: 100 - (violations / guidelines) * 100, minimum 0
-            guidelinesScore = totalGuidelines > 0 
-              ? Math.max(0, Math.round(100 - (totalViolations / totalGuidelines) * 10))
-              : null;
-            
-            console.log('✅ Extracted guidelines score:', guidelinesScore, '(', totalViolations, 'violations across', totalGuidelines, 'guidelines)');
-          } catch (e) {
-            console.error('Failed to parse GUIDELINES_V2_JSON:', e.message);
-          }
-        }
-      }
-      
-      // Calculate overall score as average
-      if (grammarScore !== null && guidelinesScore !== null) {
-        analysisResult.overallScore = Math.round((grammarScore + guidelinesScore) / 2);
-        console.log('✅ Calculated overall score:', analysisResult.overallScore);
-      } else if (grammarScore !== null) {
-        analysisResult.overallScore = grammarScore;
-        console.log('⚠️ Using grammar score as overall score:', analysisResult.overallScore);
-      }
-      
-      // Set the extracted scores
-      analysisResult.grammarScore = grammarScore;
-      analysisResult.guidelinesScore = guidelinesScore;
-      
-      // GENERATE strengths, weaknesses, and recommendations from the analysis data
-      const strengths = [];
-      const weaknesses = [];
-      const recommendations = [];
-      
-      // From grammar breakdown
       if (analysisResult.grammarBreakdown) {
-        if (grammarScore >= 85) {
-          strengths.push("Excellent grammar quality with minimal errors");
-        } else if (grammarScore >= 70) {
-          strengths.push("Good grammar foundation");
-        }
-        
-        if (grammarScore < 85) {
-          if (analysisResult.grammarBreakdown.spellingErrors && !analysisResult.grammarBreakdown.spellingErrors.includes('No spelling') && !analysisResult.grammarBreakdown.spellingErrors.includes('Found 0')) {
-            weaknesses.push("Grammar: " + analysisResult.grammarBreakdown.spellingErrors);
-            recommendations.push("Review messages for spelling accuracy before sending");
-          }
-          if (analysisResult.grammarBreakdown.punctuationProblems && !analysisResult.grammarBreakdown.punctuationProblems.includes('No punctuation') && !analysisResult.grammarBreakdown.punctuationProblems.includes('Found 0')) {
-            weaknesses.push("Punctuation: " + analysisResult.grammarBreakdown.punctuationProblems);
-            recommendations.push("Keep messages informal - avoid periods and formal commas");
-          }
-        }
+        // Grammar breakdown found
       }
       
-      // From guidelines breakdown
-      if (analysisResult.guidelinesBreakdown) {
-        Object.entries(analysisResult.guidelinesBreakdown).forEach(([category, data]) => {
-          if (data.items && Array.isArray(data.items)) {
-            data.items.forEach(item => {
-              if (item.count > 0) {
-                weaknesses.push(`${item.title}: ${item.count} violations - ${item.description}`);
-                recommendations.push(`Focus on improving: ${item.title}`);
-              } else if (item.count === 0) {
-                strengths.push(`Perfect compliance with: ${item.title}`);
-              }
-            });
-          }
-        });
+      // Check if AI returned template placeholders
+      if (analysisResult.grammarBreakdown) {
+        const grammarValues = Object.values(analysisResult.grammarBreakdown);
       }
       
-      // Add defaults if empty
-      if (strengths.length === 0) {
-        strengths.push("Analysis complete - review detailed breakdowns below");
-      }
-      if (weaknesses.length === 0) {
-        weaknesses.push("No major issues detected - great work!");
-      }
-      if (recommendations.length === 0) {
-        recommendations.push("Continue current approach and monitor performance");
-      }
+      // Check specifically for scoreExplanation
       
-      analysisResult.strengths = strengths;
-      analysisResult.weaknesses = weaknesses;
-      analysisResult.recommendations = recommendations;
+      // AI Analysis completed
       
-      console.log('📊 Final scores:', {
-        grammar: analysisResult.grammarScore,
-        guidelines: analysisResult.guidelinesScore,
-        overall: analysisResult.overallScore,
-        strengthsCount: strengths.length,
-        weaknessesCount: weaknesses.length,
-        recommendationsCount: recommendations.length
-      });
+      // Let the AI provide the breakdown sections - no fallback
       
       return analysisResult;
     } catch (parseError) {
@@ -3269,9 +2726,7 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         : 0;
 
       const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
-      const totalSubs = ofAccountData.length > 0 
-        ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
-        : 0;
+      const totalSubs = ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0);
       const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
       const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
@@ -4514,7 +3969,6 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       
       aiAnalysis.fansChatted = analyticsData.fansChatted;
       aiAnalysis.avgResponseTime = analyticsData.avgResponseTime;
-      // Keep scores as 0-100 scale
       aiAnalysis.grammarScore = analyticsData.calculatedGrammarScore || analyticsData.grammarScore;
       aiAnalysis.guidelinesScore = analyticsData.guidelinesScore;
       // Derive overall score as average of grammar and guidelines when available
@@ -5248,126 +4702,6 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
 
     await report.save();
     
-    // ==================== MARKETING ANALYTICS: Create FanPurchase records ====================
-    const creatorAccount = await CreatorAccount.findOne(); // Get default creator account
-    const reportDate = new Date(date);
-    
-    // Process PPV sales
-    for (const sale of ppvSales) {
-      const fanPurchase = new FanPurchase({
-        amount: sale.amount,
-        type: 'ppv',
-        date: reportDate,
-        creatorAccount: creatorAccount?._id,
-        chatterName: req.user.chatterName,
-        dailyReport: report._id
-      });
-      
-      if (sale.trafficSource) {
-        fanPurchase.trafficSource = sale.trafficSource;
-      }
-      
-      if (sale.vipFanUsername) {
-        fanPurchase.fanUsername = sale.vipFanUsername;
-        
-        // Check if VIP fan exists, create or update
-        let vipFan = await VIPFan.findOne({ 
-          username: sale.vipFanUsername,
-          creatorAccount: creatorAccount?._id
-        });
-        
-        if (!vipFan) {
-          // Create new VIP fan
-          vipFan = new VIPFan({
-            username: sale.vipFanUsername,
-            creatorAccount: creatorAccount?._id,
-            trafficSource: sale.trafficSource,
-            joinDate: reportDate,
-            firstSeenDate: reportDate, // NEW: Track when we first saw this fan
-            lifetimeSpend: sale.amount,
-            lastPurchaseDate: reportDate,
-            purchaseCount: 1,
-            avgPurchaseValue: sale.amount
-          });
-          await vipFan.save();
-          console.log(`⭐ Created new VIP fan: ${sale.vipFanUsername}`);
-        } else {
-          // Update existing VIP fan
-          vipFan.lifetimeSpend += sale.amount;
-          vipFan.lastPurchaseDate = reportDate;
-          vipFan.purchaseCount += 1;
-          vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
-          vipFan.status = 'active';
-          vipFan.updatedAt = new Date();
-          await vipFan.save();
-          console.log(`⭐ Updated VIP fan: ${sale.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
-        }
-        
-        fanPurchase.vipFan = vipFan._id;
-      }
-      
-      await fanPurchase.save();
-    }
-    
-    // Process tips
-    for (const tip of tips) {
-      const fanPurchase = new FanPurchase({
-        amount: tip.amount,
-        type: 'tip',
-        date: reportDate,
-        creatorAccount: creatorAccount?._id,
-        chatterName: req.user.chatterName,
-        dailyReport: report._id
-      });
-      
-      if (tip.trafficSource) {
-        fanPurchase.trafficSource = tip.trafficSource;
-      }
-      
-      if (tip.vipFanUsername) {
-        fanPurchase.fanUsername = tip.vipFanUsername;
-        
-        // Check if VIP fan exists, create or update
-        let vipFan = await VIPFan.findOne({ 
-          username: tip.vipFanUsername,
-          creatorAccount: creatorAccount?._id
-        });
-        
-        if (!vipFan) {
-          // Create new VIP fan
-          vipFan = new VIPFan({
-            username: tip.vipFanUsername,
-            creatorAccount: creatorAccount?._id,
-            trafficSource: tip.trafficSource,
-            joinDate: reportDate,
-            firstSeenDate: reportDate, // NEW: Track when we first saw this fan
-            lifetimeSpend: tip.amount,
-            lastPurchaseDate: reportDate,
-            purchaseCount: 1,
-            avgPurchaseValue: tip.amount
-          });
-          await vipFan.save();
-          console.log(`⭐ Created new VIP fan: ${tip.vipFanUsername}`);
-        } else {
-          // Update existing VIP fan
-          vipFan.lifetimeSpend += tip.amount;
-          vipFan.lastPurchaseDate = reportDate;
-          vipFan.purchaseCount += 1;
-          vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
-          vipFan.status = 'active';
-          vipFan.updatedAt = new Date();
-          await vipFan.save();
-          console.log(`⭐ Updated VIP fan: ${tip.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
-        }
-        
-        fanPurchase.vipFan = vipFan._id;
-      }
-      
-      await fanPurchase.save();
-    }
-    
-    console.log(`💰 Created ${ppvSales.length + tips.length} FanPurchase records`);
-    
     // Recalculate avgPPVPrice from ALL daily reports for this chatter
     // This ensures Dashboard/Analytics/Analysis all show the updated avgPPVPrice
     const allReports = await DailyChatterReport.find({ 
@@ -5471,942 +4805,9 @@ async function updateCreatorNames() {
   }
 }
 
-// ==================== MARKETING ANALYTICS APIs ====================
-
-// Get all traffic sources
-app.get('/api/marketing/traffic-sources', authenticateToken, async (req, res) => {
-  try {
-    const sources = await TrafficSource.find().sort({ category: 1, name: 1 });
-    res.json({ sources });
-  } catch (error) {
-    console.error('Error fetching traffic sources:', error);
-    res.status(500).json({ error: 'Failed to fetch traffic sources' });
-  }
-});
-
-// Create traffic source
-app.post('/api/marketing/traffic-sources', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const { name, category, subcategory } = req.body;
-    
-    if (!name || !category) {
-      return res.status(400).json({ error: 'Name and category are required' });
-    }
-    
-    const source = new TrafficSource({
-      name,
-      category,
-      subcategory,
-      createdBy: req.user.userId
-    });
-    
-    await source.save();
-    console.log('✅ Created traffic source:', name);
-    res.json({ success: true, source });
-  } catch (error) {
-    console.error('Error creating traffic source:', error);
-    res.status(500).json({ error: 'Failed to create traffic source' });
-  }
-});
-
-// Update traffic source
-app.put('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const { name, category, subcategory, isActive } = req.body;
-    
-    const source = await TrafficSource.findByIdAndUpdate(
-      req.params.id,
-      { name, category, subcategory, isActive },
-      { new: true }
-    );
-    
-    if (!source) {
-      return res.status(404).json({ error: 'Traffic source not found' });
-    }
-    
-    console.log('✅ Updated traffic source:', source.name);
-    res.json({ success: true, source });
-  } catch (error) {
-    console.error('Error updating traffic source:', error);
-    res.status(500).json({ error: 'Failed to update traffic source' });
-  }
-});
-
-// Delete traffic source
-app.delete('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const source = await TrafficSource.findByIdAndDelete(req.params.id);
-    
-    if (!source) {
-      return res.status(404).json({ error: 'Traffic source not found' });
-    }
-    
-    console.log('✅ Deleted traffic source:', source.name);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting traffic source:', error);
-    res.status(500).json({ error: 'Failed to delete traffic source' });
-  }
-});
-
-// Get VIP fans (for autocomplete)
-app.get('/api/marketing/vip-fans', authenticateToken, async (req, res) => {
-  try {
-    const fans = await VIPFan.find({ status: 'active' })
-      .select('username lifetimeSpend purchaseCount')
-      .sort({ lifetimeSpend: -1 })
-      .limit(100);
-    
-    res.json({ fans });
-  } catch (error) {
-    console.error('Error fetching VIP fans:', error);
-    res.status(500).json({ error: 'Failed to fetch VIP fans' });
-  }
-});
-
-// Get marketing dashboard data
-app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
-  try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
-    
-    let dateQuery = {};
-    
-    // Build date filter for FanPurchase
-    if (filterType === 'custom' && customStart && customEnd) {
-      // NEW: Custom date range
-      dateQuery.date = {
-        $gte: new Date(customStart),
-        $lte: new Date(customEnd)
-      };
-      console.log('📊 Marketing Dashboard using CUSTOM date range:', customStart, 'to', customEnd);
-    } else if (filterType === 'week' && weekStart && weekEnd) {
-      dateQuery.date = {
-        $gte: new Date(weekStart),
-        $lte: new Date(weekEnd)
-      };
-    } else if (filterType === 'month' && monthStart && monthEnd) {
-      dateQuery.date = {
-        $gte: new Date(monthStart),
-        $lte: new Date(monthEnd)
-      };
-    }
-    
-    console.log('📊 Marketing Dashboard query:', dateQuery);
-    
-    // Get all purchases (aggregated from FanPurchase)
-    const purchases = await FanPurchase.find(dateQuery)
-      .populate('trafficSource')
-      .populate('vipFan');
-    
-    console.log(`📊 Found ${purchases.length} purchases for dashboard`);
-    
-    // Get all traffic sources
-    const allSources = await TrafficSource.find({ isActive: true });
-    
-    // Aggregate by traffic source
-    const sourceMap = {};
-    let totalRevenue = 0;
-    const vipSet = new Set();
-    
-    purchases.forEach(purchase => {
-      totalRevenue += purchase.amount;
-      
-      // Track VIPs
-      if (purchase.vipFan) {
-        vipSet.add(purchase.vipFan._id.toString());
-      }
-      
-      // Aggregate by source
-      const sourceId = purchase.trafficSource?._id?.toString() || 'unknown';
-      if (sourceId !== 'unknown' && purchase.trafficSource) {
-        if (!sourceMap[sourceId]) {
-          sourceMap[sourceId] = {
-            id: sourceId,
-            name: purchase.trafficSource.name,
-            category: purchase.trafficSource.category,
-            revenue: 0,
-            purchaseCount: 0,
-            vipPurchases: new Set(),
-            buyers: new Set()
-          };
-        }
-        
-        sourceMap[sourceId].revenue += purchase.amount;
-        sourceMap[sourceId].purchaseCount += 1;
-        
-        if (purchase.vipFan) {
-          sourceMap[sourceId].vipPurchases.add(purchase.vipFan._id.toString());
-        }
-        if (purchase.fanUsername) {
-          sourceMap[sourceId].buyers.add(purchase.fanUsername);
-        }
-      }
-    });
-    
-    // Get link tracking data BY CATEGORY (reddit, twitter, etc.)
-    const linkTrackingMap = {};
-    const linkTracking = await LinkTrackingData.find(dateQuery);
-    linkTracking.forEach(lt => {
-      if (lt.category) {
-        if (!linkTrackingMap[lt.category]) {
-          linkTrackingMap[lt.category] = {
-            clicks: 0,
-            views: 0
-          };
-        }
-        linkTrackingMap[lt.category].clicks += lt.onlyFansClicks || 0;
-        linkTrackingMap[lt.category].views += lt.landingPageViews || 0;
-      }
-    });
-    
-    console.log('🔗 Link tracking by category:', linkTrackingMap);
-    
-    // Convert to array and calculate ENHANCED metrics
-    const sources = await Promise.all(Object.values(sourceMap).map(async (source) => {
-      const vipCount = source.vipPurchases.size;
-      const spenderCount = source.vipPurchases.size; // Unique spenders
-      
-      // Get link tracking data for this source's CATEGORY
-      const linkData = linkTrackingMap[source.category] || { clicks: 0, views: 0 };
-      const linkClicks = linkData.clicks;
-      
-      // Calculate spender rate (KEY NEW METRIC!)
-      const spenderRate = linkClicks > 0 ? (spenderCount / linkClicks) * 100 : 0;
-      
-      // Calculate revenue per click (ROI metric)
-      const revenuePerClick = linkClicks > 0 ? source.revenue / linkClicks : 0;
-      
-      // Calculate avg per spender
-      const avgPerSpender = spenderCount > 0 ? source.revenue / spenderCount : 0;
-      
-      // Calculate 7-day retention (based on messaging activity)
-      // TODO: This requires message data from OnlyFans exports or manual updates
-      // For now, we check if lastMessageDate exists and is within 7 days
-      const vipFans = await VIPFan.find({
-        _id: { $in: Array.from(source.vipPurchases) },
-        trafficSource: source.id
-      });
-      
-      let retainedCount = 0;
-      let totalTracked = 0;
-      
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      vipFans.forEach(fan => {
-        if (fan.firstSeenDate) {
-          totalTracked++;
-          // Retained if they have messaged in the last 7 days
-          // If lastMessageDate not set, use lastPurchaseDate as fallback (purchase = activity)
-          const lastActivity = fan.lastMessageDate || fan.lastPurchaseDate;
-          if (lastActivity && lastActivity >= sevenDaysAgo) {
-            retainedCount++;
-          }
-        }
-      });
-      
-      const retentionRate = totalTracked > 0 ? (retainedCount / totalTracked) * 100 : 0;
-      
-      // NEW: Calculate renew rate (% of VIP fans with auto-renew enabled)
-      let renewCount = 0;
-      vipFans.forEach(fan => {
-        if (fan.hasRenewOn) {
-          renewCount++;
-        }
-      });
-      const renewRate = vipFans.length > 0 ? (renewCount / vipFans.length) * 100 : 0;
-      
-      // ENHANCED QUALITY SCORE (0-100)
-      const spenderRateScore = Math.min(spenderRate * 6, 30); // 30 points max (5% = 30pts)
-      const revenuePerClickScore = Math.min(revenuePerClick * 10, 20); // 20 points max ($2 = 20pts)
-      const retentionScore = retentionRate * 0.3; // 30 points max (100% = 30pts)
-      const avgSpenderScore = Math.min(avgPerSpender / 2, 20); // 20 points max ($40 = 20pts)
-      
-      const qualityGrade = Math.min(
-        spenderRateScore + revenuePerClickScore + retentionScore + avgSpenderScore,
-        100
-      );
-      
-      let qualityScore = 'N/A';
-      if (qualityGrade >= 90) qualityScore = 'A+';
-      else if (qualityGrade >= 80) qualityScore = 'A';
-      else if (qualityGrade >= 70) qualityScore = 'B';
-      else if (qualityGrade >= 60) qualityScore = 'C';
-      else if (qualityGrade >= 50) qualityScore = 'D';
-      else qualityScore = 'F';
-      
-      return {
-        id: source.id,
-        name: source.name,
-        category: source.category,
-        // Revenue metrics
-        revenue: source.revenue,
-        // NEW: Link & conversion metrics
-        linkClicks: linkClicks,
-        linkViews: linkData.views,
-        spenders: spenderCount,
-        spenderRate: spenderRate, // KEY METRIC!
-        revenuePerClick: revenuePerClick, // KEY METRIC!
-        avgPerSpender: avgPerSpender,
-        // Retention
-        retentionRate: retentionRate, // KEY METRIC!
-        retainedCount: retainedCount,
-        totalTracked: totalTracked,
-        // NEW: Renew rate
-        renewRate: renewRate, // KEY METRIC! % with auto-renew on
-        renewCount: renewCount,
-        // VIP tracking
-        vips: vipCount,
-        // Quality
-        qualityScore,
-        qualityGrade: Math.round(qualityGrade)
-      };
-    }));
-    
-    // Sort by quality grade (best sources first!)
-    sources.sort((a, b) => b.qualityGrade - a.qualityGrade);
-    
-    // ALSO: Aggregate by CATEGORY for category-level overview
-    const categoryMap = {};
-    sources.forEach(source => {
-      if (!categoryMap[source.category]) {
-        categoryMap[source.category] = {
-          category: source.category,
-          revenue: 0,
-          spenders: 0,
-          linkClicks: linkTrackingMap[source.category]?.clicks || 0,
-          linkViews: linkTrackingMap[source.category]?.views || 0,
-          subcategories: []
-        };
-      }
-      categoryMap[source.category].revenue += source.revenue;
-      categoryMap[source.category].spenders += source.spenders;
-      categoryMap[source.category].subcategories.push({
-        name: source.name,
-        revenue: source.revenue,
-        spenders: source.spenders,
-        revenuePercent: 0 // Will calculate after
-      });
-    });
-    
-    // Calculate percentages and metrics for each category
-    const categories = Object.values(categoryMap).map(cat => {
-      const revenuePerClick = cat.linkClicks > 0 ? cat.revenue / cat.linkClicks : 0;
-      const spenderRate = cat.linkClicks > 0 ? (cat.spenders / cat.linkClicks) * 100 : 0;
-      
-      // Calculate revenue % for each subcategory
-      cat.subcategories.forEach(sub => {
-        sub.revenuePercent = cat.revenue > 0 ? (sub.revenue / cat.revenue) * 100 : 0;
-      });
-      
-      return {
-        ...cat,
-        revenuePerClick,
-        spenderRate
-      };
-    });
-    
-    categories.sort((a, b) => b.revenue - a.revenue);
-    
-    const aggregated = {
-      totalRevenue,
-      totalSubscribers: 0,
-      totalVIPs: vipSet.size,
-      avgRevenuePerSub: 0,
-      sources, // Individual source data
-      categories // NEW: Category-level aggregated data
-    };
-    
-    console.log('📊 Dashboard aggregated:', {
-      totalRevenue,
-      totalVIPs: vipSet.size,
-      sourcesCount: sources.length,
-      categoriesCount: categories.length
-    });
-    
-    res.json(aggregated);
-  } catch (error) {
-    console.error('Error fetching marketing dashboard:', error);
-    res.status(500).json({ error: 'Failed to fetch marketing dashboard' });
-  }
-});
-
-// Upload link tracking data (by CATEGORY, not specific source)
-app.post('/api/marketing/link-tracking', authenticateToken, async (req, res) => {
-  try {
-    const { category, weekStart, weekEnd, landingPageViews, onlyFansClicks, ...optionalData } = req.body;
-    
-    if (!category || !weekStart || !weekEnd || !landingPageViews || !onlyFansClicks) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    
-    // Get creator account (assume first one for now, or get from user)
-    const creatorAccount = await CreatorAccount.findOne();
-    
-    const clickThroughRate = landingPageViews > 0 ? (onlyFansClicks / landingPageViews) * 100 : 0;
-    
-    const linkData = new LinkTrackingData({
-      category, // NEW: Track by category (reddit, twitter, etc.)
-      creatorAccount: creatorAccount._id,
-      weekStartDate: new Date(weekStart),
-      weekEndDate: new Date(weekEnd),
-      landingPageViews,
-      onlyFansClicks,
-      clickThroughRate,
-      ...optionalData,
-      uploadedBy: req.user.userId
-    });
-    
-    await linkData.save();
-    console.log(`✅ Saved link tracking data for ${category} - week: ${weekStart}`);
-    res.json({ success: true, data: linkData });
-  } catch (error) {
-    console.error('Error saving link tracking data:', error);
-    res.status(500).json({ error: 'Failed to save link tracking data' });
-  }
-});
-
-// ==================== DATA MANAGEMENT APIs ====================
-
-// Get all messages for data management
-app.get('/api/data-management/messages', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const messages = await MessageAnalysis.find()
-      .select('chatterName weekStartDate weekEndDate totalMessages creatorAccount')
-      .sort({ weekStartDate: -1 })
-      .limit(100);
-    
-    res.json({ messages });
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-});
-
-// Delete message record
-app.delete('/api/data-management/messages/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const result = await MessageAnalysis.findByIdAndDelete(req.params.id);
-    if (!result) {
-      return res.status(404).json({ error: 'Message record not found' });
-    }
-    console.log(`🗑️ Deleted message record: ${result.chatterName}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting message:', error);
-    res.status(500).json({ error: 'Failed to delete message record' });
-  }
-});
-
-// Get all daily reports for data management
-app.get('/api/data-management/daily-reports', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const reports = await DailyChatterReport.find()
-      .sort({ date: -1 })
-      .limit(100);
-    
-    res.json({ reports });
-  } catch (error) {
-    console.error('Error fetching daily reports:', error);
-    res.status(500).json({ error: 'Failed to fetch daily reports' });
-  }
-});
-
-// Delete daily report (also deletes associated FanPurchase records)
-app.delete('/api/data-management/daily-reports/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const report = await DailyChatterReport.findById(req.params.id);
-    if (!report) {
-      return res.status(404).json({ error: 'Report not found' });
-    }
-    
-    // Delete associated FanPurchase records
-    const purchasesDeleted = await FanPurchase.deleteMany({ dailyReport: req.params.id });
-    console.log(`🗑️ Deleted ${purchasesDeleted.deletedCount} associated purchase records`);
-    
-    await DailyChatterReport.findByIdAndDelete(req.params.id);
-    console.log(`🗑️ Deleted daily report: ${report.chatterName} - ${report.date}`);
-    
-    res.json({ success: true, purchasesDeleted: purchasesDeleted.deletedCount });
-  } catch (error) {
-    console.error('Error deleting daily report:', error);
-    res.status(500).json({ error: 'Failed to delete daily report' });
-  }
-});
-
-// Get all link tracking data for data management
-app.get('/api/data-management/link-tracking', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const linkData = await LinkTrackingData.find()
-      .sort({ weekStartDate: -1 })
-      .limit(100);
-    
-    res.json({ linkData });
-  } catch (error) {
-    console.error('Error fetching link tracking data:', error);
-    res.status(500).json({ error: 'Failed to fetch link tracking data' });
-  }
-});
-
-// Delete link tracking data
-app.delete('/api/data-management/link-tracking/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const result = await LinkTrackingData.findByIdAndDelete(req.params.id);
-    if (!result) {
-      return res.status(404).json({ error: 'Link tracking data not found' });
-    }
-    console.log(`🗑️ Deleted link tracking data: ${result.category}`);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting link tracking data:', error);
-    res.status(500).json({ error: 'Failed to delete link tracking data' });
-  }
-});
-
-// Get all VIP fans for data management
-app.get('/api/data-management/vip-fans', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const fans = await VIPFan.find()
-      .populate('trafficSource', 'name')
-      .sort({ lifetimeSpend: -1 })
-      .limit(100);
-    
-    const fansWithSourceName = fans.map(fan => ({
-      _id: fan._id,
-      username: fan.username,
-      lifetimeSpend: fan.lifetimeSpend,
-      purchaseCount: fan.purchaseCount,
-      status: fan.status,
-      trafficSourceName: fan.trafficSource?.name || 'Unknown'
-    }));
-    
-    res.json({ fans: fansWithSourceName });
-  } catch (error) {
-    console.error('Error fetching VIP fans:', error);
-    res.status(500).json({ error: 'Failed to fetch VIP fans' });
-  }
-});
-
-// Delete VIP fan (also deletes associated purchase records)
-app.delete('/api/data-management/vip-fans/:id', authenticateToken, requireManager, async (req, res) => {
-  try {
-    const fan = await VIPFan.findById(req.params.id);
-    if (!fan) {
-      return res.status(404).json({ error: 'VIP fan not found' });
-    }
-    
-    // Delete associated FanPurchase records
-    const purchasesDeleted = await FanPurchase.deleteMany({ vipFan: req.params.id });
-    console.log(`🗑️ Deleted ${purchasesDeleted.deletedCount} purchase records for ${fan.username}`);
-    
-    await VIPFan.findByIdAndDelete(req.params.id);
-    console.log(`🗑️ Deleted VIP fan: ${fan.username}`);
-    
-    res.json({ success: true, purchasesDeleted: purchasesDeleted.deletedCount });
-  } catch (error) {
-    console.error('Error deleting VIP fan:', error);
-    res.status(500).json({ error: 'Failed to delete VIP fan' });
-  }
-});
-
-// Update VIP fan message activity (for retention tracking)
-// Call this when you have message data (from CSV or manual entry)
-app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req, res) => {
-  try {
-    const { updates } = req.body; // Array of { username, creatorAccount, lastMessageDate }
-    
-    if (!updates || !Array.isArray(updates)) {
-      return res.status(400).json({ error: 'updates array is required' });
-    }
-    
-    let updatedCount = 0;
-    let notFoundCount = 0;
-    
-    for (const update of updates) {
-      const { username, creatorAccount, lastMessageDate } = update;
-      
-      if (!username || !creatorAccount || !lastMessageDate) {
-        continue; // Skip invalid entries
-      }
-      
-      const result = await VIPFan.updateOne(
-        { 
-          username: username,
-          creatorAccount: creatorAccount
-        },
-        { 
-          $set: { 
-            lastMessageDate: new Date(lastMessageDate),
-            updatedAt: new Date()
-          } 
-        }
-      );
-      
-      if (result.modifiedCount > 0) {
-        updatedCount++;
-      } else if (result.matchedCount === 0) {
-        notFoundCount++;
-      }
-    }
-    
-    console.log(`✅ Updated lastMessageDate for ${updatedCount} VIP fans (${notFoundCount} not found)`);
-    res.json({ 
-      success: true, 
-      updatedCount,
-      notFoundCount,
-      message: `Updated ${updatedCount} VIP fans, ${notFoundCount} not found`
-    });
-  } catch (error) {
-    console.error('Error updating VIP fan message activity:', error);
-    res.status(500).json({ error: 'Failed to update message activity' });
-  }
-});
-
-// ENHANCED INDIVIDUAL CHATTER ANALYSIS
-app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnection, authenticateToken, async (req, res) => {
-  try {
-    const { chatterName } = req.params;
-    const { filterType, customStart, customEnd, weekStart, weekEnd, monthStart, monthEnd } = req.query;
-    
-    console.log('🔍 Deep chatter analysis for:', chatterName);
-    
-    // Build date query
-    let start, end;
-    if (filterType === 'custom' && customStart && customEnd) {
-      start = new Date(customStart);
-      end = new Date(customEnd);
-    } else if (filterType === 'week' && weekStart && weekEnd) {
-      start = new Date(weekStart);
-      end = new Date(weekEnd);
-    } else {
-      end = new Date();
-      start = new Date();
-      start.setDate(start.getDate() - 7);
-    }
-    
-    const dateQuery = { date: { $gte: start, $lte: end } };
-    const performanceQuery = {
-      weekStartDate: { $lte: end },
-      weekEndDate: { $gte: start },
-      chatterName: chatterName
-    };
-    
-    // Get this chatter's data
-    const chatterPurchases = await FanPurchase.find({
-      ...dateQuery,
-      chatterName: chatterName
-    }).populate('trafficSource').populate('vipFan');
-    
-    const chatterReports = await DailyChatterReport.find({
-      ...dateQuery,
-      chatterName: chatterName
-    });
-    
-    // FALLBACK: Get ChatterPerformance data if no daily reports
-    const chatterPerformance = await ChatterPerformance.find(performanceQuery);
-    console.log('📊 Chatter data found:', {
-      purchases: chatterPurchases.length,
-      dailyReports: chatterReports.length,
-      performanceRecords: chatterPerformance.length
-    });
-    
-    // Get ALL chatters' data for comparison
-    const allPurchases = await FanPurchase.find(dateQuery).populate('trafficSource');
-    const allReports = await DailyChatterReport.find(dateQuery);
-    
-    // Get message analysis for this chatter (try to find one that overlaps with date range)
-    // Use case-insensitive search
-    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
-    
-    let messageAnalysis = await MessageAnalysis.findOne({
-      chatterName: chatterNameRegex,
-      weekStartDate: { $lte: end },
-      weekEndDate: { $gte: start }
-    }).sort({ createdAt: -1 });
-    
-    // Fallback: Get ANY analysis for this chatter if no overlap found
-    if (!messageAnalysis) {
-      messageAnalysis = await MessageAnalysis.findOne({
-        chatterName: chatterNameRegex
-      }).sort({ createdAt: -1 });
-      console.log('⚠️ No message analysis found for date range, using latest available');
-    }
-    
-    console.log('💬 MessageAnalysis found:', messageAnalysis ? 'YES' : 'NO');
-    if (messageAnalysis) {
-      console.log('   - Overall Score:', messageAnalysis.overallScore);
-      console.log('   - Grammar Score:', messageAnalysis.grammarScore);
-      console.log('   - Guidelines Score:', messageAnalysis.guidelinesScore);
-    }
-    
-    // Calculate this chatter's metrics (use ChatterPerformance as fallback)
-    let chatterRevenue, chatterPPVRevenue, chatterPPVCount, chatterAvgPPVPrice;
-    let chatterPPVsSent, chatterPPVsUnlocked, chatterUnlockRate;
-    let chatterFansChatted, chatterMessagesSent, chatterAvgResponseTime;
-    
-    if (chatterReports.length > 0) {
-      // Use DailyChatterReport (preferred)
-      chatterRevenue = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-      chatterPPVRevenue = chatterPurchases.filter(p => p.type === 'ppv').reduce((sum, p) => sum + (p.amount || 0), 0);
-      chatterPPVCount = chatterPurchases.filter(p => p.type === 'ppv').length;
-      chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
-      chatterPPVsSent = chatterReports.reduce((sum, r) => sum + (r.ppvsSent || 0), 0);
-      chatterPPVsUnlocked = chatterPPVCount;
-      chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
-      chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
-      chatterMessagesSent = chatterFansChatted * 15;
-      chatterAvgResponseTime = 0;
-    } else if (chatterPerformance.length > 0) {
-      // FALLBACK: Use ChatterPerformance (weekly data)
-      console.log('📊 Using ChatterPerformance fallback for', chatterName);
-      const perf = chatterPerformance[0]; // Use first record if multiple
-      chatterRevenue = perf.netSales || 0;
-      chatterPPVRevenue = perf.ppvRevenue || 0;
-      chatterPPVsSent = perf.ppvsSent || 0;
-      chatterPPVsUnlocked = perf.ppvsUnlocked || 0;
-      chatterPPVCount = chatterPPVsUnlocked;
-      chatterAvgPPVPrice = perf.avgPPVPrice || 0;
-      chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
-      chatterFansChatted = perf.fansChattedWith || 0;
-      chatterMessagesSent = perf.messagesSent || 0;
-      chatterAvgResponseTime = perf.avgResponseTime || 0;
-    } else {
-      // No data at all
-      chatterRevenue = 0;
-      chatterPPVRevenue = 0;
-      chatterPPVCount = 0;
-      chatterAvgPPVPrice = 0;
-      chatterPPVsSent = 0;
-      chatterPPVsUnlocked = 0;
-      chatterUnlockRate = 0;
-      chatterFansChatted = 0;
-      chatterMessagesSent = 0;
-      chatterAvgResponseTime = 0;
-    }
-    
-    // VIP metrics for this chatter
-    const chatterVIPs = await VIPFan.find({
-      createdAt: { $gte: start, $lte: end }
-    });
-    const chatterVIPsFromPurchases = chatterPurchases.filter(p => p.vipFan).length;
-    const chatterVIPRevenue = chatterPurchases.filter(p => p.vipFan).reduce((sum, p) => sum + (p.amount || 0), 0);
-    const chatterAvgVIPSpend = chatterVIPsFromPurchases > 0 ? chatterVIPRevenue / chatterVIPsFromPurchases : 0;
-    
-    // Calculate TEAM averages
-    const teamChatters = {};
-    allPurchases.forEach(p => {
-      if (p.chatterName) {
-        if (!teamChatters[p.chatterName]) {
-          teamChatters[p.chatterName] = { revenue: 0, ppvCount: 0, ppvRevenue: 0 };
-        }
-        teamChatters[p.chatterName].revenue += p.amount || 0;
-        if (p.type === 'ppv') {
-          teamChatters[p.chatterName].ppvCount++;
-          teamChatters[p.chatterName].ppvRevenue += p.amount || 0;
-        }
-      }
-    });
-    
-    const teamReports = {};
-    allReports.forEach(r => {
-      if (r.chatterName) {
-        if (!teamReports[r.chatterName]) {
-          teamReports[r.chatterName] = { ppvsSent: 0, fansChatted: 0 };
-        }
-        teamReports[r.chatterName].ppvsSent += r.ppvsSent || 0;
-        teamReports[r.chatterName].fansChatted += r.fansChatted || 0;
-      }
-    });
-    
-    // Calculate team averages
-    const chatterCount = Object.keys(teamChatters).length || 1;
-    const teamAvgRevenue = Object.values(teamChatters).reduce((sum, c) => sum + c.revenue, 0) / chatterCount;
-    const teamAvgPPVPrice = Object.values(teamChatters).reduce((sum, c) => {
-      return sum + (c.ppvCount > 0 ? c.ppvRevenue / c.ppvCount : 0);
-    }, 0) / chatterCount;
-    const teamAvgUnlockRate = Object.values(teamReports).reduce((sum, c) => {
-      const unlockRate = c.ppvsSent > 0 ? ((teamChatters[Object.keys(teamReports).find(k => teamReports[k] === c)]?.ppvCount || 0) / c.ppvsSent) * 100 : 0;
-      return sum + unlockRate;
-    }, 0) / chatterCount;
-    
-    // Calculate rankings
-    const revenueRanking = Object.entries(teamChatters)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .findIndex(([name]) => name === chatterName) + 1;
-    
-    const unlockRateRanking = Object.entries(teamReports)
-      .map(([name, data]) => ({
-        name,
-        unlockRate: data.ppvsSent > 0 ? ((teamChatters[name]?.ppvCount || 0) / data.ppvsSent) * 100 : 0
-      }))
-      .sort((a, b) => b.unlockRate - a.unlockRate)
-      .findIndex(c => c.name === chatterName) + 1;
-    
-    // Traffic source performance for this chatter
-    const sourcePerformance = {};
-    chatterPurchases.forEach(p => {
-      if (p.trafficSource) {
-        const sourceName = p.trafficSource.name;
-        if (!sourcePerformance[sourceName]) {
-          sourcePerformance[sourceName] = {
-            revenue: 0,
-            count: 0,
-            category: p.trafficSource.category
-          };
-        }
-        sourcePerformance[sourceName].revenue += p.amount || 0;
-        sourcePerformance[sourceName].count++;
-      }
-    });
-    
-    const topSource = Object.entries(sourcePerformance)
-      .sort((a, b) => b[1].revenue - a[1].revenue)[0];
-    
-    // Pricing breakdown
-    const pricingBuckets = {
-      low: { count: 0, unlocked: 0 }, // $0-15
-      mid: { count: 0, unlocked: 0 }, // $15-25
-      high: { count: 0, unlocked: 0 } // $25+
-    };
-    
-    chatterReports.forEach(r => {
-      if (r.ppvSales) {
-        r.ppvSales.forEach(sale => {
-          const price = sale.amount || 0;
-          if (price < 15) {
-            pricingBuckets.low.count++;
-            pricingBuckets.low.unlocked++;
-          } else if (price < 25) {
-            pricingBuckets.mid.count++;
-            pricingBuckets.mid.unlocked++;
-          } else {
-            pricingBuckets.high.count++;
-            pricingBuckets.high.unlocked++;
-          }
-        });
-      }
-    });
-    
-    // Calculate unlock rates by price
-    const lowPriceUnlockRate = pricingBuckets.low.count > 0 ? (pricingBuckets.low.unlocked / pricingBuckets.low.count) * 100 : 0;
-    const midPriceUnlockRate = pricingBuckets.mid.count > 0 ? (pricingBuckets.mid.unlocked / pricingBuckets.mid.count) * 100 : 0;
-    const highPriceUnlockRate = pricingBuckets.high.count > 0 ? (pricingBuckets.high.unlocked / pricingBuckets.high.count) * 100 : 0;
-    
-    // Build response with both nested AND flat structure for compatibility
-    const response = {
-      // Nested structure
-      chatter: {
-        name: chatterName,
-        revenue: chatterRevenue,
-        avgPPVPrice: chatterAvgPPVPrice,
-        unlockRate: chatterUnlockRate,
-        ppvsSent: chatterPPVsSent,
-        ppvsUnlocked: chatterPPVsUnlocked,
-        fansChatted: chatterFansChatted,
-        vipCount: chatterVIPsFromPurchases,
-        avgVIPSpend: chatterAvgVIPSpend,
-        grammarScore: messageAnalysis?.grammarScore || null,
-        guidelinesScore: messageAnalysis?.guidelinesScore || null,
-        overallScore: messageAnalysis?.overallScore || null
-      },
-      team: {
-        avgRevenue: teamAvgRevenue,
-        avgPPVPrice: teamAvgPPVPrice,
-        avgUnlockRate: teamAvgUnlockRate,
-        chatterCount: chatterCount
-      },
-      rankings: {
-        revenue: revenueRanking,
-        unlockRate: unlockRateRanking
-      },
-      trafficSources: sourcePerformance,
-      topSource: topSource ? {
-        name: topSource[0],
-        revenue: topSource[1].revenue,
-        count: topSource[1].count,
-        category: topSource[1].category
-      } : null,
-      pricing: {
-        low: { unlockRate: lowPriceUnlockRate, count: pricingBuckets.low.count },
-        mid: { unlockRate: midPriceUnlockRate, count: pricingBuckets.mid.count },
-        high: { unlockRate: highPriceUnlockRate, count: pricingBuckets.high.count }
-      },
-      
-      // Flat properties for frontend compatibility
-      overallScore: messageAnalysis?.overallScore || null,
-      grammarScore: messageAnalysis?.grammarScore || null,
-      guidelinesScore: messageAnalysis?.guidelinesScore || null,
-      strengths: messageAnalysis?.strengths || [],
-      weaknesses: messageAnalysis?.weaknesses || [],
-      recommendations: messageAnalysis?.recommendations || [],
-      grammarBreakdown: messageAnalysis?.grammarBreakdown || null,
-      guidelinesBreakdown: messageAnalysis?.guidelinesBreakdown || null,
-      chattingStyle: messageAnalysis?.chattingStyle || null,
-      messagePatterns: messageAnalysis?.messagePatterns || null,
-      engagementMetrics: messageAnalysis?.engagementMetrics || null,
-      revenue: chatterRevenue,
-      ppvsSent: chatterPPVsSent,
-      ppvsUnlocked: chatterPPVsUnlocked,
-      messagesSent: chatterReports.reduce((sum, r) => sum + (r.messagesSent || 0), 0),
-      avgResponseTime: chatterReports.length > 0 ? chatterReports.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0) / chatterReports.length : 0,
-      fansChatted: chatterFansChatted
-    };
-    
-    res.json(response);
-  } catch (error) {
-    console.error('Error in chatter deep analysis:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// WIPE DATA ENDPOINT (MANAGER ONLY)
-app.post('/api/admin/wipe-data', authenticateToken, requireManager, async (req, res) => {
-  try {
-    console.log('🗑️  WIPE DATA REQUEST from user:', req.user.userId);
-    
-    // Delete all data except Messages, Analysis, Users, Creators, Guidelines
-    const results = {
-      dailyReports: await DailyChatterReport.deleteMany({}),
-      accountData: await AccountData.deleteMany({}),
-      chatterPerformance: await ChatterPerformance.deleteMany({}),
-      trafficSources: await TrafficSource.deleteMany({}),
-      vipFans: await VIPFan.deleteMany({}),
-      fanPurchases: await FanPurchase.deleteMany({}),
-      trafficSourcePerformance: await TrafficSourcePerformance.deleteMany({}),
-      linkTracking: await LinkTrackingData.deleteMany({}),
-      dailySnapshots: await DailyAccountSnapshot.deleteMany({})
-    };
-    
-    const totalDeleted = Object.values(results).reduce((sum, r) => sum + r.deletedCount, 0);
-    
-    console.log('✅ Data wiped successfully. Total deleted:', totalDeleted);
-    
-    res.json({ 
-      success: true, 
-      message: 'Data wiped successfully',
-      deleted: {
-        dailyReports: results.dailyReports.deletedCount,
-        accountData: results.accountData.deletedCount,
-        chatterPerformance: results.chatterPerformance.deletedCount,
-        trafficSources: results.trafficSources.deletedCount,
-        vipFans: results.vipFans.deletedCount,
-        fanPurchases: results.fanPurchases.deletedCount,
-        trafficSourcePerformance: results.trafficSourcePerformance.deletedCount,
-        linkTracking: results.linkTracking.deletedCount,
-        dailySnapshots: results.dailySnapshots.deletedCount,
-        total: totalDeleted
-      },
-      preserved: ['Messages', 'Analysis', 'Users', 'Creators', 'Guidelines']
-    });
-  } catch (error) {
-    console.error('❌ Error wiping data:', error);
-    res.status(500).json({ error: 'Failed to wipe data', details: error.message });
-  }
-});
-
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 OnlyFans Agency Analytics System v2.1 running on port ${PORT}`);
+  console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);
   console.log(`🌐 Visit: http://localhost:${PORT}`);
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
