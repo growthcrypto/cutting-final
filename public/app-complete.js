@@ -6906,7 +6906,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleDailySnapshotSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Save Daily Snapshot
                     </button>
                 </div>
@@ -9411,6 +9411,77 @@ async function handleOFAccountDataSubmitDirect() {
             showError(result.error || 'Failed to submit data');
         }
     } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Daily Snapshot button (bypasses event delegation)
+async function handleDailySnapshotSubmitDirect() {
+    console.log('🎯 Daily Snapshot direct button handler called!');
+    
+    const renewRateInput = document.getElementById('snapshotRenewRate').value;
+    const recurringRevenueInput = document.getElementById('snapshotRecurringRevenue').value;
+    
+    const formData = {
+        date: document.getElementById('snapshotDate').value,
+        creator: document.getElementById('snapshotCreator').value,
+        totalSubs: parseInt(document.getElementById('snapshotTotalSubs').value) || 0,
+        activeFans: parseInt(document.getElementById('snapshotActiveFans').value) || 0,
+        fansWithRenew: parseInt(document.getElementById('snapshotFansWithRenew').value) || 0,
+        newSubsToday: parseInt(document.getElementById('snapshotNewSubs').value) || 0
+    };
+    
+    // Only add renewRate if user provided it
+    if (renewRateInput && renewRateInput.trim() !== '') {
+        formData.renewRate = parseFloat(renewRateInput);
+    }
+    
+    // Only add recurringRevenue if user provided it
+    if (recurringRevenueInput && recurringRevenueInput.trim() !== '') {
+        formData.recurringRevenue = parseFloat(recurringRevenueInput);
+    }
+    
+    console.log('📊 Daily Snapshot form data:', formData);
+
+    if (!formData.date || !formData.creator) {
+        showError('Please fill in Date and Creator Account');
+        return;
+    }
+    
+    if (!formData.totalSubs || !formData.activeFans || !formData.fansWithRenew) {
+        showError('Please fill in all subscriber metrics');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/daily-snapshot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            const renewRate = result.data.renewRate || 0;
+            showNotification(`Daily snapshot saved! Renew rate: ${renewRate}%`, 'success');
+            document.getElementById('dailySnapshotForm').reset();
+            // Update dashboard if we're on it
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to save snapshot');
+        }
+    } catch (error) {
+        console.error('Daily snapshot error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
