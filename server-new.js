@@ -1798,26 +1798,9 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     // Extract just the message text for AI analysis (for now)
     const messages = messageRecords.map(record => record.messageText);
     
-    // Analyze messages using AI
-    const analysisResult = await analyzeMessages(messages, chatterName);
-      console.log('🔍 AI Analysis Result:', JSON.stringify(analysisResult, null, 2));
-      console.log('🔍 Has chattingStyle:', !!analysisResult.chattingStyle);
-      console.log('🔍 Has messagePatterns:', !!analysisResult.messagePatterns);
-      console.log('🔍 Has engagementMetrics:', !!analysisResult.engagementMetrics);
-      console.log('🔍 Has recommendations:', !!analysisResult.recommendations);
-      console.log('🔍 Has grammarBreakdown:', !!analysisResult.grammarBreakdown);
-      console.log('🔍 Has guidelinesBreakdown:', !!analysisResult.guidelinesBreakdown);
-      console.log('🔍 Has overallBreakdown:', !!analysisResult.overallBreakdown);
-      console.log('🔍 grammarBreakdown keys:', analysisResult.grammarBreakdown ? Object.keys(analysisResult.grammarBreakdown) : 'NO OBJECT');
-      console.log('🔍 guidelinesBreakdown keys:', analysisResult.guidelinesBreakdown ? Object.keys(analysisResult.guidelinesBreakdown) : 'NO OBJECT');
-      console.log('🔍 overallBreakdown keys:', analysisResult.overallBreakdown ? Object.keys(analysisResult.overallBreakdown) : 'NO OBJECT');
-      console.log('🔍 grammarBreakdown content:', JSON.stringify(analysisResult.grammarBreakdown));
-      console.log('🔍 guidelinesBreakdown content:', JSON.stringify(analysisResult.guidelinesBreakdown));
-      console.log('🔍 overallBreakdown content:', JSON.stringify(analysisResult.overallBreakdown));
-    console.log('🔍 Raw AI Response Length:', analysisResult ? 'Response received' : 'No response');
-    console.log('🔍 ChattingStyle content:', JSON.stringify(analysisResult.chattingStyle));
-    console.log('🔍 MessagePatterns content:', JSON.stringify(analysisResult.messagePatterns));
-    console.log('🔍 EngagementMetrics content:', JSON.stringify(analysisResult.engagementMetrics));
+    // ❌ DO NOT analyze on upload - analysis happens from AI Analysis page only
+    const analysisResult = null;
+    console.log('✅ Messages uploaded - analysis will run from AI Analysis page');
     
     // Save to MessageAnalysis collection
     console.log('Creating MessageAnalysis object with:', {
