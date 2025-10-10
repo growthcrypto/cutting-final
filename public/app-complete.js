@@ -6985,7 +6985,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleChatterDataSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Submit Chatter Data
                     </button>
                 </div>
@@ -9553,6 +9553,72 @@ async function handleDailySnapshotSubmit(event) {
         }
     } catch (error) {
         console.error('Daily snapshot error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Chatter Data button (bypasses event delegation)
+async function handleChatterDataSubmitDirect() {
+    console.log('🎯 Chatter Data direct button handler called!');
+    
+    const chatterSelect = document.getElementById('chatterDataChatter');
+    const selectedChatterText = chatterSelect.options[chatterSelect.selectedIndex].text;
+    
+    // Get form values and only include non-empty fields
+    const messagesSentValue = document.getElementById('chatterMessagesSent').value;
+    const ppvsSentValue = document.getElementById('chatterPPVsSent').value;
+    const ppvsUnlockedValue = document.getElementById('chatterPPVsUnlocked').value;
+    const fansChattedValue = document.getElementById('chatterFansChatted').value;
+    const avgResponseTimeValue = document.getElementById('chatterAvgResponseTime').value;
+    const netSalesValue = document.getElementById('chatterNetSales').value;
+
+    const formData = {
+        startDate: document.getElementById('chatterDataStartDate').value,
+        endDate: document.getElementById('chatterDataEndDate').value,
+        chatter: selectedChatterText,
+        dataType: 'chatter'
+    };
+
+    // Only include fields that have values (not empty)
+    if (messagesSentValue) formData.messagesSent = parseInt(messagesSentValue);
+    if (ppvsSentValue) formData.ppvsSent = parseInt(ppvsSentValue);
+    if (ppvsUnlockedValue) formData.ppvsUnlocked = parseInt(ppvsUnlockedValue);
+    if (fansChattedValue) formData.fansChatted = parseInt(fansChattedValue);
+    if (avgResponseTimeValue) formData.avgResponseTime = parseFloat(avgResponseTimeValue);
+    if (netSalesValue) formData.netSales = parseFloat(netSalesValue);
+
+    if (!formData.startDate || !formData.endDate || !formData.chatter || formData.chatter === 'Select Chatter...') {
+        showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/chatter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Chatter data submitted successfully!', 'success');
+            document.getElementById('chatterDataForm').reset();
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit data');
+        }
+    } catch (error) {
+        console.error('Chatter data error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
