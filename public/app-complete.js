@@ -7127,35 +7127,18 @@ function createAIAnalysisSection() {
                     </div>
                 </div>
                 
-                <div class="space-y-6 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Select Your Account</label>
-                            <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
-                                <option value="">Choose account to analyze...</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Time Period</label>
-                            <div class="flex gap-2">
-                                <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d" id="aiInterval7d">
-                                    <i class="fas fa-calendar-week mr-2"></i>7 Days
-                                </button>
-                                <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d" id="aiInterval30d">
-                                    <i class="fas fa-calendar-alt mr-2"></i>30 Days
-                                </button>
-                                <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom" id="aiIntervalCustom">
-                                    <i class="fas fa-calendar mr-2"></i>Custom
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button onclick="runChatterAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg">
-                        <i class="fas fa-brain mr-2"></i>Start Analysis
-                    </button>
+                <!-- Account Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Select Your Account</label>
+                    <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
+                        <option value="">Choose account to analyze...</option>
+                    </select>
                 </div>
+                
+                <!-- Run Analysis Button -->
+                <button onclick="runChatterAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg mb-6">
+                    <i class="fas fa-brain mr-2"></i>Start Individual Analysis
+                </button>
 
                 <div id="chatterAnalysisResults" class="mt-6">
                     <div class="text-center py-12">
@@ -7173,7 +7156,23 @@ function createAIAnalysisSection() {
             <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
                 <i class="fas fa-brain mr-3"></i>AI Intelligence Hub
             </h2>
-            <p class="text-gray-400 text-lg">Choose an analysis type to get started</p>
+            <p class="text-gray-400 text-lg">Select time period, then choose analysis type</p>
+        </div>
+        
+        <!-- Date Filter (BEFORE choosing analysis type) -->
+        <div class="glass-card rounded-xl p-6 mb-8">
+            <label class="block text-sm font-medium mb-3">Select Time Period</label>
+            <div class="flex gap-3">
+                <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-6 py-4 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all font-medium" data-interval="7d">
+                    <i class="fas fa-calendar-week mr-2"></i>7 Days
+                </button>
+                <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-6 py-4 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all font-medium" data-interval="30d">
+                    <i class="fas fa-calendar-alt mr-2"></i>30 Days
+                </button>
+                <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-6 py-4 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all font-medium" data-interval="custom">
+                    <i class="fas fa-calendar mr-2"></i>Custom
+                </button>
+            </div>
         </div>
 
         <!-- Analysis Type Selection Cards -->
@@ -7263,29 +7262,10 @@ function createAIAnalysisSection() {
                     </button>
                 </div>
                 
-                <!-- Date Filter + Run Button -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Time Period</label>
-                        <div class="flex gap-2">
-                            <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d">
-                                <i class="fas fa-calendar-week mr-2"></i>7 Days
-                            </button>
-                            <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d">
-                                <i class="fas fa-calendar-alt mr-2"></i>30 Days
-                            </button>
-                            <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom">
-                                <i class="fas fa-calendar mr-2"></i>Custom
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-end">
-                        <button onclick="runAgencyAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg">
-                            <i class="fas fa-brain mr-2"></i>Start Analysis
-                        </button>
-                    </div>
-                </div>
+                <!-- Run Analysis Button -->
+                <button onclick="runAgencyAnalysis()" class="w-full premium-button text-white font-bold py-4 px-6 rounded-xl text-lg mb-6">
+                    <i class="fas fa-brain mr-2"></i>Start Agency Analysis
+                </button>
                 
                 <div id="agencyAnalysisResults" class="mt-6">
                     <div class="text-center py-12">
