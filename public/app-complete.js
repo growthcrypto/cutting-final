@@ -6838,11 +6838,20 @@ function createDataUploadSection() {
                             <input type="number" id="snapshotNewSubs" min="0" required
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Renew Rate (%)
+                                <span class="text-xs text-gray-500 block">Optional - will auto-calc if blank</span>
+                            </label>
+                            <input type="number" id="snapshotRenewRate" min="0" max="100" step="0.01"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank to auto-calculate">
+                        </div>
                     </div>
                     <div class="mt-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
                         <p class="text-xs text-purple-300">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Renew rate will be auto-calculated: (Fans with Renew / Active Fans) × 100
+                            If you leave Renew Rate blank, it will be auto-calculated: (Fans with Renew / Total Subs) × 100
                         </p>
                     </div>
                 </div>
@@ -9362,6 +9371,8 @@ async function handleOFAccountDataSubmitDirect() {
 async function handleDailySnapshotSubmit(event) {
     console.log('📊 Daily Snapshot form submit triggered');
     
+    const renewRateInput = document.getElementById('snapshotRenewRate').value;
+    
     const formData = {
         date: document.getElementById('snapshotDate').value,
         creator: document.getElementById('snapshotCreator').value,
@@ -9370,6 +9381,11 @@ async function handleDailySnapshotSubmit(event) {
         fansWithRenew: parseInt(document.getElementById('snapshotFansWithRenew').value) || 0,
         newSubsToday: parseInt(document.getElementById('snapshotNewSubs').value) || 0
     };
+    
+    // Only add renewRate if user provided it
+    if (renewRateInput && renewRateInput.trim() !== '') {
+        formData.renewRate = parseFloat(renewRateInput);
+    }
     
     console.log('📊 Daily Snapshot form data:', formData);
 
