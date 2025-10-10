@@ -6752,8 +6752,8 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       revenue: chatterRevenue,
       ppvsSent: chatterPPVsSent,
       ppvsUnlocked: chatterPPVsUnlocked,
-      messagesSent: chatterReports.reduce((sum, r) => sum + (r.messagesSent || 0), 0),
-      avgResponseTime: chatterReports.length > 0 ? chatterReports.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0) / chatterReports.length : 0,
+      messagesSent: chatterMessagesSent,
+      avgResponseTime: chatterAvgResponseTime,
       fansChatted: chatterFansChatted
     };
     
