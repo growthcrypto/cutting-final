@@ -1581,6 +1581,13 @@ function setupEventListeners() {
         }
     });
 
+    // Debug: Log all button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.type === 'submit' || e.target.closest('button[type="submit"]')) {
+            console.log('🔘 Submit button clicked!', e.target);
+        }
+    }, true);
+
     // Form submissions
     document.addEventListener('submit', function(e) {
         console.log('📝 Form submitted:', e.target.id);
