@@ -6745,12 +6745,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="border-t border-gray-700 pt-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Net Revenue ($)</label>
-                            <input type="number" id="ofNetRevenue" min="0" step="0.01"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Recurring Revenue ($)</label>
                             <input type="number" id="ofRecurringRevenue" min="0" step="0.01"
@@ -6764,11 +6759,6 @@ function createDataUploadSection() {
                         <div>
                             <label class="block text-sm font-medium mb-2">New Subscribers</label>
                             <input type="number" id="ofNewSubs" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Profile Clicks</label>
-                            <input type="number" id="ofProfileClicks" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                     </div>
@@ -9273,20 +9263,13 @@ async function handleOFAccountDataSubmit(event) {
         startDate: document.getElementById('ofAccountStartDate').value,
         endDate: document.getElementById('ofAccountEndDate').value,
         creator: document.getElementById('ofAccountCreator').value,
-        netRevenue: parseFloat(document.getElementById('ofNetRevenue').value) || 0,
         recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
         totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
         newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
-        profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
         dataType: 'of_account'
     };
     
     console.log('OF Account form data collected:', formData);
-    console.log('Raw values:', {
-        netRevenue: document.getElementById('ofNetRevenue').value,
-        totalSubs: document.getElementById('ofTotalSubs').value,
-        newSubs: document.getElementById('ofNewSubs').value
-    });
 
     if (!formData.startDate || !formData.endDate || !formData.creator) {
         showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
