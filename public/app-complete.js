@@ -7999,7 +7999,7 @@ function createTeamManagementSection() {
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
                 </div>
-                <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                <button type="button" onclick="handleCreateUserDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                     <i class="fas fa-user-plus mr-2"></i>Create Account
                 </button>
             </form>
@@ -9005,6 +9005,82 @@ async function handleCreateUser(event) {
     // Only add chatterName if role is chatter
     if (role === 'chatter') {
         userData.chatterName = document.getElementById('createChatterName').value;
+    }
+
+    showLoading(true);
+
+    try {
+        console.log('Creating user with data:', userData);
+        const response = await fetch('/api/auth/register-manager', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(userData)
+        });
+
+        console.log('Registration response status:', response.status);
+        const result = await response.json();
+        console.log('Registration response:', result);
+
+        if (response.ok) {
+            showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} created successfully!`, 'success');
+            document.getElementById('createUserForm').reset();
+            loadUsers();
+        } else {
+            showError(result.error || 'Failed to create user');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for create user button (bypasses event delegation)
+async function handleCreateUserDirect() {
+    console.log('🎯 Direct button handler called!');
+    
+    const role = document.getElementById('createRole').value;
+    const username = document.getElementById('createUsername').value;
+    const email = document.getElementById('createEmail').value;
+    const password = document.getElementById('createPassword').value;
+    
+    // Validate required fields
+    if (!role) {
+        showError('Please select a role');
+        return;
+    }
+    if (!username) {
+        showError('Please enter a username');
+        return;
+    }
+    if (!email) {
+        showError('Please enter an email');
+        return;
+    }
+    if (!password || password.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+    }
+    
+    const userData = {
+        username,
+        email,
+        password,
+        role
+    };
+    
+    // Only add chatterName if role is chatter
+    if (role === 'chatter') {
+        const chatterName = document.getElementById('createChatterName').value;
+        if (!chatterName) {
+            showError('Please enter a chatter name');
+            return;
+        }
+        userData.chatterName = chatterName;
     }
 
     showLoading(true);
