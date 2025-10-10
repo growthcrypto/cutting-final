@@ -4500,7 +4500,7 @@ async function runChatterAnalysis() {
             return;
         }
         
-        renderChatterAnalysisResults(analysisData);
+        renderNewChatterAnalysis(analysisData);
         
         // Load performance trends for this chatter
         const selectedUser = await fetch(`/api/users/${select.value}`, {
@@ -4977,6 +4977,306 @@ function renderAgencyAnalysisResults(data) {
 }
 
 // Render Chatter Analysis Results (ENHANCED with new sections)
+// Helper function to format dates
+function formatDateShort(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    return `${month} ${day}`;
+}
+
+// MILLION DOLLAR AI ANALYSIS UI - Dense, Beautiful, Insightful
+function renderNewChatterAnalysis(data) {
+    const container = document.getElementById('chatterAnalysisResults');
+    if (!container) return;
+    
+    console.log('🎨 Rendering million dollar UI with data:', data);
+    
+    // Check if we have analysis data
+    if (!data || data.overallScore === null || data.overallScore === undefined) {
+        container.innerHTML = `
+            <div class="p-8 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg border border-gray-700 text-center">
+                <i class="fas fa-chart-line text-gray-500 text-4xl mb-3"></i>
+                <h4 class="text-lg font-bold text-gray-300 mb-2">No Analysis Available</h4>
+                <p class="text-sm text-gray-400">Upload messages and click "Run Analysis"</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Date display
+    const dateRange = data.weekStartDate && data.weekEndDate 
+        ? `${formatDateShort(data.weekStartDate)} - ${formatDateShort(data.weekEndDate)}`
+        : (data.interval ? `Last ${data.interval}` : 'Period');
+    
+    // Parse grammar breakdown for counts
+    const spellingCount = data.grammarBreakdown?.spellingErrors?.match(/Found (\d+)/)?.[1] || '0';
+    const grammarCount = data.grammarBreakdown?.grammarIssues?.match(/Found (\d+)/)?.[1] || '0';
+    const punctuationCount = data.grammarBreakdown?.punctuationProblems?.match(/Found (\d+)/)?.[1] || '0';
+    
+    // Calculate percentages
+    const totalMessages = data.grammarBreakdown?.totalMessages || data.messagesSent || 544;
+    const spellingPct = ((parseInt(spellingCount) / totalMessages) * 100).toFixed(1);
+    const grammarPct = ((parseInt(grammarCount) / totalMessages) * 100).toFixed(1);
+    const punctuationPct = ((parseInt(punctuationCount) / totalMessages) * 100).toFixed(1);
+    
+    // Parse guidelines by category
+    const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown);
+    
+    container.innerHTML = `
+        <div class="space-y-4">
+            
+            <!-- Header with Overall Score -->
+            <div class="bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-pink-600/20 rounded-lg p-6 border border-indigo-500/30">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white mb-1">Individual Analysis</h3>
+                        <p class="text-sm text-gray-400">📅 ${dateRange} · ${totalMessages} messages analyzed</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl font-black ${data.overallScore >= 80 ? 'text-green-400' : data.overallScore >= 60 ? 'text-yellow-400' : 'text-red-400'} mb-1">
+                            ${data.overallScore}
+                        </div>
+                        <div class="text-xs text-gray-400">Overall Score</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grammar & Guidelines Scores Side by Side -->
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Grammar Score Card -->
+                <div class="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 rounded-lg p-5 border ${data.grammarScore >= 80 ? 'border-green-500/40' : data.grammarScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-lg font-bold text-white">Grammar</h4>
+                        <div class="text-4xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                            ${data.grammarScore}
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
+                            <span class="text-gray-300">Spelling</span>
+                            <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${spellingCount} (${spellingPct}%)</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
+                            <span class="text-gray-300">Grammar</span>
+                            <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${grammarCount} (${grammarPct}%)</span>
+                        </div>
+                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
+                            <span class="text-gray-300">Punctuation</span>
+                            <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${punctuationCount} (${punctuationPct}%)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Guidelines Score Card -->
+                <div class="bg-gradient-to-br from-green-600/10 to-emerald-600/10 rounded-lg p-5 border ${data.guidelinesScore >= 80 ? 'border-green-500/40' : data.guidelinesScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-lg font-bold text-white">Guidelines</h4>
+                        <div class="text-4xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                            ${data.guidelinesScore}
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        ${guidelinesByCategory.map(cat => `
+                            <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
+                                <span class="text-gray-300">${cat.name}</span>
+                                <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${cat.violations} (${cat.pct}%)</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Breakdown Sections -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                <!-- Grammar Details -->
+                <div class="bg-gray-800/30 rounded-lg p-5 border border-gray-700">
+                    <h4 class="text-base font-bold text-blue-400 mb-3 flex items-center">
+                        <i class="fas fa-spell-check mr-2"></i>Grammar Breakdown
+                    </h4>
+                    <div class="space-y-3 text-sm">
+                        ${data.grammarBreakdown?.spellingErrors ? `
+                            <div class="p-3 bg-red-500/10 rounded border-l-2 border-red-500">
+                                <div class="font-bold text-red-400 text-xs mb-1">SPELLING (${spellingCount} errors, ${spellingPct}%)</div>
+                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.spellingErrors}</div>
+                            </div>
+                        ` : ''}
+                        ${data.grammarBreakdown?.grammarIssues ? `
+                            <div class="p-3 bg-orange-500/10 rounded border-l-2 border-orange-500">
+                                <div class="font-bold text-orange-400 text-xs mb-1">GRAMMAR (${grammarCount} errors, ${grammarPct}%)</div>
+                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.grammarIssues}</div>
+                            </div>
+                        ` : ''}
+                        ${data.grammarBreakdown?.punctuationProblems ? `
+                            <div class="p-3 bg-yellow-500/10 rounded border-l-2 border-yellow-500">
+                                <div class="font-bold text-yellow-400 text-xs mb-1">PUNCTUATION (${punctuationCount} errors, ${punctuationPct}%)</div>
+                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.punctuationProblems}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <!-- Guidelines Details -->
+                <div class="bg-gray-800/30 rounded-lg p-5 border border-gray-700">
+                    <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
+                        <i class="fas fa-list-check mr-2"></i>Guidelines Breakdown
+                    </h4>
+                    <div class="space-y-3 text-sm">
+                        ${renderDetailedGuidelines(data.guidelinesBreakdown, totalMessages)}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Insights & Recommendations -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                <!-- Key Insights -->
+                ${data.insights && data.insights.length > 0 ? `
+                <div class="bg-gradient-to-br from-cyan-600/10 to-blue-600/10 rounded-lg p-5 border border-cyan-500/30">
+                    <h4 class="text-base font-bold text-cyan-400 mb-3 flex items-center">
+                        <i class="fas fa-lightbulb mr-2"></i>Key Insights
+                    </h4>
+                    <div class="space-y-2">
+                        ${data.insights.map(insight => `
+                            <div class="text-xs text-gray-300 leading-relaxed p-2 bg-gray-800/30 rounded">
+                                <i class="fas fa-arrow-right text-cyan-400 mr-2"></i>${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Issues to Fix -->
+                ${data.weakPoints && data.weakPoints.length > 0 ? `
+                <div class="bg-gradient-to-br from-red-600/10 to-orange-600/10 rounded-lg p-5 border border-red-500/30">
+                    <h4 class="text-base font-bold text-red-400 mb-3 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Issues to Fix
+                    </h4>
+                    <div class="space-y-2">
+                        ${data.weakPoints.map(issue => `
+                            <div class="text-xs text-gray-300 leading-relaxed p-2 bg-gray-800/30 rounded">
+                                <i class="fas fa-times text-red-400 mr-2"></i>${issue}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <!-- Opportunities & ROI -->
+            ${data.opportunities && data.opportunities.length > 0 ? `
+            <div class="bg-gradient-to-br from-purple-600/10 to-pink-600/10 rounded-lg p-5 border border-purple-500/30">
+                <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center">
+                    <i class="fas fa-rocket mr-2"></i>Growth Opportunities
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${data.opportunities.map(opp => `
+                        <div class="text-xs text-gray-300 p-3 bg-gray-800/30 rounded border-l-2 border-purple-500">
+                            ${opp}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Action Plan -->
+            ${data.recommendations && data.recommendations.length > 0 ? `
+            <div class="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 rounded-lg p-5 border border-blue-500/30">
+                <h4 class="text-base font-bold text-blue-400 mb-3 flex items-center">
+                    <i class="fas fa-clipboard-check mr-2"></i>Action Plan
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${data.recommendations.map((rec, i) => `
+                        <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 border-blue-500">
+                            <span class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold mr-2 shrink-0">${i+1}</span>
+                            <span class="text-xs text-gray-300">${rec}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- ROI Calculations -->
+            ${data.roiCalculations && data.roiCalculations.length > 0 ? `
+            <div class="bg-gradient-to-br from-green-600/10 to-emerald-600/10 rounded-lg p-5 border border-green-500/30">
+                <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
+                    <i class="fas fa-dollar-sign mr-2"></i>ROI Predictions
+                </h4>
+                <div class="space-y-2">
+                    ${data.roiCalculations.map(roi => `
+                        <div class="text-xs text-gray-300 p-3 bg-gray-800/30 rounded border-l-2 border-green-500">
+                            ${roi}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+        </div>
+    `;
+}
+
+// Parse guidelines by category with counts
+function parseGuidelinesByCategory(guidelinesBreakdown) {
+    if (!guidelinesBreakdown) return [];
+    
+    const categories = [
+        { key: 'generalChatting', name: 'General' },
+        { key: 'psychology', name: 'Psychology' },
+        { key: 'captions', name: 'Captions' },
+        { key: 'sales', name: 'Sales' }
+    ];
+    
+    const totalMessages = guidelinesBreakdown.totalMessages || 544;
+    
+    return categories.map(cat => {
+        const items = guidelinesBreakdown[cat.key]?.items || [];
+        const violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
+        const pct = ((violations / totalMessages) * 100).toFixed(1);
+        return { name: cat.name, violations, pct };
+    });
+}
+
+// Render detailed guidelines with individual items
+function renderDetailedGuidelines(guidelinesBreakdown, totalMessages) {
+    if (!guidelinesBreakdown) return '<div class="text-xs text-gray-400">No guidelines data</div>';
+    
+    const categories = [
+        { key: 'generalChatting', name: 'General Chatting', color: 'blue' },
+        { key: 'psychology', name: 'Psychology', color: 'purple' },
+        { key: 'captions', name: 'Captions', color: 'pink' },
+        { key: 'sales', name: 'Sales', color: 'green' }
+    ];
+    
+    let html = '';
+    
+    categories.forEach(cat => {
+        const items = guidelinesBreakdown[cat.key]?.items || [];
+        const totalViolations = items.reduce((sum, item) => sum + (item.count || 0), 0);
+        const pct = ((totalViolations / totalMessages) * 100).toFixed(1);
+        
+        if (items.length > 0) {
+            html += `
+                <div class="p-3 bg-${cat.color}-500/10 rounded border-l-2 border-${cat.color}-500">
+                    <div class="font-bold text-${cat.color}-400 text-xs mb-2">${cat.name.toUpperCase()} (${totalViolations} violations, ${pct}%)</div>
+                    <div class="space-y-1">
+                        ${items.map(item => `
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-gray-400">${item.title}</span>
+                                <span class="${item.count === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${item.count}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    return html || '<div class="text-xs text-gray-400">No violations</div>';
+}
+
 function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
