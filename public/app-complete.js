@@ -1555,10 +1555,16 @@ function setupEventListeners() {
 
     // Add PPV sale and tip buttons
     document.addEventListener('click', function(e) {
-        if (e.target.id === 'addPPVSale') {
-            addPPVSaleField();
-        } else if (e.target.id === 'addTip') {
-            addTipField();
+        if (e.target.id === 'addPPVSale' || e.target.closest('#addPPVSale')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📍 Click detected on addPPVSale button');
+            window.addPPVSaleField();
+        } else if (e.target.id === 'addTip' || e.target.closest('#addTip')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📍 Click detected on addTip button');
+            window.addTipField();
         }
     });
 
@@ -8276,7 +8282,7 @@ function createDailyReportSection() {
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">PPV Sales</h3>
-                        <button type="button" onclick="addPPVSaleField()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <button type="button" id="addPPVSale" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Sale
                         </button>
                     </div>
@@ -8286,7 +8292,7 @@ function createDailyReportSection() {
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Tips (Optional)</h3>
-                        <button type="button" onclick="addTipField()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Tip
                         </button>
                     </div>
