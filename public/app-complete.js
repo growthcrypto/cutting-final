@@ -5021,17 +5021,17 @@ function renderChatterAnalysisResults(data) {
 
             <!-- Performance Breakdown -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Key Insights -->
-                ${data.insights && data.insights.length > 0 ? `
+                <!-- Strengths -->
+                ${data.strengths && data.strengths.length > 0 ? `
                 <div class="glass-card rounded-xl p-8">
                     <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                         <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>Key Insights
                     </h4>
                     <div class="space-y-4">
-                        ${data.insights.map(insight => `
+                        ${data.strengths.map(strength => `
                             <div class="flex items-start p-4 bg-green-900/10 rounded-lg border border-green-500/20">
                                 <i class="fas fa-check-circle text-green-400 mr-4 mt-1"></i>
-                                <span class="text-gray-300 leading-relaxed">${insight}</span>
+                                <span class="text-gray-300 leading-relaxed">${strength}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -5039,16 +5039,16 @@ function renderChatterAnalysisResults(data) {
                 ` : ''}
 
                 <!-- Areas for Improvement -->
-                ${data.weakPoints && data.weakPoints.length > 0 ? `
+                ${data.weaknesses && data.weaknesses.length > 0 ? `
                 <div class="glass-card rounded-xl p-8">
                     <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                         <i class="fas fa-exclamation-triangle text-orange-400 mr-4"></i>Areas for Improvement
                     </h4>
                     <div class="space-y-4">
-                        ${data.weakPoints.map(point => `
+                        ${data.weaknesses.map(weakness => `
                             <div class="flex items-start p-4 bg-orange-900/10 rounded-lg border border-orange-500/20">
                                 <i class="fas fa-arrow-up text-orange-400 mr-4 mt-1"></i>
-                                <span class="text-gray-300 leading-relaxed">${point}</span>
+                                <span class="text-gray-300 leading-relaxed">${weakness}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -5110,9 +5110,40 @@ function renderChatterAnalysisResults(data) {
                 ` : ''}
             </div>
 
+            <!-- Grammar & Guidelines Scores -->
+            ${(data.grammarScore !== null || data.guidelinesScore !== null) ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                ${data.grammarScore !== null ? `
+                <div class="glass-card rounded-xl p-6 border-2 border-blue-500/40">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-spell-check text-blue-400 mr-3"></i>Grammar Score
+                    </h4>
+                    <div class="text-5xl font-bold text-blue-400 mb-2">${data.grammarScore}/100</div>
+                    ${data.grammarBreakdown ? `
+                        <div class="mt-4 space-y-2 text-sm">
+                            <div class="text-gray-300">${data.grammarBreakdown.spellingErrors || 'No spelling errors'}</div>
+                            <div class="text-gray-300">${data.grammarBreakdown.grammarIssues || 'No grammar issues'}</div>
+                            <div class="text-gray-300">${data.grammarBreakdown.punctuationProblems || 'No punctuation issues'}</div>
+                        </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+                
+                ${data.guidelinesScore !== null ? `
+                <div class="glass-card rounded-xl p-6 border-2 border-purple-500/40">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-book text-purple-400 mr-3"></i>Guidelines Score
+                    </h4>
+                    <div class="text-5xl font-bold text-purple-400 mb-2">${data.guidelinesScore}/100</div>
+                    <div class="text-sm text-gray-400 mt-2">Based on ${data.guidelinesBreakdown ? Object.values(data.guidelinesBreakdown).reduce((sum, cat) => sum + (cat.items?.length || 0), 0) : 0} guidelines</div>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+
             <!-- Action Plan -->
             ${data.recommendations && data.recommendations.length > 0 ? `
-            <div class="glass-card rounded-xl p-8">
+            <div class="glass-card rounded-xl p-8 mb-8">
                 <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                     <i class="fas fa-clipboard-list text-cyan-400 mr-4"></i>Personalized Action Plan
                 </h4>
