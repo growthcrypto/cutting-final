@@ -5031,17 +5031,17 @@ function renderNewChatterAnalysis(data) {
     // Parse guidelines by category
     const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown);
     
-    // Get smart insights
-    const smartInsights = data.smartInsights || {};
+    // Get deep insights
+    const deepInsights = data.deepInsights || [];
+    const improvements = data.improvements || [];
+    const strengths = data.strengths || [];
     const analysisSummary = data.analysisSummary || '';
     
     // DEBUG: Log what we're receiving
-    console.log('🔍 Smart Insights:', smartInsights);
+    console.log('🔍 Deep Insights:', deepInsights);
+    console.log('🔍 Improvements:', improvements);
+    console.log('🔍 Strengths:', strengths);
     console.log('🔍 Analysis Summary:', analysisSummary);
-    console.log('🔍 Revenue Impact:', smartInsights.revenueImpact);
-    console.log('🔍 Conversion Efficiency:', smartInsights.conversionEfficiency);
-    console.log('🔍 Improvements:', smartInsights.improvements);
-    console.log('🔍 Strengths:', smartInsights.strengths);
     
     container.innerHTML = `
         <div class="space-y-4">
@@ -5072,155 +5072,239 @@ function renderNewChatterAnalysis(data) {
             </div>
             ` : ''}
             
-            <!-- Grammar & Guidelines Scores with Counters -->
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Grammar Score Card -->
-                <div class="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 rounded-lg p-5 border ${data.grammarScore >= 80 ? 'border-green-500/40' : data.grammarScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-lg font-bold text-white">Grammar</h4>
-                        <div class="text-4xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
-                            ${data.grammarScore}
+            <!-- AI Quality Scores - Premium Design -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Grammar Score - Detailed -->
+                <div class="bg-gradient-to-br from-blue-600/10 via-cyan-600/10 to-blue-800/10 rounded-xl p-6 border ${data.grammarScore >= 80 ? 'border-green-500/40' : data.grammarScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'} relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Grammar Quality</h4>
+                                <p class="text-xs text-gray-400">Message professionalism</p>
+                            </div>
+                            <div class="text-5xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                                ${data.grammarScore}
+                            </div>
                         </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-3">Spelling, grammar, and punctuation quality</p>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300 text-xs">Spelling Errors</span>
-                            <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs">${spellingCount} (${spellingPct}%)</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300 text-xs">Grammar Issues</span>
-                            <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs">${grammarCount} (${grammarPct}%)</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300 text-xs">Punctuation Problems</span>
-                            <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs">${punctuationCount} (${punctuationPct}%)</span>
+                        <div class="space-y-3">
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Spelling Errors</span>
+                                    <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${spellingCount}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">${spellingCount} typos out of ${totalMessages} messages (${spellingPct}% error rate)</div>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Grammar Mistakes</span>
+                                    <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${grammarCount}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">${grammarCount} grammar errors in ${totalMessages} messages (${grammarPct}% error rate)</div>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Formal Punctuation</span>
+                                    <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${punctuationCount}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">${punctuationCount} messages with periods/commas (${punctuationPct}% - should be casual)</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Guidelines Score Card -->
-                <div class="bg-gradient-to-br from-green-600/10 to-emerald-600/10 rounded-lg p-5 border ${data.guidelinesScore >= 80 ? 'border-green-500/40' : data.guidelinesScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-lg font-bold text-white">Guidelines</h4>
-                        <div class="text-4xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
-                            ${data.guidelinesScore}
+                <!-- Guidelines Score - Detailed -->
+                <div class="bg-gradient-to-br from-green-600/10 via-emerald-600/10 to-green-800/10 rounded-xl p-6 border ${data.guidelinesScore >= 80 ? 'border-green-500/40' : data.guidelinesScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'} relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Guidelines</h4>
+                                <p class="text-xs text-gray-400">Best practices compliance</p>
+                            </div>
+                            <div class="text-5xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                                ${data.guidelinesScore}
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            ${guidelinesByCategory.slice(0, 3).map(cat => `
+                                <div class="bg-gray-800/50 rounded-lg p-3">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-xs font-bold text-gray-300">${cat.name}</span>
+                                        <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${cat.violations}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">${cat.violations} violations (${cat.pct}% of messages break this rule)</div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Compliance with OnlyFans best practices</p>
-                    <div class="space-y-2 text-sm">
-                        ${guidelinesByCategory.slice(0, 3).map(cat => `
-                            <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                                <span class="text-gray-300 text-xs">${cat.name}</span>
-                                <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs">${cat.violations} (${cat.pct}%)</span>
+                </div>
+                
+                <!-- Overall Performance - New -->
+                <div class="bg-gradient-to-br from-purple-600/10 via-pink-600/10 to-purple-800/10 rounded-xl p-6 border border-purple-500/40 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="text-xl font-bold text-white mb-1">Performance</h4>
+                                <p class="text-xs text-gray-400">Revenue & conversion</p>
                             </div>
-                        `).join('')}
+                            <div class="text-5xl font-black text-purple-400">
+                                ${data.revenue ? '$' + data.revenue : '—'}
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Unlock Rate</span>
+                                    <span class="text-cyan-400 font-bold text-sm">${data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0}%</span>
+                                </div>
+                                <div class="text-xs text-gray-500">${data.ppvsUnlocked || 0} of ${data.ppvsSent || 0} PPVs unlocked by fans</div>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Revenue/Message</span>
+                                    <span class="text-green-400 font-bold text-sm">$${data.messagesSent > 0 ? (data.revenue / data.messagesSent).toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">Earning $${data.messagesSent > 0 ? (data.revenue / data.messagesSent).toFixed(2) : '0.00'} per message sent</div>
+                            </div>
+                            <div class="bg-gray-800/50 rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs font-bold text-gray-300">Revenue/Fan</span>
+                                    <span class="text-yellow-400 font-bold text-sm">$${data.fansChatted > 0 ? (data.revenue / data.fansChatted).toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div class="text-xs text-gray-500">Average $${data.fansChatted > 0 ? (data.revenue / data.fansChatted).toFixed(2) : '0.00'} per fan chatted</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Smart Insights Grid (2 columns, beautiful layout) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <!-- Conversion Efficiency -->
-                <div class="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-lg p-5 border border-cyan-500/30">
-                    <h4 class="text-base font-bold text-cyan-400 mb-3 flex items-center">
-                        <i class="fas fa-chart-line mr-2"></i>Conversion Efficiency
-                    </h4>
-                    ${smartInsights.conversionEfficiency && smartInsights.conversionEfficiency.length > 0 ? `
-                    <div class="space-y-2">
-                        ${smartInsights.conversionEfficiency.map(item => `
-                            <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 border-cyan-500">
-                                <i class="fas fa-arrow-right text-cyan-400 mr-2 mt-1"></i>
-                                <div>
-                                    <div class="text-xs font-bold text-cyan-300 mb-1">${item.metric}</div>
-                                    <div class="text-xs text-gray-300">${item.value}</div>
+            <!-- 🧠 DEEP CONNECTED INSIGHTS (THE FLAGSHIP SECTION) -->
+            ${deepInsights && deepInsights.length > 0 ? `
+            <div class="bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-pink-900/20 rounded-xl p-6 border border-indigo-500/40">
+                <div class="flex items-center mb-5">
+                    <div class="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-brain text-indigo-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">🧠 Deep Performance Analysis</h4>
+                        <p class="text-xs text-gray-400">Connecting messages, quality, and revenue</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    ${deepInsights.map((item, idx) => `
+                        <div class="bg-gradient-to-r ${
+                            item.type === 'positive' ? 'from-green-900/40 to-emerald-900/20 border-green-500/40' :
+                            item.type === 'warning' ? 'from-red-900/40 to-orange-900/20 border-orange-500/40' :
+                            item.type === 'opportunity' ? 'from-yellow-900/40 to-amber-900/20 border-yellow-500/40' :
+                            'from-blue-900/40 to-cyan-900/20 border-cyan-500/40'
+                        } rounded-xl p-5 border hover:scale-[1.01] transition-all">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 ${
+                                    item.type === 'positive' ? 'bg-green-500/20' :
+                                    item.type === 'warning' ? 'bg-orange-500/20' :
+                                    item.type === 'opportunity' ? 'bg-yellow-500/20' :
+                                    'bg-cyan-500/20'
+                                } rounded-lg flex items-center justify-center mr-4 shrink-0">
+                                    <i class="fas ${item.icon} ${
+                                        item.type === 'positive' ? 'text-green-400' :
+                                        item.type === 'warning' ? 'text-orange-400' :
+                                        item.type === 'opportunity' ? 'text-yellow-400' :
+                                        'text-cyan-400'
+                                    } text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h5 class="text-base font-bold ${
+                                        item.type === 'positive' ? 'text-green-300' :
+                                        item.type === 'warning' ? 'text-orange-300' :
+                                        item.type === 'opportunity' ? 'text-yellow-300' :
+                                        'text-cyan-300'
+                                    } mb-2">${item.title}</h5>
+                                    <p class="text-sm text-gray-200 mb-3 leading-relaxed">${item.insight}</p>
+                                    <div class="bg-gray-900/50 rounded-lg p-3 mb-3">
+                                        <div class="text-xs text-gray-400 mb-1">📊 Key Metrics:</div>
+                                        <div class="text-xs font-mono text-cyan-300">${item.metrics}</div>
+                                    </div>
+                                    <div class="flex items-start p-3 bg-gray-900/50 rounded-lg border-l-2 ${
+                                        item.type === 'positive' ? 'border-green-500' :
+                                        item.type === 'warning' ? 'border-orange-500' :
+                                        item.type === 'opportunity' ? 'border-yellow-500' :
+                                        'border-cyan-500'
+                                    }">
+                                        <i class="fas fa-lightbulb text-cyan-400 mr-2 mt-0.5"></i>
+                                        <div class="text-xs text-cyan-300 font-medium">${item.action}</div>
+                                    </div>
                                 </div>
                             </div>
-                        `).join('')}
-                    </div>
-                    ` : `
-                    <p class="text-xs text-gray-400 italic">PPV conversion rates, revenue per message, and revenue per fan</p>
-                    `}
+                        </div>
+                    `).join('')}
                 </div>
-                
-                <!-- Top Improvement Opportunities -->
-                <div class="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-5 border border-orange-500/30">
-                    <h4 class="text-base font-bold text-orange-400 mb-3 flex items-center">
-                        <i class="fas fa-wrench mr-2"></i>Top Improvements
-                    </h4>
-                    ${smartInsights.improvements && smartInsights.improvements.length > 0 ? `
-                    <div class="space-y-2">
-                        ${smartInsights.improvements.map(item => `
-                            <div class="p-3 bg-gray-800/30 rounded border-l-2 border-orange-500">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="text-xs font-bold text-orange-300">${item.issue}</div>
-                                    ${item.count > 0 ? `<div class="text-xs font-bold text-red-400">${item.count}</div>` : ''}
-                                </div>
-                                <div class="text-xs text-gray-300 mb-1">${item.detail}</div>
-                                <div class="text-xs text-cyan-400"><i class="fas fa-lightbulb mr-1"></i>${item.action}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : `
-                    <p class="text-xs text-gray-400 italic">Specific areas for improvement with actionable recommendations</p>
-                    `}
-                </div>
-                
-                <!-- What's Working Well -->
-                <div class="bg-gradient-to-br from-green-900/20 to-teal-900/20 rounded-lg p-5 border border-green-500/30">
-                    <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
-                        <i class="fas fa-star mr-2"></i>What's Working Well
-                    </h4>
-                    ${smartInsights.strengths && smartInsights.strengths.length > 0 ? `
-                    <div class="space-y-2">
-                        ${smartInsights.strengths.map(item => `
-                            <div class="p-3 bg-gray-800/30 rounded border-l-2 border-green-500">
-                                <div class="text-xs font-bold text-green-300 mb-1"><i class="fas fa-check-circle mr-1"></i>${item.strength}</div>
-                                <div class="text-xs text-gray-300 mb-1">${item.detail}</div>
-                                <div class="text-xs text-gray-400 italic">${item.impact}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : `
-                    <p class="text-xs text-gray-400 italic">Key strengths and what's driving your success</p>
-                    `}
-                </div>
-                
-                <!-- Revenue Impact (if exists) OR Quality vs Performance -->
-                ${smartInsights.revenueImpact && smartInsights.revenueImpact.length > 0 ? `
-                <div class="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-lg p-5 border border-green-500/30">
-                    <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
-                        <i class="fas fa-dollar-sign mr-2"></i>Revenue Impact
-                    </h4>
-                    <div class="space-y-2">
-                        ${smartInsights.revenueImpact.map(item => `
-                            <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 ${item.impact === 'positive' ? 'border-green-500' : 'border-red-500'}">
-                                <i class="fas ${item.impact === 'positive' ? 'fa-arrow-up text-green-400' : 'fa-arrow-down text-red-400'} mr-2 mt-1"></i>
-                                <div>
-                                    <div class="text-xs font-bold ${item.impact === 'positive' ? 'text-green-300' : 'text-red-300'} mb-1">${item.metric}</div>
-                                    <div class="text-xs text-gray-300">${item.value}</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : smartInsights.qualityVsPerformance && smartInsights.qualityVsPerformance.length > 0 ? `
-                <div class="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg p-5 border border-purple-500/30">
-                    <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center">
-                        <i class="fas fa-trophy mr-2"></i>Quality vs Performance
-                    </h4>
-                    <div class="space-y-2">
-                        ${smartInsights.qualityVsPerformance.map(item => `
-                            <div class="p-3 bg-gray-800/30 rounded border-l-2 border-purple-500">
-                                <div class="text-xs font-bold text-purple-300 mb-1">${item.metric}</div>
-                                <div class="text-xs text-gray-300 mb-1">${item.value}</div>
-                                ${item.context ? `<div class="text-xs text-gray-400 italic">${item.context}</div>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
             </div>
+            ` : ''}
+            
+            <!-- 🔥 IMPROVEMENT OPPORTUNITIES -->
+            ${improvements && improvements.length > 0 ? `
+            <div class="bg-gradient-to-br from-red-900/30 via-orange-900/20 to-yellow-900/20 rounded-xl p-6 border border-orange-500/40">
+                <div class="flex items-center mb-5">
+                    <div class="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-wrench text-orange-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">🔥 Quick Wins</h4>
+                        <p class="text-xs text-gray-400">Fix these specific issues now</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${improvements.map((item, idx) => `
+                        <div class="bg-gray-800/40 rounded-lg p-4 border-l-4 border-orange-500 hover:bg-gray-800/60 transition-all">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center text-orange-400 font-bold text-sm">${idx + 1}</div>
+                                ${item.count > 0 ? `<div class="px-2 py-1 bg-red-500/20 rounded text-xs font-bold text-red-400">${item.count}</div>` : ''}
+                            </div>
+                            <h5 class="text-sm font-bold text-orange-300 mb-2">${item.issue}</h5>
+                            <p class="text-xs text-gray-300 mb-2 leading-relaxed">${item.detail}</p>
+                            <div class="flex items-start">
+                                <i class="fas fa-lightbulb text-cyan-400 text-xs mr-2 mt-0.5"></i>
+                                <p class="text-xs text-cyan-400 leading-relaxed">${item.action}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- ✅ WHAT'S WORKING WELL -->
+            ${strengths && strengths.length > 0 ? `
+            <div class="bg-gradient-to-br from-green-900/30 via-emerald-900/20 to-teal-900/20 rounded-xl p-6 border border-green-500/40">
+                <div class="flex items-center mb-5">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-star text-green-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">✅ Your Strengths</h4>
+                        <p class="text-xs text-gray-400">What's driving your success</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${strengths.map((item, idx) => `
+                        <div class="bg-gray-800/40 rounded-lg p-4 border-l-4 border-green-500 hover:bg-gray-800/60 transition-all">
+                            <div class="flex items-center mb-3">
+                                <div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-check text-green-400 text-sm"></i>
+                                </div>
+                                <h5 class="text-sm font-bold text-green-300">${item.strength}</h5>
+                            </div>
+                            <p class="text-xs text-gray-300 mb-2 leading-relaxed">${item.detail}</p>
+                            <div class="flex items-start">
+                                <i class="fas fa-arrow-right text-green-400 text-xs mr-2 mt-0.5"></i>
+                                <p class="text-xs text-gray-400 italic leading-relaxed">${item.impact}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
         </div>
     `;
