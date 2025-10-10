@@ -2578,17 +2578,38 @@ let currentDashboardInterval = '7d';
 let currentAnalyticsInterval = '7d';
 let currentModalContext = null; // Track which page opened the modal
 
+// Independent custom date ranges for each dashboard
+let dashboardCustomDates = null;
+let analyticsCustomDates = null;
+let marketingCustomDates = null;
+let aiAnalysisCustomDates = null;
+let teamDashCustomDates = null;
+let teamComparisonCustomDates = null;
+let performanceCustomDates = null;
+
 window.setDashboardInterval = function(interval) {
     currentDashboardInterval = interval;
     
     // Update button styles
     document.querySelectorAll('.dashboard-interval-btn').forEach(btn => {
-        if (btn.getAttribute('data-interval') === interval) {
+        const btnInterval = btn.getAttribute('data-interval');
+        if (btnInterval === interval) {
             btn.classList.remove('bg-gray-700', 'text-gray-300');
             btn.classList.add('bg-blue-600', 'text-white');
+            
+            // Update button text if custom
+            if (interval === 'custom' && dashboardCustomDates) {
+                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                btn.innerHTML = `<i class="fas fa-calendar mr-2"></i>${formatDate(dashboardCustomDates.start)} - ${formatDate(dashboardCustomDates.end)}`;
+            }
         } else {
             btn.classList.remove('bg-blue-600', 'text-white');
             btn.classList.add('bg-gray-700', 'text-gray-300');
+            
+            // Reset custom button text
+            if (btnInterval === 'custom') {
+                btn.innerHTML = '<i class="fas fa-calendar mr-2"></i>Custom';
+            }
         }
     });
     
@@ -2597,34 +2618,8 @@ window.setDashboardInterval = function(interval) {
         currentModalContext = 'dashboard';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        // Calculate date range based on interval
-        const today = new Date();
-        let startDate;
-        
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        currentFilterType = 'custom';
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
-        
+        // Clear custom dates when selecting preset
+        dashboardCustomDates = null;
         loadDashboardData();
     }
 }
@@ -2897,26 +2892,53 @@ function applyModalDateFilter() {
         return;
     }
     
-    currentFilterType = 'custom';
-    customDateRange = {
-        start: startDate,
-        end: endDate
-    };
+    // Store dates in the correct independent variable based on context
+    const dateObj = { start: startDate, end: endDate };
     
-    closeCustomDateModal();
-    
-    // Load data based on context
     if (currentModalContext === 'dashboard') {
+        dashboardCustomDates = dateObj;
+        currentDashboardInterval = 'custom';
+        setDashboardInterval('custom'); // This will update button text
         loadDashboardData();
     } else if (currentModalContext === 'analytics') {
+        analyticsCustomDates = dateObj;
+        currentAnalyticsInterval = 'custom';
+        setAnalyticsInterval('custom');
         loadAnalyticsData();
     } else if (currentModalContext === 'marketing') {
+        marketingCustomDates = dateObj;
+        currentMarketingInterval = 'custom';
+        setMarketingInterval('custom');
         loadMarketingDashboard();
     } else if (currentModalContext === 'team') {
+        teamDashCustomDates = dateObj;
+        currentTeamDashInterval = 'custom';
+        setTeamDashInterval('custom');
         loadTeamDashboard();
     } else if (currentModalContext === 'team-comparison') {
+        teamComparisonCustomDates = dateObj;
+        currentTeamComparisonInterval = 'custom';
+        setTeamComparisonInterval('custom');
         loadTeamComparisonData();
+    } else if (currentModalContext === 'ai-analysis') {
+        aiAnalysisCustomDates = dateObj;
+        currentAIInterval = 'custom';
+        setAIInterval('custom');
+        // Reload AI analysis based on which section is open
+        const agencySection = document.getElementById('agencyAnalysisSection');
+        if (agencySection && !agencySection.classList.contains('hidden')) {
+            runAgencyAnalysis();
+        } else {
+            runChatterAnalysis();
+        }
+    } else if (currentModalContext === 'performance') {
+        performanceCustomDates = dateObj;
+        currentPerformanceInterval = 'custom';
+        setPerformanceInterval('custom');
+        loadPerformanceData();
     }
+    
+    closeCustomDateModal();
 }
 
 function applyCustomDateFilter() {
@@ -3002,23 +3024,34 @@ function initializeDatePicker() {
 
 async function loadDashboardData() {
     try {
-        // Build URL based on filter type
-        let url;
-        if (currentFilterType === 'custom' && customDateRange) {
-            // NEW: Custom date range
-            url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange.start}&customEnd=${customDateRange.end}&_t=${Date.now()}`;
-        } else if (currentFilterType === 'week' && currentWeekFilter) {
-            url = `/api/analytics/dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}&_t=${Date.now()}`;
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            url = `/api/analytics/dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}&_t=${Date.now()}`;
+        // Use currentDashboardInterval and calculate date range
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentDashboardInterval === 'custom' && dashboardCustomDates) {
+            startDate = new Date(dashboardCustomDates.start);
+            endDate = new Date(dashboardCustomDates.end);
+        } else if (currentDashboardInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentDashboardInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentDashboardInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
         } else {
-            // Fallback to old behavior
-            url = `/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`;
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
         }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/dashboard?interval=${currentDashboardInterval}&startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&_t=${Date.now()}`;
+        
         console.log('Loading dashboard with URL:', url);
-        console.log('Filter type:', currentFilterType);
-        console.log('Week filter:', currentWeekFilter);
-        console.log('Month filter:', currentMonthFilter);
+        console.log('Dashboard interval:', currentDashboardInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         
         // Fetch real data from API
         const response = await fetch(url, {
