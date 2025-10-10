@@ -8276,7 +8276,7 @@ function createDailyReportSection() {
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">PPV Sales</h3>
-                        <button type="button" id="addPPVSale" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <button type="button" onclick="addPPVSaleField()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Sale
                         </button>
                     </div>
@@ -8285,8 +8285,8 @@ function createDailyReportSection() {
                 </div>
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Tips</h3>
-                        <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <h3 class="text-lg font-semibold">Tips (Optional)</h3>
+                        <button type="button" onclick="addTipField()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Tip
                         </button>
                     </div>
@@ -8300,7 +8300,7 @@ function createDailyReportSection() {
                               placeholder="Any additional notes about your shift..."></textarea>
                 </div>
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleDailyReportSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Save Report
                     </button>
                 </div>
@@ -9939,6 +9939,87 @@ function removePPVSale(button) {
 
 function removeTip(button) {
     button.closest('.tip-entry').remove();
+}
+
+// Direct handler for Daily Report button (bypasses event delegation)
+async function handleDailyReportSubmitDirect() {
+    console.log('🎯 Daily Report direct button handler called!');
+
+    const data = {
+        date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        shift: document.getElementById('reportShift')?.value || 'morning',
+        fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
+        avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
+        notes: document.getElementById('reportNotes')?.value || '',
+        ppvSales: [],
+        tips: []
+    };
+
+    // Collect PPV sales with traffic source and VIP fan
+    const ppvContainer = document.getElementById('ppvSalesContainer');
+    const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
+    ppvEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const source = entry.querySelector('select[name="ppvSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        
+        if (amount) {
+            const saleData = {
+                amount: parseFloat(amount)
+            };
+            if (source) saleData.trafficSource = source;
+            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            
+            data.ppvSales.push(saleData);
+        }
+    });
+
+    // Collect tips with traffic source and VIP fan (OPTIONAL)
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
+    tipEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const source = entry.querySelector('select[name="tipSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        
+        if (amount) {
+            const tipData = {
+                amount: parseFloat(amount)
+            };
+            if (source) tipData.trafficSource = source;
+            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            
+            data.tips.push(tipData);
+        }
+    });
+
+    console.log('📊 Submitting daily report:', data);
+
+    try {
+        const response = await fetch('/api/daily-reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Daily report saved successfully!', 'success');
+            document.getElementById('dailyReportForm')?.reset();
+            if (ppvContainer) ppvContainer.innerHTML = '';
+            if (tipsContainer) tipsContainer.innerHTML = '';
+            console.log('✅ Daily report saved:', result);
+        } else {
+            showNotification(result.error || 'Failed to save report', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting daily report:', error);
+        showNotification('Connection error. Please try again.', 'error');
+    }
 }
 
 // Daily Report Form Submission
