@@ -6092,7 +6092,15 @@ function generateAnalysisSummary(data) {
     guidelinesScore,
     unlockRate,
     punctuationCount,
-    spellingCount
+    spellingCount,
+    revenuePerMessage,
+    revenuePerFan,
+    messagesPerFan
+  });
+  console.log('📊 Team data:', {
+    avgRevenue: team.avgRevenue,
+    avgUnlockRate: team.avgUnlockRate,
+    chatterCount: team.chatterCount
   });
   
   // Generate summary paragraph
@@ -6299,7 +6307,7 @@ function generateAnalysisSummary(data) {
   }
   
   // 9. Always add conversion efficiency baseline
-  if (messagesSent > 0 && revenue > 0 && ppvsSent > 0) {
+  if (messagesSent > 0 && revenue > 0 && ppvsSent > 0 && fansChatted > 0) {
     insights.deepInsights.push({
       type: 'neutral',
       icon: 'fa-calculator',
@@ -6309,6 +6317,14 @@ function generateAnalysisSummary(data) {
       action: 'Focus on improving the weakest link in your funnel'
     });
   }
+  
+  // DEBUG: Log what was generated
+  console.log('✅ Deep insights generated:', insights.deepInsights.length);
+  console.log('✅ Improvements generated:', insights.improvements.length);
+  console.log('✅ Strengths generated:', insights.strengths.length);
+  insights.deepInsights.forEach((item, idx) => {
+    console.log(`   ${idx + 1}. [${item.type}] ${item.title}`);
+  });
   
   // Improvements (always show something meaningful)
   if (punctuationCount > 50 && messagesSent > 0) {
