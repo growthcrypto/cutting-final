@@ -2440,11 +2440,11 @@ For engagementMetrics (REQUIRED - must analyze actual message content):
 - fanRetention: Analyze fan retention approach (e.g., "builds relationships", "focuses on transactions")
 
 For grammarBreakdown:
-- spellingErrors: Find and count ONLY real spelling mistakes (actual typos, wrong words). DO NOT flag informal words like 'u', 'ur', 'im', 'dont', 'cant', 'heyy', 'okayy', etc. These are CORRECT for OnlyFans. Provide specific examples and counts.
-- grammarIssues: Find and count ONLY real grammar mistakes (wrong verb tenses, sentence structure issues). DO NOT flag missing apostrophes or informal contractions - they are CORRECT. Examples: 'im', 'dont', 'cant', 'youre' are all CORRECT. Provide specific examples and counts.
-- punctuationProblems: Find and count ALL messages that USE formal punctuation (periods at end of sentences, formal commas). Messages WITHOUT periods are CORRECT. Provide specific examples and counts.
+- spellingErrors: Find and count ONLY real spelling mistakes (actual typos, wrong words). DO NOT flag informal words like 'u', 'ur', 'im', 'dont', 'cant', 'heyy', 'okayy', etc. These are CORRECT for OnlyFans. Provide ONLY the count and a brief summary. DO NOT include specific message examples.
+- grammarIssues: Find and count ONLY real grammar mistakes (wrong verb tenses, sentence structure issues). DO NOT flag missing apostrophes or informal contractions - they are CORRECT. Examples: 'im', 'dont', 'cant', 'youre' are all CORRECT. Provide ONLY the count and a brief summary. DO NOT include specific message examples.
+- punctuationProblems: Find and count ALL messages that USE formal punctuation (periods at end of sentences, formal commas). Messages WITHOUT periods are CORRECT. Provide ONLY the count. DO NOT include specific message examples.
 - informalLanguage: Note that informal language is CORRECT and ENCOURAGED for OnlyFans. Count how many messages use informal patterns like 'u', 'ur', 'im', extended words ('heyy', 'okayy'), lowercase 'i', no apostrophes. Report this as a POSITIVE: "Excellent use of informal language in X out of Y messages, which is appropriate for OnlyFans."
-- scoreExplanation: Explain the score with specific examples and total error counts. Remember: informal language, missing apostrophes, and no periods are CORRECT.
+- scoreExplanation: Explain the score with total error counts. Remember: informal language, missing apostrophes, and no periods are CORRECT. DO NOT include specific message examples.
 
 For guidelines: Use ONLY the GUIDELINES_V2_JSON format with exact uploaded guideline titles from the CUSTOM GUIDELINES section above. DO NOT use generic categories.
 
@@ -6050,6 +6050,199 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
   }
 });
 
+// Helper function to generate smart analysis summary and insights
+function generateAnalysisSummary(data) {
+  const insights = {
+    summary: '',
+    revenueImpact: [],
+    conversionEfficiency: [],
+    qualityVsPerformance: [],
+    improvements: [],
+    strengths: []
+  };
+  
+  // Extract key metrics
+  const chatter = data.chatter || {};
+  const team = data.team || {};
+  const overallScore = chatter.overallScore || 0;
+  const grammarScore = chatter.grammarScore || 0;
+  const guidelinesScore = chatter.guidelinesScore || 0;
+  const revenue = data.revenue || 0;
+  const ppvsSent = data.ppvsSent || 0;
+  const ppvsUnlocked = data.ppvsUnlocked || 0;
+  const messagesSent = data.messagesSent || 0;
+  const fansChatted = data.fansChatted || 0;
+  const unlockRate = ppvsSent > 0 ? ((ppvsUnlocked / ppvsSent) * 100).toFixed(1) : 0;
+  const revenuePerMessage = messagesSent > 0 ? (revenue / messagesSent).toFixed(2) : 0;
+  const revenuePerFan = fansChatted > 0 ? (revenue / fansChatted).toFixed(2) : 0;
+  
+  // Parse grammar breakdown for issues
+  const grammarBreakdown = data.grammarBreakdown || {};
+  const spellingCount = parseInt(grammarBreakdown.spellingErrors?.match(/(\d+)/)?.[1] || '0');
+  const grammarIssuesCount = parseInt(grammarBreakdown.grammarIssues?.match(/(\d+)/)?.[1] || '0');
+  const punctuationCount = parseInt(grammarBreakdown.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
+  
+  // Generate summary paragraph
+  let summaryParts = [];
+  
+  if (overallScore > 0) {
+    summaryParts.push(`${data.chatter.name} demonstrates ${overallScore >= 90 ? 'excellent' : overallScore >= 80 ? 'strong' : overallScore >= 70 ? 'good' : 'developing'} message quality with a ${overallScore}/100 overall score`);
+    
+    if (guidelinesScore === 100) {
+      summaryParts.push('perfect guideline compliance');
+    } else if (guidelinesScore >= 90) {
+      summaryParts.push('strong guideline adherence');
+    }
+  }
+  
+  if (revenue > 0 && messagesSent > 0 && fansChatted > 0) {
+    summaryParts.push(`With ${messagesSent} messages generating $${revenue} revenue across ${fansChatted} fans, ${unlockRate > 0 ? `achieving a ${unlockRate}% unlock rate on ${ppvsSent} PPVs` : 'building relationships with fans'}`);
+  }
+  
+  // Add primary improvement area if exists
+  if (punctuationCount > 50) {
+    summaryParts.push(`The primary area for improvement is punctuation usage, with ${punctuationCount} instances of formal punctuation that could be reduced to enhance the casual, engaging tone`);
+  } else if (spellingCount > 5) {
+    summaryParts.push(`Focus on reducing ${spellingCount} spelling errors to improve message professionalism`);
+  } else if (grammarIssuesCount > 5) {
+    summaryParts.push(`Address ${grammarIssuesCount} grammar issues to enhance message clarity`);
+  } else if (overallScore >= 90) {
+    summaryParts.push('Continue maintaining this high-quality standard');
+  }
+  
+  insights.summary = summaryParts.join('. ') + '.';
+  
+  // Revenue Impact Analysis (only if meaningful)
+  if (unlockRate > 0 && team.avgUnlockRate > 0) {
+    const unlockRateDiff = (parseFloat(unlockRate) - team.avgUnlockRate).toFixed(1);
+    if (Math.abs(unlockRateDiff) > 5) {
+      insights.revenueImpact.push({
+        metric: 'Unlock Rate Performance',
+        value: `${unlockRate}% unlock rate is ${unlockRateDiff > 0 ? '+' : ''}${unlockRateDiff}% ${unlockRateDiff > 0 ? 'above' : 'below'} team average`,
+        impact: unlockRateDiff > 0 ? 'positive' : 'negative'
+      });
+    }
+  }
+  
+  if (revenue > 0 && team.avgRevenue > 0) {
+    const revenueDiff = ((revenue / team.avgRevenue - 1) * 100).toFixed(0);
+    if (Math.abs(revenueDiff) > 10) {
+      insights.revenueImpact.push({
+        metric: 'Revenue Performance',
+        value: `$${revenue} revenue is ${revenueDiff > 0 ? '+' : ''}${revenueDiff}% ${revenueDiff > 0 ? 'above' : 'below'} team average`,
+        impact: revenueDiff > 0 ? 'positive' : 'negative'
+      });
+    }
+  }
+  
+  // Conversion Efficiency (always show if we have data)
+  if (ppvsSent > 0 && ppvsUnlocked >= 0) {
+    insights.conversionEfficiency.push({
+      metric: 'PPV Conversion',
+      value: `${ppvsSent} PPVs sent → ${ppvsUnlocked} unlocked = ${unlockRate}% unlock rate`
+    });
+  }
+  
+  if (messagesSent > 0 && revenue > 0) {
+    insights.conversionEfficiency.push({
+      metric: 'Message Efficiency',
+      value: `${messagesSent} messages → $${revenue} revenue = $${revenuePerMessage} per message`
+    });
+  }
+  
+  if (fansChatted > 0 && revenue > 0) {
+    insights.conversionEfficiency.push({
+      metric: 'Fan Value',
+      value: `${fansChatted} fans chatted → $${revenuePerFan} average revenue per fan`
+    });
+  }
+  
+  // Quality vs Performance (only if we have team data)
+  if (grammarScore > 0 && unlockRate > 0 && team.avgUnlockRate > 0) {
+    const scoreTier = grammarScore >= 85 ? 'high' : grammarScore >= 70 ? 'medium' : 'developing';
+    insights.qualityVsPerformance.push({
+      metric: 'Grammar Impact',
+      value: `${grammarScore}/100 grammar score with ${unlockRate}% unlock rate`,
+      context: scoreTier === 'high' ? 'Strong message quality correlates with above-average performance' : 'Improving grammar could boost conversion rates'
+    });
+  }
+  
+  if (guidelinesScore === 100) {
+    insights.qualityVsPerformance.push({
+      metric: 'Guideline Compliance',
+      value: '0 guideline violations = premium message quality',
+      context: 'Perfect compliance builds fan trust and engagement'
+    });
+  }
+  
+  // Improvements (only show real issues)
+  if (punctuationCount > 50) {
+    const estimatedImpact = (punctuationCount / messagesSent * 100).toFixed(1);
+    insights.improvements.push({
+      issue: 'Formal Punctuation',
+      count: punctuationCount,
+      detail: `${punctuationCount} messages use formal punctuation (periods, commas)`,
+      action: 'Remove periods from casual messages to enhance informal, engaging tone',
+      impact: `Affects ${estimatedImpact}% of messages`
+    });
+  }
+  
+  if (spellingCount > 0) {
+    insights.improvements.push({
+      issue: 'Spelling Errors',
+      count: spellingCount,
+      detail: `${spellingCount} spelling errors detected`,
+      action: 'Review and correct typos for better professionalism',
+      impact: 'Small but noticeable quality improvement'
+    });
+  }
+  
+  if (grammarIssuesCount > 0) {
+    insights.improvements.push({
+      issue: 'Grammar Issues',
+      count: grammarIssuesCount,
+      detail: `${grammarIssuesCount} grammar mistakes found`,
+      action: 'Fix verb tenses and sentence structure',
+      impact: 'Improves message clarity and professionalism'
+    });
+  }
+  
+  // Strengths (only show real strengths)
+  if (guidelinesScore === 100) {
+    insights.strengths.push({
+      strength: 'Perfect Guideline Compliance',
+      detail: '0 violations across all guidelines',
+      impact: 'Demonstrates excellent understanding of best practices'
+    });
+  }
+  
+  if (unlockRate > 50 && ppvsSent > 10) {
+    insights.strengths.push({
+      strength: 'High Unlock Rate',
+      detail: `${unlockRate}% unlock rate on ${ppvsSent} PPVs`,
+      impact: 'Your captions are highly effective at driving purchases'
+    });
+  }
+  
+  if (grammarBreakdown.informalLanguage?.includes('Excellent')) {
+    insights.strengths.push({
+      strength: 'Excellent Informal Communication',
+      detail: 'Consistent use of casual, engaging language',
+      impact: 'Perfect tone for OnlyFans platform'
+    });
+  }
+  
+  if (revenuePerMessage > 1 && messagesSent > 100) {
+    insights.strengths.push({
+      strength: 'High Message Efficiency',
+      detail: `$${revenuePerMessage} revenue per message`,
+      impact: 'Excellent balance of engagement and monetization'
+    });
+  }
+  
+  return insights;
+}
+
 // ENHANCED INDIVIDUAL CHATTER ANALYSIS
 app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
@@ -6344,6 +6537,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       avgResponseTime: chatterReports.length > 0 ? chatterReports.reduce((sum, r) => sum + (r.avgResponseTime || 0), 0) / chatterReports.length : 0,
       fansChatted: chatterFansChatted
     };
+    
+    // Generate smart analysis summary and insights
+    const analysisSummary = generateAnalysisSummary(response);
+    response.analysisSummary = analysisSummary.summary;
+    response.smartInsights = analysisSummary.insights;
     
     res.json(response);
   } catch (error) {

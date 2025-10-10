@@ -5031,6 +5031,10 @@ function renderNewChatterAnalysis(data) {
     // Parse guidelines by category
     const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown);
     
+    // Get smart insights
+    const smartInsights = data.smartInsights || {};
+    const analysisSummary = data.analysisSummary || '';
+    
     container.innerHTML = `
         <div class="space-y-4">
             
@@ -5049,6 +5053,16 @@ function renderNewChatterAnalysis(data) {
                     </div>
                 </div>
             </div>
+            
+            <!-- Analysis Summary -->
+            ${analysisSummary ? `
+            <div class="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 rounded-lg p-6 border border-purple-500/30">
+                <h4 class="text-lg font-bold text-purple-300 mb-3 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>Analysis Summary
+                </h4>
+                <p class="text-gray-300 leading-relaxed">${analysisSummary}</p>
+            </div>
+            ` : ''}
             
             <!-- Grammar & Guidelines Scores Side by Side -->
             <div class="grid grid-cols-2 gap-4">
@@ -5154,67 +5168,96 @@ function renderNewChatterAnalysis(data) {
                     </div>
                 </div>
                 ` : ''}
-                
-                <!-- Issues to Fix -->
-                ${data.weakPoints && data.weakPoints.length > 0 ? `
-                <div class="bg-gradient-to-br from-red-600/10 to-orange-600/10 rounded-lg p-5 border border-red-500/30">
-                    <h4 class="text-base font-bold text-red-400 mb-3 flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>Issues to Fix
-                    </h4>
-                    <div class="space-y-2">
-                        ${data.weakPoints.map(issue => `
-                            <div class="text-xs text-gray-300 leading-relaxed p-2 bg-gray-800/30 rounded">
-                                <i class="fas fa-times text-red-400 mr-2"></i>${issue}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
             </div>
             
-            <!-- Opportunities & ROI -->
-            ${data.opportunities && data.opportunities.length > 0 ? `
-            <div class="bg-gradient-to-br from-purple-600/10 to-pink-600/10 rounded-lg p-5 border border-purple-500/30">
-                <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center">
-                    <i class="fas fa-rocket mr-2"></i>Growth Opportunities
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${data.opportunities.map(opp => `
-                        <div class="text-xs text-gray-300 p-3 bg-gray-800/30 rounded border-l-2 border-purple-500">
-                            ${opp}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-            
-            <!-- Action Plan -->
-            ${data.recommendations && data.recommendations.length > 0 ? `
-            <div class="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 rounded-lg p-5 border border-blue-500/30">
-                <h4 class="text-base font-bold text-blue-400 mb-3 flex items-center">
-                    <i class="fas fa-clipboard-check mr-2"></i>Action Plan
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${data.recommendations.map((rec, i) => `
-                        <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 border-blue-500">
-                            <span class="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold mr-2 shrink-0">${i+1}</span>
-                            <span class="text-xs text-gray-300">${rec}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-            
-            <!-- ROI Calculations -->
-            ${data.roiCalculations && data.roiCalculations.length > 0 ? `
-            <div class="bg-gradient-to-br from-green-600/10 to-emerald-600/10 rounded-lg p-5 border border-green-500/30">
+            <!-- Smart Insights Sections -->
+            ${smartInsights.revenueImpact && smartInsights.revenueImpact.length > 0 ? `
+            <div class="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-lg p-5 border border-green-500/30">
                 <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
-                    <i class="fas fa-dollar-sign mr-2"></i>ROI Predictions
+                    <i class="fas fa-dollar-sign mr-2"></i>Revenue Impact Analysis
                 </h4>
                 <div class="space-y-2">
-                    ${data.roiCalculations.map(roi => `
-                        <div class="text-xs text-gray-300 p-3 bg-gray-800/30 rounded border-l-2 border-green-500">
-                            ${roi}
+                    ${smartInsights.revenueImpact.map(item => `
+                        <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 ${item.impact === 'positive' ? 'border-green-500' : 'border-red-500'}">
+                            <i class="fas ${item.impact === 'positive' ? 'fa-arrow-up text-green-400' : 'fa-arrow-down text-red-400'} mr-2 mt-1"></i>
+                            <div>
+                                <div class="text-xs font-bold ${item.impact === 'positive' ? 'text-green-300' : 'text-red-300'} mb-1">${item.metric}</div>
+                                <div class="text-xs text-gray-300">${item.value}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${smartInsights.conversionEfficiency && smartInsights.conversionEfficiency.length > 0 ? `
+            <div class="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-lg p-5 border border-cyan-500/30">
+                <h4 class="text-base font-bold text-cyan-400 mb-3 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>Conversion Efficiency
+                </h4>
+                <div class="space-y-2">
+                    ${smartInsights.conversionEfficiency.map(item => `
+                        <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 border-cyan-500">
+                            <i class="fas fa-arrow-right text-cyan-400 mr-2 mt-1"></i>
+                            <div>
+                                <div class="text-xs font-bold text-cyan-300 mb-1">${item.metric}</div>
+                                <div class="text-xs text-gray-300">${item.value}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${smartInsights.qualityVsPerformance && smartInsights.qualityVsPerformance.length > 0 ? `
+            <div class="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg p-5 border border-purple-500/30">
+                <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center">
+                    <i class="fas fa-trophy mr-2"></i>Message Quality vs Performance
+                </h4>
+                <div class="space-y-2">
+                    ${smartInsights.qualityVsPerformance.map(item => `
+                        <div class="p-3 bg-gray-800/30 rounded border-l-2 border-purple-500">
+                            <div class="text-xs font-bold text-purple-300 mb-1">${item.metric}</div>
+                            <div class="text-xs text-gray-300 mb-2">${item.value}</div>
+                            ${item.context ? `<div class="text-xs text-gray-400 italic">${item.context}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${smartInsights.improvements && smartInsights.improvements.length > 0 ? `
+            <div class="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-5 border border-orange-500/30">
+                <h4 class="text-base font-bold text-orange-400 mb-3 flex items-center">
+                    <i class="fas fa-wrench mr-2"></i>Top Improvement Opportunities
+                </h4>
+                <div class="space-y-2">
+                    ${smartInsights.improvements.map(item => `
+                        <div class="p-3 bg-gray-800/30 rounded border-l-2 border-orange-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs font-bold text-orange-300">${item.issue}</div>
+                                <div class="text-xs font-bold text-red-400">${item.count} errors</div>
+                            </div>
+                            <div class="text-xs text-gray-300 mb-1">${item.detail}</div>
+                            <div class="text-xs text-cyan-400 mb-1"><i class="fas fa-lightbulb mr-1"></i>${item.action}</div>
+                            <div class="text-xs text-gray-500 italic">${item.impact}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${smartInsights.strengths && smartInsights.strengths.length > 0 ? `
+            <div class="bg-gradient-to-br from-green-900/20 to-teal-900/20 rounded-lg p-5 border border-green-500/30">
+                <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
+                    <i class="fas fa-star mr-2"></i>What's Working Well
+                </h4>
+                <div class="space-y-2">
+                    ${smartInsights.strengths.map(item => `
+                        <div class="p-3 bg-gray-800/30 rounded border-l-2 border-green-500">
+                            <div class="text-xs font-bold text-green-300 mb-1"><i class="fas fa-check-circle mr-1"></i>${item.strength}</div>
+                            <div class="text-xs text-gray-300 mb-1">${item.detail}</div>
+                            <div class="text-xs text-gray-400 italic">${item.impact}</div>
                         </div>
                     `).join('')}
                 </div>
