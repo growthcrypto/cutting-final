@@ -5939,8 +5939,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     const allReports = await DailyChatterReport.find(dateQuery);
     
     // Get message analysis for this chatter (try to find one that overlaps with date range)
+    // Use case-insensitive search
+    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
+    
     let messageAnalysis = await MessageAnalysis.findOne({
-      chatterName: chatterName,
+      chatterName: chatterNameRegex,
       weekStartDate: { $lte: end },
       weekEndDate: { $gte: start }
     }).sort({ createdAt: -1 });
@@ -5948,9 +5951,16 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     // Fallback: Get ANY analysis for this chatter if no overlap found
     if (!messageAnalysis) {
       messageAnalysis = await MessageAnalysis.findOne({
-        chatterName: chatterName
+        chatterName: chatterNameRegex
       }).sort({ createdAt: -1 });
       console.log('⚠️ No message analysis found for date range, using latest available');
+    }
+    
+    console.log('💬 MessageAnalysis found:', messageAnalysis ? 'YES' : 'NO');
+    if (messageAnalysis) {
+      console.log('   - Overall Score:', messageAnalysis.overallScore);
+      console.log('   - Grammar Score:', messageAnalysis.grammarScore);
+      console.log('   - Guidelines Score:', messageAnalysis.guidelinesScore);
     }
     
     // Calculate this chatter's metrics (use ChatterPerformance as fallback)
