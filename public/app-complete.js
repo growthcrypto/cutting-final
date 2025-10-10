@@ -4907,9 +4907,17 @@ function renderChatterAnalysisResults(data) {
                             </div>
                         </div>
                         <div class="text-center p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/30">
-                            <div class="text-4xl font-bold text-green-400">${data.overallScore || 0}</div>
-                            <div class="text-sm text-gray-300 font-medium">Overall Score</div>
-                            <div class="text-xs text-green-400 mt-1">Performance Rating</div>
+                            ${data.overallScore ? `
+                                <div class="text-4xl font-bold text-green-400">${data.overallScore}</div>
+                                <div class="text-sm text-gray-300 font-medium">Overall Score</div>
+                                <div class="text-xs text-green-400 mt-1">Performance Rating</div>
+                            ` : `
+                                <div class="text-2xl font-bold text-yellow-400">
+                                    <i class="fas fa-file-upload mb-2"></i>
+                                </div>
+                                <div class="text-sm text-gray-300 font-medium">No Message Analysis</div>
+                                <div class="text-xs text-yellow-400 mt-1">Upload messages to see scores</div>
+                            `}
                         </div>
                     </div>
                 </div>

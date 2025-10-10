@@ -5938,10 +5938,20 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     const allPurchases = await FanPurchase.find(dateQuery).populate('trafficSource');
     const allReports = await DailyChatterReport.find(dateQuery);
     
-    // Get message analysis for this chatter
-    const messageAnalysis = await MessageAnalysis.findOne({
-      chatterName: chatterName
+    // Get message analysis for this chatter (try to find one that overlaps with date range)
+    let messageAnalysis = await MessageAnalysis.findOne({
+      chatterName: chatterName,
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start }
     }).sort({ createdAt: -1 });
+    
+    // Fallback: Get ANY analysis for this chatter if no overlap found
+    if (!messageAnalysis) {
+      messageAnalysis = await MessageAnalysis.findOne({
+        chatterName: chatterName
+      }).sort({ createdAt: -1 });
+      console.log('⚠️ No message analysis found for date range, using latest available');
+    }
     
     // Calculate this chatter's metrics (use ChatterPerformance as fallback)
     let chatterRevenue, chatterPPVRevenue, chatterPPVCount, chatterAvgPPVPrice;
