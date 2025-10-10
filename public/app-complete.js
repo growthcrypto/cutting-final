@@ -2855,11 +2855,11 @@ window.setAIInterval = function(interval) {
     // Update button styles
     document.querySelectorAll('.ai-interval-btn').forEach(btn => {
         if (btn.getAttribute('data-interval') === interval) {
-            btn.classList.remove('bg-gray-700', 'text-gray-300');
-            btn.classList.add('bg-blue-600', 'text-white');
+            btn.classList.remove('bg-gray-700', 'text-gray-300', 'border-gray-600');
+            btn.classList.add('bg-cyan-600', 'text-white', 'border-cyan-500', 'border-2');
         } else {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('bg-gray-700', 'text-gray-300');
+            btn.classList.remove('bg-cyan-600', 'text-white', 'border-cyan-500', 'border-2');
+            btn.classList.add('bg-gray-700', 'text-gray-300', 'border-gray-600');
         }
     });
     
@@ -2872,9 +2872,13 @@ window.setAIInterval = function(interval) {
         
         console.log('✅ AI Analysis interval set to:', interval);
         
-        // Reload chatter analysis if one is selected
+        // Reload appropriate analysis based on what's visible
+        const agencySection = document.getElementById('agencyAnalysisSection');
         const chatterSelect = document.getElementById('chatterAnalysisSelect');
-        if (chatterSelect && chatterSelect.value) {
+        
+        if (agencySection && !agencySection.classList.contains('hidden')) {
+            runAgencyAnalysis();
+        } else if (chatterSelect && chatterSelect.value) {
             runChatterAnalysis();
         }
     }
@@ -4124,8 +4128,13 @@ function renderAgencyInsights(insights) {
 
 // Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
-    const resultsContainer = document.getElementById('aiAnalysisResults');
-    if (!resultsContainer) return;
+    const resultsContainer = document.getElementById('agencyAnalysisResults');
+    if (!resultsContainer) {
+        console.error('❌ agencyAnalysisResults container not found');
+        return;
+    }
+    
+    console.log('🔍 Running agency analysis...');
     
     // Show loading state with beautiful animation
     resultsContainer.innerHTML = `
@@ -4144,8 +4153,34 @@ async function runAgencyAnalysis() {
     `;
     
     try {
+        // Calculate date range based on current AI interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentAIInterval === 'custom' && aiAnalysisCustomDates) {
+            startDate = new Date(aiAnalysisCustomDates.start);
+            endDate = new Date(aiAnalysisCustomDates.end);
+        } else if (currentAIInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentAIInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentAIInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        
+        console.log('🔍 Agency Analysis date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
         // Get dashboard data for analysis
-        const url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange?.start || ''}&customEnd=${customDateRange?.end || ''}&_t=${Date.now()}`;
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
         
         const response = await fetch(url, {
             headers: {
@@ -7108,11 +7143,28 @@ function createAIAnalysisSection() {
                     </div>
                 </div>
                 
-                <div class="mb-6">
-                    <label class="block text-sm font-medium mb-2">Select Your Account</label>
-                    <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
-                        <option value="">Choose account to analyze...</option>
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Select Your Account</label>
+                        <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
+                            <option value="">Choose account to analyze...</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Time Period</label>
+                        <div class="flex gap-2">
+                            <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d" id="aiInterval7d">
+                                <i class="fas fa-calendar-week mr-2"></i>7 Days
+                            </button>
+                            <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d" id="aiInterval30d">
+                                <i class="fas fa-calendar-alt mr-2"></i>30 Days
+                            </button>
+                            <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom" id="aiIntervalCustom">
+                                <i class="fas fa-calendar mr-2"></i>Custom
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="chatterAnalysisResults" class="mt-6">
@@ -7207,15 +7259,34 @@ function createAIAnalysisSection() {
         <div id="agencyAnalysisSection" class="hidden">
             <div class="glass-card rounded-xl p-8 mb-8">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-white flex items-center">
-                        <i class="fas fa-building text-purple-400 mr-3"></i>
-                        Agency Performance Analysis
-                        <span class="ml-3 px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-medium rounded-full">COMPREHENSIVE</span>
-                    </h3>
+                    <div class="flex items-center">
+                        <h3 class="text-2xl font-bold text-white flex items-center">
+                            <i class="fas fa-building text-purple-400 mr-3"></i>
+                            Agency Performance Analysis
+                            <span class="ml-3 px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-medium rounded-full">COMPREHENSIVE</span>
+                        </h3>
+                    </div>
                     <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition">
                         <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
+                
+                <!-- Date Filter -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Time Period</label>
+                    <div class="flex gap-2">
+                        <button onclick="setAIInterval('7d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-cyan-600 text-white border-2 border-cyan-500 transition-all" data-interval="7d">
+                            <i class="fas fa-calendar-week mr-2"></i>7 Days
+                        </button>
+                        <button onclick="setAIInterval('30d')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="30d">
+                            <i class="fas fa-calendar-alt mr-2"></i>30 Days
+                        </button>
+                        <button onclick="setAIInterval('custom')" class="ai-interval-btn flex-1 px-4 py-3 rounded-xl bg-gray-700 text-gray-300 border border-gray-600 hover:bg-cyan-600/20 hover:border-cyan-500/50 transition-all" data-interval="custom">
+                            <i class="fas fa-calendar mr-2"></i>Custom
+                        </button>
+                    </div>
+                </div>
+                
                 <div id="agencyAnalysisResults" class="space-y-6">
                     <!-- Agency analysis results will be loaded here -->
                 </div>
