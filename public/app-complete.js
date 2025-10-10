@@ -11499,30 +11499,90 @@ async function loadMyMessageAnalysis() {
                 document.getElementById('myGuidelinesScore').textContent = '0';
             }
 
-            // Update strengths and weaknesses with enhanced styling
+            // Update strengths and weaknesses with SMART styling
             const strengthsDiv = document.getElementById('myMessageStrengths');
             const weaknessesDiv = document.getElementById('myMessageWeaknesses');
 
             if (analysis && analysis.strengths && analysis.strengths.length > 0) {
-                strengthsDiv.innerHTML = analysis.strengths.map(strength => 
-                    `<div class="flex items-start p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                        <i class="fas fa-check text-green-400 mr-3 mt-0.5 text-sm"></i>
-                        <span class="text-gray-300 text-sm leading-relaxed">${strength}</span>
-                    </div>`
-                ).join('');
+                // Group "Perfect compliance" items
+                const perfectCompliance = analysis.strengths.filter(s => s.includes('Perfect compliance with:'));
+                const otherStrengths = analysis.strengths.filter(s => !s.includes('Perfect compliance with:'));
+                
+                let html = '';
+                
+                // Show other strengths first (more important)
+                if (otherStrengths.length > 0) {
+                    html += otherStrengths.map(strength => 
+                        `<div class="flex items-start p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <i class="fas fa-star text-green-400 mr-3 mt-0.5 text-sm"></i>
+                            <span class="text-gray-300 text-sm leading-relaxed font-medium">${strength}</span>
+                        </div>`
+                    ).join('');
+                }
+                
+                // Compact perfect compliance summary
+                if (perfectCompliance.length > 0) {
+                    const guidelineNames = perfectCompliance.map(s => {
+                        const match = s.match(/Perfect compliance with: (.+)/);
+                        return match ? match[1] : s;
+                    });
+                    
+                    html += `
+                        <div class="p-3 bg-green-500/5 rounded-lg border border-green-500/10">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-check-circle text-green-400 mr-2 text-xs"></i>
+                                <span class="text-green-400 text-xs font-bold uppercase tracking-wide">Perfect Guidelines (${perfectCompliance.length})</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                ${guidelineNames.map(name => 
+                                    `<span class="text-xs px-2 py-0.5 bg-green-500/10 text-green-300 rounded">${name}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                strengthsDiv.innerHTML = html || '<div class="text-gray-400 text-sm">No strengths data</div>';
             } else {
                 strengthsDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
             }
             
             if (analysis && analysis.weaknesses && analysis.weaknesses.length > 0) {
-                weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => 
-                    `<div class="flex items-start p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-                        <i class="fas fa-arrow-up text-red-400 mr-3 mt-0.5 text-sm"></i>
-                        <span class="text-gray-300 text-sm leading-relaxed">${weakness}</span>
-                    </div>`
-                ).join('');
+                // Parse and enhance weaknesses with error counts and impact
+                weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => {
+                    // Extract error count if present
+                    const countMatch = weakness.match(/Found (\d+)/);
+                    const errorCount = countMatch ? parseInt(countMatch[1]) : null;
+                    
+                    // Extract violation count
+                    const violationMatch = weakness.match(/(\d+) violations/);
+                    const violationCount = violationMatch ? parseInt(violationMatch[1]) : null;
+                    
+                    // Determine severity
+                    let severity = 'medium';
+                    let icon = 'fa-exclamation-circle';
+                    let color = 'orange';
+                    
+                    if ((errorCount && errorCount > 100) || (violationCount && violationCount > 50)) {
+                        severity = 'high';
+                        icon = 'fa-exclamation-triangle';
+                        color = 'red';
+                    } else if ((errorCount && errorCount < 10) || (violationCount && violationCount < 5)) {
+                        severity = 'low';
+                        icon = 'fa-info-circle';
+                        color = 'yellow';
+                    }
+                    
+                    return `<div class="flex items-start p-3 bg-${color}-500/10 rounded-lg border border-${color}-500/20 hover:bg-${color}-500/15 transition-all">
+                        <i class="fas ${icon} text-${color}-400 mr-3 mt-0.5 text-sm"></i>
+                        <div class="flex-1">
+                            <span class="text-gray-300 text-sm leading-relaxed">${weakness}</span>
+                            ${errorCount || violationCount ? `<div class="mt-1.5 text-xs text-${color}-400 font-medium">${errorCount || violationCount} issues found</div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
             } else {
-                weaknessesDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
+                weaknessesDiv.innerHTML = '<div class="text-gray-400 text-sm">No issues found - great work!</div>';
             }
         }
     } catch (error) {
