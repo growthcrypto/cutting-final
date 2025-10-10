@@ -2516,7 +2516,16 @@ async function loadTeamComparisonData() {
         if (!response.ok) throw new Error('Failed to load team data');
 
         const data = await response.json();
-        teamComparisonData = data.chatters || [];
+        // 🔥 FILTER OUT chatters with NO data (0 revenue, 0 messages, 0 PPVs)
+        teamComparisonData = (data.chatters || []).filter(c => 
+            c.revenue > 0 || c.messagesSent > 0 || c.ppvsSent > 0 || c.fansChatted > 0
+        );
+
+        console.log('🎯 Filtered team data:', {
+            total: data.chatters?.length || 0,
+            withData: teamComparisonData.length,
+            filtered: (data.chatters?.length || 0) - teamComparisonData.length
+        });
 
         // Sort by revenue by default
         sortTeamBy('revenue');
@@ -11333,6 +11342,7 @@ async function handleDailyReportSubmit(event) {
 
 // My Performance functions
 let currentMyPerformanceInterval = '7d';
+let myPerformanceCustomDates = null;
 
 function setMyPerformanceInterval(interval) {
     currentMyPerformanceInterval = interval;
@@ -11345,7 +11355,62 @@ function setMyPerformanceInterval(interval) {
     // Highlight selected button
     event.target.className = 'interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm';
     
-    // Load data for the selected interval
+    // If custom interval, show date picker
+    if (interval === 'custom') {
+        showMyPerformanceDatePicker();
+    } else {
+        myPerformanceCustomDates = null;
+        loadMyPerformanceData();
+    }
+}
+
+function showMyPerformanceDatePicker() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-gray-800 rounded-xl p-6 w-96">
+            <h3 class="text-xl font-bold mb-4">Select Date Range</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Start Date</label>
+                    <input type="date" id="myPerfStartDate" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">End Date</label>
+                    <input type="date" id="myPerfEndDate" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="applyMyPerformanceDateFilter()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg">Apply</button>
+                <button onclick="closeMyPerformanceDatePicker()" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded-lg">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.id = 'myPerfDatePickerModal';
+}
+
+function closeMyPerformanceDatePicker() {
+    const modal = document.getElementById('myPerfDatePickerModal');
+    if (modal) modal.remove();
+}
+
+function applyMyPerformanceDateFilter() {
+    const startDate = document.getElementById('myPerfStartDate').value;
+    const endDate = document.getElementById('myPerfEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    myPerformanceCustomDates = { start: startDate, end: endDate };
+    closeMyPerformanceDatePicker();
     loadMyPerformanceData();
 }
 
@@ -11360,8 +11425,14 @@ async function loadMyPerformanceData() {
         });
         const user = await userResponse.json();
 
+        // Build API URL with custom dates if applicable
+        let apiUrl = `/api/analytics/dashboard?interval=${currentMyPerformanceInterval}`;
+        if (currentMyPerformanceInterval === 'custom' && myPerformanceCustomDates) {
+            apiUrl = `/api/analytics/dashboard?interval=custom&customStart=${myPerformanceCustomDates.start}&customEnd=${myPerformanceCustomDates.end}`;
+        }
+
         // Get performance data
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentMyPerformanceInterval}`, {
+        const response = await fetch(apiUrl, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await response.json();
