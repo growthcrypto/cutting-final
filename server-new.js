@@ -612,11 +612,17 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     let accountDataQuery, chatterPerformanceQuery, dateQuery;
     
     if (isCustomFilter) {
-      // NEW: Custom date range - query daily data directly
-      accountDataQuery = {}; // Don't use weekly OF data for custom ranges
-      chatterPerformanceQuery = {}; // Don't use weekly chatter data
+      // NEW: Custom date range - query daily data AND OF account data that overlaps
+      accountDataQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
+      chatterPerformanceQuery = {
+        weekStartDate: { $lte: end },
+        weekEndDate: { $gte: start }
+      };
       dateQuery = { date: { $gte: start, $lte: end } };
-      console.log('📅 Using custom date range query (daily data only)');
+      console.log('📅 Using custom date range query with overlap for weekly data');
     } else if (isWeekFilter) {
       // EXACT WEEK MATCH
       accountDataQuery = {
