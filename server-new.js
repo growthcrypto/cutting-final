@@ -6076,8 +6076,158 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
   }
 });
 
+// Helper function to build previous period data
+async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterName) {
+  // Get previous period MessageAnalysis
+  const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
+  const prevMessageAnalysis = await MessageAnalysis.findOne({
+    chatterName: chatterNameRegex
+  }).sort({ createdAt: -1, _id: -1 }).skip(1); // Get second most recent (previous)
+  
+  if (prevPerformance.length === 0 && prevPurchases.length === 0) {
+    return null; // No previous period data
+  }
+  
+  const prevPerf = prevPerformance[0] || {};
+  const prevRevenue = prevPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const prevPPVCount = prevPurchases.filter(p => p.type === 'ppv').length;
+  
+  return {
+    revenue: prevRevenue,
+    ppvsSent: prevPerf.ppvsSent || 0,
+    ppvsUnlocked: prevPPVCount,
+    messagesSent: prevPerf.messagesSent || 0,
+    fansChatted: prevPerf.fansChattedWith || 0,
+    unlockRate: prevPerf.ppvsSent > 0 ? ((prevPPVCount / prevPerf.ppvsSent) * 100).toFixed(1) : 0,
+    avgPPVPrice: prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0,
+    grammarScore: prevMessageAnalysis?.grammarScore || null,
+    guidelinesScore: prevMessageAnalysis?.guidelinesScore || null,
+    overallScore: prevMessageAnalysis?.overallScore || null,
+    punctuationCount: prevMessageAnalysis?.grammarBreakdown 
+      ? parseInt(prevMessageAnalysis.grammarBreakdown.punctuationProblems?.match(/(\d+)/)?.[1] || '0')
+      : 0
+  };
+}
+
+// Helper function to build team averages
+async function buildTeamData(allPurchases, allPerformance, excludeChatter) {
+  // Group by chatter
+  const chatterStats = {};
+  
+  // Calculate from ChatterPerformance
+  allPerformance.forEach(perf => {
+    if (perf.chatterName === excludeChatter) return; // Exclude current chatter
+    
+    if (!chatterStats[perf.chatterName]) {
+      chatterStats[perf.chatterName] = {
+        ppvsSent: 0,
+        ppvsUnlocked: 0,
+        messagesSent: 0,
+        fansChatted: 0,
+        revenue: 0,
+        grammarScore: null,
+        guidelinesScore: null
+      };
+    }
+    
+    chatterStats[perf.chatterName].ppvsSent += perf.ppvsSent || 0;
+    chatterStats[perf.chatterName].ppvsUnlocked += perf.ppvsUnlocked || 0;
+    chatterStats[perf.chatterName].messagesSent += perf.messagesSent || 0;
+    chatterStats[perf.chatterName].fansChatted += perf.fansChattedWith || 0;
+  });
+  
+  // Add revenue from FanPurchase
+  allPurchases.forEach(purchase => {
+    if (purchase.chatterName === excludeChatter) return;
+    
+    if (chatterStats[purchase.chatterName]) {
+      chatterStats[purchase.chatterName].revenue += purchase.amount || 0;
+    }
+  });
+  
+  // Get MessageAnalysis for all chatters
+  const allMessageAnalyses = await MessageAnalysis.find({})
+    .sort({ createdAt: -1 })
+    .limit(20); // Get recent analyses
+  
+  allMessageAnalyses.forEach(analysis => {
+    if (analysis.chatterName === excludeChatter) return;
+    if (chatterStats[analysis.chatterName]) {
+      chatterStats[analysis.chatterName].grammarScore = analysis.grammarScore;
+      chatterStats[analysis.chatterName].guidelinesScore = analysis.guidelinesScore;
+    }
+  });
+  
+  // Calculate averages
+  const chatters = Object.values(chatterStats);
+  const count = chatters.length;
+  
+  if (count === 0) {
+    return { avgRevenue: 0, avgUnlockRate: 0, avgPPVsPerFan: 0, avgGuidelinesScore: null, chatterCount: 0 };
+  }
+  
+  const avgRevenue = chatters.reduce((sum, c) => sum + c.revenue, 0) / count;
+  const totalUnlockRate = chatters.reduce((sum, c) => {
+    return sum + (c.ppvsSent > 0 ? (c.ppvsUnlocked / c.ppvsSent) * 100 : 0);
+  }, 0);
+  const avgUnlockRate = totalUnlockRate / count;
+  
+  const totalPPVsPerFan = chatters.reduce((sum, c) => {
+    return sum + (c.fansChatted > 0 ? c.ppvsSent / c.fansChatted : 0);
+  }, 0);
+  const avgPPVsPerFan = totalPPVsPerFan / count;
+  
+  const chattersWithScores = chatters.filter(c => c.guidelinesScore !== null);
+  const avgGuidelinesScore = chattersWithScores.length > 0
+    ? chattersWithScores.reduce((sum, c) => sum + c.guidelinesScore, 0) / chattersWithScores.length
+    : null;
+  
+  // Calculate correlation between guidelines and unlock rate
+  const guidelinesUnlockCorrelation = calculateGuidelinesUnlockCorrelation(chatters);
+  
+  return {
+    avgRevenue: Math.round(avgRevenue),
+    avgUnlockRate: avgUnlockRate.toFixed(1),
+    avgPPVsPerFan: avgPPVsPerFan.toFixed(2),
+    avgGuidelinesScore: avgGuidelinesScore ? Math.round(avgGuidelinesScore) : null,
+    chatterCount: count,
+    guidelinesUnlockCorrelation,
+    chatterStats: chatters // Include individual chatter data for correlation analysis
+  };
+}
+
+// Helper function to calculate correlation between guidelines score and unlock rate
+function calculateGuidelinesUnlockCorrelation(chatters) {
+  const dataPoints = chatters.filter(c => 
+    c.guidelinesScore !== null && c.ppvsSent > 0
+  );
+  
+  if (dataPoints.length < 3) {
+    return null; // Not enough data
+  }
+  
+  // Group by guidelines score ranges
+  const highGuidelines = dataPoints.filter(c => c.guidelinesScore >= 90);
+  const midGuidelines = dataPoints.filter(c => c.guidelinesScore >= 70 && c.guidelinesScore < 90);
+  const lowGuidelines = dataPoints.filter(c => c.guidelinesScore < 70);
+  
+  const avgUnlockRate = (chatters) => {
+    if (chatters.length === 0) return null;
+    const total = chatters.reduce((sum, c) => {
+      return sum + (c.ppvsSent > 0 ? (c.ppvsUnlocked / c.ppvsSent) * 100 : 0);
+    }, 0);
+    return (total / chatters.length).toFixed(1);
+  };
+  
+  return {
+    high: { count: highGuidelines.length, avgUnlockRate: avgUnlockRate(highGuidelines) },
+    mid: { count: midGuidelines.length, avgUnlockRate: avgUnlockRate(midGuidelines) },
+    low: { count: lowGuidelines.length, avgUnlockRate: avgUnlockRate(lowGuidelines) }
+  };
+}
+
 // Helper function to generate DEEP, CONNECTED analysis insights
-function generateAnalysisSummary(data) {
+function generateAnalysisSummary(data, previousPeriodData, teamData) {
   const insights = {
     summary: '',
     deepInsights: [],  // NEW: Deep connected insights
@@ -6160,188 +6310,256 @@ function generateAnalysisSummary(data) {
   insights.summary = summaryParts.join('. ') + '.';
   
   // ========================================
-  // DEEP INSIGHTS - Connect EVERYTHING
+  // PATTERN-BASED INSIGHTS - Data-Driven, No BS
   // ========================================
   
-  // 1. Grammar Quality → Revenue Connection
-  if (grammarScore > 0 && revenue > 0 && messagesSent > 0) {
-    if (grammarScore >= 85 && unlockRate > 50) {
-      insights.deepInsights.push({
-        type: 'positive',
-        icon: 'fa-trophy',
-        title: 'High-Quality Messages Drive Strong Conversions',
-        insight: `Your ${grammarScore}/100 grammar score correlates with a ${unlockRate}% unlock rate, which is ${unlockRate > 50 ? 'excellent' : 'solid'}. Clean, professional messages build trust, leading to higher PPV purchases.`,
-        metrics: `${messagesSent} messages → ${ppvsUnlocked}/${ppvsSent} PPVs unlocked → $${revenue} revenue`,
-        action: 'Maintain this quality standard to sustain high conversion rates'
-      });
-    } else if (grammarScore < 80 && unlockRate < 50) {
-      const potentialGain = (revenue * 0.15).toFixed(0);
-      insights.deepInsights.push({
-        type: 'warning',
-        icon: 'fa-exclamation-circle',
-        title: 'Grammar Quality May Be Limiting Conversions',
-        insight: `Your ${grammarScore}/100 grammar score with ${unlockRate}% unlock rate suggests message quality issues may be impacting trust. Chatters with 85+ grammar scores average 15% higher unlock rates.`,
-        metrics: `Current: $${revenuePerMessage}/msg | Potential: $${(parseFloat(revenuePerMessage) * 1.15).toFixed(2)}/msg`,
-        action: `Fix ${spellingCount + grammarIssuesCount + punctuationCount} errors to potentially gain +$${potentialGain} revenue`
-      });
-    }
-  }
-  
-  // 2. Message Volume → Revenue Efficiency
-  if (messagesSent > 0 && ppvsSent > 0 && fansChatted > 0) {
-    const messagesPerPPV = (messagesSent / ppvsSent).toFixed(1);
-    const messagesPerFan = (messagesSent / fansChatted).toFixed(1);
+  // PATTERN 1: Revenue Mechanical Breakdown (Always show if data exists)
+  if (previousPeriodData && revenue > 0 && previousPeriodData.revenue > 0) {
+    const revenueChange = revenue - previousPeriodData.revenue;
+    const revenueChangePercent = ((revenueChange / previousPeriodData.revenue) * 100).toFixed(1);
     
-    if (messagesPerPPV > 50 && unlockRate > 50) {
-      insights.deepInsights.push({
-        type: 'positive',
-        icon: 'fa-comments',
-        title: 'Relationship-First Strategy Working Excellently',
-        insight: `You send ${messagesPerPPV} messages per PPV (building strong relationships) and achieve ${unlockRate}% unlock rate. This proves that taking time to build trust pays off.`,
-        metrics: `${fansChatted} fans × ${messagesPerFan} msgs/fan = ${messagesSent} total messages → $${revenuePerFan}/fan`,
-        action: 'Continue this relationship-building approach - it\'s highly effective'
-      });
-    } else if (messagesPerPPV < 20 && unlockRate < 40) {
-      insights.deepInsights.push({
-        type: 'warning',
-        icon: 'fa-bolt',
-        title: 'Sending PPVs Too Early - Build More Rapport First',
-        insight: `You send PPVs after only ${messagesPerPPV} messages on average, resulting in ${unlockRate}% unlock rate. Fans need 30-50 messages to build trust before they're ready to purchase.`,
-        metrics: `Current: ${messagesPerPPV} msgs/PPV | Optimal: 40-60 msgs/PPV`,
-        action: 'Spend more time building relationships before sending PPVs'
-      });
+    // Calculate contribution factors
+    const ppvChange = ppvsSent - previousPeriodData.ppvsSent;
+    const priceChange = (revenue / ppvsUnlocked) - (previousPeriodData.revenue / previousPeriodData.ppvsUnlocked);
+    const unlockRateChange = parseFloat(unlockRate) - parseFloat(previousPeriodData.unlockRate);
+    
+    let breakdown = `Revenue ${revenueChange >= 0 ? 'increased' : 'decreased'} from $${previousPeriodData.revenue} to $${revenue} (${revenueChange >= 0 ? '+' : ''}$${revenueChange}, ${revenueChangePercent >= 0 ? '+' : ''}${revenueChangePercent}%).\n\n`;
+    breakdown += `Breaking down what drove this:\n`;
+    breakdown += `• PPVs sent ${ppvChange >= 0 ? 'increased' : 'decreased'} from ${previousPeriodData.ppvsSent} to ${ppvsSent} (${ppvChange >= 0 ? '+' : ''}${ppvChange})\n`;
+    breakdown += `• Average PPV price ${priceChange >= 0 ? 'increased' : 'decreased'} by $${Math.abs(priceChange).toFixed(0)}\n`;
+    breakdown += `• Unlock rate ${unlockRateChange >= 0 ? 'improved' : 'dropped'} from ${previousPeriodData.unlockRate}% to ${unlockRate}% (${unlockRateChange >= 0 ? '+' : ''}${unlockRateChange.toFixed(1)}%)\n\n`;
+    breakdown += `${revenueChange >= 0 ? 'Positive' : 'Negative'} revenue movement was driven by ${Math.abs(ppvChange) > Math.abs(unlockRateChange) ? 'volume changes' : 'conversion rate changes'}.`;
+    
+    insights.deepInsights.push({
+      type: revenueChange >= 0 ? 'positive' : 'warning',
+      icon: 'fa-chart-line',
+      title: 'Period-over-Period Revenue Analysis',
+      insight: breakdown,
+      metrics: `Previous: $${previousPeriodData.revenue} | Current: $${revenue} | Change: ${revenueChangePercent >= 0 ? '+' : ''}${revenueChangePercent}%`,
+      action: revenueChange >= 0 ? 'Replicate the factors that drove growth' : 'Address the factors causing decline'
+    });
+  }
+  
+  // PATTERN 2: Team Guidelines Correlation (Only if strong correlation exists)
+  if (teamData && teamData.guidelinesUnlockCorrelation && guidelinesScore !== null) {
+    const correlation = teamData.guidelinesUnlockCorrelation;
+    
+    if (correlation.high.count >= 2 && correlation.mid.count >= 2) {
+      const highAvg = parseFloat(correlation.high.avgUnlockRate);
+      const midAvg = parseFloat(correlation.mid.avgUnlockRate);
+      const diff = Math.abs(highAvg - midAvg);
+      
+      // Only show if there's a meaningful difference (>8%)
+      if (diff > 8) {
+        let insight = `Across ${teamData.chatterCount} chatters this period:\n`;
+        insight += `• Chatters with 90-100 guidelines score: ${correlation.high.avgUnlockRate}% avg unlock rate (${correlation.high.count} chatters)\n`;
+        insight += `• Chatters with 70-89 guidelines score: ${correlation.mid.avgUnlockRate}% avg unlock rate (${correlation.mid.count} chatters)\n`;
+        if (correlation.low.count > 0) {
+          insight += `• Chatters with <70 guidelines score: ${correlation.low.avgUnlockRate}% avg unlock rate (${correlation.low.count} chatters)\n`;
+        }
+        insight += `\nYour ${guidelinesScore}/100 score puts you in the ${guidelinesScore >= 90 ? 'top' : guidelinesScore >= 70 ? 'middle' : 'lower'} tier. `;
+        
+        if (guidelinesScore >= 90) {
+          insight += `You're outperforming the team - your ${unlockRate}% unlock rate is ${(parseFloat(unlockRate) - midAvg).toFixed(1)}% above mid-tier performers.`;
+        } else {
+          insight += `Improving to 90+ could potentially increase your unlock rate by ${(highAvg - parseFloat(unlockRate)).toFixed(1)}%.`;
+        }
+        
+        insights.deepInsights.push({
+          type: guidelinesScore >= 90 ? 'positive' : 'opportunity',
+          icon: 'fa-users',
+          title: 'Team-Wide Guidelines Performance Correlation',
+          insight: insight,
+          metrics: `Your score: ${guidelinesScore}/100 | Your unlock rate: ${unlockRate}% | Top tier avg: ${correlation.high.avgUnlockRate}%`,
+          action: guidelinesScore >= 90 ? 'Maintain this advantage' : 'Focus on guidelines compliance to match top performers'
+        });
+      }
     }
   }
   
-  // 3. Punctuation Errors → Lost Revenue
-  if (punctuationCount > 50 && revenue > 0 && messagesSent > 0) {
+  // PATTERN 3: Punctuation Impact (Period-over-period if available)
+  if (previousPeriodData && punctuationCount > 50) {
+    const prevPunctuation = previousPeriodData.punctuationCount || 0;
+    const punctuationChange = punctuationCount - prevPunctuation;
+    const unlockRateChange = parseFloat(unlockRate) - parseFloat(previousPeriodData.unlockRate || 0);
+    
+    if (punctuationChange !== 0) {
+      let insight = `Punctuation errors ${punctuationChange > 0 ? 'increased' : 'decreased'} from ${prevPunctuation} to ${punctuationCount} (${punctuationChange > 0 ? '+' : ''}${punctuationChange}). `;
+      
+      if (punctuationChange > 20 && unlockRateChange < -5) {
+        insight += `During the same period, your unlock rate dropped from ${previousPeriodData.unlockRate}% to ${unlockRate}% (${unlockRateChange.toFixed(1)}%). `;
+        insight += `The increase in formal punctuation may be contributing to lower engagement - fans prefer casual, informal messaging.`;
+        
+        insights.deepInsights.push({
+          type: 'warning',
+          icon: 'fa-exclamation-circle',
+          title: 'Punctuation Errors Increased as Unlock Rate Dropped',
+          insight: insight,
+          metrics: `Punctuation: ${prevPunctuation} → ${punctuationCount} | Unlock rate: ${previousPeriodData.unlockRate}% → ${unlockRate}%`,
+          action: 'Remove periods and formal commas to sound more natural'
+        });
+      } else if (punctuationChange < -20 && unlockRateChange > 3) {
+        insight += `Your unlock rate improved from ${previousPeriodData.unlockRate}% to ${unlockRate}% (+${unlockRateChange.toFixed(1)}%). `;
+        insight += `Reducing formal punctuation has made your messages more engaging!`;
+        
+        insights.deepInsights.push({
+          type: 'positive',
+          icon: 'fa-check-circle',
+          title: 'Informal Language Improvement Driving Better Conversions',
+          insight: insight,
+          metrics: `Punctuation: ${prevPunctuation} → ${punctuationCount} | Unlock rate: ${previousPeriodData.unlockRate}% → ${unlockRate}%`,
+          action: 'Continue this casual, informal messaging style'
+        });
+      }
+    }
+  } else if (punctuationCount > 50 && messagesSent > 0) {
+    // Fallback: Basic punctuation insight without period comparison
     const errorRate = (punctuationCount / messagesSent * 100).toFixed(1);
-    const estimatedLoss = (revenue * (errorRate / 100) * 0.3).toFixed(0);
     insights.deepInsights.push({
       type: 'warning',
-      icon: 'fa-money-bill-wave',
-      title: 'Formal Punctuation Hurting Engagement',
-      insight: `${punctuationCount} out of ${messagesSent} messages (${errorRate}%) use formal punctuation (periods, commas), making you sound robotic instead of casual and friendly. OnlyFans fans respond 30% better to informal, conversational messages.`,
-      metrics: `${punctuationCount} formal messages | ${errorRate}% error rate | Estimated loss: ~$${estimatedLoss}`,
-      action: `Remove periods from casual messages to sound more natural and boost conversions`
+      icon: 'fa-comment-dots',
+      title: 'Formal Punctuation Detected',
+      insight: `${punctuationCount} out of ${messagesSent} messages (${errorRate}%) use formal punctuation (periods, commas). OnlyFans fans respond better to casual, informal messaging without periods.`,
+      metrics: `${punctuationCount} formal messages | ${errorRate}% of all messages`,
+      action: 'Remove periods from casual messages to sound more natural'
     });
   }
   
-  // 4. Guideline Compliance → Trust & Revenue
-  if (guidelinesScore === 100 && unlockRate > 0) {
-    insights.deepInsights.push({
-      type: 'positive',
-      icon: 'fa-shield-check',
-      title: 'Perfect Compliance Builds Maximum Fan Trust',
-      insight: `0 guideline violations means you're following all best practices perfectly. This builds fan trust, which directly translates to higher unlock rates and repeat purchases.`,
-      metrics: `100/100 guidelines score → ${unlockRate}% unlock rate → $${revenuePerFan}/fan`,
-      action: 'Maintain this perfect standard - it\'s your competitive advantage'
-    });
-  } else if (guidelinesScore < 90) {
-    const violations = Math.round((100 - guidelinesScore) / 100 * messagesSent);
-    insights.deepInsights.push({
-      type: 'warning',
-      icon: 'fa-exclamation-triangle',
-      title: 'Guideline Violations Reducing Fan Trust',
-      insight: `${guidelinesScore}/100 guidelines score indicates ~${violations} messages break best practices. Each violation reduces fan trust, making them less likely to purchase PPVs.`,
-      metrics: `Current unlock rate: ${unlockRate}% | Potential with perfect compliance: ${(parseFloat(unlockRate) * 1.15).toFixed(1)}%`,
-      action: 'Review and follow all guidelines to maximize fan trust and conversions'
-    });
-  }
-  
-  // 5. Revenue Per Fan Analysis
-  if (fansChatted > 0 && revenue > 0 && messagesSent > 0) {
-    const messagesPerFan = (messagesSent / fansChatted).toFixed(1);
-    if (revenuePerFan > 15 && messagesPerFan > 10) {
-      insights.deepInsights.push({
-        type: 'positive',
-        icon: 'fa-user-check',
-        title: 'Excellent Fan Monetization Strategy',
-        insight: `You're generating $${revenuePerFan} per fan with ${messagesPerFan} messages per fan. This shows you're balancing engagement with monetization perfectly - not over-selling, not under-selling.`,
-        metrics: `${fansChatted} fans × $${revenuePerFan}/fan = $${revenue} total revenue`,
-        action: 'Replicate this approach with new fans to scale revenue'
-      });
-    } else if (revenuePerFan < 10 && ppvsSent > 10) {
-      insights.deepInsights.push({
-        type: 'warning',
-        icon: 'fa-user-times',
-        title: 'Low Revenue Per Fan - Pricing or Targeting Issue',
-        insight: `Only $${revenuePerFan} per fan despite sending ${ppvsSent} PPVs suggests either prices are too low, or you're targeting fans who aren't ready to buy. Focus on engaged fans who respond well.`,
-        metrics: `${fansChatted} fans chatted but only $${revenue} revenue generated`,
-        action: 'Increase PPV prices gradually and focus on high-engagement fans'
-      });
-    }
-  }
-  
-  // 6. Message-to-PPV Ratio Analysis
-  if (ppvsSent > 0 && messagesSent > 0 && fansChatted > 0) {
-    const messagesPerPPV = (messagesSent / ppvsSent).toFixed(0);
-    const ppvPerFan = (ppvsSent / fansChatted).toFixed(1);
+  // PATTERN 4: PPV Frequency Analysis (Period comparison + Team benchmark)
+  if (ppvsSent > 0 && fansChatted > 0 && messagesSent > 0) {
+    const currentPPVsPerFan = (ppvsSent / fansChatted).toFixed(2);
+    const messageToPPVRate = (ppvsSent / messagesSent * 100).toFixed(1);
     
-    if (ppvPerFan < 0.5 && fansChatted > 20) {
-      const potentialPPVs = Math.round(fansChatted * 1.2);
-      const avgPPVRevenue = revenue / ppvsSent;
-      const potentialGain = Math.round(potentialPPVs * avgPPVRevenue - revenue);
-      insights.deepInsights.push({
-        type: 'opportunity',
-        icon: 'fa-rocket',
-        title: 'Massive Untapped Revenue Opportunity',
-        insight: `You're only sending ${ppvPerFan} PPVs per fan (${ppvsSent} PPVs across ${fansChatted} fans). You have ${fansChatted} engaged fans but aren't monetizing them enough. Top performers send 1-2 PPVs per fan.`,
-        metrics: `Current: ${ppvsSent} PPVs | Potential: ${potentialPPVs} PPVs | Revenue gain: +$${potentialGain}`,
-        action: 'Send more PPVs to your engaged fans - you\'re leaving money on the table'
-      });
+    // Check period-over-period if data exists
+    if (previousPeriodData && previousPeriodData.ppvsSent > 0 && previousPeriodData.fansChatted > 0) {
+      const prevPPVsPerFan = (previousPeriodData.ppvsSent / previousPeriodData.fansChatted).toFixed(2);
+      const ppvFrequencyChange = currentPPVsPerFan - prevPPVsPerFan;
+      const unlockRateChange = parseFloat(unlockRate) - parseFloat(previousPeriodData.unlockRate || 0);
+      
+      if (Math.abs(ppvFrequencyChange) > 0.1) {
+        let insight = `PPV frequency ${ppvFrequencyChange > 0 ? 'increased' : 'decreased'} from ${prevPPVsPerFan} to ${currentPPVsPerFan} PPVs per fan. `;
+        insight += `Your unlock rate ${unlockRateChange >= 0 ? 'improved' : 'dropped'} from ${previousPeriodData.unlockRate}% to ${unlockRate}% (${unlockRateChange >= 0 ? '+' : ''}${unlockRateChange.toFixed(1)}%).\n\n`;
+        
+        if (ppvFrequencyChange > 0.15 && unlockRateChange >= -3) {
+          insight += `You successfully increased PPV volume without significantly hurting unlock rate. This indicates you haven't reached saturation yet and can likely send more.`;
+          const safeIncrease = Math.round(fansChatted * 0.2);
+          const potentialRevenue = Math.round(safeIncrease * (revenue / ppvsUnlocked) * (parseFloat(unlockRate) / 100));
+          
+          insights.deepInsights.push({
+            type: 'opportunity',
+            icon: 'fa-arrow-trend-up',
+            title: 'Safe to Increase PPV Frequency Further',
+            insight: insight,
+            metrics: `Previous: ${prevPPVsPerFan} PPVs/fan | Current: ${currentPPVsPerFan} | Unlock rate: ${unlockRate}%`,
+            action: `Test sending ${safeIncrease} more PPVs next period (potential +$${potentialRevenue})`
+          });
+        } else if (ppvFrequencyChange > 0.15 && unlockRateChange < -8) {
+          insight += `The increased PPV frequency appears to be causing saturation - fans are saying "no" more often. Consider pulling back to previous levels.`;
+          const estimatedLoss = Math.round(ppvsSent * (revenue / ppvsUnlocked) * (Math.abs(unlockRateChange) / 100));
+          
+          insights.deepInsights.push({
+            type: 'warning',
+            icon: 'fa-exclamation-triangle',
+            title: 'PPV Over-Saturation Detected',
+            insight: insight,
+            metrics: `PPV frequency: ${prevPPVsPerFan} → ${currentPPVsPerFan} | Unlock rate: ${previousPeriodData.unlockRate}% → ${unlockRate}%`,
+            action: `Reduce PPV frequency back to ~${prevPPVsPerFan} PPVs/fan to recover unlock rate`
+          });
+        }
+      }
+    }
+    
+    // Team comparison for PPV frequency
+    if (teamData && teamData.avgPPVsPerFan && parseFloat(teamData.avgPPVsPerFan) > 0) {
+      const teamPPVsPerFan = parseFloat(teamData.avgPPVsPerFan);
+      const diff = currentPPVsPerFan - teamPPVsPerFan;
+      
+      if (diff < -0.25 && parseFloat(unlockRate) > teamData.avgUnlockRate) {
+        // Sending fewer PPVs but higher unlock rate = opportunity
+        const additionalPPVs = Math.round(fansChatted * (teamPPVsPerFan - currentPPVsPerFan));
+        const potentialRevenue = Math.round(additionalPPVs * (revenue / ppvsUnlocked) * (parseFloat(unlockRate) / 100));
+        
+        let insight = `You're sending ${currentPPVsPerFan} PPVs per fan vs team average of ${teamPPVsPerFan.toFixed(2)} (${Math.abs(diff).toFixed(2)} fewer). `;
+        insight += `Your ${unlockRate}% unlock rate is ${(parseFloat(unlockRate) - parseFloat(teamData.avgUnlockRate)).toFixed(1)}% above team average, `;
+        insight += `which means your captions are strong and fans are receptive. You have room to send more PPVs without hurting conversions.`;
+        
+        insights.deepInsights.push({
+          type: 'opportunity',
+          icon: 'fa-bullseye',
+          title: 'Underutilizing Strong Unlock Rate',
+          insight: insight,
+          metrics: `Your PPVs/fan: ${currentPPVsPerFan} | Team avg: ${teamPPVsPerFan.toFixed(2)} | Your unlock rate: ${unlockRate}%`,
+          action: `Send ${additionalPPVs} more PPVs to match team average (potential +$${potentialRevenue})`
+        });
+      }
     }
   }
   
-  // 7. Spelling/Grammar → Professionalism Impact
-  if ((spellingCount > 5 || grammarIssuesCount > 5) && messagesSent > 0) {
-    const totalErrors = spellingCount + grammarIssuesCount;
-    const errorRate = ((totalErrors / messagesSent) * 100).toFixed(1);
-    insights.deepInsights.push({
-      type: 'warning',
-      icon: 'fa-spell-check',
-      title: 'Grammar Errors Reducing Message Professionalism',
-      insight: `${totalErrors} spelling and grammar errors across ${messagesSent} messages (${errorRate}% error rate) make you appear less professional. Fans subconsciously associate message quality with content quality.`,
-      metrics: `${spellingCount} spelling + ${grammarIssuesCount} grammar = ${totalErrors} total errors | ${errorRate}% error rate`,
-      action: 'Use spell-check and proofread before sending to appear more professional'
-    });
-  }
-  
-  // 8. Unlock Rate Benchmarking
-  if (unlockRate > 0 && team.avgUnlockRate > 0) {
-    const diff = (parseFloat(unlockRate) - team.avgUnlockRate).toFixed(1);
-    if (diff > 10) {
-      insights.deepInsights.push({
-        type: 'positive',
-        icon: 'fa-chart-line',
-        title: 'Significantly Outperforming Team Average',
-        insight: `Your ${unlockRate}% unlock rate is ${diff}% higher than the team average (${team.avgUnlockRate.toFixed(1)}%). This means your captions, timing, and relationship-building are working exceptionally well.`,
-        metrics: `You: ${unlockRate}% | Team: ${team.avgUnlockRate.toFixed(1)}% | Difference: +${diff}%`,
-        action: 'Document what you\'re doing differently and teach it to the team'
-      });
-    } else if (diff < -10) {
-      const potentialRevenue = (revenue * (Math.abs(diff) / 100)).toFixed(0);
-      insights.deepInsights.push({
-        type: 'warning',
-        icon: 'fa-chart-line',
-        title: 'Underperforming Team Average - Action Needed',
-        insight: `Your ${unlockRate}% unlock rate is ${Math.abs(diff)}% below the team average (${team.avgUnlockRate.toFixed(1)}%). This gap represents significant lost revenue. Review top performers' messages to identify what they're doing differently.`,
-        metrics: `Lost revenue potential: ~$${potentialRevenue} if you matched team average`,
-        action: 'Study top performers\' caption styles and relationship-building techniques'
-      });
+  // PATTERN 5: Conversion Funnel Analysis with Bottleneck Detection
+  if (messagesSent > 0 && ppvsSent > 0 && fansChatted > 0) {
+    const messageToPPVRate = (ppvsSent / messagesSent * 100).toFixed(1);
+    const ppvsPerFan = (ppvsSent / fansChatted).toFixed(2);
+    
+    let funnelInsight = `${fansChatted} fans → ${messagesSent} messages (${(messagesSent / fansChatted).toFixed(1)} msgs/fan) → ${ppvsSent} PPVs sent (${ppvsPerFan} PPVs/fan) → ${ppvsUnlocked} unlocked (${unlockRate}% rate) → $${revenue} revenue ($${revenuePerFan}/fan)\n\n`;
+    
+    // Identify bottleneck
+    let bottleneck = null;
+    if (parseFloat(messageToPPVRate) < 2) {
+      bottleneck = `Bottleneck: Only ${messageToPPVRate}% of messages include PPVs. You're chatting a lot but not asking for sales often enough.`;
+    } else if (parseFloat(unlockRate) < 40) {
+      bottleneck = `Bottleneck: ${unlockRate}% unlock rate is low. PPV frequency is fine (${messageToPPVRate}%), but captions or pricing need work.`;
+    } else if (parseFloat(ppvsPerFan) < 0.5) {
+      bottleneck = `Bottleneck: Only ${ppvsPerFan} PPVs per fan. Your unlock rate (${unlockRate}%) is strong, so send more PPVs to monetize engaged fans.`;
+    } else {
+      bottleneck = `All funnel stages are healthy. Your ${messageToPPVRate}% PPV send rate and ${unlockRate}% unlock rate are balanced.`;
     }
-  }
-  
-  // 9. Always add conversion efficiency baseline
-  if (messagesSent > 0 && revenue > 0 && ppvsSent > 0 && fansChatted > 0) {
+    
+    funnelInsight += bottleneck;
+    
     insights.deepInsights.push({
-      type: 'neutral',
-      icon: 'fa-calculator',
-      title: 'Your Conversion Funnel Breakdown',
-      insight: `${fansChatted} fans → ${messagesSent} messages (${(messagesSent / fansChatted).toFixed(1)} msgs/fan) → ${ppvsSent} PPVs sent (${(ppvsSent / fansChatted).toFixed(1)} PPVs/fan) → ${ppvsUnlocked} unlocked (${unlockRate}% rate) → $${revenue} revenue ($${revenuePerFan}/fan)`,
+      type: parseFloat(unlockRate) >= 50 && parseFloat(messageToPPVRate) >= 2 ? 'positive' : 'neutral',
+      icon: 'fa-filter',
+      title: 'Conversion Funnel Analysis',
+      insight: funnelInsight,
       metrics: `Efficiency: $${revenuePerMessage}/message | $${revenuePerFan}/fan | ${unlockRate}% unlock rate`,
-      action: 'Focus on improving the weakest link in your funnel'
+      action: bottleneck.includes('Bottleneck') ? 'Focus on the identified bottleneck' : 'Maintain current approach'
     });
+  }
+  
+  // PATTERN 6: Team Performance Comparison
+  if (teamData && teamData.chatterCount > 0 && unlockRate > 0) {
+    const unlockRateDiff = (parseFloat(unlockRate) - parseFloat(teamData.avgUnlockRate)).toFixed(1);
+    
+    if (Math.abs(unlockRateDiff) > 8) {
+      let insight = `Your ${unlockRate}% unlock rate is ${unlockRateDiff > 0 ? '' : '-'}${Math.abs(unlockRateDiff)}% ${unlockRateDiff > 0 ? 'above' : 'below'} the team average (${teamData.avgUnlockRate}%). `;
+      
+      if (unlockRateDiff > 8) {
+        insight += `This means your captions, timing, and relationship-building are significantly stronger than the rest of the team. `;
+        insight += `Sharing your approach could help improve overall agency performance.`;
+        
+        insights.deepInsights.push({
+          type: 'positive',
+          icon: 'fa-star',
+          title: 'Significantly Outperforming Team',
+          insight: insight,
+          metrics: `You: ${unlockRate}% | Team: ${teamData.avgUnlockRate}% | Difference: +${unlockRateDiff}%`,
+          action: 'Document your messaging strategy to share with team'
+        });
+      } else {
+        const potentialGain = Math.round(ppvsSent * (revenue / ppvsUnlocked) * (Math.abs(unlockRateDiff) / 100));
+        insight += `Matching the team average would add approximately $${potentialGain} to your revenue. `;
+        insight += `Review what top performers are doing differently in their captions and fan engagement.`;
+        
+        insights.deepInsights.push({
+          type: 'warning',
+          icon: 'fa-chart-bar',
+          title: 'Below Team Average Performance',
+          insight: insight,
+          metrics: `Gap: ${Math.abs(unlockRateDiff)}% below team | Potential gain: $${potentialGain}`,
+          action: 'Analyze top performers to identify improvement opportunities'
+        });
+      }
+    }
   }
   
   // DEBUG: Log what was generated
@@ -6536,9 +6754,45 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       performanceRecords: chatterPerformance.length
     });
     
-    // Get ALL chatters' data for comparison
+    // Calculate previous period dates (same duration, shifted back)
+    const periodDuration = end - start;
+    const prevStart = new Date(start.getTime() - periodDuration);
+    const prevEnd = new Date(start.getTime());
+    
+    console.log('📅 Previous period:', { start: prevStart, end: prevEnd });
+    
+    // Get previous period data for this chatter
+    const prevDateQuery = { date: { $gte: prevStart, $lte: prevEnd } };
+    const prevPerformanceQuery = {
+      weekStartDate: { $lte: prevEnd },
+      weekEndDate: { $gte: prevStart },
+      chatterName: chatterName
+    };
+    
+    const prevChatterPurchases = await FanPurchase.find({
+      ...prevDateQuery,
+      chatterName: chatterName
+    });
+    
+    const prevChatterPerformance = await ChatterPerformance.find(prevPerformanceQuery);
+    
+    console.log('📊 Previous period data:', {
+      purchases: prevChatterPurchases.length,
+      performanceRecords: prevChatterPerformance.length
+    });
+    
+    // Get ALL chatters' data for comparison (current period)
     const allPurchases = await FanPurchase.find(dateQuery).populate('trafficSource');
     const allReports = await DailyChatterReport.find(dateQuery);
+    const allPerformance = await ChatterPerformance.find({
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start }
+    });
+    
+    console.log('📊 Team data found:', {
+      allPurchases: allPurchases.length,
+      allPerformance: allPerformance.length
+    });
     
     // Get message analysis for this chatter (try to find one that overlaps with date range)
     // Use case-insensitive search
@@ -6810,8 +7064,25 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       fansChatted: chatterFansChatted
     };
     
+    // Build previous period data object
+    const previousPeriodData = await buildPreviousPeriodData(
+      prevChatterPurchases,
+      prevChatterPerformance,
+      chatterName
+    );
+    
+    // Build team averages object
+    const teamData = await buildTeamData(
+      allPurchases,
+      allPerformance,
+      chatterName
+    );
+    
+    console.log('📊 Previous period metrics:', previousPeriodData);
+    console.log('📊 Team averages:', teamData);
+    
     // Generate smart analysis summary and insights
-    const analysisSummary = generateAnalysisSummary(response);
+    const analysisSummary = generateAnalysisSummary(response, previousPeriodData, teamData);
     response.analysisSummary = analysisSummary.summary;
     response.deepInsights = analysisSummary.deepInsights;
     response.improvements = analysisSummary.improvements;
