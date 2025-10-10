@@ -175,13 +175,17 @@
         }
 
         .scrollbar-thin::-webkit-scrollbar-track {
-            background: rgba(75, 85, 99, 0.3);
+            background: transparent;
             border-radius: 3px;
         }
 
         .scrollbar-thin::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
+            background: transparent;
             border-radius: 3px;
+        }
+        
+        .scrollbar-thin:hover::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
         }
 
         .date-picker {
@@ -508,12 +512,12 @@
             </aside>
 
             <!-- Floating Sidebar Toggle Button (appears when collapsed) -->
-            <button id="floatingSidebarToggle" onclick="document.getElementById('sidebar').classList.remove('sidebar-hidden'); this.classList.add('hidden'); document.querySelector('.main-content').style.marginLeft = '288px';" class="fixed top-20 left-4 z-[60] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-2xl transition-all hidden" title="Show Menu">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-
             <!-- Main Content -->
-            <main class="main-content flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto scrollbar-thin" style="margin-left: 288px;">
+            <main class="main-content flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-y-auto scrollbar-thin relative" style="margin-left: 288px;">
+                <!-- Floating Sidebar Toggle (inside main content, top-left when collapsed) -->
+                <button id="floatingSidebarToggle" onclick="document.getElementById('sidebar').classList.remove('sidebar-hidden'); this.classList.add('hidden'); this.parentElement.style.marginLeft = '288px';" class="absolute top-4 left-4 z-10 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-2xl transition-all hidden" title="Show Menu">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
                 <!-- Dashboard Section -->
                 <div id="dashboard" class="section p-8">
                     <!-- Header with Time Controls -->
@@ -1501,6 +1505,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760055794"></script>
+        <script src="app-complete.js?v=1760056882"></script>
 </body>
 </html>
