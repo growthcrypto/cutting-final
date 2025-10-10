@@ -1493,6 +1493,11 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
         existingSnapshot.renewRate = req.body.renewRate;
       }
       
+      // Only set recurringRevenue if provided
+      if (req.body.recurringRevenue !== undefined && req.body.recurringRevenue !== null) {
+        existingSnapshot.recurringRevenue = req.body.recurringRevenue;
+      }
+      
       await existingSnapshot.save();
       console.log('📊 Updated existing snapshot:', existingSnapshot._id);
       return res.json({ message: 'Daily snapshot updated successfully', data: existingSnapshot });
@@ -1512,6 +1517,11 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
     // Only set renewRate if provided (otherwise it will auto-calculate)
     if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
       snapshotData.renewRate = req.body.renewRate;
+    }
+    
+    // Only set recurringRevenue if provided
+    if (req.body.recurringRevenue !== undefined && req.body.recurringRevenue !== null) {
+      snapshotData.recurringRevenue = req.body.recurringRevenue;
     }
     
     const snapshot = new DailyAccountSnapshot(snapshotData);

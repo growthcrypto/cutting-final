@@ -513,6 +513,9 @@ const dailyAccountSnapshotSchema = new mongoose.Schema({
   creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
   date: { type: Date, required: true }, // Exact date (not week range!)
   
+  // Revenue
+  recurringRevenue: { type: Number, default: 0 }, // Monthly recurring revenue from subscriptions
+  
   // Subscriber Metrics
   totalSubs: { type: Number, required: true }, // Total subscriber count
   activeFans: { type: Number, required: true }, // Fans who are currently active
