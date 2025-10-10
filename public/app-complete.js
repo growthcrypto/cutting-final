@@ -5069,113 +5069,36 @@ function renderNewChatterAnalysis(data) {
                 <!-- Grammar Score Card -->
                 <div class="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 rounded-lg p-5 border ${data.grammarScore >= 80 ? 'border-green-500/40' : data.grammarScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
                     <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-lg font-bold text-white">Grammar</h4>
+                        <h4 class="text-lg font-bold text-white">Grammar Score</h4>
                         <div class="text-4xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
                             ${data.grammarScore}
                         </div>
                     </div>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300">Spelling</span>
-                            <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${spellingCount} (${spellingPct}%)</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300">Grammar</span>
-                            <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${grammarCount} (${grammarPct}%)</span>
-                        </div>
-                        <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                            <span class="text-gray-300">Punctuation</span>
-                            <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${punctuationCount} (${punctuationPct}%)</span>
-                        </div>
-                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Measures spelling, grammar, and punctuation quality. Higher scores indicate cleaner, more professional messages.
+                    </p>
                 </div>
                 
                 <!-- Guidelines Score Card -->
                 <div class="bg-gradient-to-br from-green-600/10 to-emerald-600/10 rounded-lg p-5 border ${data.guidelinesScore >= 80 ? 'border-green-500/40' : data.guidelinesScore >= 60 ? 'border-yellow-500/40' : 'border-red-500/40'}">
                     <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-lg font-bold text-white">Guidelines</h4>
+                        <h4 class="text-lg font-bold text-white">Guidelines Score</h4>
                         <div class="text-4xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
                             ${data.guidelinesScore}
                         </div>
                     </div>
-                    <div class="space-y-2 text-sm">
-                        ${guidelinesByCategory.map(cat => `
-                            <div class="flex justify-between items-center p-2 bg-gray-800/40 rounded">
-                                <span class="text-gray-300">${cat.name}</span>
-                                <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold">${cat.violations} (${cat.pct}%)</span>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Measures compliance with OnlyFans best practices (informality, hooks, captions, etc.). 100 = perfect compliance.
+                    </p>
                 </div>
             </div>
             
-            <!-- Detailed Breakdown Sections -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                
-                <!-- Grammar Details -->
-                <div class="bg-gray-800/30 rounded-lg p-5 border border-gray-700">
-                    <h4 class="text-base font-bold text-blue-400 mb-3 flex items-center">
-                        <i class="fas fa-spell-check mr-2"></i>Grammar Breakdown
-                    </h4>
-                    <div class="space-y-3 text-sm">
-                        ${data.grammarBreakdown?.spellingErrors ? `
-                            <div class="p-3 bg-red-500/10 rounded border-l-2 border-red-500">
-                                <div class="font-bold text-red-400 text-xs mb-1">SPELLING (${spellingCount} errors, ${spellingPct}%)</div>
-                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.spellingErrors}</div>
-                            </div>
-                        ` : ''}
-                        ${data.grammarBreakdown?.grammarIssues ? `
-                            <div class="p-3 bg-orange-500/10 rounded border-l-2 border-orange-500">
-                                <div class="font-bold text-orange-400 text-xs mb-1">GRAMMAR (${grammarCount} errors, ${grammarPct}%)</div>
-                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.grammarIssues}</div>
-                            </div>
-                        ` : ''}
-                        ${data.grammarBreakdown?.punctuationProblems ? `
-                            <div class="p-3 bg-yellow-500/10 rounded border-l-2 border-yellow-500">
-                                <div class="font-bold text-yellow-400 text-xs mb-1">PUNCTUATION (${punctuationCount} errors, ${punctuationPct}%)</div>
-                                <div class="text-gray-300 text-xs leading-relaxed">${data.grammarBreakdown.punctuationProblems}</div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                <!-- Guidelines Details -->
-                <div class="bg-gray-800/30 rounded-lg p-5 border border-gray-700">
-                    <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
-                        <i class="fas fa-list-check mr-2"></i>Guidelines Breakdown
-                    </h4>
-                    <div class="space-y-3 text-sm">
-                        ${renderDetailedGuidelines(data.guidelinesBreakdown, totalMessages)}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Insights & Recommendations -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                
-                <!-- Key Insights -->
-                ${data.insights && data.insights.length > 0 ? `
-                <div class="bg-gradient-to-br from-cyan-600/10 to-blue-600/10 rounded-lg p-5 border border-cyan-500/30">
-                    <h4 class="text-base font-bold text-cyan-400 mb-3 flex items-center">
-                        <i class="fas fa-lightbulb mr-2"></i>Key Insights
-                    </h4>
-                    <div class="space-y-2">
-                        ${data.insights.map(insight => `
-                            <div class="text-xs text-gray-300 leading-relaxed p-2 bg-gray-800/30 rounded">
-                                <i class="fas fa-arrow-right text-cyan-400 mr-2"></i>${insight}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-            
-            <!-- Smart Insights Sections -->
-            ${smartInsights.revenueImpact && smartInsights.revenueImpact.length > 0 ? `
+            <!-- Smart Insights Sections (Always Visible) -->
             <div class="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-lg p-5 border border-green-500/30">
                 <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
                     <i class="fas fa-dollar-sign mr-2"></i>Revenue Impact Analysis
                 </h4>
+                ${smartInsights.revenueImpact && smartInsights.revenueImpact.length > 0 ? `
                 <div class="space-y-2">
                     ${smartInsights.revenueImpact.map(item => `
                         <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 ${item.impact === 'positive' ? 'border-green-500' : 'border-red-500'}">
@@ -5187,14 +5110,18 @@ function renderNewChatterAnalysis(data) {
                         </div>
                     `).join('')}
                 </div>
+                ` : `
+                <p class="text-xs text-gray-400 italic">
+                    Compares your revenue and unlock rate to team averages. Appears when your performance differs significantly from the team.
+                </p>
+                `}
             </div>
-            ` : ''}
             
-            ${smartInsights.conversionEfficiency && smartInsights.conversionEfficiency.length > 0 ? `
             <div class="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-lg p-5 border border-cyan-500/30">
                 <h4 class="text-base font-bold text-cyan-400 mb-3 flex items-center">
                     <i class="fas fa-chart-line mr-2"></i>Conversion Efficiency
                 </h4>
+                ${smartInsights.conversionEfficiency && smartInsights.conversionEfficiency.length > 0 ? `
                 <div class="space-y-2">
                     ${smartInsights.conversionEfficiency.map(item => `
                         <div class="flex items-start p-3 bg-gray-800/30 rounded border-l-2 border-cyan-500">
@@ -5206,14 +5133,18 @@ function renderNewChatterAnalysis(data) {
                         </div>
                     `).join('')}
                 </div>
+                ` : `
+                <p class="text-xs text-gray-400 italic">
+                    Shows PPV conversion rates, revenue per message, and revenue per fan. Calculates your efficiency metrics.
+                </p>
+                `}
             </div>
-            ` : ''}
             
-            ${smartInsights.qualityVsPerformance && smartInsights.qualityVsPerformance.length > 0 ? `
             <div class="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg p-5 border border-purple-500/30">
                 <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center">
                     <i class="fas fa-trophy mr-2"></i>Message Quality vs Performance
                 </h4>
+                ${smartInsights.qualityVsPerformance && smartInsights.qualityVsPerformance.length > 0 ? `
                 <div class="space-y-2">
                     ${smartInsights.qualityVsPerformance.map(item => `
                         <div class="p-3 bg-gray-800/30 rounded border-l-2 border-purple-500">
@@ -5223,20 +5154,24 @@ function renderNewChatterAnalysis(data) {
                         </div>
                     `).join('')}
                 </div>
+                ` : `
+                <p class="text-xs text-gray-400 italic">
+                    Correlates your message quality scores with performance metrics. Shows when team comparison data is available.
+                </p>
+                `}
             </div>
-            ` : ''}
             
-            ${smartInsights.improvements && smartInsights.improvements.length > 0 ? `
             <div class="bg-gradient-to-br from-orange-900/20 to-red-900/20 rounded-lg p-5 border border-orange-500/30">
                 <h4 class="text-base font-bold text-orange-400 mb-3 flex items-center">
                     <i class="fas fa-wrench mr-2"></i>Top Improvement Opportunities
                 </h4>
+                ${smartInsights.improvements && smartInsights.improvements.length > 0 ? `
                 <div class="space-y-2">
                     ${smartInsights.improvements.map(item => `
                         <div class="p-3 bg-gray-800/30 rounded border-l-2 border-orange-500">
                             <div class="flex items-center justify-between mb-2">
                                 <div class="text-xs font-bold text-orange-300">${item.issue}</div>
-                                <div class="text-xs font-bold text-red-400">${item.count} errors</div>
+                                ${item.count > 0 ? `<div class="text-xs font-bold text-red-400">${item.count} errors</div>` : ''}
                             </div>
                             <div class="text-xs text-gray-300 mb-1">${item.detail}</div>
                             <div class="text-xs text-cyan-400 mb-1"><i class="fas fa-lightbulb mr-1"></i>${item.action}</div>
@@ -5244,14 +5179,18 @@ function renderNewChatterAnalysis(data) {
                         </div>
                     `).join('')}
                 </div>
+                ` : `
+                <p class="text-xs text-gray-400 italic">
+                    Identifies specific areas for improvement with actionable recommendations and impact estimates.
+                </p>
+                `}
             </div>
-            ` : ''}
             
-            ${smartInsights.strengths && smartInsights.strengths.length > 0 ? `
             <div class="bg-gradient-to-br from-green-900/20 to-teal-900/20 rounded-lg p-5 border border-green-500/30">
                 <h4 class="text-base font-bold text-green-400 mb-3 flex items-center">
                     <i class="fas fa-star mr-2"></i>What's Working Well
                 </h4>
+                ${smartInsights.strengths && smartInsights.strengths.length > 0 ? `
                 <div class="space-y-2">
                     ${smartInsights.strengths.map(item => `
                         <div class="p-3 bg-gray-800/30 rounded border-l-2 border-green-500">
@@ -5261,8 +5200,12 @@ function renderNewChatterAnalysis(data) {
                         </div>
                     `).join('')}
                 </div>
+                ` : `
+                <p class="text-xs text-gray-400 italic">
+                    Highlights your key strengths and what's driving your success.
+                </p>
+                `}
             </div>
-            ` : ''}
             
         </div>
     `;

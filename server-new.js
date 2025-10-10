@@ -6175,7 +6175,7 @@ function generateAnalysisSummary(data) {
     });
   }
   
-  // Improvements (only show real issues)
+  // Improvements (always show something meaningful)
   if (punctuationCount > 50) {
     const estimatedImpact = (punctuationCount / messagesSent * 100).toFixed(1);
     insights.improvements.push({
@@ -6207,12 +6207,45 @@ function generateAnalysisSummary(data) {
     });
   }
   
-  // Strengths (only show real strengths)
+  // If no major issues, show optimization opportunities
+  if (insights.improvements.length === 0) {
+    if (ppvsSent > 0 && fansChatted > 0) {
+      const ppvPerFan = (ppvsSent / fansChatted).toFixed(1);
+      if (ppvPerFan < 1) {
+        insights.improvements.push({
+          issue: 'PPV Frequency',
+          count: 0,
+          detail: `Sending ${ppvPerFan} PPVs per fan - opportunity to increase`,
+          action: 'Consider sending more PPVs to engaged fans to maximize revenue',
+          impact: 'Could increase revenue per fan'
+        });
+      }
+    }
+    
+    // Always have at least one item
+    if (insights.improvements.length === 0 && overallScore < 100) {
+      insights.improvements.push({
+        issue: 'Score Optimization',
+        count: 0,
+        detail: `Current score: ${overallScore}/100`,
+        action: 'Continue refining message quality to reach perfect score',
+        impact: 'Incremental improvements in engagement and conversions'
+      });
+    }
+  }
+  
+  // Strengths (always show something positive)
   if (guidelinesScore === 100) {
     insights.strengths.push({
       strength: 'Perfect Guideline Compliance',
       detail: '0 violations across all guidelines',
       impact: 'Demonstrates excellent understanding of best practices'
+    });
+  } else if (guidelinesScore >= 90) {
+    insights.strengths.push({
+      strength: 'Strong Guideline Compliance',
+      detail: `${guidelinesScore}/100 guidelines score`,
+      impact: 'Very few violations - nearly perfect adherence'
     });
   }
   
@@ -6221,6 +6254,12 @@ function generateAnalysisSummary(data) {
       strength: 'High Unlock Rate',
       detail: `${unlockRate}% unlock rate on ${ppvsSent} PPVs`,
       impact: 'Your captions are highly effective at driving purchases'
+    });
+  } else if (unlockRate > 30 && ppvsSent > 5) {
+    insights.strengths.push({
+      strength: 'Solid Unlock Rate',
+      detail: `${unlockRate}% unlock rate on ${ppvsSent} PPVs`,
+      impact: 'Consistent conversion performance'
     });
   }
   
@@ -6238,6 +6277,35 @@ function generateAnalysisSummary(data) {
       detail: `$${revenuePerMessage} revenue per message`,
       impact: 'Excellent balance of engagement and monetization'
     });
+  } else if (revenuePerMessage > 0.5 && messagesSent > 50) {
+    insights.strengths.push({
+      strength: 'Good Message Efficiency',
+      detail: `$${revenuePerMessage} revenue per message`,
+      impact: 'Solid monetization of conversations'
+    });
+  }
+  
+  // Always have at least one strength
+  if (insights.strengths.length === 0) {
+    if (overallScore >= 80) {
+      insights.strengths.push({
+        strength: 'Strong Overall Quality',
+        detail: `${overallScore}/100 overall score`,
+        impact: 'Above-average message quality'
+      });
+    } else if (messagesSent > 100) {
+      insights.strengths.push({
+        strength: 'High Engagement Volume',
+        detail: `${messagesSent} messages sent`,
+        impact: 'Actively building relationships with fans'
+      });
+    } else {
+      insights.strengths.push({
+        strength: 'Active Communication',
+        detail: 'Consistently engaging with fans',
+        impact: 'Building foundation for long-term revenue'
+      });
+    }
   }
   
   return insights;
