@@ -6765,7 +6765,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleOFAccountDataSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Submit OF Account Data
                     </button>
                 </div>
@@ -9258,6 +9258,58 @@ async function deleteGuideline(guidelineId) {
 // Form handlers
 async function handleOFAccountDataSubmit(event) {
     console.log('OF Account form submit triggered');
+    
+    const formData = {
+        startDate: document.getElementById('ofAccountStartDate').value,
+        endDate: document.getElementById('ofAccountEndDate').value,
+        creator: document.getElementById('ofAccountCreator').value,
+        recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
+        totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
+        newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
+        dataType: 'of_account'
+    };
+    
+    console.log('OF Account form data collected:', formData);
+
+    if (!formData.startDate || !formData.endDate || !formData.creator) {
+        showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/of-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('OF Account data submitted successfully!', 'success');
+            document.getElementById('ofAccountDataForm').reset();
+            // Update dashboard if we're on it
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit data');
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for OF Account Data button (bypasses event delegation)
+async function handleOFAccountDataSubmitDirect() {
+    console.log('🎯 OF Account Data direct button handler called!');
     
     const formData = {
         startDate: document.getElementById('ofAccountStartDate').value,
