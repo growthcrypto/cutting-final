@@ -2157,23 +2157,7 @@ function initializeSidebar() {
         });
     }
 
-    document.addEventListener('click', (event) => {
-        if (window.innerWidth >= 1024) return;
-        
-        // Don't interfere with buttons, forms, or links
-        if (event.target.tagName === 'BUTTON' || event.target.tagName === 'A' || event.target.tagName === 'INPUT') {
-            return;
-        }
-        
-        const isClickInsideSidebar = sidebar.contains(event.target);
-        const isClickOnControl = (sidebarToggle && sidebarToggle.contains(event.target))
-            || (sidebarToggleIcon && sidebarToggleIcon.contains(event.target))
-            || (floatingSidebarToggle && floatingSidebarToggle.contains(event.target));
-
-        if (!isClickInsideSidebar && !isClickOnControl) {
-            toggleSidebarState(true);
-        }
-    });
+    // Removed auto-collapse on click - was interfering with form submissions
 
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 1024) {
