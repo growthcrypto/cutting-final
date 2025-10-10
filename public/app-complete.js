@@ -4182,6 +4182,14 @@ async function runAgencyAnalysis() {
         const data = await response.json();
         console.log('📊 Data for AI analysis:', data);
         
+        // Calculate unlock rate
+        const unlockRate = data.ppvsSent > 0 
+            ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1)
+            : 0;
+        
+        // Get active chatters count
+        const activeChatterCount = data.chatterPerformance?.length || 0;
+        
         // Show simple team overview for now
         resultsContainer.innerHTML = `
             <div class="glass-card rounded-xl p-6 mb-6">
@@ -4190,32 +4198,62 @@ async function runAgencyAnalysis() {
                     Team Performance Summary
                 </h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="bg-gray-700/50 rounded-xl p-6">
                         <div class="text-gray-400 text-sm mb-2">Total Revenue</div>
                         <div class="text-3xl font-bold text-white">$${data.totalRevenue || 0}</div>
-                        <div class="text-sm text-gray-400 mt-2">${data.chatterPerformance?.length || 0} chatters active</div>
+                        <div class="text-sm text-gray-400 mt-2">This period</div>
                     </div>
                     
                     <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Average Unlock Rate</div>
-                        <div class="text-3xl font-bold text-white">${data.avgUnlockRate || 0}%</div>
-                        <div class="text-sm text-gray-400 mt-2">Across all PPVs sent</div>
+                        <div class="text-gray-400 text-sm mb-2">Team Unlock Rate</div>
+                        <div class="text-3xl font-bold text-white">${unlockRate}%</div>
+                        <div class="text-sm text-gray-400 mt-2">${data.ppvsUnlocked || 0}/${data.ppvsSent || 0} PPVs</div>
                     </div>
                     
                     <div class="bg-gray-700/50 rounded-xl p-6">
-                        <div class="text-gray-400 text-sm mb-2">Average Quality Score</div>
+                        <div class="text-gray-400 text-sm mb-2">Avg Quality Score</div>
                         <div class="text-3xl font-bold text-white">${data.avgOverallScore || 0}/100</div>
-                        <div class="text-sm text-gray-400 mt-2">Team message quality</div>
+                        <div class="text-sm text-gray-400 mt-2">Message quality</div>
+                    </div>
+                    
+                    <div class="bg-gray-700/50 rounded-xl p-6">
+                        <div class="text-gray-400 text-sm mb-2">Active Chatters</div>
+                        <div class="text-3xl font-bold text-white">${activeChatterCount}</div>
+                        <div class="text-sm text-gray-400 mt-2">This period</div>
                     </div>
                 </div>
                 
-                <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                    <p class="text-blue-300">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Note:</strong> Upload data for multiple chatters and periods to see team-wide pattern analysis, correlations, and recommendations.
-                    </p>
-                </div>
+                ${activeChatterCount < 2 ? `
+                    <div class="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                        <p class="text-yellow-300">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Limited Insights:</strong> Only ${activeChatterCount} chatter has data. Upload performance data for multiple chatters to see team-wide correlations, benchmarks, and recommendations.
+                        </p>
+                    </div>
+                ` : ''}
+                
+                ${data.avgOverallScore ? `
+                    <div class="mt-6 space-y-4">
+                        <h4 class="text-lg font-bold text-white">Team Insights</h4>
+                        <div class="bg-gray-700/30 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm text-gray-400">Grammar Score</div>
+                                    <div class="text-xl font-bold text-white">${data.avgGrammarScore !== null ? data.avgGrammarScore : 'N/A'}/100</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">Guidelines Score</div>
+                                    <div class="text-xl font-bold text-white">${data.avgGuidelinesScore || 'N/A'}/100</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">Overall Score</div>
+                                    <div class="text-xl font-bold text-white">${data.avgOverallScore || 0}/100</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
         
