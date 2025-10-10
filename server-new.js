@@ -6339,7 +6339,7 @@ app.post('/api/admin/wipe-data', authenticateToken, requireManager, async (req, 
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 OnlyFans Agency Analytics System v2.0 running on port ${PORT}`);
+  console.log(`🚀 OnlyFans Agency Analytics System v2.1 running on port ${PORT}`);
   console.log(`🌐 Visit: http://localhost:${PORT}`);
   console.log(`📊 New system deployed successfully!`);
   console.log(`🔐 User authentication: ${process.env.JWT_SECRET ? 'Secure' : 'Default key'}`);
