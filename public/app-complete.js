@@ -4436,6 +4436,23 @@ async function runChatterAnalysis() {
 
         const analysisData = await response.json();
         console.log('✅ Enhanced chatter analysis data:', analysisData);
+        
+        // If scores are null, we need to trigger analysis first!
+        if (analysisData.overallScore === null || analysisData.overallScore === 0) {
+            console.log('⚠️ No analysis scores found - need to run analysis first!');
+            resultsContainer.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-yellow-600/20 to-orange-600/20 rounded-3xl flex items-center justify-center border-2 border-yellow-500/30">
+                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-400"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">No Analysis Data Available</h3>
+                    <p class="text-gray-400 mb-6">Messages have been uploaded but not analyzed yet.</p>
+                    <p class="text-gray-300 mb-8">Go to <strong>Data Management > Messages</strong> and click <strong>"Re-analyze"</strong> to run the AI analysis.</p>
+                </div>
+            `;
+            return;
+        }
+        
         renderChatterAnalysisResults(analysisData);
         
         // Load performance trends for this chatter
