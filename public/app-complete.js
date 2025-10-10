@@ -1553,20 +1553,7 @@ function setupEventListeners() {
         dailyReportForm.addEventListener('submit', handleDailyReportSubmit);
     }
 
-    // Add PPV sale and tip buttons
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'addPPVSale' || e.target.closest('#addPPVSale')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('📍 Click detected on addPPVSale button');
-            window.addPPVSaleField();
-        } else if (e.target.id === 'addTip' || e.target.closest('#addTip')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('📍 Click detected on addTip button');
-            window.addTipField();
-        }
-    });
+    // Removed event delegation for PPV/Tip buttons - using direct onclick handlers instead
 
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(event) {
@@ -8282,7 +8269,7 @@ function createDailyReportSection() {
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">PPV Sales</h3>
-                        <button type="button" id="addPPVSale" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <button type="button" id="addPPVSale" onclick="window.addPPVSaleField()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Sale
                         </button>
                     </div>
@@ -8292,7 +8279,7 @@ function createDailyReportSection() {
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Tips (Optional)</h3>
-                        <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                        <button type="button" id="addTip" onclick="window.addTipField()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Tip
                         </button>
                     </div>
