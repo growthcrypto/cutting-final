@@ -1482,13 +1482,18 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
       existingSnapshot.newSubsToday = req.body.newSubsToday || 0;
       existingSnapshot.uploadedBy = req.user.userId;
       
+      // Only set renewRate if provided (otherwise it will auto-calculate)
+      if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
+        existingSnapshot.renewRate = req.body.renewRate;
+      }
+      
       await existingSnapshot.save();
       console.log('📊 Updated existing snapshot:', existingSnapshot._id);
       return res.json({ message: 'Daily snapshot updated successfully', data: existingSnapshot });
     }
     
     // Create new snapshot
-    const snapshot = new DailyAccountSnapshot({
+    const snapshotData = {
       creatorAccount: creatorAccount._id,
       date: new Date(req.body.date),
       totalSubs: req.body.totalSubs || 0,
@@ -1496,7 +1501,14 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
       fansWithRenew: req.body.fansWithRenew || 0,
       newSubsToday: req.body.newSubsToday || 0,
       uploadedBy: req.user.userId
-    });
+    };
+    
+    // Only set renewRate if provided (otherwise it will auto-calculate)
+    if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
+      snapshotData.renewRate = req.body.renewRate;
+    }
+    
+    const snapshot = new DailyAccountSnapshot(snapshotData);
     
     await snapshot.save();
     console.log('📊 Daily snapshot saved:', snapshot._id, 'Renew rate:', snapshot.renewRate + '%');
