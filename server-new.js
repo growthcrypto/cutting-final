@@ -6085,21 +6085,21 @@ function generateAnalysisSummary(data) {
     strengths: []
   };
   
-  // Extract key metrics
+  // Extract key metrics (support both nested and flat structure)
   const chatter = data.chatter || {};
   const team = data.team || {};
-  const overallScore = chatter.overallScore || 0;
-  const grammarScore = chatter.grammarScore || 0;
-  const guidelinesScore = chatter.guidelinesScore || 0;
+  const overallScore = data.overallScore || chatter.overallScore || 0;
+  const grammarScore = data.grammarScore || chatter.grammarScore || 0;
+  const guidelinesScore = data.guidelinesScore || chatter.guidelinesScore || 0;
   const revenue = data.revenue || 0;
   const ppvsSent = data.ppvsSent || 0;
   const ppvsUnlocked = data.ppvsUnlocked || 0;
   const messagesSent = data.messagesSent || 0;
   const fansChatted = data.fansChatted || 0;
-  const unlockRate = ppvsSent > 0 ? ((ppvsUnlocked / ppvsSent) * 100).toFixed(1) : 0;
-  const revenuePerMessage = messagesSent > 0 ? (revenue / messagesSent).toFixed(2) : 0;
-  const revenuePerFan = fansChatted > 0 ? (revenue / fansChatted).toFixed(2) : 0;
-  const messagesPerFan = fansChatted > 0 ? (messagesSent / fansChatted).toFixed(1) : 0;
+  const unlockRate = data.unlockRate || (ppvsSent > 0 ? ((ppvsUnlocked / ppvsSent) * 100).toFixed(1) : 0);
+  const revenuePerMessage = data.revenuePerMessage || (messagesSent > 0 ? (revenue / messagesSent).toFixed(2) : 0);
+  const revenuePerFan = data.revenuePerFan || (fansChatted > 0 ? (revenue / fansChatted).toFixed(2) : 0);
+  const messagesPerFan = data.messagesPerFan || (fansChatted > 0 ? (messagesSent / fansChatted).toFixed(1) : 0);
   
   // Parse grammar breakdown for issues
   const grammarBreakdown = data.grammarBreakdown || {};
