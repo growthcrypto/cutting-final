@@ -2576,6 +2576,11 @@ function getMetricColor(value, avg, lowerIsBetter = false) {
 
 let currentDashboardInterval = '7d';
 let currentAnalyticsInterval = '7d';
+let currentMarketingInterval = '7d';
+let currentTeamDashInterval = '7d';
+let currentTeamComparisonInterval = '7d';
+let currentAIInterval = '7d';
+let currentPerformanceInterval = '7d';
 let currentModalContext = null; // Track which page opened the modal
 
 // Independent custom date ranges for each dashboard
@@ -2827,50 +2832,40 @@ window.setAIInterval = function(interval) {
 }
 
 window.setTeamDashInterval = function(interval) {
+    currentTeamDashInterval = interval;
+    
     // Update button styles
     document.querySelectorAll('.team-interval-btn').forEach(btn => {
-        if (btn.getAttribute('data-interval') === interval) {
+        const btnInterval = btn.getAttribute('data-interval');
+        if (btnInterval === interval) {
             btn.classList.remove('bg-gray-700', 'text-gray-300');
             btn.classList.add('bg-blue-600', 'text-white');
+            
+            // Update button text if custom
+            if (interval === 'custom' && teamDashCustomDates) {
+                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                btn.innerHTML = `<i class="fas fa-calendar mr-2"></i>${formatDate(teamDashCustomDates.start)} - ${formatDate(teamDashCustomDates.end)}`;
+            }
         } else {
             btn.classList.remove('bg-blue-600', 'text-white');
             btn.classList.add('bg-gray-700', 'text-gray-300');
+            
+            // Reset custom button text
+            if (btnInterval === 'custom') {
+                btn.innerHTML = '<i class="fas fa-calendar mr-2"></i>Custom';
+            }
         }
     });
     
     if (interval === 'custom') {
+        // Clear modal inputs and show popup
+        document.getElementById('modalStartDate').value = '';
+        document.getElementById('modalEndDate').value = '';
         currentModalContext = 'team';
         document.getElementById('customDateModal').classList.remove('hidden');
     } else {
-        const today = new Date();
-        let startDate;
-        
-        if (interval === '24h') {
-            startDate = new Date(today);
-            startDate.setHours(today.getHours() - 24);
-        } else if (interval === '7d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-        } else if (interval === '30d') {
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-        }
-        
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        // Set filter type and date range for Team Dashboard API
-        currentFilterType = 'custom';
-        customDateRange = {
-            start: formatDate(startDate),
-            end: formatDate(today)
-        };
-        
-        console.log('🔄 Team Dashboard interval set:', interval, customDateRange);
+        // Clear custom dates when selecting preset
+        teamDashCustomDates = null;
         loadTeamDashboard();
     }
 }
@@ -8495,34 +8490,34 @@ async function loadTeamDashboard() {
     }
     
     try {
-        // Build URL based on filter type (use same filters as Manager Dashboard)
-        let url;
-        if (currentFilterType === 'custom' && customDateRange) {
-            // NEW: Custom date range
-            url = `/api/analytics/team-dashboard?filterType=custom&customStart=${customDateRange.start}&customEnd=${customDateRange.end}`;
-        } else if (currentFilterType === 'week' && currentWeekFilter) {
-            url = `/api/analytics/team-dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}`;
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            url = `/api/analytics/team-dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}`;
+        // Use currentTeamDashInterval and calculate date range
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentTeamDashInterval === 'custom' && teamDashCustomDates) {
+            startDate = new Date(teamDashCustomDates.start);
+            endDate = new Date(teamDashCustomDates.end);
+        } else if (currentTeamDashInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentTeamDashInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentTeamDashInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
         } else {
-            // Fallback: Load available periods first if not loaded
-            if (!currentFilterType && availableWeeks.length === 0) {
-                console.log('🔄 Team Dashboard: No filter set, loading available periods...');
-                await loadAvailablePeriods();
-                // After periods loaded, selectWeek() was called which triggers loadDashboardData() but not loadTeamDashboard()
-                // So we need to reload the team dashboard now
-                console.log('🔄 Team Dashboard: Periods loaded, reloading with filter...');
-                return loadTeamDashboard(); // Recursively call with filter now set
-            }
-            // Old behavior fallback - should not reach here anymore
-            console.warn('⚠️ Team Dashboard using old fallback - this should not happen!');
-            url = `/api/analytics/team-dashboard?interval=${currentTeamInterval || '7d'}`;
-            if (currentTeamDateRange) {
-                url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
-            }
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
         }
         
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/team-dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
         console.log('Team Dashboard URL:', url);
+        console.log('Team Dashboard interval:', currentTeamDashInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         
         const response = await fetch(url, {
             headers: {
