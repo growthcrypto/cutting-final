@@ -6120,6 +6120,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       console.log('   - Overall Score:', messageAnalysis.overallScore);
       console.log('   - Grammar Score:', messageAnalysis.grammarScore);
       console.log('   - Guidelines Score:', messageAnalysis.guidelinesScore);
+      console.log('   - Grammar Breakdown:', JSON.stringify(messageAnalysis.grammarBreakdown));
+      console.log('   - Guidelines Breakdown:', JSON.stringify(messageAnalysis.guidelinesBreakdown));
+      console.log('   - Strengths:', messageAnalysis.strengths);
+      console.log('   - Weaknesses:', messageAnalysis.weaknesses);
+      console.log('   - Recommendations:', messageAnalysis.recommendations);
     }
     
     // Calculate this chatter's metrics (use ChatterPerformance as fallback)
