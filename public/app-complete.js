@@ -1270,6 +1270,7 @@ async function deleteVIPFan(id, username) {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 App initializing...');
+    setupEventListeners();
     checkAuthStatus();
     
     // Initialize sidebar after a brief delay to ensure DOM is ready
