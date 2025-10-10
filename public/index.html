@@ -432,7 +432,7 @@
             <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto scrollbar-thin">
                 <!-- Sidebar Toggle Button -->
                 <div class="flex justify-end p-4" style="margin-top: 60px;">
-                    <button onclick="document.getElementById('sidebar').classList.add('sidebar-hidden'); document.getElementById('floatingSidebarToggle').classList.remove('hidden');" class="text-gray-400 hover:text-white transition-colors bg-gray-700/50 hover:bg-gray-600/50 px-3 py-2 rounded-lg text-sm" title="Collapse Sidebar">
+                    <button onclick="document.getElementById('sidebar').classList.add('sidebar-hidden'); document.getElementById('floatingSidebarToggle').classList.remove('hidden'); document.querySelector('.main-content').style.marginLeft = '0';" class="text-gray-400 hover:text-white transition-colors bg-gray-700/50 hover:bg-gray-600/50 px-3 py-2 rounded-lg text-sm" title="Collapse Sidebar">
                         <i class="fas fa-angle-double-left"></i>
                     </button>
                 </div>
@@ -508,7 +508,7 @@
             </aside>
 
             <!-- Floating Sidebar Toggle Button (appears when collapsed) -->
-            <button id="floatingSidebarToggle" onclick="document.getElementById('sidebar').classList.remove('sidebar-hidden'); this.classList.add('hidden');" class="fixed top-20 left-4 z-[60] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-2xl transition-all hidden" title="Show Menu">
+            <button id="floatingSidebarToggle" onclick="document.getElementById('sidebar').classList.remove('sidebar-hidden'); this.classList.add('hidden'); document.querySelector('.main-content').style.marginLeft = '288px';" class="fixed top-20 left-4 z-[60] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-2xl transition-all hidden" title="Show Menu">
                 <i class="fas fa-bars text-xl"></i>
             </button>
 
@@ -1501,6 +1501,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760055591"></script>
+        <script src="app-complete.js?v=1760055794"></script>
 </body>
 </html>
