@@ -4225,12 +4225,26 @@ function renderAgencyIntelligence(intel) {
         <!-- Revenue Analysis -->
         ${revenue.current ? `
             <div class="glass-card rounded-2xl p-8 mb-8">
-                <h3 class="text-2xl font-bold text-white mb-6">
+                <h3 class="text-2xl font-bold text-white mb-4">
                     <i class="fas fa-chart-line text-green-400 mr-3"></i>
                     Revenue Mechanical Breakdown
                 </h3>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                ${revenue.previous.revenue > 0 ? `
+                    <div class="mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-600/30">
+                        <p class="text-gray-300 leading-relaxed">
+                            Revenue ${revenue.changes.revenue >= 0 ? 'grew' : 'declined'} by <span class="font-bold text-white">${revenue.changes.revenuePercent >= 0 ? '+' : ''}${revenue.changes.revenuePercent}%</span> this period 
+                            ($${revenue.previous.revenue} → $${revenue.current.revenue}). 
+                            ${Math.abs(revenue.drivers.volumeContribution) > Math.abs(revenue.drivers.priceContribution) 
+                                ? `Volume changes contributed $${Math.abs(revenue.drivers.volumeContribution)}, while pricing contributed $${Math.abs(revenue.drivers.priceContribution)}.`
+                                : `Pricing changes contributed $${Math.abs(revenue.drivers.priceContribution)}, while volume contributed $${Math.abs(revenue.drivers.volumeContribution)}.`
+                            }
+                            ${revenue.changes.unlockRate < -5 ? `Unlock rate decline cost you potential revenue.` : revenue.changes.unlockRate > 5 ? `Unlock rate improvement boosted revenue.` : ''}
+                        </p>
+                    </div>
+                ` : ''}
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" style="display: none;">
                     <div class="bg-gradient-to-br from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
                         <div class="text-green-300 text-sm font-bold mb-4">CURRENT PERIOD</div>
                         <div class="space-y-3">
@@ -4289,31 +4303,55 @@ function renderAgencyIntelligence(intel) {
                         <i class="fas fa-calculator mr-2"></i>WHAT DROVE THE CHANGE:
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="text-center">
-                            <div class="text-sm text-gray-400">Volume Impact</div>
-                            <div class="text-2xl font-bold ${revenue.drivers?.volumeContribution >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        <div class="bg-gray-800/50 rounded-lg p-4">
+                            <div class="text-sm text-gray-400 mb-2">Volume Impact</div>
+                            <div class="text-3xl font-bold ${revenue.drivers?.volumeContribution >= 0 ? 'text-green-400' : 'text-red-400'} mb-2">
                                 ${revenue.drivers?.volumeContribution >= 0 ? '+' : ''}$${revenue.drivers?.volumeContribution || 0}
                             </div>
-                            <div class="text-xs text-gray-500">${revenue.changes?.ppvCount >= 0 ? '+' : ''}${revenue.changes?.ppvCount || 0} PPVs</div>
+                            <div class="text-xs text-gray-500 mb-2">${revenue.changes?.ppvCount >= 0 ? '+' : ''}${revenue.changes?.ppvCount || 0} PPVs unlocked</div>
+                            <div class="text-xs text-gray-400 leading-tight">
+                                ${revenue.changes?.ppvCount > 0 
+                                    ? `Sending more PPVs increased potential revenue`
+                                    : revenue.changes?.ppvCount < 0
+                                    ? `Fewer PPVs sent reduced revenue`
+                                    : `Volume unchanged`
+                                }
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm text-gray-400">Pricing Impact</div>
-                            <div class="text-2xl font-bold ${revenue.drivers?.priceContribution >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        <div class="bg-gray-800/50 rounded-lg p-4">
+                            <div class="text-sm text-gray-400 mb-2">Pricing Impact</div>
+                            <div class="text-3xl font-bold ${revenue.drivers?.priceContribution >= 0 ? 'text-green-400' : 'text-red-400'} mb-2">
                                 ${revenue.drivers?.priceContribution >= 0 ? '+' : ''}$${revenue.drivers?.priceContribution || 0}
                             </div>
-                            <div class="text-xs text-gray-500">${revenue.changes?.avgPrice >= 0 ? '+' : ''}$${revenue.changes?.avgPrice || 0} avg price</div>
+                            <div class="text-xs text-gray-500 mb-2">${revenue.changes?.avgPrice >= 0 ? '+' : ''}$${revenue.changes?.avgPrice || 0} avg price change</div>
+                            <div class="text-xs text-gray-400 leading-tight">
+                                ${revenue.changes?.avgPrice > 5 
+                                    ? `Higher prices drove more revenue per PPV`
+                                    : revenue.changes?.avgPrice < -5
+                                    ? `Lower prices reduced revenue per PPV`
+                                    : `Pricing remained consistent`
+                                }
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm text-gray-400">Unlock Rate Impact</div>
-                            <div class="text-2xl font-bold ${revenue.changes?.unlockRate >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        <div class="bg-gray-800/50 rounded-lg p-4">
+                            <div class="text-sm text-gray-400 mb-2">Conversion Impact</div>
+                            <div class="text-3xl font-bold ${revenue.changes?.unlockRate >= 0 ? 'text-green-400' : 'text-red-400'} mb-2">
                                 ${revenue.changes?.unlockRate >= 0 ? '+' : ''}${revenue.changes?.unlockRate || 0}%
                             </div>
-                            <div class="text-xs text-gray-500">${revenue.current.unlockRate}% current</div>
+                            <div class="text-xs text-gray-500 mb-2">${revenue.current.unlockRate}% current rate</div>
+                            <div class="text-xs text-gray-400 leading-tight">
+                                ${revenue.changes?.unlockRate > 3 
+                                    ? `Better captions/timing improved conversions`
+                                    : revenue.changes?.unlockRate < -3
+                                    ? `Lower unlock rate hurt revenue potential`
+                                    : `Conversion rate stable`
+                                }
+                            </div>
                         </div>
                     </div>
-                    <div class="text-center text-white">
+                    <div class="text-center text-white pt-4 border-t border-white/10">
                         <i class="fas fa-bolt text-yellow-400 mr-2"></i>
-                        Primary driver: <span class="font-bold">${revenue.drivers?.primaryDriver === 'volume' ? 'PPV Volume' : 'Price Changes'}</span>
+                        <span class="font-bold">${revenue.drivers?.primaryDriver === 'volume' ? 'Volume Growth' : 'Price Changes'}</span> was the primary revenue driver this period
                     </div>
                 </div>
             </div>
@@ -4322,10 +4360,22 @@ function renderAgencyIntelligence(intel) {
         <!-- Traffic Source Intelligence -->
         ${traffic.sortedSources && traffic.sortedSources.length > 0 ? `
             <div class="glass-card rounded-2xl p-8 mb-8">
-                <h3 class="text-2xl font-bold text-white mb-6">
+                <h3 class="text-2xl font-bold text-white mb-4">
                     <i class="fas fa-route text-blue-400 mr-3"></i>
                     Traffic Source Intelligence
                 </h3>
+                
+                <div class="mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-600/30">
+                    <p class="text-gray-300 leading-relaxed">
+                        ${traffic.sortedSources.length} traffic source${traffic.sortedSources.length > 1 ? 's' : ''} generated $${traffic.totalRevenue} this period. 
+                        <span class="font-bold text-white">${traffic.topSource?.name}</span> is your top performer with $${traffic.topSource?.revenue} 
+                        (<span class="${parseFloat(traffic.concentration) > 70 ? 'text-red-400' : 'text-green-400'} font-bold">${traffic.concentration}%</span> of revenue).
+                        ${parseFloat(traffic.concentration) > 70 
+                            ? ` This high concentration creates risk - if ${traffic.topSource?.name} underperforms, you lose most of your revenue.`
+                            : ` Your revenue is well-diversified across multiple sources.`
+                        }
+                    </p>
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div class="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 rounded-xl p-6 border border-blue-500/30">
@@ -4413,10 +4463,28 @@ function renderAgencyIntelligence(intel) {
         <!-- Retention & Churn -->
         ${retention.overall ? `
             <div class="glass-card rounded-2xl p-8 mb-8">
-                <h3 class="text-2xl font-bold text-white mb-6">
+                <h3 class="text-2xl font-bold text-white mb-4">
                     <i class="fas fa-users text-cyan-400 mr-3"></i>
                     Retention & Churn Intelligence
                 </h3>
+                
+                <div class="mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-600/30">
+                    <p class="text-gray-300 leading-relaxed">
+                        ${retention.overall.retention30Day > 0 
+                            ? `<span class="font-bold text-white">${retention.overall.retention30Day}%</span> of fans remain active after 30 days, dropping to 
+                               <span class="font-bold text-white">${retention.overall.retention90Day}%</span> by 90 days.`
+                            : 'No retention data available - track VIP fan engagement to monitor churn.'
+                        }
+                        ${retention.atRisk.count > 0 
+                            ? ` <span class="text-yellow-400 font-bold">${retention.atRisk.count} fans</span> haven't messaged in 15+ days and are at risk of churning.`
+                            : ''
+                        }
+                        ${retention.likelyChurned.count > 0 
+                            ? ` <span class="text-red-400 font-bold">${retention.likelyChurned.count} fans</span> are likely already churned (30+ days inactive).`
+                            : ''
+                        }
+                    </p>
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     <div class="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-xl p-6 border border-cyan-500/30">
@@ -4486,10 +4554,28 @@ function renderAgencyIntelligence(intel) {
         <!-- Team Performance Matrix -->
         ${team.chatters && team.chatters.length > 0 ? `
             <div class="glass-card rounded-2xl p-8 mb-8">
-                <h3 class="text-2xl font-bold text-white mb-6">
+                <h3 class="text-2xl font-bold text-white mb-4">
                     <i class="fas fa-users-cog text-purple-400 mr-3"></i>
                     Team Performance Matrix
                 </h3>
+                
+                <div class="mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-600/30">
+                    <p class="text-gray-300 leading-relaxed">
+                        ${team.count} ${team.count > 1 ? 'chatters are' : 'chatter is'} active this period. 
+                        ${team.rankings?.revenue?.[0] 
+                            ? `<span class="font-bold text-white">${team.rankings.revenue[0].name}</span> leads in revenue with $${team.rankings.revenue[0].revenue}.`
+                            : ''
+                        }
+                        ${team.averages?.unlockRate > 0 
+                            ? ` Team average unlock rate is <span class="font-bold text-white">${team.averages.unlockRate}%</span>.`
+                            : ''
+                        }
+                        ${team.correlations?.qualityUnlockRate?.isSignificant
+                            ? ` Strong ${team.correlations.qualityUnlockRate.strength.toFixed(0)}% correlation detected between quality scores and unlock rates.`
+                            : team.count >= 3 ? ` Upload message analyses for all chatters to detect quality correlations.` : ''
+                        }
+                    </p>
+                </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     ${team.rankings?.revenue?.slice(0, 3).map((chatter, idx) => `
