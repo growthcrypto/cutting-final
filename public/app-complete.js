@@ -977,6 +977,40 @@ async function refreshDataTab(tabName) {
 }
 
 // Load Messages Data
+// Re-analyze messages
+async function reanalyzeMessages(messageId) {
+    if (!confirm('This will re-run AI analysis on these messages. This may take a few minutes and use API credits. Continue?')) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        console.log('🔄 Triggering re-analysis for:', messageId);
+        const response = await fetch(`/api/messages/reanalyze/${messageId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Messages re-analyzed successfully! Check AI Analysis page for results.', 'success');
+            loadMessagesData(); // Refresh the table
+        } else {
+            showError(result.error || 'Failed to re-analyze messages');
+        }
+    } catch (error) {
+        console.error('Re-analysis error:', error);
+        showError('Failed to re-analyze messages. Check console for details.');
+    } finally {
+        showLoading(false);
+    }
+}
+
 async function loadMessagesData() {
     try {
         const response = await fetch('/api/data-management/messages', {
@@ -999,6 +1033,9 @@ async function loadMessagesData() {
                 <td class="px-4 py-4 text-right text-blue-400">${msg.totalMessages || 0}</td>
                 <td class="px-4 py-4 text-right text-gray-300">${msg.creatorAccount || 'N/A'}</td>
                 <td class="px-4 py-4 text-center">
+                    <button onclick="reanalyzeMessages('${msg._id}')" class="px-3 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/30 hover:border-cyan-500 text-cyan-300 rounded-lg text-sm transition-all mr-2">
+                        <i class="fas fa-brain mr-1"></i>Re-analyze
+                    </button>
                     <button onclick="deleteMessageRecord('${msg._id}', '${msg.chatterName}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
                         <i class="fas fa-trash mr-1"></i>Delete
                     </button>

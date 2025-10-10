@@ -1943,6 +1943,70 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
   }
 });
 
+// RE-ANALYZE existing messages (triggered by "Run Analysis" button)
+app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const messageAnalysisId = req.params.id;
+    console.log('🔄 RE-ANALYZING MessageAnalysis:', messageAnalysisId);
+    
+    // Get the existing MessageAnalysis record
+    const existingAnalysis = await MessageAnalysis.findById(messageAnalysisId);
+    if (!existingAnalysis) {
+      return res.status(404).json({ error: 'Message analysis not found' });
+    }
+    
+    console.log('Found existing analysis:', {
+      chatterName: existingAnalysis.chatterName,
+      totalMessages: existingAnalysis.totalMessages,
+      hasMessageRecords: !!existingAnalysis.messageRecords,
+      messageRecordsLength: existingAnalysis.messageRecords?.length || 0
+    });
+    
+    // Check if we have message records to analyze
+    if (!existingAnalysis.messageRecords || existingAnalysis.messageRecords.length === 0) {
+      return res.status(400).json({ error: 'No message records found in this analysis. Please re-upload the messages.' });
+    }
+    
+    // Extract message text from records
+    const messages = existingAnalysis.messageRecords.map(record => record.messageText);
+    console.log('📧 Extracted', messages.length, 'messages for re-analysis');
+    
+    // Run AI analysis
+    const analysisResult = await analyzeMessages(messages, existingAnalysis.chatterName);
+    console.log('✅ Re-analysis complete:', {
+      overallScore: analysisResult.overallScore,
+      grammarScore: analysisResult.grammarScore,
+      guidelinesScore: analysisResult.guidelinesScore
+    });
+    
+    // Update the existing record
+    existingAnalysis.overallScore = analysisResult.overallScore || null;
+    existingAnalysis.grammarScore = analysisResult.grammarScore || null;
+    existingAnalysis.guidelinesScore = analysisResult.guidelinesScore || null;
+    existingAnalysis.strengths = analysisResult.strengths || [];
+    existingAnalysis.weaknesses = analysisResult.weaknesses || [];
+    existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
+    existingAnalysis.chattingStyle = analysisResult.chattingStyle || null;
+    existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
+    existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
+    
+    await existingAnalysis.save();
+    console.log('✅ Updated MessageAnalysis saved');
+    
+    res.json({
+      message: 'Messages re-analyzed successfully',
+      analysis: {
+        overallScore: existingAnalysis.overallScore,
+        grammarScore: existingAnalysis.grammarScore,
+        guidelinesScore: existingAnalysis.guidelinesScore
+      }
+    });
+  } catch (error) {
+    console.error('Re-analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Helper function to analyze messages using AI
 async function analyzeMessages(messages, chatterName) {
   try {
