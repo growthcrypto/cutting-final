@@ -1966,6 +1966,8 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     existingAnalysis.overallScore = analysisResult.overallScore || null;
     existingAnalysis.grammarScore = analysisResult.grammarScore || null;
     existingAnalysis.guidelinesScore = analysisResult.guidelinesScore || null;
+    existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
+    existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
     existingAnalysis.strengths = analysisResult.strengths || [];
     existingAnalysis.weaknesses = analysisResult.weaknesses || [];
     existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
@@ -1974,7 +1976,10 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
     
     await existingAnalysis.save();
-    console.log('✅ Updated MessageAnalysis saved');
+    console.log('✅ Updated MessageAnalysis saved with breakdowns:', {
+      hasGrammarBreakdown: !!analysisResult.grammarBreakdown,
+      hasGuidelinesBreakdown: !!analysisResult.guidelinesBreakdown
+    });
     
     res.json({
       message: 'Messages re-analyzed successfully',
