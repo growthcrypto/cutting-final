@@ -7028,7 +7028,7 @@ function createDataUploadSection() {
                     <input type="file" id="messagesFile" accept=".csv" required
                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700">
                 </div>
-                <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                <button type="button" onclick="handleMessagesUploadDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                     <i class="fas fa-upload mr-2"></i>Upload Messages
                 </button>
             </form>
@@ -9682,6 +9682,78 @@ async function handleChatterDataSubmit(event) {
             showError(result.error || 'Failed to submit data');
         }
     } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Messages Upload button (bypasses event delegation)
+async function handleMessagesUploadDirect() {
+    console.log('🎯 Messages Upload direct button handler called!');
+    
+    if (!authToken) {
+        showError('Please log in first');
+        return;
+    }
+    
+    const file = document.getElementById('messagesFile').files[0];
+    const chatter = document.getElementById('messagesChatter').value;
+    const startDate = document.getElementById('messagesStartDate').value;
+    const endDate = document.getElementById('messagesEndDate').value;
+    
+    console.log('Form data:', { file: file?.name, chatter, startDate, endDate });
+    
+    if (!file) {
+        showError('Please select a file first');
+        return;
+    }
+    
+    if (!chatter) {
+        showError('Please select a chatter/employee');
+        return;
+    }
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date cannot be after end date');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('messages', file);
+    formData.append('chatter', chatter);
+    formData.append('startDate', startDate);
+    formData.append('endDate', endDate);
+
+    showLoading(true);
+
+    try {
+        console.log('Sending request to /api/upload/messages');
+        const response = await fetch('/api/upload/messages', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        });
+
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Response result:', result);
+
+        if (response.ok) {
+            showNotification('Message data uploaded successfully!', 'success');
+            document.getElementById('messagesUploadForm').reset();
+        } else {
+            showError(result.error || 'Failed to upload messages');
+        }
+    } catch (error) {
+        console.error('Messages upload error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
