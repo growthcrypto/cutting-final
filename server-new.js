@@ -1403,6 +1403,18 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
 });
 
 // Submit OF Account data
+// Delete all OF Account Data (manager only)
+app.delete('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
+  try {
+    const result = await AccountData.deleteMany({});
+    console.log('🗑️ Deleted all OF Account Data:', result.deletedCount, 'records');
+    res.json({ message: 'All OF Account Data deleted successfully', deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error('Error deleting OF Account Data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/analytics/of-account', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     console.log('OF Account data submission:', req.body);
