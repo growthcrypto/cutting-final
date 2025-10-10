@@ -1553,7 +1553,30 @@ function setupEventListeners() {
         dailyReportForm.addEventListener('submit', handleDailyReportSubmit);
     }
 
-    // Removed event delegation for PPV/Tip buttons - using direct onclick handlers instead
+    // Nuclear option: Capture phase event listener for PPV/Tip buttons
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        const addPPVBtn = target.id === 'addPPVSale' || target.closest('#addPPVSale');
+        const addTipBtn = target.id === 'addTip' || target.closest('#addTip');
+        
+        if (addPPVBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔥 CAPTURED Add PPV click!');
+            window.addPPVSaleField();
+            return false;
+        }
+        
+        if (addTipBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔥 CAPTURED Add Tip click!');
+            window.addTipField();
+            return false;
+        }
+    }, true); // TRUE = capture phase (fires BEFORE any other handlers)
 
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(event) {
