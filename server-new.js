@@ -6601,7 +6601,34 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterFansChatted = perf.fansChattedWith || 0;
       chatterMessagesSent = perf.messagesSent || 0;
       chatterAvgResponseTime = perf.avgResponseTime || 0;
-    } else {
+    }
+    
+    // 🔥 CRITICAL FIX: Override with ChatterPerformance if DailyChatterReport is incomplete
+    if (chatterPerformance.length > 0) {
+      const perf = chatterPerformance[0];
+      if (chatterMessagesSent === 0 && perf.messagesSent > 0) {
+        console.log('⚠️  Overriding messagesSent from ChatterPerformance:', perf.messagesSent);
+        chatterMessagesSent = perf.messagesSent;
+      }
+      if (chatterPPVsSent === 0 && perf.ppvsSent > 0) {
+        console.log('⚠️  Overriding ppvsSent from ChatterPerformance:', perf.ppvsSent);
+        chatterPPVsSent = perf.ppvsSent;
+      }
+      if (chatterFansChatted === 0 && perf.fansChattedWith > 0) {
+        console.log('⚠️  Overriding fansChatted from ChatterPerformance:', perf.fansChattedWith);
+        chatterFansChatted = perf.fansChattedWith;
+      }
+      if (chatterAvgResponseTime === 0 && perf.avgResponseTime > 0) {
+        chatterAvgResponseTime = perf.avgResponseTime;
+      }
+      if (chatterPPVsUnlocked === 0 && perf.ppvsUnlocked > 0) {
+        chatterPPVsUnlocked = perf.ppvsUnlocked;
+      }
+      // Recalculate unlock rate with corrected data
+      chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
+    }
+    
+    if (chatterReports.length === 0 && chatterPerformance.length === 0) {
       // No data at all
       chatterRevenue = 0;
       chatterPPVRevenue = 0;
