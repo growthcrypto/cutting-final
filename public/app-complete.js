@@ -1941,6 +1941,27 @@ function createSection(sectionId) {
             break;
         case 'daily-report':
             section.innerHTML = createDailyReportSection();
+            // Attach event listeners after section is created
+            setTimeout(() => {
+                const addPPVBtn = document.getElementById('addPPVSale');
+                const addTipBtn = document.getElementById('addTip');
+                if (addPPVBtn) {
+                    addPPVBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🎯 Add PPV clicked via event listener');
+                        window.addPPVSaleField();
+                    });
+                }
+                if (addTipBtn) {
+                    addTipBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🎯 Add Tip clicked via event listener');
+                        window.addTipField();
+                    });
+                }
+            }, 100);
             break;
         case 'my-performance':
             section.innerHTML = createMyPerformanceSection();
