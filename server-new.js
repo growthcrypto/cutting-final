@@ -102,7 +102,7 @@ if (process.env.OPENAI_API_KEY) {
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL || 'mongodb://localhost:27017/onlyfans_analytics';
 console.log('🔌 Attempting to connect to MongoDB...');
 console.log('🔗 MongoDB URI format check:', mongoUri ? 'Set' : 'Not set');
-console.log('🔥 SERVER STARTED WITH UPDATED CODE - OPENAI GPT-4O-MINI!');
+  console.log('🔥 SERVER STARTED - DEEP INSIGHTS FIXED - OPENAI GPT-4O-MINI!');
 
 // Connect to MongoDB and wait for connection
 async function connectToMongoDB() {
