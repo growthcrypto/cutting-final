@@ -432,7 +432,7 @@
             <aside id="sidebar" class="sidebar w-72 bg-gray-800/95 backdrop-blur-sm border-r border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto">
                 <!-- Sidebar Toggle Button -->
                 <div class="flex justify-end p-4" style="margin-top: 60px;">
-                    <button id="sidebarToggleIcon" class="text-gray-400 hover:text-white transition-colors bg-gray-700/50 hover:bg-gray-600/50 px-3 py-2 rounded-lg text-sm" title="Collapse Sidebar">
+                    <button onclick="document.getElementById('sidebar').classList.toggle('sidebar-hidden')" class="text-gray-400 hover:text-white transition-colors bg-gray-700/50 hover:bg-gray-600/50 px-3 py-2 rounded-lg text-sm" title="Collapse Sidebar">
                         <i class="fas fa-angle-double-left"></i>
                     </button>
                 </div>
@@ -1501,6 +1501,6 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760054646"></script>
+        <script src="app-complete.js?v=1760055008"></script>
 </body>
 </html>
