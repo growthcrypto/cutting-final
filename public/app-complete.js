@@ -4992,6 +4992,13 @@ function renderNewChatterAnalysis(data) {
     if (!container) return;
     
     console.log('🎨 Rendering million dollar UI with data:', data);
+    console.log('🔍 Grammar breakdown:', data.grammarBreakdown);
+    console.log('🔍 Guidelines breakdown:', data.guidelinesBreakdown);
+    console.log('🔍 Insights:', data.insights);
+    console.log('🔍 WeakPoints:', data.weakPoints);
+    console.log('🔍 Opportunities:', data.opportunities);
+    console.log('🔍 ROI:', data.roiCalculations);
+    console.log('🔍 Recommendations:', data.recommendations);
     
     // Check if we have analysis data
     if (!data || data.overallScore === null || data.overallScore === undefined) {
