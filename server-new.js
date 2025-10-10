@@ -1101,55 +1101,36 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       let analysisQuery;
       
       if (isWeekFilter) {
-        // EXACT WEEK MATCH
+        // EXACT WEEK MATCH - use weekStartDate and weekEndDate
+        const startOfDay = new Date(start);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(end);
+        endOfDay.setHours(23, 59, 59, 999);
+        
         analysisQuery = {
           chatterName: name,
-          $or: [
-            // Exact week match in dateRange
-            {
-              'dateRange.start': start,
-              'dateRange.end': end
-            },
-            // Legacy: exact week match in timestamp (unlikely but handle it)
-            {
-              'dateRange.start': { $exists: false },
-              timestamp: { $gte: start, $lte: end }
-            }
-          ]
+          weekStartDate: { $gte: startOfDay, $lte: new Date(start.getTime() + 24 * 60 * 60 * 1000) },
+          weekEndDate: { $gte: new Date(end.getTime() - 24 * 60 * 60 * 1000), $lte: endOfDay }
         };
       } else {
-        // MONTH or OVERLAP: any analysis covering this period
+        // CUSTOM or OVERLAP: any analysis covering this period
         analysisQuery = {
           chatterName: name,
-          $or: [
-            // Analysis dateRange overlaps with filter range
-            {
-              'dateRange.start': { $exists: true, $ne: null },
-              'dateRange.end': { $exists: true, $ne: null },
-              'dateRange.start': { $lte: end },
-              'dateRange.end': { $gte: start }
-            },
-            // Legacy: timestamp within range
-            {
-              'dateRange.start': { $exists: false },
-              timestamp: { $gte: start, $lte: end }
-            },
-            {
-              'dateRange.start': null,
-              timestamp: { $gte: start, $lte: end }
-            }
-          ]
+          weekStartDate: { $lte: end },
+          weekEndDate: { $gte: start }
         };
       }
       
-      const latestAnalysis = await AIAnalysis.findOne(analysisQuery)
+      const latestAnalysis = await MessageAnalysis.findOne(analysisQuery)
         .sort({ _id: -1 }) // Sort by _id to get the most recently created record
-        .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp dateRange');
+        .select('grammarScore guidelinesScore overallScore grammarBreakdown guidelinesBreakdown overallBreakdown timestamp dateRange weekStartDate weekEndDate');
       
-      console.log(`📊 AI Analysis for ${name}:`, latestAnalysis ? { 
-        scores: { grammar: latestAnalysis.grammarScore, guidelines: latestAnalysis.guidelinesScore }, 
+      console.log(`📊 Message Analysis for ${name}:`, latestAnalysis ? { 
+        scores: { grammar: latestAnalysis.grammarScore, guidelines: latestAnalysis.guidelinesScore, overall: latestAnalysis.overallScore }, 
         timestamp: latestAnalysis.timestamp,
-        dateRange: latestAnalysis.dateRange
+        dateRange: latestAnalysis.dateRange,
+        weekRange: latestAnalysis.weekStartDate && latestAnalysis.weekEndDate ? 
+          `${latestAnalysis.weekStartDate.toISOString().split('T')[0]} to ${latestAnalysis.weekEndDate.toISOString().split('T')[0]}` : 'N/A'
       } : 'NOT FOUND');
       
       return { chatterName: name, analysis: latestAnalysis };
