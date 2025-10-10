@@ -9,6 +9,104 @@ let availableMonths = [];
 let currentFilterType = null; // 'week' or 'month'
 let currentWeekFilter = null;
 let currentMonthFilter = null;
+let trafficSources = []; // Marketing: Available traffic sources
+let vipFans = []; // Marketing: VIP fans for autocomplete
+
+// ==================== MARKETING FUNCTIONS ====================
+
+// Load traffic sources from backend
+async function loadTrafficSources() {
+    try {
+        const response = await fetch('/api/marketing/traffic-sources', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            trafficSources = data.sources || [];
+            console.log('📊 Loaded traffic sources:', trafficSources.length);
+        }
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        trafficSources = [];
+    }
+}
+
+// Load VIP fans for autocomplete
+async function loadVIPFans() {
+    try {
+        const response = await fetch('/api/marketing/vip-fans', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            vipFans = data.fans || [];
+            console.log('⭐ Loaded VIP fans:', vipFans.length);
+            updateVIPFansDatalist();
+        }
+    } catch (error) {
+        console.error('Error loading VIP fans:', error);
+        vipFans = [];
+    }
+}
+
+// Update VIP fans datalist for autocomplete
+function updateVIPFansDatalist() {
+    let datalist = document.getElementById('vipFansList');
+    if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'vipFansList';
+        document.body.appendChild(datalist);
+    }
+    
+    datalist.innerHTML = vipFans.map(fan => 
+        `<option value="${fan.username}">${fan.username} - $${fan.lifetimeSpend} lifetime</option>`
+    ).join('');
+}
+
+// Populate traffic source dropdowns in PPV/Tip forms
+function populateTrafficSourceDropdowns() {
+    const selects = document.querySelectorAll('.traffic-source-select');
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Unknown</option>';
+        
+        // Group by category
+        const categories = {
+            reddit: [],
+            twitter: [],
+            instagram: [],
+            tiktok: [],
+            youtube: [],
+            other: []
+        };
+        
+        trafficSources.forEach(source => {
+            if (source.isActive) {
+                categories[source.category].push(source);
+            }
+        });
+        
+        // Add optgroups for each category with sources
+        Object.entries(categories).forEach(([category, sources]) => {
+            if (sources.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
+                sources.forEach(source => {
+                    const option = document.createElement('option');
+                    option.value = source._id;
+                    option.textContent = source.name;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+        });
+        
+        // Restore previous value if it exists
+        if (currentValue) {
+            select.value = currentValue;
+        }
+    });
+}
 
 // Load available weeks and months from backend
 async function loadAvailablePeriods() {
@@ -145,11 +243,1093 @@ function selectMonth(month) {
     loadDashboardData();
 }
 
+// ==================== TRAFFIC SOURCES MANAGEMENT ====================
+
+let currentTrafficSourceFilter = 'all';
+let allTrafficSourcesData = [];
+
+async function loadTrafficSourcesData() {
+    try {
+        await loadTrafficSources(); // Load global trafficSources array
+        allTrafficSourcesData = trafficSources;
+        renderTrafficSources();
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        showNotification('Failed to load traffic sources', 'error');
+    }
+}
+
+function renderTrafficSources() {
+    const grid = document.getElementById('trafficSourcesGrid');
+    if (!grid) return;
+    
+    // Filter sources
+    const filtered = currentTrafficSourceFilter === 'all' 
+        ? allTrafficSourcesData 
+        : allTrafficSourcesData.filter(s => s.category === currentTrafficSourceFilter);
+    
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-inbox text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400 text-lg">No traffic sources found</p>
+                <button onclick="showAddTrafficSourceModal()" class="mt-4 premium-button text-white font-medium py-2 px-4 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Add Your First Source
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render source cards
+    grid.innerHTML = filtered.map(source => {
+        const categoryIcons = {
+            reddit: 'fab fa-reddit',
+            twitter: 'fab fa-twitter',
+            instagram: 'fab fa-instagram',
+            tiktok: 'fab fa-tiktok',
+            youtube: 'fab fa-youtube',
+            other: 'fas fa-globe'
+        };
+        
+        const categoryColors = {
+            reddit: 'from-orange-500 to-red-500',
+            twitter: 'from-blue-400 to-blue-600',
+            instagram: 'from-pink-500 to-purple-600',
+            tiktok: 'from-black to-cyan-500',
+            youtube: 'from-red-500 to-red-700',
+            other: 'from-gray-500 to-gray-700'
+        };
+        
+        return `
+            <div class="glass-card rounded-xl p-5 hover:scale-105 transition-transform duration-200 border border-gray-700 hover:border-${source.category === 'reddit' ? 'orange' : source.category === 'twitter' ? 'blue' : source.category === 'instagram' ? 'pink' : 'purple'}-500/50">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${categoryColors[source.category]} flex items-center justify-center">
+                            <i class="${categoryIcons[source.category]} text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white">${source.name}</h4>
+                            ${source.subcategory ? `<p class="text-xs text-gray-400">${source.subcategory}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="editTrafficSource('${source._id}')" class="p-2 hover:bg-gray-700 rounded-lg transition-all" title="Edit">
+                            <i class="fas fa-edit text-blue-400"></i>
+                        </button>
+                        <button onclick="deleteTrafficSource('${source._id}', '${source.name}')" class="p-2 hover:bg-gray-700 rounded-lg transition-all" title="Delete">
+                            <i class="fas fa-trash text-red-400"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-gray-700">
+                    <span class="text-xs text-gray-400 capitalize">
+                        <i class="fas fa-tag mr-1"></i>${source.category}
+                    </span>
+                    <span class="text-xs ${source.isActive ? 'text-green-400' : 'text-gray-500'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${source.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterTrafficSources(category) {
+    currentTrafficSourceFilter = category;
+    
+    // Update button styles
+    document.querySelectorAll('.traffic-source-filter').forEach(btn => {
+        btn.className = 'traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all';
+    });
+    event.target.className = 'traffic-source-filter px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium';
+    
+    renderTrafficSources();
+}
+
+function showAddTrafficSourceModal() {
+    document.getElementById('modalTitle').textContent = 'Add Traffic Source';
+    document.getElementById('editSourceId').value = '';
+    document.getElementById('sourceName').value = '';
+    document.getElementById('sourceCategory').value = '';
+    document.getElementById('sourceSubcategory').value = '';
+    document.getElementById('trafficSourceModal').style.display = 'flex';
+}
+
+function closeTrafficSourceModal() {
+    document.getElementById('trafficSourceModal').style.display = 'none';
+}
+
+async function editTrafficSource(sourceId) {
+    const source = allTrafficSourcesData.find(s => s._id === sourceId);
+    if (!source) return;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Traffic Source';
+    document.getElementById('editSourceId').value = source._id;
+    document.getElementById('sourceName').value = source.name;
+    document.getElementById('sourceCategory').value = source.category;
+    document.getElementById('sourceSubcategory').value = source.subcategory || '';
+    document.getElementById('trafficSourceModal').style.display = 'flex';
+}
+
+async function deleteTrafficSource(sourceId, sourceName) {
+    if (!confirm(`Are you sure you want to delete "${sourceName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/marketing/traffic-sources/${sourceId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Traffic source deleted successfully', 'success');
+            loadTrafficSourcesData();
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'Failed to delete traffic source', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting traffic source:', error);
+        showNotification('Failed to delete traffic source', 'error');
+    }
+}
+
+// Handle traffic source form submission
+document.addEventListener('submit', async function(e) {
+    if (e.target.id === 'trafficSourceForm') {
+        e.preventDefault();
+        
+        const sourceId = document.getElementById('editSourceId').value;
+        const data = {
+            name: document.getElementById('sourceName').value,
+            category: document.getElementById('sourceCategory').value,
+            subcategory: document.getElementById('sourceSubcategory').value || undefined
+        };
+        
+        try {
+            const url = sourceId 
+                ? `/api/marketing/traffic-sources/${sourceId}`
+                : '/api/marketing/traffic-sources';
+            
+            const method = sourceId ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showNotification(`Traffic source ${sourceId ? 'updated' : 'created'} successfully`, 'success');
+                closeTrafficSourceModal();
+                loadTrafficSourcesData();
+            } else {
+                const result = await response.json();
+                showNotification(result.error || 'Failed to save traffic source', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving traffic source:', error);
+            showNotification('Failed to save traffic source', 'error');
+        }
+    }
+});
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('trafficSourceModal');
+    if (modal && e.target === modal) {
+        closeTrafficSourceModal();
+    }
+});
+
+// ==================== MARKETING DASHBOARD FUNCTIONS ====================
+
+let currentMarketingFilter = { type: null, week: null, month: null };
+let marketingDashboardData = null;
+
+// Marketing Dashboard Custom Date Picker Functions
+function applyMarketingDateFilter() {
+    const startDate = document.getElementById('marketingStartDate').value;
+    const endDate = document.getElementById('marketingEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentMarketingFilter = {
+        type: 'custom',
+        customStart: startDate,
+        customEnd: endDate
+    };
+    
+    console.log('✅ Marketing custom date filter applied:', currentMarketingFilter);
+    loadMarketingDashboard();
+}
+
+function setMarketingQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('marketingStartDate').value = formatDate(startDate);
+    document.getElementById('marketingEndDate').value = formatDate(endDate);
+    
+    applyMarketingDateFilter();
+}
+
+function initializeMarketingDatePicker() {
+    setMarketingQuickFilter('week');
+}
+
+async function loadMarketingDashboard() {
+    console.log('🚀 loadMarketingDashboard() called');
+    try {
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentMarketingInterval === 'custom' && marketingCustomDates) {
+            startDate = new Date(marketingCustomDates.start);
+            endDate = new Date(marketingCustomDates.end);
+        } else if (currentMarketingInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentMarketingInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentMarketingInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        
+        // Build query params
+        let params = new URLSearchParams();
+        params.append('filterType', 'custom');
+        params.append('customStart', formatDate(startDate));
+        params.append('customEnd', formatDate(endDate));
+        
+        console.log('📡 Fetching marketing dashboard from:', `/api/marketing/dashboard?${params}`);
+        console.log('Marketing interval:', currentMarketingInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        const response = await fetch(`/api/marketing/dashboard?${params}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        console.log('📡 Response status:', response.status);
+        if (response.ok) {
+            marketingDashboardData = await response.json();
+            console.log('✅ Marketing data loaded:', marketingDashboardData);
+            renderMarketingDashboard();
+        } else {
+            console.error('❌ Failed to load marketing dashboard, status:', response.status);
+            showNotification('Failed to load marketing dashboard', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading marketing dashboard:', error);
+        showNotification('Failed to load marketing dashboard', 'error');
+    }
+}
+
+function renderMarketingDashboard() {
+    if (!marketingDashboardData) return;
+    
+    const data = marketingDashboardData;
+    console.log('📊 Rendering marketing dashboard with data:', data);
+    
+    // Render overview cards
+    const overviewCards = document.getElementById('marketingOverviewCards');
+    if (overviewCards) {
+        let totalSpenders = 0;
+        if (data.sources) {
+            data.sources.forEach(s => totalSpenders += (s.spenders || 0));
+        }
+        
+        overviewCards.innerHTML = `
+            <div class="glass-card rounded-xl p-6 border border-green-500/30 hover:border-green-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Revenue</span>
+                    <i class="fas fa-dollar-sign text-green-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">$${data.totalRevenue?.toFixed(2) || '0.00'}</div>
+                <div class="text-xs text-gray-400">From all sources</div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 border border-purple-500/30 hover:border-purple-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">VIP Fans</span>
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${data.totalVIPs || 0}</div>
+                <div class="text-xs text-gray-400">High-value customers</div>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 border border-blue-500/30 hover:border-blue-500/50 transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-400">Total Spenders</span>
+                    <i class="fas fa-users text-blue-400 text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold text-white mb-1">${totalSpenders}</div>
+                <div class="text-xs text-gray-400">Unique buyers</div>
+            </div>
+        `;
+    }
+    
+    // Render top sources
+    const performanceGrid = document.getElementById('sourcePerformanceGrid');
+    if (performanceGrid && data.sources && data.sources.length > 0) {
+        const topSources = data.sources.slice(0, 6);
+        
+        performanceGrid.innerHTML = topSources.map((source, index) => {
+                    const qualityColor = source.qualityGrade >= 80 ? 'green' : source.qualityGrade >= 60 ? 'yellow' : source.qualityGrade >= 40 ? 'orange' : 'red';
+                    
+                    return `
+                        <div class="glass-card rounded-xl p-6 border border-${qualityColor}-500/30 hover:border-${qualityColor}-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="font-bold text-white text-lg">${source.name}</h4>
+                                    <p class="text-xs text-gray-400 capitalize">${source.category}</p>
+                                </div>
+                                ${index === 0 ? '<i class="fas fa-trophy text-yellow-400 text-2xl"></i>' : ''}
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="p-3 bg-gray-800/30 rounded-lg">
+                                    <div class="text-xs font-semibold text-blue-300 mb-1">FUNNEL</div>
+                                    <div class="text-sm text-gray-300">
+                                        Clicks: <span class="font-bold text-white">${source.linkClicks || 0}</span> →
+                                        Spenders: <span class="font-bold text-green-400">${source.spenders || 0}</span>
+                                        (<span class="font-bold ${source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400'}">${source.spenderRate?.toFixed(1) || '0'}%</span>)
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div class="text-xs text-gray-400 mb-1">Revenue</div>
+                                        <div class="text-xl font-bold text-green-400">$${source.revenue?.toFixed(2) || '0.00'}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-400 mb-1">Per Click</div>
+                                        <div class="text-xl font-bold text-cyan-400">$${source.revenuePerClick?.toFixed(2) || '0.00'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-3 bg-gray-800/30 rounded-lg">
+                                    <div class="text-xs font-semibold text-purple-300 mb-1">7-DAY RETENTION</div>
+                                    <div class="text-sm text-gray-300">
+                                        <span class="font-bold ${source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400'}">${source.retentionRate?.toFixed(0) || '0'}%</span>
+                                        (${source.retainedCount || 0}/${source.totalTracked || 0})
+                                    </div>
+                                </div>
+                                
+                                <div class="p-3 bg-gray-800/30 rounded-lg border border-green-500/20">
+                                    <div class="text-xs font-semibold text-green-300 mb-1">RENEW RATE</div>
+                                    <div class="text-sm text-gray-300">
+                                        <span class="font-bold ${source.renewRate >= 60 ? 'text-green-400' : source.renewRate >= 40 ? 'text-yellow-400' : 'text-red-400'}">${source.renewRate?.toFixed(0) || '0'}%</span>
+                                        (${source.renewCount || 0}/${source.vips || 0} with auto-renew)
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-3 border-t border-gray-700 flex items-center justify-between">
+                                    <span class="text-sm text-gray-400">Quality Score</span>
+                                    <div class="text-lg font-bold text-${qualityColor}-400">${source.qualityScore || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+    } else if (performanceGrid) {
+        performanceGrid.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-chart-bar text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400 text-lg">No data yet</p>
+                <p class="text-gray-500 text-sm">Upload link tracking and log sales to see analytics</p>
+            </div>
+        `;
+    }
+    
+    // Render detailed table with category grouping
+    const detailedTableBody = document.getElementById('marketingDetailedTableBody');
+    console.log('📊 Rendering detailed table:', {
+        tableExists: !!detailedTableBody,
+        sourcesExist: !!data.sources,
+        sourcesLength: data.sources?.length
+    });
+    
+    if (detailedTableBody && data.sources && data.sources.length > 0) {
+        console.log('✅ Populating detailed table with', data.sources.length, 'sources');
+        
+        // Calculate total agency revenue
+        const totalAgencyRevenue = data.sources.reduce((sum, s) => sum + (s.revenue || 0), 0);
+        
+        // Group sources by category
+        const categoryMap = {};
+        data.sources.forEach(source => {
+            if (!categoryMap[source.category]) {
+                categoryMap[source.category] = {
+                    sources: [],
+                    totalRevenue: 0,
+                    totalClicks: 0,
+                    totalSpenders: 0,
+                    avgRetention: 0,
+                    avgQualityGrade: 0
+                };
+            }
+            categoryMap[source.category].sources.push(source);
+            categoryMap[source.category].totalRevenue += source.revenue || 0;
+            categoryMap[source.category].totalClicks += source.linkClicks || 0;
+            categoryMap[source.category].totalSpenders += source.spenders || 0;
+        });
+        
+        // Calculate averages and percentages for each category
+        Object.keys(categoryMap).forEach(category => {
+            const cat = categoryMap[category];
+            const sourceCount = cat.sources.length;
+            cat.avgRetention = cat.sources.reduce((sum, s) => sum + (s.retentionRate || 0), 0) / sourceCount;
+            cat.avgQualityGrade = cat.sources.reduce((sum, s) => sum + (s.qualityGrade || 0), 0) / sourceCount;
+            cat.spenderRate = cat.totalClicks > 0 ? (cat.totalSpenders / cat.totalClicks) * 100 : 0;
+            cat.revenuePerClick = cat.totalClicks > 0 ? cat.totalRevenue / cat.totalClicks : 0;
+            cat.revenuePercent = totalAgencyRevenue > 0 ? (cat.totalRevenue / totalAgencyRevenue) * 100 : 0;
+        });
+        
+        // Render rows
+        let html = '';
+        Object.keys(categoryMap).forEach(category => {
+            const cat = categoryMap[category];
+            const categoryId = category.replace(/\s+/g, '-');
+            const qualityColor = cat.avgQualityGrade >= 80 ? 'text-green-400' : cat.avgQualityGrade >= 60 ? 'text-yellow-400' : 'text-orange-400';
+            const spenderRateColor = cat.spenderRate >= 3 ? 'text-green-400' : cat.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
+            const retentionColor = cat.avgRetention >= 70 ? 'text-green-400' : cat.avgRetention >= 50 ? 'text-yellow-400' : 'text-red-400';
+            
+            // Category row (expandable)
+            html += `
+                <tr class="border-b border-gray-700 bg-gray-800/30 hover:bg-gray-800/50 transition-all cursor-pointer" onclick="toggleCategoryRow('${categoryId}')">
+                    <td class="px-4 py-4">
+                        <div class="flex items-center">
+                            <i id="icon-${categoryId}" class="fas fa-chevron-right text-gray-400 mr-3 transition-transform"></i>
+                            <span class="font-bold text-white uppercase">${category}</span>
+                            <span class="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded">${cat.sources.length} sources</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 text-right text-white font-semibold">${cat.totalClicks}</td>
+                    <td class="px-4 py-4 text-right text-blue-400 font-semibold">${cat.totalSpenders}</td>
+                    <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${cat.spenderRate?.toFixed(1) || '0'}%</td>
+                    <td class="px-4 py-4 text-right text-green-400 font-bold">${cat.revenuePercent?.toFixed(1) || '0'}%</td>
+                    <td class="px-4 py-4 text-right text-cyan-400 font-semibold">$${cat.revenuePerClick?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${cat.avgRetention?.toFixed(0) || '0'}%</td>
+                    <td class="px-4 py-4 text-center">
+                        <span class="font-bold ${qualityColor} text-lg">${Math.round(cat.avgQualityGrade)}</span>
+                    </td>
+                </tr>
+            `;
+            
+            // Individual source rows (hidden by default)
+            cat.sources.forEach(source => {
+                const sourceQualityColor = source.qualityGrade >= 80 ? 'text-green-400' : source.qualityGrade >= 60 ? 'text-yellow-400' : source.qualityGrade >= 40 ? 'text-orange-400' : 'text-red-400';
+                const sourceSpenderRateColor = source.spenderRate >= 3 ? 'text-green-400' : source.spenderRate >= 1.5 ? 'text-yellow-400' : 'text-red-400';
+                const sourceRetentionColor = source.retentionRate >= 70 ? 'text-green-400' : source.retentionRate >= 50 ? 'text-yellow-400' : 'text-red-400';
+                const sourceRevenuePercent = totalAgencyRevenue > 0 ? (source.revenue / totalAgencyRevenue) * 100 : 0;
+                
+                html += `
+                    <tr class="category-${categoryId} border-b border-gray-800/50 bg-gray-900/50 hidden">
+                        <td class="px-4 py-3 pl-12">
+                            <div class="text-sm text-gray-300">${source.name}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-400">${source.linkClicks || 0}</td>
+                        <td class="px-4 py-3 text-right text-sm text-blue-300">${source.spenders || 0}</td>
+                        <td class="px-4 py-3 text-right text-sm ${sourceSpenderRateColor}">${source.spenderRate?.toFixed(1) || '0'}%</td>
+                        <td class="px-4 py-3 text-right text-sm text-green-300">${sourceRevenuePercent?.toFixed(1) || '0'}%</td>
+                        <td class="px-4 py-3 text-right text-sm text-cyan-300">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
+                        <td class="px-4 py-3 text-right text-sm ${sourceRetentionColor}">${source.retentionRate?.toFixed(0) || '0'}%</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="text-sm font-semibold ${sourceQualityColor}">${source.qualityScore || 'N/A'}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+        
+        detailedTableBody.innerHTML = html;
+    } else if (detailedTableBody) {
+        detailedTableBody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">No data yet - upload link tracking and log sales</td></tr>';
+    }
+    
+    // Calculate and display avg spender rate in 4th card
+    if (overviewCards && data.sources && data.sources.length > 0) {
+        let totalSpenders = 0;
+        let totalClicks = 0;
+        data.sources.forEach(s => {
+            totalSpenders += (s.spenders || 0);
+            totalClicks += (s.linkClicks || 0);
+        });
+        const avgSpenderRate = totalClicks > 0 ? (totalSpenders / totalClicks) * 100 : 0;
+        
+        // Update the 4th card
+        const cards = overviewCards.querySelectorAll('.glass-card');
+        if (cards[3]) {
+            cards[3].querySelector('.text-3xl').textContent = `${avgSpenderRate.toFixed(1)}%`;
+        }
+    }
+}
+
+function populateMarketingSelectors() {
+    const weekSelector = document.getElementById('marketingWeekSelector');
+    const monthSelector = document.getElementById('marketingMonthSelector');
+    
+    if (weekSelector && availableWeeks.length > 0) {
+        weekSelector.innerHTML = '<option value="">Select Week...</option>';
+        availableWeeks.forEach(week => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ start: week.start, end: week.end });
+            option.textContent = week.label;
+            weekSelector.appendChild(option);
+        });
+        
+        weekSelector.onchange = function() {
+            if (this.value) {
+                const week = JSON.parse(this.value);
+                currentMarketingFilter = { type: 'week', week, month: null };
+                monthSelector.value = '';
+                updateMarketingFilterDisplay();
+                loadMarketingDashboard();
+            }
+        };
+    }
+    
+    if (monthSelector && availableMonths.length > 0) {
+        monthSelector.innerHTML = '<option value="">Select Month...</option>';
+        availableMonths.forEach(month => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ start: month.start, end: month.end });
+            option.textContent = month.label;
+            monthSelector.appendChild(option);
+        });
+        
+        monthSelector.onchange = function() {
+            if (this.value) {
+                const month = JSON.parse(this.value);
+                currentMarketingFilter = { type: 'month', week: null, month };
+                weekSelector.value = '';
+                updateMarketingFilterDisplay();
+                loadMarketingDashboard();
+            }
+        };
+    }
+}
+
+function updateMarketingFilterDisplay() {
+    const display = document.getElementById('marketingFilterDisplay');
+    if (!display) return;
+    
+    if (currentMarketingFilter.type === 'week' && currentMarketingFilter.week) {
+        const startDate = new Date(currentMarketingFilter.week.start);
+        const endDate = new Date(currentMarketingFilter.week.end);
+        display.textContent = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    } else if (currentMarketingFilter.type === 'month' && currentMarketingFilter.month) {
+        const startDate = new Date(currentMarketingFilter.month.start);
+        display.textContent = startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else {
+        display.textContent = 'All Time';
+    }
+}
+
+function showLinkTrackingModal() {
+    // Populate traffic sources
+    // Link tracking modal functions removed - form now in Data Upload section
+}
+
+// Toggle category expansion in marketing table
+function toggleCategoryRow(categoryId) {
+    const rows = document.querySelectorAll(`.category-${categoryId}`);
+    const icon = document.getElementById(`icon-${categoryId}`);
+    
+    rows.forEach(row => {
+        row.classList.toggle('hidden');
+    });
+    
+    // Rotate icon
+    if (icon) {
+        icon.classList.toggle('fa-chevron-right');
+        icon.classList.toggle('fa-chevron-down');
+    }
+}
+
+// Handle link tracking form submission
+document.addEventListener('submit', async function(e) {
+    if (e.target.id === 'linkTrackingForm') {
+        e.preventDefault();
+        
+        const data = {
+            category: document.getElementById('linkCategory').value, // CHANGED: Use category instead of sourceId
+            weekStart: document.getElementById('linkWeekStart').value,
+            weekEnd: document.getElementById('linkWeekEnd').value,
+            landingPageViews: parseInt(document.getElementById('linkLandingViews').value),
+            onlyFansClicks: parseInt(document.getElementById('linkOFClicks').value)
+        };
+        
+        try {
+            const response = await fetch('/api/marketing/link-tracking', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                showNotification('Link tracking data uploaded successfully!', 'success');
+                e.target.reset();
+                // Reload dashboard if on marketing page
+                if (document.getElementById('marketing-dashboard')?.classList.contains('hidden') === false) {
+                    loadMarketingDashboard();
+                }
+            } else {
+                const result = await response.json();
+                showNotification(result.error || 'Failed to upload link tracking data', 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading link tracking data:', error);
+            showNotification('Failed to upload link tracking data', 'error');
+        }
+    }
+});
+
+// ==================== DATA MANAGEMENT FUNCTIONS ====================
+
+let currentDataTab = 'messages';
+
+async function loadDataManagement() {
+    showDataTab('messages');
+}
+
+function showDataTab(tabName) {
+    currentDataTab = tabName;
+    
+    // Update tab buttons
+    document.querySelectorAll('.data-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    event?.target.classList.remove('bg-gray-700', 'text-gray-300');
+    event?.target.classList.add('active', 'bg-gradient-to-r', 'from-purple-600', 'to-blue-600', 'text-white');
+    
+    // Show/hide tabs
+    document.querySelectorAll('.data-tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.getElementById(`dataTab-${tabName}`)?.classList.remove('hidden');
+    
+    // Load data
+    refreshDataTab(tabName);
+}
+
+async function refreshDataTab(tabName) {
+    switch(tabName) {
+        case 'messages':
+            await loadMessagesData();
+            break;
+        case 'daily-reports':
+            await loadDailyReportsData();
+            break;
+        case 'link-tracking':
+            await loadLinkTrackingData();
+            break;
+        case 'traffic-sources':
+            await loadTrafficSourcesDataTable();
+            break;
+        case 'vip-fans':
+            await loadVIPFansData();
+            break;
+    }
+}
+
+// Load Messages Data
+// Re-analyze messages
+async function reanalyzeMessages(messageId) {
+    if (!confirm('This will re-run AI analysis on these messages. This may take a few minutes and use API credits. Continue?')) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        console.log('🔄 Triggering re-analysis for:', messageId);
+        const response = await fetch(`/api/messages/reanalyze/${messageId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Messages re-analyzed successfully! Check AI Analysis page for results.', 'success');
+            loadMessagesData(); // Refresh the table
+        } else {
+            showError(result.error || 'Failed to re-analyze messages');
+        }
+    } catch (error) {
+        console.error('Re-analysis error:', error);
+        showError('Failed to re-analyze messages. Check console for details.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadMessagesData() {
+    try {
+        const response = await fetch('/api/data-management/messages', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('messagesTableBody');
+        if (!tbody) return;
+        
+        if (!data.messages || data.messages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No messages uploaded yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.messages.map(msg => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${msg.chatterName}</td>
+                <td class="px-4 py-4 text-gray-300">${new Date(msg.weekStartDate).toLocaleDateString()} - ${new Date(msg.weekEndDate).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${msg.totalMessages || 0}</td>
+                <td class="px-4 py-4 text-right text-gray-300">${msg.creatorAccount || 'N/A'}</td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="reanalyzeMessages('${msg._id}')" class="px-3 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/30 hover:border-cyan-500 text-cyan-300 rounded-lg text-sm transition-all mr-2">
+                        <i class="fas fa-brain mr-1"></i>Re-analyze
+                    </button>
+                    <button onclick="deleteMessageRecord('${msg._id}', '${msg.chatterName}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        showNotification('Failed to load messages', 'error');
+    }
+}
+
+// Load Daily Reports Data
+async function loadDailyReportsData() {
+    try {
+        const response = await fetch('/api/data-management/daily-reports', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('dailyReportsTableBody');
+        if (!tbody) return;
+        
+        if (!data.reports || data.reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No daily reports yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.reports.map(report => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all cursor-pointer" onclick="toggleReportDetails('${report._id}')">
+                <td class="px-4 py-4 text-white font-medium">${report.chatterName}</td>
+                <td class="px-4 py-4 text-gray-300">${new Date(report.date).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-gray-300 capitalize">${report.shift}</td>
+                <td class="px-4 py-4 text-right text-purple-400">${report.ppvSales?.length || 0}</td>
+                <td class="px-4 py-4 text-right text-green-400">${report.tips?.length || 0}</td>
+                <td class="px-4 py-4 text-right text-white font-bold">$${report.totalRevenue?.toFixed(2) || '0.00'}</td>
+                <td class="px-4 py-4 text-center" onclick="event.stopPropagation()">
+                    <button onclick="deleteReport('${report._id}', '${report.chatterName}', '${new Date(report.date).toLocaleDateString()}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+            <tr id="reportDetails-${report._id}" class="hidden bg-gray-900/50">
+                <td colspan="7" class="px-4 py-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="font-semibold text-purple-400 mb-2">PPV Sales:</div>
+                            ${(report.ppvSales || []).map((sale, i) => `
+                                <div class="pl-3 text-gray-300">
+                                    ${i+1}. $${sale.amount.toFixed(2)}
+                                    ${sale.vipFanUsername ? ` - <span class="text-yellow-400">${sale.vipFanUsername}</span>` : ''}
+                                </div>
+                            `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-green-400 mb-2">Tips:</div>
+                            ${(report.tips || []).map((tip, i) => `
+                                <div class="pl-3 text-gray-300">
+                                    ${i+1}. $${tip.amount.toFixed(2)}
+                                    ${tip.vipFanUsername ? ` - <span class="text-yellow-400">${tip.vipFanUsername}</span>` : ''}
+                                </div>
+                            `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
+                        </div>
+                    </div>
+                    ${report.notes ? `<div class="mt-3 text-gray-400"><strong>Notes:</strong> ${report.notes}</div>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading daily reports:', error);
+        showNotification('Failed to load daily reports', 'error');
+    }
+}
+
+// Load Link Tracking Data
+async function loadLinkTrackingData() {
+    try {
+        const response = await fetch('/api/data-management/link-tracking', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('linkTrackingTableBody');
+        if (!tbody) return;
+        
+        if (!data.linkData || data.linkData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No link tracking data yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.linkData.map(link => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4">
+                    <span class="px-3 py-1 rounded-lg bg-gray-700 text-sm capitalize font-medium">${link.category}</span>
+                </td>
+                <td class="px-4 py-4 text-gray-300">${new Date(link.weekStartDate).toLocaleDateString()} - ${new Date(link.weekEndDate).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${link.landingPageViews?.toLocaleString() || 0}</td>
+                <td class="px-4 py-4 text-right text-green-400">${link.onlyFansClicks?.toLocaleString() || 0}</td>
+                <td class="px-4 py-4 text-right text-cyan-400">${link.clickThroughRate?.toFixed(1) || 0}%</td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteLinkTracking('${link._id}', '${link.category}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading link tracking:', error);
+        showNotification('Failed to load link tracking data', 'error');
+    }
+}
+
+// Load Traffic Sources for Data Table
+async function loadTrafficSourcesDataTable() {
+    try {
+        await loadTrafficSources();
+        
+        const tbody = document.getElementById('trafficSourcesTableBody');
+        if (!tbody) return;
+        
+        if (!trafficSources || trafficSources.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No traffic sources created yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = trafficSources.map(source => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${source.name}</td>
+                <td class="px-4 py-4">
+                    <span class="px-3 py-1 rounded-lg bg-gray-700 text-xs capitalize">${source.category}</span>
+                </td>
+                <td class="px-4 py-4 text-gray-300">${source.subcategory || '-'}</td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs ${source.isActive ? 'text-green-400' : 'text-gray-500'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${source.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteTrafficSource('${source._id}', '${source.name}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading traffic sources:', error);
+        showNotification('Failed to load traffic sources', 'error');
+    }
+}
+
+// Load VIP Fans Data
+async function loadVIPFansData() {
+    try {
+        const response = await fetch('/api/data-management/vip-fans', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('vipFansTableBody');
+        if (!tbody) return;
+        
+        if (!data.fans || data.fans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No VIP fans yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.fans.map(fan => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${fan.username}</td>
+                <td class="px-4 py-4 text-gray-300">${fan.trafficSourceName || 'Unknown'}</td>
+                <td class="px-4 py-4 text-right text-green-400 font-bold">$${fan.lifetimeSpend?.toFixed(2) || '0.00'}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${fan.purchaseCount || 0}</td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-xs ${fan.status === 'active' ? 'text-green-400' : 'text-red-400'}">
+                        <i class="fas fa-circle text-xs mr-1"></i>${fan.status || 'active'}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteVIPFan('${fan._id}', '${fan.username}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading VIP fans:', error);
+        showNotification('Failed to load VIP fans', 'error');
+    }
+}
+
+// Toggle report details
+function toggleReportDetails(reportId) {
+    const detailsRow = document.getElementById(`reportDetails-${reportId}`);
+    if (detailsRow) {
+        detailsRow.classList.toggle('hidden');
+    }
+}
+
+// Delete functions
+async function deleteMessageRecord(id, chatterName) {
+    if (!confirm(`Delete message upload for ${chatterName}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/messages/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Message record deleted', 'success');
+            refreshDataTab('messages');
+        } else {
+            showNotification('Failed to delete message record', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        showNotification('Failed to delete message record', 'error');
+    }
+}
+
+async function deleteReport(id, chatterName, date) {
+    if (!confirm(`Delete daily report for ${chatterName} on ${date}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/daily-reports/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Daily report deleted', 'success');
+            refreshDataTab('daily-reports');
+        } else {
+            showNotification('Failed to delete report', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting report:', error);
+        showNotification('Failed to delete report', 'error');
+    }
+}
+
+async function deleteLinkTracking(id, category) {
+    if (!confirm(`Delete link tracking data for ${category}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/link-tracking/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Link tracking data deleted', 'success');
+            refreshDataTab('link-tracking');
+        } else {
+            showNotification('Failed to delete link tracking', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting link tracking:', error);
+        showNotification('Failed to delete link tracking', 'error');
+    }
+}
+
+async function deleteVIPFan(id, username) {
+    if (!confirm(`Delete VIP fan "${username}"? This will also delete their purchase history. This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/vip-fans/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('VIP fan deleted', 'success');
+            refreshDataTab('vip-fans');
+        } else {
+            showNotification('Failed to delete VIP fan', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting VIP fan:', error);
+        showNotification('Failed to delete VIP fan', 'error');
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    
-    checkAuthStatus();
+    console.log('🚀 App initializing...');
     setupEventListeners();
+    checkAuthStatus();
+    
+    // Initialize sidebar after a brief delay to ensure DOM is ready
+    setTimeout(() => {
+        initializeSidebar();
+    }, 100);
+    
     setDefaultDate();
     // loadEmployees() will be called after authentication in checkAuthStatus()
 });
@@ -305,13 +1485,21 @@ function showMainApp() {
     document.getElementById('userWelcome').textContent = welcomeMsg;
 
     // Show appropriate navigation
+    const managerNav = document.getElementById('managerNav');
+    const chatterNav = document.getElementById('chatterNav');
+    const marketerNav = document.getElementById('marketerNav');
+    
+    // Hide all navs first
+    [managerNav, chatterNav, marketerNav].forEach(nav => nav?.classList.add('hidden'));
+    
     if (currentUser.role === 'manager') {
-        document.getElementById('managerNav').classList.remove('hidden');
-        document.getElementById('chatterNav').classList.add('hidden');
+        managerNav.classList.remove('hidden');
         showSection('dashboard');
+    } else if (currentUser.role === 'marketer') {
+        marketerNav.classList.remove('hidden');
+        showSection('marketing-dashboard');
     } else {
-        document.getElementById('chatterNav').classList.remove('hidden');
-        document.getElementById('managerNav').classList.add('hidden');
+        chatterNav.classList.remove('hidden');
         showSection('daily-report'); // Start chatters on daily report page
     }
 
@@ -323,7 +1511,8 @@ function showMainApp() {
         clearDashboardToZero();
         // Aggressively clear specific metrics immediately
         forceClearSpecificMetrics();
-        loadDashboardData();
+        // Initialize dashboard with default 7d interval
+        setDashboardInterval('7d');
         loadAIRecommendations();
         
         // Also clear again after a short delay to override any cached values
@@ -417,14 +1606,37 @@ function setupEventListeners() {
         dailyReportForm.addEventListener('submit', handleDailyReportSubmit);
     }
 
-    // Add PPV sale and tip buttons
+    // Nuclear option: Capture phase event listener for PPV/Tip buttons
     document.addEventListener('click', function(e) {
-        if (e.target.id === 'addPPVSale') {
-            addPPVSaleField();
-        } else if (e.target.id === 'addTip') {
-            addTipField();
+        // Check if the click is on the button or any child of the button (like the icon)
+        const addPPVBtn = e.target.id === 'addPPVSale' ? e.target : e.target.closest('#addPPVSale');
+        const addTipBtn = e.target.id === 'addTip' ? e.target : e.target.closest('#addTip');
+        
+        console.log('🔍 Click detected:', {
+            targetId: e.target.id,
+            targetTag: e.target.tagName,
+            closestPPV: addPPVBtn ? 'YES' : 'NO',
+            closestTip: addTipBtn ? 'YES' : 'NO'
+        });
+        
+        if (addPPVBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔥 CAPTURED Add PPV click!');
+            window.addPPVSaleField();
+            return false;
         }
-    });
+        
+        if (addTipBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔥 CAPTURED Add Tip click!');
+            window.addTipField();
+            return false;
+        }
+    }, true); // TRUE = capture phase (fires BEFORE any other handlers)
 
     // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(event) {
@@ -445,10 +1657,19 @@ function setupEventListeners() {
         }
     });
 
+    // Debug: Log all button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.type === 'submit' || e.target.closest('button[type="submit"]')) {
+            console.log('🔘 Submit button clicked!', e.target);
+        }
+    }, true);
+
     // Form submissions
     document.addEventListener('submit', function(e) {
+        console.log('📝 Form submitted:', e.target.id);
         if (e.target.id === 'createUserForm') {
             e.preventDefault();
+            console.log('✅ Create user form detected, calling handler...');
             handleCreateUser(e);
         } else if (e.target.id === 'addGuidelineForm') {
             e.preventDefault();
@@ -456,6 +1677,9 @@ function setupEventListeners() {
         } else if (e.target.id === 'ofAccountDataForm') {
             e.preventDefault();
             handleOFAccountDataSubmit(e);
+        } else if (e.target.id === 'dailySnapshotForm') {
+            e.preventDefault();
+            handleDailySnapshotSubmit(e);
         } else if (e.target.id === 'chatterDataForm') {
             e.preventDefault();
             handleChatterDataSubmit(e);
@@ -623,15 +1847,26 @@ function showSection(sectionId) {
         section.classList.add('hidden');
     });
 
+    // SPECIAL: Always recreate these sections to ensure fresh HTML
+    if (sectionId === 'analytics' || sectionId === 'ai-analysis') {
+        const existingSection = document.getElementById(sectionId);
+        if (existingSection) {
+            console.log('🗑️ Removing old section:', sectionId);
+            existingSection.remove();
+        }
+    }
+
     // Show selected section
     let targetSection = document.getElementById(sectionId);
     if (!targetSection) {
         // Create section dynamically if it doesn't exist
+        console.log('📝 Creating section:', sectionId);
         targetSection = createSection(sectionId);
     }
     
     if (targetSection) {
         targetSection.classList.remove('hidden');
+        console.log('✅ Section shown:', sectionId);
     }
 
     // Update active nav link
@@ -750,7 +1985,12 @@ function createSection(sectionId) {
     
     switch(sectionId) {
         case 'analytics':
-            section.innerHTML = createAnalyticsSection();
+            const analyticsHTML = createAnalyticsSection();
+            console.log('📝 Analytics HTML to insert:', analyticsHTML.substring(0, 200));
+            section.innerHTML = analyticsHTML;
+            console.log('✅ Analytics HTML inserted into section');
+            console.log('📍 Section element:', section);
+            console.log('📍 First element check:', document.getElementById('analyticsNetRevenue'));
             break;
         case 'ai-analysis':
             section.innerHTML = createAIAnalysisSection();
@@ -764,6 +2004,18 @@ function createSection(sectionId) {
         case 'team-management':
             section.innerHTML = createTeamManagementSection();
             break;
+        case 'team-comparison':
+            section.innerHTML = createTeamComparisonSection();
+            break;
+        case 'traffic-sources':
+            section.innerHTML = createTrafficSourcesSection();
+            break;
+        case 'marketing-dashboard':
+            section.innerHTML = createMarketingDashboardSection();
+            break;
+        case 'data-management':
+            section.innerHTML = createDataManagementSection();
+            break;
         case 'settings':
             section.innerHTML = createSettingsSection();
             break;
@@ -772,6 +2024,27 @@ function createSection(sectionId) {
             break;
         case 'daily-report':
             section.innerHTML = createDailyReportSection();
+            // Attach event listeners after section is created
+            setTimeout(() => {
+                const addPPVBtn = document.getElementById('addPPVSale');
+                const addTipBtn = document.getElementById('addTip');
+                if (addPPVBtn) {
+                    addPPVBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🎯 Add PPV clicked via event listener');
+                        window.addPPVSaleField();
+                    });
+                }
+                if (addTipBtn) {
+                    addTipBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🎯 Add Tip clicked via event listener');
+                        window.addTipField();
+                    });
+                }
+            }, 100);
             break;
         case 'my-performance':
             section.innerHTML = createMyPerformanceSection();
@@ -792,13 +2065,22 @@ function loadSectionData(sectionId) {
         case 'team-management':
             loadUsers();
             break;
+        case 'team-comparison':
+            loadTeamComparisonData();
+            break;
+        case 'traffic-sources':
+            loadTrafficSourcesData();
+            break;
         case 'guidelines':
             loadGuidelines();
             break;
         case 'analytics':
             setTimeout(() => {
-                loadAnalyticsCharts();
-            }, 100);
+                console.log('🔄 Initializing analytics with interval:', currentAnalyticsInterval);
+                console.log('🔍 Analytics buttons found:', document.querySelectorAll('.analytics-interval-btn').length);
+                // Just call setAnalyticsInterval - it will handle button styling AND data loading
+                setAnalyticsInterval(currentAnalyticsInterval);
+            }, 300);
             break;
         case 'ai-analysis':
             loadChattersForAnalysis();
@@ -807,8 +2089,33 @@ function loadSectionData(sectionId) {
             loadChattersForInfloww();
             setDefaultDateRanges();
             break;
+        case 'daily-report':
+            // Load marketing data for daily report
+            loadTrafficSources();
+            loadVIPFans();
+            // Add one PPV and one Tip field by default with new format
+            setTimeout(() => {
+                // Clear containers first to avoid duplicates
+                const ppvContainer = document.getElementById('ppvSalesContainer');
+                const tipsContainer = document.getElementById('tipsContainer');
+                if (ppvContainer) ppvContainer.innerHTML = '';
+                if (tipsContainer) tipsContainer.innerHTML = '';
+                
+                // Now add one of each
+                addPPVSaleField();
+                addTipField();
+            }, 100);
+            break;
         case 'my-performance':
             loadMyPerformanceData();
+            break;
+        case 'marketing-dashboard':
+            // Initialize date picker and load marketing dashboard data
+            initializeMarketingDatePicker();
+            break;
+        case 'data-management':
+            // Load all data for management
+            loadDataManagement();
             break;
         default:
             break;
@@ -852,6 +2159,41 @@ async function loadChattersForInfloww() {
     }
 }
 
+// Load chatters for AI Analysis dropdown
+async function loadChattersForAnalysis() {
+    try {
+        const chatterSelect = document.getElementById('chatterAnalysisSelect');
+        if (!chatterSelect) return;
+
+        // For chatters, only show their own account
+        if (currentUser && currentUser.role === 'chatter') {
+            chatterSelect.innerHTML = `<option value="${currentUser._id}" selected>${currentUser.chatterName || currentUser.username}</option>`;
+            // Automatically trigger analysis for their account
+            setTimeout(() => runChatterAnalysis(), 500);
+            return;
+        }
+
+        // For managers, show all chatters
+        const response = await fetch('/api/users', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const users = await response.json();
+            const chatters = users.filter(user => user.role === 'chatter');
+            
+            chatterSelect.innerHTML = '<option value="">Select Chatter...</option>' +
+                chatters.map(chatter => 
+                    `<option value="${chatter._id}">${chatter.chatterName || chatter.username}</option>`
+                ).join('');
+        }
+    } catch (error) {
+        console.error('Error loading chatters for analysis:', error);
+    }
+}
+
 function toggleSidebar() {
     // No-op retained for legacy bindings
 }
@@ -863,32 +2205,45 @@ function initializeSidebar() {
     const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
     const floatingSidebarToggle = document.getElementById('floatingSidebarToggle');
 
-    if (!sidebar || !mainContent || !sidebarToggle || !sidebarToggleIcon || !floatingSidebarToggle) return;
+    console.log('🔧 Initializing sidebar:', { sidebar: !!sidebar, mainContent: !!mainContent, sidebarToggle: !!sidebarToggle, sidebarToggleIcon: !!sidebarToggleIcon, floatingSidebarToggle: !!floatingSidebarToggle });
+    
+    if (!sidebar || !mainContent) {
+        console.error('❌ Sidebar or mainContent not found');
+        return;
+    }
 
     function setCollapsedState(collapsed) {
+        console.log('🔄 Setting sidebar collapsed state:', collapsed);
         sidebar.classList.toggle('sidebar-hidden', collapsed);
-        floatingSidebarToggle.classList.toggle('hidden', !collapsed);
         
-        const toggleIcon = sidebarToggleIcon.querySelector('i');
-        if (toggleIcon) {
-            toggleIcon.className = collapsed
-                ? 'fas fa-angle-double-right text-xl'
-                : 'fas fa-angle-double-left text-xl';
+        if (floatingSidebarToggle) {
+            floatingSidebarToggle.classList.toggle('hidden', !collapsed);
+        }
+        
+        if (sidebarToggleIcon) {
+            const toggleIcon = sidebarToggleIcon.querySelector('i');
+            if (toggleIcon) {
+                toggleIcon.className = collapsed
+                    ? 'fas fa-angle-double-right'
+                    : 'fas fa-angle-double-left';
+            }
         }
 
         // Move content left to fill sidebar space when collapsed
         if (collapsed) {
-            // Sidebar is hidden, move content all the way left
             mainContent.style.marginLeft = '0';
         } else {
-            // Sidebar is visible, offset content by sidebar width
             mainContent.style.marginLeft = '288px';
         }
+        
+        console.log('✅ Sidebar state set. Collapsed:', collapsed);
     }
 
     function toggleSidebarState(forceState) {
+        console.log('🎯 toggleSidebarState called, forceState:', forceState);
         const isCollapsed = sidebar.classList.contains('sidebar-hidden');
         const nextState = typeof forceState === 'boolean' ? forceState : !isCollapsed;
+        console.log('  Current collapsed:', isCollapsed, '→ Next state:', nextState);
         setCollapsedState(nextState);
     }
 
@@ -896,21 +2251,26 @@ function initializeSidebar() {
     window.toggleSidebarState = toggleSidebarState;
     window.setCollapsedState = setCollapsedState;
 
-    sidebarToggle.addEventListener('click', () => toggleSidebarState());
-    sidebarToggleIcon.addEventListener('click', () => toggleSidebarState());
-    floatingSidebarToggle.addEventListener('click', () => toggleSidebarState(false));
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            console.log('📱 Mobile sidebar toggle clicked');
+            toggleSidebarState();
+        });
+    }
+    if (sidebarToggleIcon) {
+        sidebarToggleIcon.addEventListener('click', () => {
+            console.log('🔲 Sidebar collapse button clicked');
+            toggleSidebarState();
+        });
+    }
+    if (floatingSidebarToggle) {
+        floatingSidebarToggle.addEventListener('click', () => {
+            console.log('🔵 Floating button clicked');
+            toggleSidebarState(false);
+        });
+    }
 
-    document.addEventListener('click', (event) => {
-        if (window.innerWidth >= 1024) return;
-        const isClickInsideSidebar = sidebar.contains(event.target);
-        const isClickOnControl = sidebarToggle.contains(event.target)
-            || sidebarToggleIcon.contains(event.target)
-            || floatingSidebarToggle.contains(event.target);
-
-        if (!isClickInsideSidebar && !isClickOnControl) {
-            toggleSidebarState(true);
-        }
-    });
+    // Removed auto-collapse on click - was interfering with form submissions
 
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 1024) {
@@ -1088,11 +2448,12 @@ function updateUsersTable(users) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">${user.username}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${user.chatterName || '-'}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${user.email}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     <span class="px-2 py-1 text-xs font-medium rounded-full ${
-                        user.role === 'manager' ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'
+                        user.role === 'manager' ? 'bg-red-900/30 text-red-400' : 
+                        user.role === 'marketer' ? 'bg-purple-900/30 text-purple-400' : 
+                        'bg-blue-900/30 text-blue-400'
                     }">
                         ${user.role}
                     </span>
@@ -1118,22 +2479,628 @@ function updateUsersTable(users) {
     }
 }
 
+// ==================== TEAM COMPARISON FUNCTIONS ====================
+
+let teamComparisonData = [];
+let currentSortBy = 'revenue';
+let currentSortOrder = 'desc';
+
+async function loadTeamComparisonData() {
+    try {
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentTeamComparisonInterval === 'custom' && teamComparisonCustomDates) {
+            startDate = new Date(teamComparisonCustomDates.start);
+            endDate = new Date(teamComparisonCustomDates.end);
+        } else if (currentTeamComparisonInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentTeamComparisonInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentTeamComparisonInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/team-dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
+        console.log('Team Comparison URL:', url);
+        console.log('Team Comparison interval:', currentTeamComparisonInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
+        // Get all chatter performance data from team dashboard API
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load team data');
+
+        const data = await response.json();
+        teamComparisonData = data.chatters || [];
+
+        // Sort by revenue by default
+        sortTeamBy('revenue');
+    } catch (error) {
+        console.error('Error loading team comparison:', error);
+        showNotification('Failed to load team comparison data', 'error');
+    }
+}
+
+function sortTeamBy(metric) {
+    // Toggle sort order if clicking same column
+    if (currentSortBy === metric) {
+        currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+    } else {
+        currentSortBy = metric;
+        currentSortOrder = 'desc'; // Default to descending
+    }
+
+    // For response time, lower is better (so reverse the sort)
+    const isLowerBetter = metric === 'responseTime';
+
+    teamComparisonData.sort((a, b) => {
+        let aVal = a[metric] || 0;
+        let bVal = b[metric] || 0;
+
+        if (metric === 'name') {
+            aVal = a.chatterName || a.username || '';
+            bVal = b.chatterName || b.username || '';
+            return currentSortOrder === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+        }
+
+        if (isLowerBetter) {
+            return currentSortOrder === 'desc' ? aVal - bVal : bVal - aVal;
+        }
+        return currentSortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    renderTeamComparison();
+}
+
+function renderTeamComparison() {
+    const tbody = document.getElementById('teamComparisonTableBody');
+    const yourPositionCard = document.getElementById('yourPositionCard');
+    const teamAverageRow = document.getElementById('teamAverageRow');
+
+    if (!tbody || !yourPositionCard || !teamAverageRow) return;
+
+    // Calculate team averages
+    const teamAvg = {
+        revenue: teamComparisonData.reduce((sum, c) => sum + (c.revenue || 0), 0) / (teamComparisonData.length || 1),
+        unlockRate: teamComparisonData.reduce((sum, c) => sum + (c.unlockRate || 0), 0) / (teamComparisonData.length || 1),
+        responseTime: teamComparisonData.reduce((sum, c) => sum + (c.responseTime || 0), 0) / (teamComparisonData.length || 1),
+        messagesPerPPV: teamComparisonData.reduce((sum, c) => sum + (c.messagesPerPPV || 0), 0) / (teamComparisonData.length || 1),
+        overallScore: teamComparisonData.reduce((sum, c) => sum + (c.overallScore || 0), 0) / (teamComparisonData.length || 1),
+        grammarScore: teamComparisonData.reduce((sum, c) => sum + (c.grammarScore || 0), 0) / (teamComparisonData.length || 1),
+        guidelinesScore: teamComparisonData.reduce((sum, c) => sum + (c.guidelinesScore || 0), 0) / (teamComparisonData.length || 1)
+    };
+
+    // Find current user's data
+    const currentUserData = teamComparisonData.find(c => 
+        c.chatterName === currentUser.chatterName || c.username === currentUser.username
+    );
+    const userRank = teamComparisonData.indexOf(currentUserData) + 1;
+
+    // Render "Your Position" card
+    if (currentUserData && userRank > 0) {
+        const getRankEmoji = (rank) => {
+            if (rank === 1) return '🥇';
+            if (rank === 2) return '🥈';
+            if (rank === 3) return '🥉';
+            return `#${rank}`;
+        };
+
+        const rankDisplay = getRankEmoji(userRank);
+        const isTop3 = userRank <= 3;
+
+        yourPositionCard.innerHTML = `
+            <div class="relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r ${isTop3 ? 'from-yellow-600/20 to-orange-600/10' : 'from-blue-600/10 to-cyan-600/5'} rounded-3xl"></div>
+                <div class="relative glass-card rounded-3xl p-8 border-2 ${isTop3 ? 'border-yellow-500/50' : 'border-cyan-500/30'}">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center">
+                            <div class="text-6xl mr-6">${rankDisplay}</div>
+                            <div>
+                                <h3 class="text-3xl font-bold text-white">Your Position</h3>
+                                <p class="text-gray-400 text-lg">${currentUserData.chatterName || currentUser.username}</p>
+                            </div>
+                        </div>
+                        ${userRank > 1 ? `
+                            <div class="text-right">
+                                <div class="text-sm text-gray-400">Gap to #1</div>
+                                <div class="text-2xl font-bold text-orange-400">$${(teamComparisonData[0].revenue - currentUserData.revenue).toFixed(0)}</div>
+                            </div>
+                        ` : `
+                            <div class="text-center p-4 bg-yellow-500/20 rounded-xl">
+                                <div class="text-2xl font-bold text-yellow-400">👑 Top Performer!</div>
+                            </div>
+                        `}
+                    </div>
+                    <div class="grid grid-cols-3 md:grid-cols-7 gap-4">
+                        ${renderMetricCard('Revenue', currentUserData.revenue, teamAvg.revenue, '$', 0)}
+                        ${renderMetricCard('Unlock %', currentUserData.unlockRate, teamAvg.unlockRate, '', 1, '%')}
+                        ${renderMetricCard('Response', currentUserData.responseTime, teamAvg.responseTime, '', 1, 'm', true)}
+                        ${renderMetricCard('Msgs/PPV', currentUserData.messagesPerPPV, teamAvg.messagesPerPPV, '', 1)}
+                        ${renderMetricCard('Overall', currentUserData.overallScore, teamAvg.overallScore, '', 0)}
+                        ${renderMetricCard('Grammar', currentUserData.grammarScore, teamAvg.grammarScore, '', 0)}
+                        ${renderMetricCard('Guidelines', currentUserData.guidelinesScore, teamAvg.guidelinesScore, '', 0)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Render table rows
+    tbody.innerHTML = teamComparisonData.map((chatter, index) => {
+        const rank = index + 1;
+        const isCurrentUser = chatter.chatterName === currentUser.chatterName || chatter.username === currentUser.username;
+        const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+
+        return `
+            <tr class="${isCurrentUser ? 'bg-cyan-500/10 border-l-4 border-cyan-400' : ''} hover:bg-gray-700/30 transition-colors">
+                <td class="px-4 py-4 text-left font-bold ${rank <= 3 ? 'text-yellow-400 text-xl' : 'text-gray-300'}">${rankIcon}</td>
+                <td class="px-4 py-4 text-left font-medium ${isCurrentUser ? 'text-cyan-400' : 'text-white'}">${chatter.chatterName || chatter.username}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.revenue, teamAvg.revenue)}">$${(chatter.revenue || 0).toFixed(0)}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.unlockRate, teamAvg.unlockRate)}">${(chatter.unlockRate || 0).toFixed(1)}%</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.responseTime, teamAvg.responseTime, true)}">${(chatter.responseTime || 0).toFixed(1)}m</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.messagesPerPPV, teamAvg.messagesPerPPV)}">${(chatter.messagesPerPPV || 0).toFixed(1)}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.overallScore, teamAvg.overallScore)}">${chatter.overallScore || '-'}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.grammarScore, teamAvg.grammarScore)}">${chatter.grammarScore || '-'}</td>
+                <td class="px-4 py-4 text-right ${getMetricColor(chatter.guidelinesScore, teamAvg.guidelinesScore)}">${chatter.guidelinesScore || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Render team average row
+    teamAverageRow.innerHTML = `
+        <div class="flex items-center justify-between">
+            <div class="text-lg font-bold text-gray-300">
+                <i class="fas fa-chart-line text-blue-400 mr-3"></i>Team Average
+            </div>
+            <div class="grid grid-cols-7 gap-6 text-right">
+                <div class="text-blue-400 font-bold">$${teamAvg.revenue.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.unlockRate.toFixed(1)}%</div>
+                <div class="text-blue-400 font-bold">${teamAvg.responseTime.toFixed(1)}m</div>
+                <div class="text-blue-400 font-bold">${teamAvg.messagesPerPPV.toFixed(1)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.overallScore.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.grammarScore.toFixed(0)}</div>
+                <div class="text-blue-400 font-bold">${teamAvg.guidelinesScore.toFixed(0)}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMetricCard(label, value, avg, prefix = '', decimals = 0, suffix = '', lowerIsBetter = false) {
+    const numValue = parseFloat(value) || 0;
+    const numAvg = parseFloat(avg) || 0;
+    const isBetter = lowerIsBetter ? numValue < numAvg : numValue > numAvg;
+    const color = isBetter ? 'text-green-400' : numValue < numAvg ? 'text-red-400' : 'text-gray-300';
+
+    return `
+        <div class="text-center">
+            <div class="text-xs text-gray-400 mb-1">${label}</div>
+            <div class="text-lg font-bold ${color}">${prefix}${numValue.toFixed(decimals)}${suffix}</div>
+            <div class="text-xs text-gray-500">avg: ${prefix}${numAvg.toFixed(decimals)}${suffix}</div>
+        </div>
+    `;
+}
+
+function getMetricColor(value, avg, lowerIsBetter = false) {
+    const numValue = parseFloat(value) || 0;
+    const numAvg = parseFloat(avg) || 0;
+    
+    if (lowerIsBetter) {
+        return numValue < numAvg ? 'text-green-400 font-bold' : numValue > numAvg ? 'text-red-400' : 'text-gray-300';
+    }
+    return numValue > numAvg ? 'text-green-400 font-bold' : numValue < numAvg ? 'text-red-400' : 'text-gray-300';
+}
+
+// ==================== CUSTOM DATE PICKER FUNCTIONS ====================
+
+let currentDashboardInterval = '7d';
+let currentAnalyticsInterval = '7d';
+let currentMarketingInterval = '7d';
+let currentTeamDashInterval = '7d';
+let currentTeamComparisonInterval = '7d';
+let currentAIInterval = '7d';
+let currentPerformanceInterval = '7d';
+let currentModalContext = null; // Track which page opened the modal
+
+// Independent custom date ranges for each dashboard
+let dashboardCustomDates = null;
+let analyticsCustomDates = null;
+let marketingCustomDates = null;
+let aiAnalysisCustomDates = null;
+let teamDashCustomDates = null;
+let teamComparisonCustomDates = null;
+let performanceCustomDates = null;
+
+window.setDashboardInterval = function(interval) {
+    currentDashboardInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.dashboard-interval-btn').forEach(btn => {
+        const btnInterval = btn.getAttribute('data-interval');
+        if (btnInterval === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+            
+            // Update button text if custom
+            if (interval === 'custom' && dashboardCustomDates) {
+                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                btn.innerHTML = `<i class="fas fa-calendar mr-2"></i>${formatDate(dashboardCustomDates.start)} - ${formatDate(dashboardCustomDates.end)}`;
+            }
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+            
+            // Reset custom button text
+            if (btnInterval === 'custom') {
+                btn.innerHTML = '<i class="fas fa-calendar mr-2"></i>Custom';
+            }
+        }
+    });
+    
+    if (interval === 'custom') {
+        // Clear modal inputs and show popup
+        document.getElementById('modalStartDate').value = '';
+        document.getElementById('modalEndDate').value = '';
+        currentModalContext = 'dashboard';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting preset
+        dashboardCustomDates = null;
+        loadDashboardData();
+    }
+}
+
+window.setAnalyticsInterval = function(interval) {
+    console.log('🎯 setAnalyticsInterval called with:', interval);
+    
+    // Store the selected interval
+    currentAnalyticsInterval = interval;
+    
+    // Update button styles
+    const buttons = document.querySelectorAll('.analytics-interval-btn');
+    console.log('📊 Found', buttons.length, 'analytics buttons');
+    
+    buttons.forEach(btn => {
+        const btnInterval = btn.getAttribute('data-interval');
+        console.log('  Button:', btnInterval, 'Match:', btnInterval === interval);
+        
+        if (btnInterval === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+            console.log('  ✅ Highlighted button:', btnInterval);
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'analytics';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting a preset interval
+        analyticsCustomDates = null;
+        
+        console.log('✅ Analytics interval set to:', interval);
+        loadAnalyticsData();
+    }
+}
+
+window.setMarketingInterval = function(interval) {
+    currentMarketingInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.marketing-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'marketing';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting a preset interval
+        marketingCustomDates = null;
+        
+        console.log('✅ Marketing interval set to:', interval);
+        loadMarketingDashboard();
+    }
+}
+
+window.setTeamComparisonInterval = function(interval) {
+    currentTeamComparisonInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.team-comparison-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'team-comparison';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting a preset interval
+        teamComparisonCustomDates = null;
+        
+        console.log('✅ Team Comparison interval set to:', interval);
+        loadTeamComparisonData();
+    }
+}
+
+window.setAIInterval = function(interval) {
+    currentAIInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.ai-interval-btn').forEach(btn => {
+        if (btn.getAttribute('data-interval') === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+        }
+    });
+    
+    if (interval === 'custom') {
+        currentModalContext = 'ai-analysis';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting a preset interval
+        aiAnalysisCustomDates = null;
+        
+        console.log('✅ AI Analysis interval set to:', interval);
+        
+        // Reload chatter analysis if one is selected
+        const chatterSelect = document.getElementById('chatterAnalysisSelect');
+        if (chatterSelect && chatterSelect.value) {
+            runChatterAnalysis();
+        }
+    }
+}
+
+window.setTeamDashInterval = function(interval) {
+    currentTeamDashInterval = interval;
+    
+    // Update button styles
+    document.querySelectorAll('.team-interval-btn').forEach(btn => {
+        const btnInterval = btn.getAttribute('data-interval');
+        if (btnInterval === interval) {
+            btn.classList.remove('bg-gray-700', 'text-gray-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+            
+            // Update button text if custom
+            if (interval === 'custom' && teamDashCustomDates) {
+                const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                btn.innerHTML = `<i class="fas fa-calendar mr-2"></i>${formatDate(teamDashCustomDates.start)} - ${formatDate(teamDashCustomDates.end)}`;
+            }
+        } else {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-300');
+            
+            // Reset custom button text
+            if (btnInterval === 'custom') {
+                btn.innerHTML = '<i class="fas fa-calendar mr-2"></i>Custom';
+            }
+        }
+    });
+    
+    if (interval === 'custom') {
+        // Clear modal inputs and show popup
+        document.getElementById('modalStartDate').value = '';
+        document.getElementById('modalEndDate').value = '';
+        currentModalContext = 'team';
+        document.getElementById('customDateModal').classList.remove('hidden');
+    } else {
+        // Clear custom dates when selecting preset
+        teamDashCustomDates = null;
+        loadTeamDashboard();
+    }
+}
+
+function closeCustomDateModal() {
+    document.getElementById('customDateModal').classList.add('hidden');
+    currentModalContext = null;
+}
+
+function applyModalDateFilter() {
+    const startDate = document.getElementById('modalStartDate').value;
+    const endDate = document.getElementById('modalEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Store dates in the correct independent variable based on context
+    const dateObj = { start: startDate, end: endDate };
+    
+    if (currentModalContext === 'dashboard') {
+        dashboardCustomDates = dateObj;
+        currentDashboardInterval = 'custom';
+        setDashboardInterval('custom'); // This will update button text
+        loadDashboardData();
+    } else if (currentModalContext === 'analytics') {
+        analyticsCustomDates = dateObj;
+        currentAnalyticsInterval = 'custom';
+        setAnalyticsInterval('custom');
+        loadAnalyticsData();
+    } else if (currentModalContext === 'marketing') {
+        marketingCustomDates = dateObj;
+        currentMarketingInterval = 'custom';
+        setMarketingInterval('custom');
+        loadMarketingDashboard();
+    } else if (currentModalContext === 'team') {
+        teamDashCustomDates = dateObj;
+        currentTeamDashInterval = 'custom';
+        setTeamDashInterval('custom');
+        loadTeamDashboard();
+    } else if (currentModalContext === 'team-comparison') {
+        teamComparisonCustomDates = dateObj;
+        currentTeamComparisonInterval = 'custom';
+        setTeamComparisonInterval('custom');
+        loadTeamComparisonData();
+    } else if (currentModalContext === 'ai-analysis') {
+        aiAnalysisCustomDates = dateObj;
+        currentAIInterval = 'custom';
+        setAIInterval('custom');
+        // Reload AI analysis based on which section is open
+        const agencySection = document.getElementById('agencyAnalysisSection');
+        if (agencySection && !agencySection.classList.contains('hidden')) {
+            runAgencyAnalysis();
+        } else {
+            runChatterAnalysis();
+        }
+    } else if (currentModalContext === 'performance') {
+        performanceCustomDates = dateObj;
+        currentPerformanceInterval = 'custom';
+        setPerformanceInterval('custom');
+        loadPerformanceData();
+    }
+    
+    closeCustomDateModal();
+}
+
+function applyCustomDateFilter() {
+    const startDate = document.getElementById('dashboardStartDate').value;
+    const endDate = document.getElementById('dashboardEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentFilterType = 'custom';
+    currentWeekFilter = null;
+    currentMonthFilter = null;
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Custom date filter applied:', customDateRange);
+    loadDashboardData();
+}
+
+function setQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate = new Date();
+    
+    if (type === '24h') {
+        // Last 24 hours
+        startDate = new Date(today);
+        startDate.setHours(today.getHours() - 24);
+    } else if (type === '7d') {
+        // Last 7 days
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7);
+    } else if (type === '30d') {
+        // Last 30 days
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+    } else if (type === 'week') {
+        // Get start of this week (Sunday)
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        
+        // Get end of this week (Saturday)
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        // First day of current month
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // Last day of current month
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    // Set input values
+    document.getElementById('dashboardStartDate').value = formatDate(startDate);
+    document.getElementById('dashboardEndDate').value = formatDate(endDate);
+    
+    // Apply filter
+    applyCustomDateFilter();
+}
+
+// Initialize with current week on load
+function initializeDatePicker() {
+    setQuickFilter('week');
+}
+
 async function loadDashboardData() {
     try {
-        // Build URL based on filter type
-        let url;
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            url = `/api/analytics/dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}&_t=${Date.now()}`;
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            url = `/api/analytics/dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}&_t=${Date.now()}`;
+        // Use currentDashboardInterval and calculate date range
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentDashboardInterval === 'custom' && dashboardCustomDates) {
+            startDate = new Date(dashboardCustomDates.start);
+            endDate = new Date(dashboardCustomDates.end);
+        } else if (currentDashboardInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentDashboardInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentDashboardInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
         } else {
-            // Fallback to old behavior
-            url = `/api/analytics/dashboard?interval=${currentTimeInterval}${customDateRange ? `&startDate=${customDateRange.start}&endDate=${customDateRange.end}` : ''}&_t=${Date.now()}`;
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
         }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
         console.log('Loading dashboard with URL:', url);
-        console.log('Filter type:', currentFilterType);
-        console.log('Week filter:', currentWeekFilter);
-        console.log('Month filter:', currentMonthFilter);
+        console.log('Dashboard interval:', currentDashboardInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         
         // Fetch real data from API
         const response = await fetch(url, {
@@ -1182,9 +3149,9 @@ async function loadDashboardData() {
         loadLiveAIInsights(data, intelligentMetrics);
         loadActionOpportunities(data, intelligentMetrics);
         
-        // Load charts
-        loadRevenueChart();
-        loadAIInsightsChart();
+        // Load new charts
+        loadRevenueAttributionChart();
+        loadConversionFunnelChart(data);
     } catch (error) {
         console.error('Error loading dashboard data:', error);
         // Use empty data as fallback
@@ -1209,14 +3176,15 @@ async function loadDashboardData() {
         loadLiveAIInsights(emptyData, intelligentMetrics);
         loadActionOpportunities(emptyData, intelligentMetrics);
         
-        loadRevenueChart();
-        loadAIInsightsChart();
+        loadRevenueAttributionChart();
+        loadConversionFunnelChart(emptyData);
     }
 }
 
 // Calculate intelligent metrics not available in Infloww
 function calculateIntelligentMetrics(analytics) {
-    const clickToSubRate = analytics.profileClicks > 0 ? (analytics.newSubs / analytics.profileClicks * 100) : 0;
+    // FIXED: Use linkClicks instead of profileClicks for Click-to-Sub Rate
+    const clickToSubRate = analytics.linkClicks > 0 ? (analytics.newSubs / analytics.linkClicks * 100) : 0;
     const ppvUnlockRate = analytics.ppvsSent > 0 ? (analytics.ppvsUnlocked / analytics.ppvsSent * 100) : 0;
     const revenuePerSub = analytics.totalSubs > 0 ? (analytics.totalRevenue / analytics.totalSubs) : 0;
     // Calculate revenue per hour based on actual time period
@@ -1226,10 +3194,11 @@ function calculateIntelligentMetrics(analytics) {
     const revenuePerHour = analytics.totalRevenue / timePeriodHours;
     const messagesPerPPV = analytics.ppvsSent > 0 ? (analytics.messagesSent / analytics.ppvsSent) : 0;
     
-    // Team performance calculations - empty until real data uploaded
-    const topPerformer = analytics.totalRevenue > 0 ? 'Calculating from data...' : 'No data uploaded';
-    const performanceGap = 0; // Will be calculated from real chatter data
-    const teamConsistency = 0; // Will be calculated from real data
+    // Team performance calculations
+    // Top performer will be set from backend data if available, otherwise show message
+    const topPerformer = 'See Team Dashboard';
+    const performanceGap = 0;
+    const teamConsistency = 0;
     const synergyScore = 0; // Will be calculated from real team data
     
     // Growth calculations - empty until historical data available
@@ -1265,18 +3234,18 @@ function updateIntelligentMetrics(analytics, intelligent) {
         // Conversion intelligence
         clickToSubRate: `${intelligent.clickToSubRate}%`,
         ppvUnlockRate: `${intelligent.ppvUnlockRate}%`,
-        revenuePerSub: `$${intelligent.revenuePerSub}`,
+        revenuePerSub: `$${intelligent.revenuePerSub.toFixed(2)}`,
         
-        // Efficiency metrics
-        revenuePerHour: `$${intelligent.revenuePerHour}`,
-        messagesPerPPV: intelligent.messagesPerPPV,
-        peakTime: intelligent.peakTime,
+        // Efficiency metrics - NEW
+        effActiveFans: analytics.activeFans > 0 ? analytics.activeFans.toLocaleString() : '-',
+        effFansWithRenew: analytics.fansWithRenew > 0 ? analytics.fansWithRenew.toLocaleString() : '-',
+        clicksToSpenders: analytics.linkClicks > 0 ? `${((analytics.uniqueSpenders / analytics.linkClicks) * 100).toFixed(1)}%` : '0%',
         
-        // Team dynamics
-        topPerformer: intelligent.topPerformer,
-        performanceGap: `${intelligent.performanceGap}%`,
-        teamConsistency: `${intelligent.teamConsistency}%`,
-        synergyScore: `${intelligent.synergyScore}%`
+        // Team quality - NEW (scores are 0-100 scale)
+        topPerformer: analytics.topPerformer || 'No data',
+        avgOverallScore: analytics.avgOverallScore != null ? `${analytics.avgOverallScore}/100` : '-',
+        avgGrammarScore: analytics.avgGrammarScore != null ? `${analytics.avgGrammarScore}/100` : '-',
+        avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/100` : '-'
     };
 
     // Update all elements
@@ -1364,7 +3333,6 @@ function updateTeamInsight(intelligent) {
 
 // AI Analysis Time Interval Management
 let currentAIAnalysisInterval = '7d';
-let currentAnalyticsInterval = '7d';
 
 function setAIAnalysisInterval(interval) {
     if (interval === 'custom') {
@@ -1520,14 +3488,20 @@ function applyCustomDateRange(context) {
 
 // Show Agency Analysis
 function showAgencyAnalysis() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Hide selection cards
+    if (cards) cards.classList.add('hidden');
+    
+    // Show agency section and run analysis
     if (agencySection) {
         agencySection.classList.remove('hidden');
         runAgencyAnalysis();
     }
     
+    // Hide individual section
     if (chatterSection) {
         chatterSection.classList.add('hidden');
     }
@@ -1570,14 +3544,20 @@ function showChatterAnalysisAuto() {
 
 // Show Chatter Analysis
 function showChatterAnalysis() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Hide selection cards
+    if (cards) cards.classList.add('hidden');
+    
+    // Show individual section
     if (chatterSection) {
         chatterSection.classList.remove('hidden');
         loadChattersForAnalysis();
     }
     
+    // Hide agency section
     if (agencySection) {
         agencySection.classList.add('hidden');
     }
@@ -1585,9 +3565,14 @@ function showChatterAnalysis() {
 
 // Hide Analysis Results
 function hideAnalysisResults() {
+    const cards = document.getElementById('analysisTypeCards');
     const agencySection = document.getElementById('agencyAnalysisSection');
     const chatterSection = document.getElementById('chatterAnalysisSection');
     
+    // Show selection cards again
+    if (cards) cards.classList.remove('hidden');
+    
+    // Hide both analysis sections
     if (agencySection) {
         agencySection.classList.add('hidden');
     }
@@ -1804,175 +3789,388 @@ function generateAnalysisFromRealData(analyticsData, interval) {
     };
 }
 
+// DEEP INSIGHTS GENERATION - The Brain of the System
+function generateDeepInsights(data) {
+    const insights = {
+        critical: [],    // 🔴 Critical problems
+        opportunities: [], // 🟡 Revenue opportunities
+        strengths: [],   // 🟢 What's working
+        predictions: []  // 💎 Predictive insights
+    };
+    
+    // Calculate key ratios
+    const revenuePerSub = data.totalSubs > 0 ? data.netRevenue / data.totalSubs : 0;
+    const unlockRate = data.ppvsSent > 0 ? (data.ppvsUnlocked / data.ppvsSent) * 100 : 0;
+    const spenderRate = data.linkClicks > 0 ? (data.uniqueSpenders / data.linkClicks) * 100 : 0;
+    const clickToSubRate = data.linkClicks > 0 ? (data.newSubs / data.linkClicks) * 100 : 0;
+    const vipDependency = data.vipRevenuePercent || 0;
+    
+    // 🔴 CRITICAL PROBLEMS
+    if (vipDependency > 70) {
+        const risk = ((vipDependency - 70) / 30 * 100).toFixed(0);
+        insights.critical.push({
+            title: 'SEVERE Revenue Concentration Risk',
+            description: `${vipDependency.toFixed(1)}% of revenue from VIPs - if top 3 VIPs churn, you lose ${(vipDependency * 0.6).toFixed(0)}% of income`,
+            impact: '$' + (data.netRevenue * (vipDependency * 0.006)).toFixed(0) + ' at risk',
+            severity: 'CRITICAL',
+            action: 'Diversify: Focus on converting more regular fans to consistent spenders'
+        });
+    }
+    
+    if (unlockRate < 35 && data.ppvsSent > 20) {
+        const potential = ((45 - unlockRate) / 100 * data.ppvsSent * (data.avgPPVPrice || 10)).toFixed(0);
+        insights.critical.push({
+            title: 'PPV Unlock Rate Bottleneck',
+            description: `Only ${unlockRate.toFixed(1)}% unlock rate - chatters sending low-value PPVs or poor timing`,
+            impact: '+$' + potential + '/week potential',
+            severity: 'HIGH',
+            action: 'Audit PPV quality: Check prices, preview appeal, and send timing'
+        });
+    }
+    
+    if (data.avgResponseTime > 5) {
+        insights.critical.push({
+            title: 'Response Time Killing Conversions',
+            description: `${data.avgResponseTime}min average - fans lose interest after 3min`,
+            impact: 'Losing 15-25% potential sales',
+            severity: 'HIGH',
+            action: 'Implement response templates and set 2min response time target'
+        });
+    }
+    
+    if (spenderRate < 2 && data.linkClicks > 50) {
+        const wasted = (data.linkClicks * (1 - spenderRate/100)).toFixed(0);
+        insights.critical.push({
+            title: 'Traffic Conversion Crisis',
+            description: `${spenderRate.toFixed(1)}% spender rate - ${wasted} clicks produced no revenue`,
+            impact: '${((3 - spenderRate) / 100 * data.linkClicks * 50).toFixed(0)} weekly revenue missed',
+            severity: 'CRITICAL',
+            action: 'Fix: Landing page → First message flow is broken. Review welcome scripts'
+        });
+    }
+    
+    // 🟡 OPPORTUNITIES (Hidden money on the table)
+    if (data.avgPPVPrice && data.avgPPVPrice < 15 && data.ppvsUnlocked > 10) {
+        const gain = ((20 - data.avgPPVPrice) * data.ppvsUnlocked).toFixed(0);
+        insights.opportunities.push({
+            title: 'PPV Pricing Leaving Money on Table',
+            description: `Avg PPV price $${data.avgPPVPrice} - premium content sells for $20-30`,
+            potential: '+$' + gain + '/week',
+            confidence: '85%',
+            action: 'Test $20-25 PPVs with exclusive content angles'
+        });
+    }
+    
+    if (clickToSubRate < 5 && data.linkClicks > 100) {
+        const potentialSubs = (data.linkClicks * 0.05 - data.newSubs).toFixed(0);
+        insights.opportunities.push({
+            title: 'Link Click → Subscriber Conversion Gap',
+            description: `${clickToSubRate.toFixed(1)}% conversion - ${potentialSubs} more subs available from existing traffic`,
+            potential: '+$' + (potentialSubs * revenuePerSub).toFixed(0) + '/week',
+            confidence: '90%',
+            action: 'Optimize: Free trial offers, profile appeal, subscription price testing'
+        });
+    }
+    
+    if (data.renewRate && data.renewRate < 50 && data.activeFans > 50) {
+        const churning = (data.activeFans * (1 - data.renewRate/100)).toFixed(0);
+        insights.opportunities.push({
+            title: 'Retention Leakage',
+            description: `${data.renewRate.toFixed(1)}% renew rate - ${churning} fans will churn next month`,
+            potential: '+$' + (churning * 10).toFixed(0) + '/month saved',
+            confidence: '95%',
+            action: 'Launch re-engagement campaign 3 days before renewal dates'
+        });
+    }
+    
+    // 🟢 STRENGTHS (What to double down on)
+    if (unlockRate >= 40) {
+        insights.strengths.push({
+            title: 'PPV Conversion Excellence',
+            description: `${unlockRate.toFixed(1)}% unlock rate - your chatters know how to sell`,
+            impact: 'Keep this quality as you scale',
+            action: 'Document what works: PPV types, timing, messaging style'
+        });
+    }
+    
+    if (spenderRate >= 3) {
+        insights.strengths.push({
+            title: 'Traffic Quality is Premium',
+            description: `${spenderRate.toFixed(1)}% of clicks become buyers - your sources are gold`,
+            impact: 'Traffic → Revenue machine working',
+            action: 'Double marketing budget on current best-performing sources'
+        });
+    }
+    
+    if (data.vipRevenuePercent > 0 && data.vipRevenuePercent < 60 && data.avgVIPSpend > 200) {
+        insights.strengths.push({
+            title: 'Balanced Revenue + Strong VIPs',
+            description: `${data.vipRevenuePercent.toFixed(1)}% from VIPs with $${data.avgVIPSpend.toFixed(0)} avg spend - healthy mix`,
+            impact: 'Low risk, high stability',
+            action: 'Maintain: Keep cultivating VIPs while growing regular fan base'
+        });
+    }
+    
+    // 💎 PREDICTIVE INSIGHTS
+    if (data.ppvsUnlocked > 0 && unlockRate < 45) {
+        const currentRevenue = data.ppvsUnlocked * (data.avgPPVPrice || 10);
+        const targetRevenue = data.ppvsSent * 0.45 * (data.avgPPVPrice || 10);
+        const gain = (targetRevenue - currentRevenue).toFixed(0);
+        insights.predictions.push({
+            title: 'Unlock Rate Optimization',
+            current: `${unlockRate.toFixed(1)}% → $${currentRevenue.toFixed(0)}/week`,
+            target: `45% → $${targetRevenue.toFixed(0)}/week`,
+            gain: '+$' + gain + '/week',
+            timeframe: '2-3 weeks',
+            action: 'Improve PPV preview quality + timing optimization'
+        });
+    }
+    
+    if (data.linkClicks > 100 && spenderRate < 4) {
+        const currentSpenders = data.uniqueSpenders;
+        const targetSpenders = data.linkClicks * 0.04;
+        const gain = ((targetSpenders - currentSpenders) * (data.avgPPVPrice || 15)).toFixed(0);
+        insights.predictions.push({
+            title: 'Traffic Conversion Upside',
+            current: `${spenderRate.toFixed(1)}% spender rate → ${currentSpenders} buyers`,
+            target: `4% → ${targetSpenders.toFixed(0)} buyers`,
+            gain: '+$' + gain + '/week',
+            timeframe: '1-2 weeks',
+            action: 'Fix first message + faster response times'
+        });
+    }
+    
+    return insights;
+}
+
+// Render Agency Insights with BEAUTIFUL UI
+function renderAgencyInsights(insights) {
+    const criticalHTML = insights.critical.map(c => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-red-500/40 bg-gradient-to-br from-red-900/20 to-red-800/10 hover:border-red-500/60 transition-all">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">${c.title}</h4>
+                        <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">${c.severity}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Impact</div>
+                    <div class="text-lg font-bold text-red-400">${c.impact}</div>
+                </div>
+            </div>
+            <p class="text-gray-300 mb-4 text-base leading-relaxed">${c.description}</p>
+            <div class="pt-4 border-t border-red-500/20">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-lightbulb text-yellow-400 mt-1"></i>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">ACTION REQUIRED</div>
+                        <div class="text-sm font-medium text-white">${c.action}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const opportunitiesHTML = insights.opportunities.map(o => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-900/20 to-yellow-800/10 hover:border-yellow-500/60 transition-all">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                        <i class="fas fa-treasure-chest text-yellow-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white">${o.title}</h4>
+                        <span class="px-3 py-1 bg-yellow-500/80 text-gray-900 text-xs font-bold rounded-full">${o.confidence} CONFIDENCE</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-400">Potential</div>
+                    <div class="text-2xl font-bold text-green-400">${o.potential}</div>
+                </div>
+            </div>
+            <p class="text-gray-300 mb-4 text-base leading-relaxed">${o.description}</p>
+            <div class="pt-4 border-t border-yellow-500/20">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-rocket text-green-400 mt-1"></i>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">HOW TO CAPTURE</div>
+                        <div class="text-sm font-medium text-white">${o.action}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const strengthsHTML = insights.strengths.map(s => `
+        <div class="glass-card rounded-xl p-5 border border-green-500/30 bg-gradient-to-br from-green-900/10 to-green-800/5">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-bold text-white mb-1">${s.title}</h5>
+                    <p class="text-sm text-gray-300 mb-2">${s.description}</p>
+                    <div class="flex items-center gap-4 text-xs">
+                        <span class="text-green-400">✓ ${s.impact}</span>
+                        <span class="text-gray-500">→ ${s.action}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    const predictionsHTML = insights.predictions.map(p => `
+        <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-pink-900/10">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-crystal-ball text-purple-400 text-xl"></i>
+                </div>
+                <h4 class="text-xl font-bold text-white">${p.title}</h4>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="p-3 bg-gray-800/50 rounded-lg">
+                    <div class="text-xs text-gray-500 mb-1">CURRENT STATE</div>
+                    <div class="text-sm font-medium text-gray-300">${p.current}</div>
+                </div>
+                <div class="p-3 bg-purple-900/30 rounded-lg border border-purple-500/30">
+                    <div class="text-xs text-purple-400 mb-1">TARGET STATE</div>
+                    <div class="text-sm font-medium text-white">${p.target}</div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-purple-500/20">
+                <div>
+                    <div class="text-xs text-gray-500">PROJECTED GAIN</div>
+                    <div class="text-2xl font-bold text-green-400">${p.gain}</div>
+                    <div class="text-xs text-gray-400">in ${p.timeframe}</div>
+                </div>
+                <div class="text-right flex-1 ml-4">
+                    <div class="text-xs text-gray-500 mb-1">ACTION PLAN</div>
+                    <div class="text-sm text-white">${p.action}</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    return `
+        <div class="mb-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-2xl font-bold text-white">Analysis Complete</h3>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg">${insights.critical.length} Critical</span>
+                    <span class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-lg">${insights.opportunities.length} Opportunities</span>
+                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg">${insights.strengths.length} Strengths</span>
+                </div>
+            </div>
+        </div>
+        
+        ${insights.critical.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">Critical Issues</span>
+                </h3>
+                <div class="space-y-4">
+                    ${criticalHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.opportunities.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-gem text-yellow-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-yellow-400 to-green-500 bg-clip-text text-transparent">Revenue Opportunities</span>
+                </h3>
+                <div class="space-y-4">
+                    ${opportunitiesHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.predictions.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-purple-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Predictive Models</span>
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    ${predictionsHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.strengths.length > 0 ? `
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-trophy text-green-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">Core Strengths</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${strengthsHTML}
+                </div>
+            </div>
+        ` : ''}
+        
+        ${insights.critical.length === 0 && insights.opportunities.length === 0 ? `
+            <div class="text-center py-16 glass-card rounded-2xl border-2 border-green-500/30">
+                <i class="fas fa-check-circle text-6xl text-green-400 mb-4"></i>
+                <h3 class="text-3xl font-bold text-white mb-3">Agency Running Optimally</h3>
+                <p class="text-gray-400 text-lg">No critical issues or major opportunities detected. Keep executing!</p>
+            </div>
+        ` : ''}
+    `;
+}
+
 // Enhanced Agency Analysis - NEW VERSION
 async function runAgencyAnalysis() {
-    const resultsContainer = document.getElementById('agencyAnalysisResults');
+    const resultsContainer = document.getElementById('aiAnalysisResults');
     if (!resultsContainer) return;
     
-    // Show loading state
+    // Show loading state with beautiful animation
     resultsContainer.innerHTML = `
-        <div class="flex items-center justify-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
-            <span class="ml-4 text-lg text-gray-300">Analyzing agency performance...</span>
+        <div class="flex flex-col items-center justify-center py-20">
+            <div class="relative w-32 h-32 mb-8">
+                <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
+                <div class="absolute inset-4 rounded-full border-4 border-transparent border-t-pink-500 animate-spin" style="animation-duration: 1.5s;"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i class="fas fa-brain text-3xl text-purple-400"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Deep Analysis in Progress</h3>
+            <p class="text-gray-400">Processing metrics, identifying patterns, calculating opportunities...</p>
         </div>
     `;
     
     try {
-        // Call real AI analysis endpoint
-        const authToken = localStorage.getItem('authToken');
-        if (!authToken) {
-            throw new Error('Not authenticated');
-        }
-
-        // Prepare request body for AI analysis (use shared week/month filter)
-        const requestBody = {
-            analysisType: 'agency',
-            interval: '7d' // Default fallback
-        };
-
-        // Use shared week/month filter if available
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            requestBody.startDate = currentWeekFilter.start;
-            requestBody.endDate = currentWeekFilter.end;
-            console.log('Using week filter for AI analysis:', currentWeekFilter);
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            requestBody.startDate = currentMonthFilter.firstDay;
-            requestBody.endDate = currentMonthFilter.lastDay;
-            console.log('Using month filter for AI analysis:', currentMonthFilter);
-        } else if (currentAIAnalysisInterval === 'custom' && window.customDateRange) {
-            requestBody.startDate = window.customDateRange.start;
-            requestBody.endDate = window.customDateRange.end;
-        } else {
-            requestBody.interval = currentAIAnalysisInterval || '7d';
-        }
-
-        console.log('Sending AI analysis request:', requestBody);
+        // Get dashboard data for analysis
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${customDateRange?.start || ''}&customEnd=${customDateRange?.end || ''}&_t=${Date.now()}`;
         
-        const response = await fetch(`/api/ai/analysis?_t=${Date.now()}` , {
-            method: 'POST',
+        const response = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+                'Authorization': 'Bearer ' + authToken,
+                'Cache-Control': 'no-cache'
+            }
         });
 
         console.log('AI analysis response status:', response.status);
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI analysis error response:', errorText);
-            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
+            throw new Error('Failed to fetch data');
         }
 
-        const analysis = await response.json();
-
-        resultsContainer.innerHTML = `
-            <div class="space-y-8">
-                <!-- Overall Performance -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center p-6 bg-green-900/20 rounded-xl border border-green-500/30">
-                        <div class="text-4xl font-bold text-green-400 mb-2">${analysis.overallScore}</div>
-                        <div class="text-lg text-gray-300 mb-1">Overall Score</div>
-                        <div class="text-sm text-green-400">Above Average (75+)</div>
-                    </div>
-                    <div class="text-center p-6 bg-blue-900/20 rounded-xl border border-blue-500/30">
-                        <div class="text-3xl font-bold text-blue-400 mb-2">${analysis.conversionRate}%</div>
-                        <div class="text-lg text-gray-300 mb-1">Conversion Rate</div>
-                        <div class="text-sm text-blue-400">Above Industry Avg</div>
-                    </div>
-                    <div class="text-center p-6 bg-purple-900/20 rounded-xl border border-purple-500/30">
-                        <div class="text-3xl font-bold text-purple-400 mb-2">$${(analysis.totalRevenue/analysis.totalSubs).toFixed(2)}</div>
-                        <div class="text-lg text-gray-300 mb-1">Revenue per Sub</div>
-                        <div class="text-sm text-yellow-400">Below Target ($12.50)</div>
-                    </div>
-                </div>
-
-                <!-- Performance Insights -->
-                <div class="bg-gray-800/30 rounded-xl p-8 border border-gray-600/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
-                        <i class="fas fa-chart-line mr-3 text-xl"></i>Performance Insights
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${analysis.insights.map(insight => 
-                            `<div class="text-base text-gray-300 flex items-start p-3 bg-gray-700/30 rounded-lg">
-                                <i class="fas fa-check-circle text-green-400 mr-3 mt-1 text-lg"></i>
-                                <span>${insight}</span>
-                            </div>`
-                        ).join('')}
-                    </div>
-                </div>
-
-                <!-- Areas for Improvement -->
-                <div class="bg-red-900/10 rounded-xl p-8 border border-red-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-red-400 flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>Areas for Improvement
-                    </h4>
-                    <div class="space-y-4">
-                        ${analysis.weakPoints.map(point => 
-                            `<div class="text-base text-gray-300 flex items-start p-4 bg-red-900/20 rounded-lg">
-                                <i class="fas fa-arrow-down text-red-400 mr-3 mt-1 text-lg"></i>
-                                <span>${point}</span>
-                            </div>`
-                        ).join('')}
-                    </div>
-                </div>
-
-                <!-- Growth Opportunities & ROI -->
-                <div class="bg-green-900/10 rounded-xl p-8 border border-green-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-green-400 flex items-center">
-                        <i class="fas fa-rocket mr-3 text-xl"></i>Growth Opportunities & ROI
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h5 class="text-xl font-medium text-yellow-400 mb-4">Opportunities:</h5>
-                            <div class="space-y-3">
-                                ${analysis.opportunities.map(opp => 
-                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-yellow-900/20 rounded-lg">
-                                        <i class="fas fa-lightbulb text-yellow-400 mr-3 mt-1 text-lg"></i>
-                                        <span>${opp}</span>
-                                    </div>`
-                                ).join('')}
-                            </div>
-                        </div>
-                        <div>
-                            <h5 class="text-xl font-medium text-green-400 mb-4">ROI Calculations:</h5>
-                            <div class="space-y-3">
-                                ${analysis.roiCalculations.map(calc => 
-                                    `<div class="text-base text-gray-300 flex items-start p-3 bg-green-900/20 rounded-lg">
-                                        <i class="fas fa-dollar-sign text-green-400 mr-3 mt-1 text-lg"></i>
-                                        <span>${calc}</span>
-                                    </div>`
-                                ).join('')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- Recommended Actions -->
-                <div class="bg-blue-900/10 rounded-xl p-8 border border-blue-500/30">
-                    <h4 class="text-2xl font-semibold mb-6 text-blue-400 flex items-center">
-                        <i class="fas fa-tasks mr-3 text-xl"></i>Recommended Actions (Priority Order)
-                    </h4>
-                    <div class="space-y-4">
-                        ${analysis.recommendations.map((rec, index) => {
-                            const priority = index === 0 ? 'HIGH' : index === 1 ? 'MED' : 'LOW';
-                            const bgColor = index === 0 ? 'red' : index === 1 ? 'yellow' : 'green';
-                            const textColor = index === 1 ? 'black' : 'white';
-                            return `
-                            <div class="flex items-start p-6 bg-${bgColor}-900/20 rounded-xl border border-${bgColor}-500/30">
-                                <span class="bg-${bgColor}-500 text-${textColor} text-sm px-4 py-2 rounded-lg mr-4 mt-1 font-bold">${priority}</span>
-                                <div>
-                                    <span class="text-lg font-medium text-white">${rec}</span>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
+        const data = await response.json();
+        console.log('📊 Data for AI analysis:', data);
+        
+        // DEEP ANALYSIS LOGIC - Calculate insights
+        const insights = generateDeepInsights(data);
+        
+        // Render STUNNING results
+        resultsContainer.innerHTML = renderAgencyInsights(insights);
         
     } catch (error) {
         console.error('Agency analysis error:', error);
@@ -2173,19 +4371,44 @@ async function runChatterAnalysis() {
             throw new Error('Not authenticated');
         }
 
-        // Prepare request body for AI analysis (use shared week/month filter)
+        // Calculate date range based on current AI interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentAIInterval === 'custom' && aiAnalysisCustomDates) {
+            startDate = new Date(aiAnalysisCustomDates.start);
+            endDate = new Date(aiAnalysisCustomDates.end);
+        } else if (currentAIInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentAIInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentAIInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        
+        // Prepare request body for AI analysis
         const requestBody = {
             analysisType: 'individual',
-            interval: '7d', // Default fallback
-            chatterId: select.value
+            interval: currentAIInterval || '7d',
+            chatterId: select.value,
+            startDate: formatDate(startDate),
+            endDate: formatDate(endDate)
         };
-
-        // Use shared week/month filter if available
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            requestBody.startDate = currentWeekFilter.start;
-            requestBody.endDate = currentWeekFilter.end;
-            console.log('✅ AI Analysis using WEEK filter:', currentWeekFilter);
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
+        
+        console.log('✅ AI Analysis using interval:', currentAIInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
+        // OLD CODE - Remove this
+        if (false && currentFilterType === 'month' && currentMonthFilter) {
             requestBody.startDate = currentMonthFilter.firstDay;
             requestBody.endDate = currentMonthFilter.lastDay;
             console.log('✅ AI Analysis using MONTH filter:', currentMonthFilter);
@@ -2197,27 +4420,56 @@ async function runChatterAnalysis() {
             console.log('⚠️ AI Analysis using interval fallback:', requestBody.interval);
         }
 
-        console.log('Sending AI analysis request:', requestBody);
+        console.log('Sending enhanced chatter analysis request');
         
-        const response = await fetch('/api/ai/analysis', {
-            method: 'POST',
+        // Get chatter name from select
+        const chatterName = select.options[select.selectedIndex].text;
+        
+        // Build query params using the date range we calculated above
+        let params = new URLSearchParams();
+        params.append('filterType', 'custom');
+        params.append('customStart', formatDate(startDate));
+        params.append('customEnd', formatDate(endDate));
+        
+        console.log('🔍 AI Analysis API call:', {
+            chatterName,
+            filterType: 'custom',
+            start: formatDate(startDate),
+            end: formatDate(endDate)
+        });
+        
+        // Call NEW enhanced API
+        const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
             headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+                'Authorization': `Bearer ${authToken}`
+            }
         });
 
-        console.log('AI analysis response status:', response.status);
+        console.log('Enhanced chatter analysis response status:', response.status);
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI analysis error response:', errorText);
-            throw new Error(`Failed to get AI analysis: ${response.status} ${errorText}`);
+            throw new Error(`Failed to get enhanced analysis: ${response.status}`);
         }
 
         const analysisData = await response.json();
-        console.log('AI analysis data:', analysisData);
+        console.log('✅ Enhanced chatter analysis data:', analysisData);
+        
+        // If scores are null, we need to trigger analysis first!
+        if (analysisData.overallScore === null || analysisData.overallScore === 0) {
+            console.log('⚠️ No analysis scores found - need to run analysis first!');
+            resultsContainer.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-yellow-600/20 to-orange-600/20 rounded-3xl flex items-center justify-center border-2 border-yellow-500/30">
+                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-400"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">No Analysis Data Available</h3>
+                    <p class="text-gray-400 mb-6">Messages have been uploaded but not analyzed yet.</p>
+                    <p class="text-gray-300 mb-8">Go to <strong>Data Management > Messages</strong> and click <strong>"Re-analyze"</strong> to run the AI analysis.</p>
+                </div>
+            `;
+            return;
+        }
+        
         renderChatterAnalysisResults(analysisData);
         
         // Load performance trends for this chatter
@@ -2240,68 +4492,6 @@ async function runChatterAnalysis() {
 }
 
 // Load analytics data for analytics page
-async function loadAnalyticsData() {
-    try {
-        const response = await fetch(`/api/analytics/dashboard?interval=${currentAnalyticsInterval}&_t=${Date.now()}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Cache-Control': 'no-cache'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            updateAnalyticsPageData(data);
-        }
-    } catch (error) {
-        console.error('Error loading analytics data:', error);
-    }
-}
-
-function updateAnalyticsPageData(data) {
-    console.log('Analytics page data received:', data);
-    console.log('Analytics changes object:', data.changes);
-    
-    const changes = data.changes || {};
-    
-    // Update core metrics from real data with change indicators
-    const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked || 0) / data.ppvsSent * 100).toFixed(1) : 0;
-    const conversionRate = data.profileClicks > 0 ? ((data.newSubs || 0) / data.profileClicks * 100).toFixed(1) : 0;
-    const messagesPerPPV = data.ppvsSent > 0 ? ((data.messagesSent || 0) / data.ppvsSent).toFixed(1) : 0;
-    
-    const elements = {
-        'analytics-revenue': { value: `$${data.totalRevenue?.toLocaleString() || '0'}`, change: changes.totalRevenue },
-        'analytics-net-revenue': { value: `$${data.netRevenue?.toLocaleString() || '0'}`, change: changes.netRevenue },
-        'analytics-subs': { value: data.totalSubs?.toLocaleString() || '0', change: changes.totalSubs },
-        'analytics-clicks': { value: data.profileClicks?.toLocaleString() || '0', change: changes.profileClicks },
-        'analytics-ppvs': { value: data.ppvsSent?.toLocaleString() || '0', change: changes.ppvsSent },
-        'analytics-ppv-unlocked': { value: data.ppvsUnlocked?.toLocaleString() || '0', change: changes.ppvsUnlocked },
-        'analytics-messages': { value: data.messagesSent?.toLocaleString() || '0', change: changes.messagesSent },
-        'analytics-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true },
-        'analytics-click-to-sub': { value: `${conversionRate}%`, change: changes.conversionRate },
-        'analytics-ppv-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
-        'analytics-revenue-per-sub': { value: data.totalSubs > 0 ? `$${(data.totalRevenue / data.totalSubs).toFixed(2)}` : '$0', change: null },
-        'analytics-messages-per-ppv': { value: messagesPerPPV, change: changes.messagesPerPPV },
-        'analytics-conversion-rate': { value: `${conversionRate}%`, change: changes.conversionRate },
-        'analytics-revenue-per-chatter': { value: data.totalRevenue > 0 ? `$${Math.round(data.totalRevenue / 4).toLocaleString()}` : '$0', change: null },
-        'analytics-ppv-success-rate': { value: `${unlockRate}%`, change: changes.unlockRate },
-        'analytics-avg-response-time': { value: `${data.avgResponseTime || 0}m`, change: changes.avgResponseTime, reversed: true }
-    };
-    
-    Object.entries(elements).forEach(([id, config]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.innerHTML = config.value + (config.change ? renderChangeIndicator(config.change, config.reversed) : '');
-        }
-    });
-    
-    // Update creator performance table
-    updateCreatorPerformanceTable(data);
-    
-    // Update top performing chatters
-    updateTopPerformingChatters(data);
-}
-
 function updateCreatorPerformanceTable(data) {
     const tableBody = document.getElementById('creator-performance-table');
     if (!tableBody) return;
@@ -2756,7 +4946,7 @@ function renderAgencyAnalysisResults(data) {
     `;
 }
 
-// Render Chatter Analysis Results
+// Render Chatter Analysis Results (ENHANCED with new sections)
 function renderChatterAnalysisResults(data) {
     const container = document.getElementById('chatterAnalysisResults');
     if (!container) return;
@@ -2785,27 +4975,80 @@ function renderChatterAnalysisResults(data) {
                             </div>
                         </div>
                         <div class="text-center p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/30">
-                            <div class="text-4xl font-bold text-green-400">${data.overallScore || 0}</div>
-                            <div class="text-sm text-gray-300 font-medium">Overall Score</div>
-                            <div class="text-xs text-green-400 mt-1">Performance Rating</div>
+                            ${data.overallScore ? `
+                                <div class="text-4xl font-bold text-green-400">${data.overallScore}</div>
+                                <div class="text-sm text-gray-300 font-medium">Overall Score</div>
+                                <div class="text-xs text-green-400 mt-1">Performance Rating</div>
+                            ` : `
+                                <div class="text-2xl font-bold text-yellow-400">
+                                    <i class="fas fa-file-upload mb-2"></i>
+                                </div>
+                                <div class="text-sm text-gray-300 font-medium">No Message Analysis</div>
+                                <div class="text-xs text-yellow-400 mt-1">Upload messages to see scores</div>
+                            `}
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- NEW: Team Comparison Rankings -->
+            ${data.rankings ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-900/20 to-blue-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-trophy text-cyan-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Your Team Rankings</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 rounded-xl border border-yellow-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Revenue Rank</span>
+                            <div class="text-4xl font-black ${data.rankings.revenue === 1 ? 'text-yellow-400' : data.rankings.revenue === 2 ? 'text-gray-300' : data.rankings.revenue === 3 ? 'text-orange-400' : 'text-gray-500'}">
+                                #${data.rankings.revenue || '-'}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            You: $${(data.chatter?.revenue || 0).toFixed(0)} vs Team: $${(data.team?.avgRevenue || 0).toFixed(0)}
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gradient-to-br from-green-900/20 to-emerald-900/10 rounded-xl border border-green-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Unlock Rate Rank</span>
+                            <div class="text-4xl font-black ${data.rankings.unlockRate === 1 ? 'text-yellow-400' : data.rankings.unlockRate === 2 ? 'text-gray-300' : data.rankings.unlockRate === 3 ? 'text-orange-400' : 'text-gray-500'}">
+                                #${data.rankings.unlockRate || '-'}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            You: ${(data.chatter?.unlockRate || 0).toFixed(1)}% vs Team: ${(data.team?.avgUnlockRate || 0).toFixed(1)}%
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/10 rounded-xl border border-purple-500/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-gray-300">Avg PPV Price</span>
+                            <div class="text-2xl font-bold text-purple-400">
+                                $${(data.chatter?.avgPPVPrice || 0).toFixed(0)}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            Team avg: $${(data.team?.avgPPVPrice || 0).toFixed(0)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
             <!-- Performance Breakdown -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Key Insights -->
-                ${data.insights && data.insights.length > 0 ? `
+                <!-- Strengths -->
+                ${data.strengths && data.strengths.length > 0 ? `
                 <div class="glass-card rounded-xl p-8">
                     <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                         <i class="fas fa-lightbulb text-yellow-400 mr-4"></i>Key Insights
                     </h4>
                     <div class="space-y-4">
-                        ${data.insights.map(insight => `
+                        ${data.strengths.map(strength => `
                             <div class="flex items-start p-4 bg-green-900/10 rounded-lg border border-green-500/20">
                                 <i class="fas fa-check-circle text-green-400 mr-4 mt-1"></i>
-                                <span class="text-gray-300 leading-relaxed">${insight}</span>
+                                <span class="text-gray-300 leading-relaxed">${strength}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -2813,16 +5056,16 @@ function renderChatterAnalysisResults(data) {
                 ` : ''}
 
                 <!-- Areas for Improvement -->
-                ${data.weakPoints && data.weakPoints.length > 0 ? `
+                ${data.weaknesses && data.weaknesses.length > 0 ? `
                 <div class="glass-card rounded-xl p-8">
                     <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                         <i class="fas fa-exclamation-triangle text-orange-400 mr-4"></i>Areas for Improvement
                     </h4>
                     <div class="space-y-4">
-                        ${data.weakPoints.map(point => `
+                        ${data.weaknesses.map(weakness => `
                             <div class="flex items-start p-4 bg-orange-900/10 rounded-lg border border-orange-500/20">
                                 <i class="fas fa-arrow-up text-orange-400 mr-4 mt-1"></i>
-                                <span class="text-gray-300 leading-relaxed">${point}</span>
+                                <span class="text-gray-300 leading-relaxed">${weakness}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -2884,9 +5127,40 @@ function renderChatterAnalysisResults(data) {
                 ` : ''}
             </div>
 
+            <!-- Grammar & Guidelines Scores -->
+            ${(data.grammarScore !== null || data.guidelinesScore !== null) ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                ${data.grammarScore !== null ? `
+                <div class="glass-card rounded-xl p-6 border-2 border-blue-500/40">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-spell-check text-blue-400 mr-3"></i>Grammar Score
+                    </h4>
+                    <div class="text-5xl font-bold text-blue-400 mb-2">${data.grammarScore}/100</div>
+                    ${data.grammarBreakdown ? `
+                        <div class="mt-4 space-y-2 text-sm">
+                            <div class="text-gray-300">${data.grammarBreakdown.spellingErrors || 'No spelling errors'}</div>
+                            <div class="text-gray-300">${data.grammarBreakdown.grammarIssues || 'No grammar issues'}</div>
+                            <div class="text-gray-300">${data.grammarBreakdown.punctuationProblems || 'No punctuation issues'}</div>
+                        </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+                
+                ${data.guidelinesScore !== null ? `
+                <div class="glass-card rounded-xl p-6 border-2 border-purple-500/40">
+                    <h4 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-book text-purple-400 mr-3"></i>Guidelines Score
+                    </h4>
+                    <div class="text-5xl font-bold text-purple-400 mb-2">${data.guidelinesScore}/100</div>
+                    <div class="text-sm text-gray-400 mt-2">Based on ${data.guidelinesBreakdown ? Object.values(data.guidelinesBreakdown).reduce((sum, cat) => sum + (cat.items?.length || 0), 0) : 0} guidelines</div>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+
             <!-- Action Plan -->
             ${data.recommendations && data.recommendations.length > 0 ? `
-            <div class="glass-card rounded-xl p-8">
+            <div class="glass-card rounded-xl p-8 mb-8">
                 <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
                     <i class="fas fa-clipboard-list text-cyan-400 mr-4"></i>Personalized Action Plan
                 </h4>
@@ -2903,29 +5177,92 @@ function renderChatterAnalysisResults(data) {
             </div>
             ` : ''}
 
-            <!-- Performance Summary -->
-            <div class="glass-card rounded-xl p-8">
+            <!-- NEW: Traffic Source Performance -->
+            ${data.topSource ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-purple-500/40 bg-gradient-to-br from-purple-900/20 to-pink-900/10 mb-8">
                 <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
-                    <i class="fas fa-chart-line text-indigo-400 mr-4"></i>Performance Summary
+                    <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">Your Traffic Source Performance</span>
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-xl border border-indigo-500/30">
-                        <div class="text-2xl font-bold text-indigo-400 mb-2">${data.fansChatted || 0}</div>
-                        <div class="text-sm text-gray-400">Fans Chatted</div>
-                        <div class="text-xs text-indigo-400 mt-1">Engagement Level</div>
+                <div class="p-6 bg-gray-800/50 rounded-xl border border-purple-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Your Best Source</div>
+                            <div class="text-2xl font-bold text-white">${data.topSource.name}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400 mb-1">Revenue</div>
+                            <div class="text-2xl font-bold text-green-400">$${data.topSource.revenue.toFixed(0)}</div>
+                        </div>
                     </div>
-                    <div class="text-center p-6 bg-gradient-to-br from-emerald-900/20 to-green-900/20 rounded-xl border border-emerald-500/30">
-                        <div class="text-2xl font-bold text-emerald-400 mb-2">${((data.messagesSent || 0) / (data.fansChatted || 1)).toFixed(1)}</div>
-                        <div class="text-sm text-gray-400">Messages per Fan</div>
-                        <div class="text-xs text-emerald-400 mt-1">Engagement Rate</div>
-                    </div>
-                    <div class="text-center p-6 bg-gradient-to-br from-amber-900/20 to-yellow-900/20 rounded-xl border border-amber-500/30">
-                        <div class="text-2xl font-bold text-amber-400 mb-2">${((data.ppvsUnlocked || 0) / (data.fansChatted || 1) * 100).toFixed(1)}%</div>
-                        <div class="text-sm text-gray-400">Conversion Rate</div>
-                        <div class="text-xs text-amber-400 mt-1">Fan to Sale</div>
+                    <div class="text-base text-purple-300 leading-relaxed">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                        When you talk to ${data.topSource.category} fans, they're ${(data.topSource.revenue / data.topSource.count).toFixed(0)}x more likely to spend
                     </div>
                 </div>
             </div>
+            ` : ''}
+
+            <!-- NEW: Pricing Intelligence -->
+            ${data.pricing && (data.pricing.low.count > 0 || data.pricing.mid.count > 0 || data.pricing.high.count > 0) ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-green-500/40 bg-gradient-to-br from-green-900/20 to-emerald-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">Your Pricing Strategy</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                        <div class="text-sm text-gray-400 mb-2">$0-15 PPVs</div>
+                        <div class="text-2xl font-bold text-red-400">${data.pricing.low.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.low.count} sent</div>
+                    </div>
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-yellow-500/30">
+                        <div class="text-sm text-gray-400 mb-2">$15-25 PPVs</div>
+                        <div class="text-2xl font-bold text-yellow-400">${data.pricing.mid.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.mid.count} sent</div>
+                    </div>
+                    <div class="p-4 bg-gray-800/50 rounded-xl border border-green-500/30">
+                        <div class="text-sm text-gray-400 mb-2">$25+ PPVs</div>
+                        <div class="text-2xl font-bold text-green-400">${data.pricing.high.unlockRate.toFixed(1)}%</div>
+                        <div class="text-xs text-gray-500">${data.pricing.high.count} sent</div>
+                    </div>
+                </div>
+                <div class="p-4 bg-green-900/20 rounded-lg border border-green-500/20">
+                    <p class="text-sm text-gray-300">
+                        <i class="fas fa-chart-line text-green-400 mr-2"></i>
+                        <strong>Insight:</strong> Your avg PPV price: $${(data.chatter?.avgPPVPrice || 0).toFixed(0)} vs Team: $${(data.team?.avgPPVPrice || 0).toFixed(0)}
+                        ${data.chatter?.avgPPVPrice < data.team?.avgPPVPrice ? ' - Consider raising prices!' : ' - Great pricing!'}
+                    </p>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- NEW: VIP Performance -->
+            ${data.chatter?.vipCount > 0 ? `
+            <div class="glass-card rounded-2xl p-6 border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 mb-8">
+                <h4 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-crown text-yellow-400 mr-3"></i>
+                    <span class="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Your VIP Performance</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 bg-yellow-900/20 rounded-xl border border-yellow-500/30">
+                        <div class="text-3xl font-bold text-yellow-400 mb-2">${data.chatter.vipCount}</div>
+                        <div class="text-sm text-gray-400">VIPs Created</div>
+                        <div class="text-xs text-yellow-400 mt-1">This period</div>
+                    </div>
+                    <div class="text-center p-6 bg-green-900/20 rounded-xl border border-green-500/30">
+                        <div class="text-3xl font-bold text-green-400 mb-2">$${data.chatter.avgVIPSpend.toFixed(0)}</div>
+                        <div class="text-sm text-gray-400">Avg VIP Spend</div>
+                        <div class="text-xs text-green-400 mt-1">Per VIP fan</div>
+                    </div>
+                    <div class="text-center p-6 bg-purple-900/20 rounded-xl border border-purple-500/30">
+                        <div class="text-3xl font-bold text-purple-400 mb-2">${((data.chatter.vipCount / (data.chatter.fansChatted || 1)) * 100).toFixed(1)}%</div>
+                        <div class="text-sm text-gray-400">VIP Conversion</div>
+                        <div class="text-xs text-purple-400 mt-1">Fans → VIPs</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
 
         </div>
     `;
@@ -3126,13 +5463,267 @@ function loadLiveAIInsights(analytics, intelligent) {
         return;
     }
     
-    // Generate real data-driven insights
-    generateRealDataInsights(analytics, intelligent).then(insights => {
-        renderInsights(insights, container);
-    });
+    // DEEP ANALYSIS - Find critical weaknesses and strengths
+    const insights = [];
+    
+    // 1. PPV UNLOCK RATE ANALYSIS
+    if (analytics.ppvsSent > 0) {
+        const unlockRate = intelligent.ppvUnlockRate;
+        if (unlockRate < 25) {
+            const potentialRevenue = (analytics.ppvsSent * 0.35 - analytics.ppvsUnlocked) * (analytics.avgPPVPrice || 20);
+            insights.push({
+                type: 'critical',
+                icon: 'fa-exclamation-triangle',
+                title: 'Critical: Low PPV Unlock Rate',
+                value: `${unlockRate.toFixed(1)}%`,
+                message: `Only ${analytics.ppvsUnlocked} of ${analytics.ppvsSent} PPVs unlocked. Missing $${potentialRevenue.toFixed(0)}/period potential if rate improved to 35%.`,
+                action: 'Review message quality and PPV pricing strategy'
+            });
+        } else if (unlockRate > 45) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-trophy',
+                title: 'Strength: Excellent PPV Performance',
+                value: `${unlockRate.toFixed(1)}%`,
+                message: `${analytics.ppvsUnlocked} of ${analytics.ppvsSent} PPVs unlocked - team is crushing it!`,
+                action: 'Document what is working and scale this approach'
+            });
+        }
+    }
+    
+    // 2. ANALYSIS SCORE TREND (scores are 0-100 scale)
+    if (analytics.avgOverallScore != null || analytics.avgGrammarScore != null || analytics.avgGuidelinesScore != null) {
+        const lowestScore = Math.min(
+            analytics.avgOverallScore || 100,
+            analytics.avgGrammarScore || 100,
+            analytics.avgGuidelinesScore || 100
+        );
+        const lowestCategory = lowestScore === analytics.avgGrammarScore ? 'Grammar' :
+                               lowestScore === analytics.avgGuidelinesScore ? 'Guidelines' : 'Overall';
+        
+        if (lowestScore < 60) { // Below 60/100
+            insights.push({
+                type: 'critical',
+                icon: 'fa-exclamation-circle',
+                title: `Critical: ${lowestCategory} Score Low`,
+                value: `${lowestScore}/100`,
+                message: `Team ${lowestCategory.toLowerCase()} score is below acceptable. This impacts fan experience and revenue.`,
+                action: `Immediate training session on ${lowestCategory.toLowerCase()} improvement needed`
+            });
+        } else if (lowestScore >= 80) { // 80/100 or higher
+            insights.push({
+                type: 'strength',
+                icon: 'fa-star',
+                title: 'Strength: High Quality Messaging',
+                value: `${Math.max(analytics.avgOverallScore || 0, analytics.avgGrammarScore || 0, analytics.avgGuidelinesScore || 0)}/100`,
+                message: 'Team maintaining excellent messaging standards across all categories.',
+                action: 'Keep current training and quality standards'
+            });
+        }
+    }
+    
+    // 3. SPENDER CONVERSION ANALYSIS
+    if (analytics.fansChatted > 0 && analytics.uniqueSpenders != null) {
+        const convRate = analytics.spenderConversionRate;
+        if (convRate < 5) {
+            const targetSpenders = Math.ceil(analytics.fansChatted * 0.08);
+            const missedRevenue = (targetSpenders - analytics.uniqueSpenders) * (analytics.avgPPVPrice || 20);
+            insights.push({
+                type: 'warning',
+                icon: 'fa-user-slash',
+                title: 'Warning: Low Spender Conversion',
+                value: `${convRate.toFixed(1)}%`,
+                message: `Only ${analytics.uniqueSpenders} of ${analytics.fansChatted} fans became buyers. Missing ~$${missedRevenue.toFixed(0)} if rate improved to 8%.`,
+                action: 'Focus on identifying buying signals and targeted selling'
+            });
+        } else if (convRate > 10) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-chart-line',
+                title: 'Strength: High Conversion Efficiency',
+                value: `${convRate.toFixed(1)}%`,
+                message: `${analytics.uniqueSpenders} buyers from ${analytics.fansChatted} fans - excellent qualification!`,
+                action: 'Scale this approach across all chatters'
+            });
+        }
+    }
+    
+    // 4. RESPONSE TIME IMPACT
+    if (analytics.avgResponseTime > 0) {
+        if (analytics.avgResponseTime > 7) {
+            const estimatedLoss = analytics.totalRevenue * 0.15; // 15% loss from slow responses
+            insights.push({
+                type: 'warning',
+                icon: 'fa-clock',
+                title: 'Warning: Slow Response Times',
+                value: `${analytics.avgResponseTime}min`,
+                message: `Avg response time above 7min can reduce conversions by ~15%. Potential loss: $${estimatedLoss.toFixed(0)}/period.`,
+                action: 'Implement response time targets and monitoring'
+            });
+        } else if (analytics.avgResponseTime < 4) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-bolt',
+                title: 'Strength: Lightning Fast Responses',
+                value: `${analytics.avgResponseTime}min`,
+                message: 'Team responding quickly - this drives higher engagement and sales.',
+                action: 'Maintain current response standards'
+            });
+        }
+    }
+    
+    // 5. REVENUE PER SUB ANALYSIS
+    if (analytics.totalSubs > 0) {
+        const revPerSub = intelligent.revenuePerSub;
+        if (revPerSub < 10) {
+            const potentialRevenue = analytics.totalSubs * 15 - analytics.totalRevenue;
+            insights.push({
+                type: 'warning',
+                icon: 'fa-dollar-sign',
+                title: 'Warning: Low Revenue per Subscriber',
+                value: `$${revPerSub.toFixed(2)}`,
+                message: `Each subscriber generating only $${revPerSub.toFixed(2)}. Missing $${potentialRevenue.toFixed(0)} potential at $15/sub target.`,
+                action: 'Increase PPV frequency and improve upselling techniques'
+            });
+        } else if (revPerSub > 20) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-gem',
+                title: 'Strength: High-Value Subscribers',
+                value: `$${revPerSub.toFixed(2)}`,
+                message: `Subscribers generating $${revPerSub.toFixed(2)} each - excellent monetization!`,
+                action: 'Analyze and replicate what\'s working'
+            });
+        }
+    }
+    
+    // 6. AVG PPV PRICE OPTIMIZATION
+    if (analytics.avgPPVPrice > 0 && analytics.ppvsUnlocked > 10) {
+        if (analytics.avgPPVPrice < 15) {
+            const revenueIncrease = analytics.ppvsUnlocked * 5; // $5 increase per PPV
+            insights.push({
+                type: 'opportunity',
+                icon: 'fa-arrow-up',
+                title: 'Opportunity: Increase PPV Pricing',
+                value: `$${analytics.avgPPVPrice}`,
+                message: `Avg PPV at $${analytics.avgPPVPrice}. Raising to $${analytics.avgPPVPrice + 5} could add $${revenueIncrease.toFixed(0)}/period.`,
+                action: 'Test higher PPV prices with high-engagement fans'
+            });
+        } else if (analytics.avgPPVPrice > 30) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-fire',
+                title: 'Strength: Premium PPV Pricing',
+                value: `$${analytics.avgPPVPrice}`,
+                message: 'Team successfully selling premium-priced content!',
+                action: 'Continue premium positioning strategy'
+            });
+        }
+    }
+    
+    // 7. MESSAGES PER PPV EFFICIENCY
+    if (intelligent.messagesPerPPV > 0) {
+        if (intelligent.messagesPerPPV > 150) {
+            const timeWasted = (intelligent.messagesPerPPV - 100) * analytics.ppvsSent * 0.5; // minutes
+            insights.push({
+                type: 'warning',
+                icon: 'fa-comments',
+                title: 'Warning: High Message-to-Sale Ratio',
+                value: `${intelligent.messagesPerPPV.toFixed(0)}`,
+                message: `${intelligent.messagesPerPPV.toFixed(0)} messages per PPV sale. Team spending ~${timeWasted.toFixed(0)} extra minutes. Improve qualification.`,
+                action: 'Train on buyer signal recognition and faster closing'
+            });
+        } else if (intelligent.messagesPerPPV < 80) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-bullseye',
+                title: 'Strength: Efficient Sales Process',
+                value: `${intelligent.messagesPerPPV.toFixed(0)}`,
+                message: 'Team closing sales quickly with minimal message waste!',
+                action: 'Share best practices across team'
+            });
+        }
+    }
+    
+    // 8. LINK CLICK TO SUBSCRIBER CONVERSION
+    if (analytics.linkClicks > 0 && analytics.newSubs > 0) {
+        const linkToSubRate = (analytics.newSubs / analytics.linkClicks) * 100;
+        if (linkToSubRate < 3) {
+            const potentialSubs = Math.ceil(analytics.linkClicks * 0.05 - analytics.newSubs);
+            insights.push({
+                type: 'warning',
+                icon: 'fa-link',
+                title: 'Warning: Poor Link-to-Sub Conversion',
+                value: `${linkToSubRate.toFixed(1)}%`,
+                message: `${analytics.newSubs} subs from ${analytics.linkClicks} clicks. Missing ${potentialSubs} potential subs at 5% conversion.`,
+                action: 'Optimize landing page and OnlyFans profile appeal'
+            });
+        } else if (linkToSubRate > 5) {
+            insights.push({
+                type: 'strength',
+                icon: 'fa-rocket',
+                title: 'Strength: Excellent Traffic Quality',
+                value: `${linkToSubRate.toFixed(1)}%`,
+                message: `${analytics.newSubs} subs from ${analytics.linkClicks} clicks - traffic sources are high-quality!`,
+                action: 'Scale winning traffic sources'
+            });
+        }
+    }
+    
+    // Sort: Critical first, then warnings, then opportunities, then strengths
+    const sortOrder = { critical: 0, warning: 1, opportunity: 2, strength: 3 };
+    insights.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
+    
+    // Render insights (max 8, only show if actionable)
+    if (insights.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-8">
+                <i class="fas fa-check-circle text-green-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-green-300 mb-2">All Systems Optimal</h4>
+                <p class="text-gray-400">No critical issues detected. Team performing well!</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = insights.slice(0, 8).map(insight => {
+            const colorClass = {
+                critical: 'border-red-500/50 bg-red-900/10',
+                warning: 'border-yellow-500/50 bg-yellow-900/10',
+                opportunity: 'border-blue-500/50 bg-blue-900/10',
+                strength: 'border-green-500/50 bg-green-900/10'
+            }[insight.type];
+            
+            const iconColor = {
+                critical: 'text-red-400',
+                warning: 'text-yellow-400',
+                opportunity: 'text-blue-400',
+                strength: 'text-green-400'
+            }[insight.type];
+            
+            return `
+                <div class="glass-card rounded-lg p-5 border ${colorClass} hover:border-opacity-75 transition-all">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-10 h-10 rounded-lg bg-gray-800/50 flex items-center justify-center flex-shrink-0">
+                            <i class="fas ${insight.icon} ${iconColor} text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-semibold text-white text-sm">${insight.title}</h4>
+                                <span class="px-2 py-1 rounded-lg ${colorClass} text-xs font-bold">${insight.value}</span>
+                            </div>
+                            <p class="text-gray-300 text-xs mb-3 leading-relaxed">${insight.message}</p>
+                            <div class="flex items-center pt-2 border-t border-gray-700/50">
+                                <i class="fas fa-lightbulb text-purple-400 mr-2 text-xs"></i>
+                                <span class="text-purple-300 text-xs font-medium">${insight.action}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 }
 
-// Load action opportunities  
+// Load action opportunities with REAL calculations and predictions
 function loadActionOpportunities(analytics, intelligent) {
     const container = document.getElementById('actionOpportunities');
     if (!container) return;
@@ -3149,92 +5740,170 @@ function loadActionOpportunities(analytics, intelligent) {
         return;
     }
     
-    // Only show opportunities when we have meaningful data to analyze
+    // Generate REAL actionable opportunities with calculations
     const opportunities = [];
+    const avgPrice = analytics.avgPPVPrice || 0;
     
-    // Weekend performance analysis (only if we have enough data)
-    if (analytics.totalRevenue > 1000) { // Only show if we have substantial data
-        opportunities.push({
-            title: 'Weekend Performance Analysis',
-            urgency: 'medium',
-            impact: 'Data analysis required',
-            description: 'Upload weekend vs weekday data to identify performance gaps',
-            action: 'Upload detailed daily reports',
-            timeframe: '1 week'
-        });
+    // 1. IMPROVE PPV UNLOCK RATE
+    if (analytics.ppvsSent > 0 && intelligent.ppvUnlockRate < 40) {
+        const currentUnlocked = analytics.ppvsUnlocked;
+        const targetUnlocked = Math.ceil(analytics.ppvsSent * 0.40);
+        const additionalUnlocks = targetUnlocked - currentUnlocked;
+        const revenueGain = additionalUnlocks * avgPrice;
+        
+        if (revenueGain > 50) { // Only show if meaningful
+            opportunities.push({
+                title: 'Improve PPV Unlock Rate',
+                urgency: 'high',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Get ${additionalUnlocks} more fans to unlock PPVs (raise rate from ${intelligent.ppvUnlockRate.toFixed(1)}% to 40%)`,
+                action: 'Train chatters on message quality and timing',
+                calculation: `${additionalUnlocks} more unlocks × $${avgPrice.toFixed(0)} avg PPV`
+            });
+        }
     }
     
-    // Response time optimization (only if we have response time data)
-    if (analytics.avgResponseTime > 0 && analytics.avgResponseTime < 10) {
-        opportunities.push({
-            title: 'Response Time Optimization',
-            urgency: analytics.avgResponseTime > 5 ? 'high' : 'low',
-            impact: 'Performance improvement opportunity',
-            description: `Current response time: ${analytics.avgResponseTime}min (target: <5min)`,
-            action: analytics.avgResponseTime > 5 ? 'Implement response time improvements' : 'Monitor consistency',
-            timeframe: '1 week'
-        });
+    // 2. IMPROVE BUYER CONVERSION
+    if (analytics.fansChatted > 0 && analytics.uniqueSpenders != null) {
+        const convRate = analytics.spenderConversionRate;
+        if (convRate < 8) {
+            const targetSpenders = Math.ceil(analytics.fansChatted * 0.10);
+            const additionalSpenders = targetSpenders - analytics.uniqueSpenders;
+            const revenuePerBuyer = analytics.uniqueSpenders > 0 ? analytics.totalRevenue / analytics.uniqueSpenders : avgPrice;
+            const revenueGain = additionalSpenders * revenuePerBuyer;
+            
+            if (revenueGain > 50) {
+                opportunities.push({
+                    title: 'Convert More Fans to Buyers',
+                    urgency: 'high',
+                    impact: `+$${revenueGain.toFixed(0)}/week`,
+                    description: `Turn ${additionalSpenders} more chatted fans into paying customers (current: ${analytics.uniqueSpenders} buyers from ${analytics.fansChatted} fans)`,
+                    action: 'Focus on fans showing buying signals',
+                    calculation: `${additionalSpenders} new buyers × $${revenuePerBuyer.toFixed(0)} avg per buyer`
+                });
+            }
+        }
     }
     
-    // PPV pricing analysis (only if we have PPV data)
-    if (analytics.ppvsSent > 0 && analytics.avgPPVPrice > 0) {
-        opportunities.push({
-            title: 'PPV Pricing Analysis',
-            urgency: 'medium',
-            impact: 'Revenue optimization opportunity',
-            description: `Current avg PPV price: $${analytics.avgPPVPrice.toFixed(2)}`,
-            action: 'Upload team PPV data for pricing comparison',
-            timeframe: '2 weeks'
-        });
+    // 3. OPTIMIZE RESPONSE TIME
+    if (analytics.avgResponseTime > 5 && analytics.totalRevenue > 0) {
+        const revenueLoss = analytics.totalRevenue * 0.12; // 12% loss from slow responses
+        const revenueGain = revenueLoss * 0.8; // 80% recoverable
+        
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Speed Up Response Times',
+                urgency: 'high',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Reduce avg response time from ${analytics.avgResponseTime}min to under 5min (recover lost conversions)`,
+                action: 'Set response time alerts and team targets',
+                calculation: `Recover 80% of estimated $${revenueLoss.toFixed(0)} loss from delays`
+            });
+        }
     }
     
-    // Team performance analysis (only if we have multiple chatters)
-    if (analytics.totalRevenue > 500) {
-        opportunities.push({
-            title: 'Team Performance Analysis',
-            urgency: 'medium',
-            impact: 'Team optimization opportunity',
-            description: 'Upload data from multiple chatters to identify performance gaps',
-            action: 'Upload individual chatter reports',
-            timeframe: '2 weeks'
-        });
+    // 4. INCREASE AVG PPV PRICE
+    if (avgPrice > 0 && avgPrice < 25 && analytics.ppvsUnlocked > 10) {
+        const priceIncrease = 5;
+        const revenueGain = analytics.ppvsUnlocked * priceIncrease;
+        
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Raise PPV Prices',
+                urgency: 'medium',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Test increasing avg PPV price from $${avgPrice.toFixed(0)} to $${(avgPrice + priceIncrease).toFixed(0)}`,
+                action: 'Start with high-engagement fans, monitor unlock rate',
+                calculation: `${analytics.ppvsUnlocked} unlocked PPVs × $${priceIncrease} increase`
+            });
+        }
     }
     
-    // If no opportunities can be generated from current data, show data requirements
+    // 5. IMPROVE REVENUE PER SUB
+    if (analytics.totalSubs > 0 && intelligent.revenuePerSub < 12) {
+        const target = 15;
+        const revenueGain = analytics.totalSubs * (target - intelligent.revenuePerSub);
+        
+        if (revenueGain > 50) {
+            opportunities.push({
+                title: 'Increase Revenue per Subscriber',
+                urgency: 'medium',
+                impact: `+$${revenueGain.toFixed(0)}/week`,
+                description: `Raise revenue per sub from $${intelligent.revenuePerSub.toFixed(2)} to $${target} target`,
+                action: 'Send more PPVs and improve upselling',
+                calculation: `${analytics.totalSubs} subs × $${(target - intelligent.revenuePerSub).toFixed(2)} gap`
+            });
+        }
+    }
+    
+    // 6. IMPROVE LINK-TO-SUB CONVERSION
+    if (analytics.linkClicks > 50 && analytics.newSubs > 0) {
+        const linkToSubRate = (analytics.newSubs / analytics.linkClicks) * 100;
+        if (linkToSubRate < 4) {
+            const targetSubs = Math.ceil(analytics.linkClicks * 0.05);
+            const additionalSubs = targetSubs - analytics.newSubs;
+            const revenueGain = additionalSubs * intelligent.revenuePerSub;
+            
+            if (revenueGain > 50) {
+                opportunities.push({
+                    title: 'Improve Link Conversion',
+                    urgency: 'medium',
+                    impact: `+$${revenueGain.toFixed(0)}/week`,
+                    description: `Get ${additionalSubs} more subs from your ${analytics.linkClicks} link clicks (raise rate from ${linkToSubRate.toFixed(1)}% to 5%)`,
+                    action: 'Optimize OnlyFans profile and landing pages',
+                    calculation: `${additionalSubs} more subs × $${intelligent.revenuePerSub.toFixed(0)} revenue/sub`
+                });
+            }
+        }
+    }
+    
+    // Sort by impact (highest revenue first)
+    opportunities.sort((a, b) => {
+        const impactA = parseFloat(a.impact.replace(/[^0-9.-]/g, '')) || 0;
+        const impactB = parseFloat(b.impact.replace(/[^0-9.-]/g, '')) || 0;
+        return impactB - impactA;
+    });
+    
+    // Show top 6 opportunities
     if (opportunities.length === 0) {
-        opportunities.push({
-            title: 'Data Collection Required',
-            urgency: 'high',
-            impact: 'Analysis not possible',
-            description: 'Upload daily chatter reports and message data to generate actionable opportunities',
-            action: 'Upload performance data',
-            timeframe: 'Immediate'
-        });
+        container.innerHTML = `
+            <div class="col-span-3 text-center py-8">
+                <i class="fas fa-check-circle text-green-400 text-4xl mb-4"></i>
+                <h4 class="text-xl font-semibold text-green-300 mb-2">Performance Optimal</h4>
+                <p class="text-gray-400">No immediate optimization opportunities detected!</p>
+            </div>
+        `;
+    } else {
+        container.innerHTML = opportunities.slice(0, 6).map(opp => {
+            const urgencyClass = {
+                urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
+                high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+                medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                low: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+            }[opp.urgency];
+            
+            return `
+                <div class="glass-card rounded-xl p-5 border border-gray-700 hover:border-green-500/30 transition-all">
+                    <div class="flex items-start justify-between mb-3">
+                        <h4 class="font-bold text-white text-sm flex-1">${opp.title}</h4>
+                        <span class="px-2 py-1 rounded-lg text-xs font-bold ${urgencyClass} ml-2">${opp.urgency.toUpperCase()}</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-lg font-bold text-green-400 mb-2">${opp.impact}</div>
+                        <p class="text-gray-300 text-sm leading-relaxed">${opp.description}</p>
+                    </div>
+                    <div class="mb-3 p-2 bg-gray-800/50 rounded-lg">
+                        <div class="text-xs text-gray-400 mb-1">Calculation:</div>
+                        <div class="text-xs text-blue-300 font-mono">${opp.calculation}</div>
+                    </div>
+                    <div class="flex items-center pt-3 border-t border-gray-700">
+                        <i class="fas fa-play text-purple-400 mr-2 text-xs"></i>
+                        <span class="text-purple-300 text-xs font-medium">${opp.action}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
-    
-    container.innerHTML = opportunities.slice(0, 6).map(opp => `
-        <div class="glass-card rounded-lg p-4 hover:bg-gray-700/20 transition-all cursor-pointer">
-            <div class="flex items-center justify-between mb-2">
-                <h4 class="font-semibold text-white text-sm">${opp.title}</h4>
-                <span class="px-2 py-1 rounded-full text-xs font-bold ${
-                    opp.urgency === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                    opp.urgency === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                    opp.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-blue-500/20 text-blue-400'
-                }">${opp.urgency.toUpperCase()}</span>
-            </div>
-            <p class="text-gray-400 text-xs mb-3">${opp.description}</p>
-            <div class="flex items-center justify-between">
-                <span class="text-green-400 font-bold text-sm">${opp.impact}</span>
-                <span class="text-gray-500 text-xs">${opp.timeframe}</span>
-            </div>
-            <div class="mt-3 pt-2 border-t border-gray-700">
-                <button class="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                    <i class="fas fa-play mr-1"></i>${opp.action}
-                </button>
-            </div>
-        </div>
-    `).join('');
 }
 
 function clearDashboardToZero() {
@@ -3339,9 +6008,20 @@ function updateDashboardMetrics(data) {
         subsEl.innerHTML = `${data.totalSubs.toLocaleString()}${renderChangeIndicator(changes.totalSubs)}`;
     }
     
-    const clicksEl = document.getElementById('profileClicks');
+    const clicksEl = document.getElementById('linkClicks');
     if (clicksEl) {
-        clicksEl.innerHTML = `${data.profileClicks.toLocaleString()}${renderChangeIndicator(changes.profileClicks)}`;
+        clicksEl.innerHTML = `${(data.linkClicks || 0).toLocaleString()}${renderChangeIndicator(changes.linkClicks)}`;
+    }
+    
+    // NEW: Update VIP & Retention metrics
+    const vipRevenuePercentEl = document.getElementById('vipRevenuePercent');
+    if (vipRevenuePercentEl) {
+        vipRevenuePercentEl.textContent = data.vipRevenuePercent > 0 ? `${data.vipRevenuePercent.toFixed(1)}%` : '-';
+    }
+    
+    const renewRateEl = document.getElementById('renewRate');
+    if (renewRateEl) {
+        renewRateEl.textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
     }
     
     const messagesEl = document.getElementById('messagesSent');
@@ -3490,50 +6170,128 @@ function destroyAllCharts() {
 }
 
 // Chart functions
-function loadRevenueChart() {
-    const ctx = document.getElementById('revenueChart');
+// Load Revenue Attribution Chart (Donut chart by category)
+async function loadRevenueAttributionChart() {
+    const ctx = document.getElementById('revenueAttributionChart');
     if (!ctx) return;
 
     // Destroy existing chart if it exists
-    if (chartInstances.revenueChart) {
-        chartInstances.revenueChart.destroy();
+    if (chartInstances.revenueAttributionChart) {
+        chartInstances.revenueAttributionChart.destroy();
     }
-
-    chartInstances.revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Revenue',
-                data: [1200, 1900, 800, 1500, 2000, 1700, 1300],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e5e7eb'
-                    }
+    
+    try {
+        // Fetch traffic source data
+        const params = new URLSearchParams();
+        if (currentTimeInterval === '7d') {
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - 7);
+            params.append('filterType', 'week');
+            params.append('weekStart', weekStart.toISOString());
+            params.append('weekEnd', new Date().toISOString());
+        }
+        
+        const response = await fetch(`/api/marketing/dashboard?${params}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch marketing data');
+        }
+        
+        const data = await response.json();
+        
+        // Aggregate by category
+        const categoryRevenue = {};
+        if (data.sources && data.sources.length > 0) {
+            data.sources.forEach(source => {
+                if (!categoryRevenue[source.category]) {
+                    categoryRevenue[source.category] = 0;
                 }
+                categoryRevenue[source.category] += source.revenue || 0;
+            });
+        }
+        
+        const categories = Object.keys(categoryRevenue);
+        const revenues = Object.values(categoryRevenue);
+        
+        // If no data, show placeholder
+        if (categories.length === 0) {
+            categories.push('No Data');
+            revenues.push(100);
+        }
+        
+        const colors = {
+            reddit: '#FF4500',
+            twitter: '#1DA1F2',
+            instagram: '#E4405F',
+            tiktok: '#00F2EA',
+            youtube: '#FF0000',
+            other: '#6B7280',
+            'No Data': '#374151'
+        };
+        
+        chartInstances.revenueAttributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+                datasets: [{
+                    data: revenues,
+                    backgroundColor: categories.map(c => colors[c] || colors.other),
+                    borderColor: '#1f2937',
+                    borderWidth: 2
+                }]
             },
-            scales: {
-                x: {
-                    ticks: {
-                        color: '#9ca3af'
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: '#9ca3af'
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#e5e7eb',
+                            padding: 15,
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: $${value.toFixed(0)} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Error loading revenue attribution chart:', error);
+        // Show fallback
+        chartInstances.revenueAttributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['No Data'],
+                datasets: [{
+                    data: [100],
+                    backgroundColor: ['#374151'],
+                    borderColor: '#1f2937',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+    }
 }
 
 function loadAnalyticsCharts() {
@@ -3620,59 +6378,93 @@ function loadAnalyticsCharts() {
     }
 }
 
-function loadAIInsightsChart() {
-    const ctx = document.getElementById('aiInsightsChart');
+// Load Conversion Funnel Chart (Link Clicks → Subs → Spenders → Revenue)
+function loadConversionFunnelChart(analytics) {
+    const ctx = document.getElementById('conversionFunnelChart');
     if (!ctx) return;
 
     // Destroy existing chart if it exists
-    if (chartInstances.aiInsightsChart) {
-        chartInstances.aiInsightsChart.destroy();
+    if (chartInstances.conversionFunnelChart) {
+        chartInstances.conversionFunnelChart.destroy();
     }
 
-    chartInstances.aiInsightsChart = new Chart(ctx, {
-        type: 'radar',
+    // Build funnel data
+    const linkClicks = analytics.linkClicks || 0;
+    const newSubs = analytics.newSubs || 0;
+    const spenders = analytics.uniqueSpenders || 0;
+    const revenue = analytics.totalRevenue || 0;
+    
+    // Calculate percentages
+    const clickToSubRate = linkClicks > 0 ? (newSubs / linkClicks * 100).toFixed(1) : 0;
+    const subToSpenderRate = newSubs > 0 ? (spenders / newSubs * 100).toFixed(1) : 0;
+    const spenderToRevenueRate = spenders > 0 ? (revenue / spenders).toFixed(0) : 0;
+    
+    chartInstances.conversionFunnelChart = new Chart(ctx, {
+        type: 'bar',
         data: {
-            labels: ['Response Time', 'Conversion Rate', 'Message Quality', 'PPV Performance', 'Customer Satisfaction', 'Revenue Growth'],
+            labels: [
+                `Link Clicks\n${linkClicks.toLocaleString()}`,
+                `Subscribers\n${newSubs.toLocaleString()} (${clickToSubRate}%)`,
+                `Spenders\n${spenders.toLocaleString()} (${subToSpenderRate}%)`,
+                `Revenue\n$${revenue.toLocaleString()}`
+            ],
             datasets: [{
-                label: 'Agency Performance',
-                data: [85, 72, 88, 76, 91, 68],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#3b82f6'
-            }, {
-                label: 'Industry Average',
-                data: [70, 65, 75, 70, 80, 60],
-                borderColor: '#6b7280',
-                backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                pointBackgroundColor: '#6b7280',
-                pointBorderColor: '#6b7280'
+                label: 'Conversion Funnel',
+                data: [
+                    linkClicks,
+                    newSubs,
+                    spenders,
+                    revenue / 10 // Scale down revenue for visual comparison
+                ],
+                backgroundColor: [
+                    'rgba(147, 51, 234, 0.8)', // Purple
+                    'rgba(59, 130, 246, 0.8)', // Blue
+                    'rgba(16, 185, 129, 0.8)', // Green
+                    'rgba(245, 158, 11, 0.8)'  // Yellow
+                ],
+                borderColor: [
+                    'rgba(147, 51, 234, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)'
+                ],
+                borderWidth: 2
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        color: '#9ca3af'
-                    },
-                    grid: {
-                        color: '#374151'
-                    },
-                    pointLabels: {
-                        color: '#e5e7eb',
-                        font: {
-                            size: 11
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            if (index === 3) {
+                                return `Revenue: $${(context.parsed.x * 10).toFixed(0)}`;
+                            }
+                            return `${context.label.split('\n')[0]}: ${context.parsed.x.toLocaleString()}`;
                         }
                     }
                 }
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#e5e7eb'
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    ticks: {
+                        color: '#e5e7eb',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        display: false
                     }
                 }
             }
@@ -3682,302 +6474,246 @@ function loadAIInsightsChart() {
 
 // Section creation functions
 function createAnalyticsSection() {
-    return `
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div>
-                <h2 class="text-3xl font-bold mb-2">Advanced Analytics</h2>
-                <p class="text-gray-400">Complete data visualization and intelligent metrics breakdown</p>
-            </div>
-            
-            <!-- Analytics Time Controls -->
-            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                <span class="text-sm text-gray-400 mr-3">Data Period:</span>
-                <button onclick="setAnalyticsInterval('7d')" class="analytics-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
-                <button onclick="setAnalyticsInterval('30d')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
-                <button onclick="setAnalyticsInterval('custom')" class="analytics-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
-                </button>
-            </div>
-        </div>
-
-        <!-- Core Infloww Data -->
+    console.log('🎯 createAnalyticsSection() called - returning new HTML');
+    const html = `
         <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-database text-blue-400 mr-3"></i>
-                Core Performance Data
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Combined revenue from PPVs, tips, and subscriptions">Total Revenue</p>
-                            <p class="text-2xl font-bold text-green-400" id="analytics-revenue">$0</p>
-                        </div>
-                        <i class="fas fa-dollar-sign text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">All revenue sources combined</div>
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+                    </h2>
+                    <p class="text-gray-400">All your key metrics in one place</p>
                 </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Revenue after OnlyFans platform fees are deducted">Net Revenue</p>
-                            <p class="text-2xl font-bold text-cyan-400" id="analytics-net-revenue">$0</p>
-                        </div>
-                        <i class="fas fa-chart-line text-cyan-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">After platform fees</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Total number of active paying subscribers across all creators">Total Subscribers</p>
-                            <p class="text-2xl font-bold text-blue-400" id="analytics-subs">0</p>
-                        </div>
-                        <i class="fas fa-users text-blue-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Active subscriber base</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Number of users who clicked through to OnlyFans profiles from marketing">Profile Clicks</p>
-                            <p class="text-2xl font-bold text-purple-400" id="analytics-clicks">3,421</p>
-                        </div>
-                        <i class="fas fa-mouse-pointer text-purple-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Marketing funnel entry</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPVs Sent</p>
-                            <p class="text-2xl font-bold text-yellow-400" id="analytics-ppvs">156</p>
-                        </div>
-                        <i class="fas fa-paper-plane text-yellow-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Pay-per-view messages</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPVs Unlocked</p>
-                            <p class="text-2xl font-bold text-orange-400" id="analytics-ppv-unlocked">89</p>
-                        </div>
-                        <i class="fas fa-unlock text-orange-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Successfully converted</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">Messages Sent</p>
-                            <p class="text-2xl font-bold text-pink-400" id="analytics-messages">892</p>
-                        </div>
-                        <i class="fas fa-comments text-pink-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Total conversations</div>
-                </div>
-                
-                <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-gray-400 text-sm">Avg Response Time</p>
-                            <p class="text-2xl font-bold text-red-400" id="analytics-response-time">2.3m</p>
-                        </div>
-                        <i class="fas fa-clock text-red-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Team efficiency metric</div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setAnalyticsInterval('24h')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setAnalyticsInterval('7d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setAnalyticsInterval('30d')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setAnalyticsInterval('custom')" class="analytics-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Intelligent Combined Metrics -->
+        <!-- Sales Metrics -->
         <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-brain text-purple-400 mr-3"></i>
-                Intelligent Combined Metrics
-                <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">SMART</span>
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                Sales
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="glass-card rounded-xl p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <p class="text-gray-400 text-sm tooltip" data-tooltip="Percentage of profile clicks that convert to paying subscribers">Click-to-Subscriber Rate</p>
-                            <p class="text-3xl font-bold text-yellow-400" id="analytics-click-to-sub">0%</p>
-                        </div>
-                        <i class="fas fa-funnel-dollar text-yellow-400 text-2xl"></i>
-                    </div>
-                    <div class="w-full bg-gray-700/50 rounded-full h-3 mb-3">
-                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-3 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div class="text-sm text-gray-400">Profile clicks → subscribers conversion</div>
-                </div>
-                
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">PPV Unlock Rate</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-ppv-rate">0%</p>
-                        </div>
-                        <i class="fas fa-key text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="w-full bg-gray-700/50 rounded-full h-2 mb-2">
-                        <div class="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div class="text-xs text-gray-500">PPV sent → unlocked conversion</div>
+                    <div class="text-sm text-gray-400 mb-2">Net Revenue</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsNetRevenue">$0</div>
                 </div>
-                
                 <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Revenue per Subscriber</p>
-                            <p class="text-3xl font-bold text-blue-400" id="analytics-revenue-per-sub">$0</p>
-                        </div>
-                        <i class="fas fa-user-dollar text-blue-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Average subscriber lifetime value</div>
+                    <div class="text-sm text-gray-400 mb-2">PPV Revenue</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsPPVRevenue">$0</div>
                 </div>
-                
                 <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Revenue per Hour</p>
-                            <p class="text-3xl font-bold text-green-400" id="analytics-revenue-per-hour">$0</p>
-                        </div>
-                        <i class="fas fa-stopwatch text-green-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Operational efficiency rate</div>
+                    <div class="text-sm text-gray-400 mb-2">Tip Revenue</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsTipRevenue">$0</div>
                 </div>
-                
                 <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Messages per PPV</p>
-                            <p class="text-3xl font-bold text-purple-400" id="analytics-messages-per-ppv">0</p>
-                        </div>
-                        <i class="fas fa-exchange-alt text-purple-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Conversation-to-sale efficiency</div>
+                    <div class="text-sm text-gray-400 mb-2">Avg PPV Price</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsAvgPPV">$0</div>
                 </div>
-                
                 <div class="glass-card rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm">Platform Fee Impact</p>
-                            <p class="text-3xl font-bold text-red-400" id="analytics-fee-impact">0%</p>
-                        </div>
-                        <i class="fas fa-percentage text-red-400 text-2xl"></i>
-                    </div>
-                    <div class="text-xs text-gray-500">Revenue lost to platform fees</div>
+                    <div class="text-sm text-gray-400 mb-2">Total Spenders</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsTotalSpenders">0</div>
                 </div>
             </div>
         </div>
 
-        <!-- Performance Breakdown Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Revenue Breakdown by Creator</h3>
-                <canvas id="revenueBreakdownChart" width="400" height="200"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3 class="text-lg font-semibold mb-4">Chatter Performance Comparison</h3>
-                <canvas id="chatterComparisonChart" width="400" height="200"></canvas>
+        <!-- Chatting Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-comments text-blue-400 mr-3"></i>
+                Chatting
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Messages Sent</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Response Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsResponseRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsPPVsUnlocked">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Unlock Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsUnlockRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg Response Time</div>
+                    <div class="text-3xl font-bold text-orange-400" id="analyticsAvgResponse">0m</div>
+                </div>
             </div>
         </div>
 
-        <!-- Detailed Tables -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Creator Performance -->
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Creator Performance</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Creator</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Revenue</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Subscribers</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-700">
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Arya</td>
-                                <td class="px-4 py-3 text-green-400">$4,850</td>
-                                <td class="px-4 py-3 text-blue-400">445</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Iris</td>
-                                <td class="px-4 py-3 text-green-400">$4,200</td>
-                                <td class="px-4 py-3 text-blue-400">398</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-3 text-white font-medium">Lilla</td>
-                                <td class="px-4 py-3 text-green-400">$3,400</td>
-                                <td class="px-4 py-3 text-blue-400">391</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <!-- Marketing Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                Marketing
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Clicks</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsLinkClicks">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Views</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsLinkViews">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Spender Rate</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsSpenderRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Revenue/Click</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRevenuePerClick">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Click-to-Sub Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsClickToSub">0%</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Top Performing Chatters -->
-            <div class="glass-card rounded-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Top Performing Chatters</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-sm">1</div>
-                            <span class="text-white font-medium">Sarah M.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$3,240</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-black font-bold text-sm">2</div>
-                            <span class="text-white font-medium">Alex K.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$2,890</span>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold text-sm">3</div>
-                            <span class="text-white font-medium">Jamie L.</span>
-                        </div>
-                        <span class="text-green-400 font-bold">$2,650</span>
-                    </div>
+        <!-- Subscriber Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-3"></i>
+                Subscribers
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Subscribers</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsTotalSubs">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Active Fans</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsActiveFans">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Fans with Renew</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsFansWithRenew">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Renew Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRenewRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">New Subscribers</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsNewSubs">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Quality Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-star text-yellow-400 mr-3"></i>
+                Team Quality
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Overall Score</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Top Performer</div>
+                    <div class="text-2xl font-bold text-green-400" id="analyticsTopPerformer">-</div>
                 </div>
             </div>
         </div>
     `;
+    console.log('✅ Analytics HTML generated, length:', html.length);
+    return html;
 }
 
 function createAIAnalysisSection() {
+    const isChatter = currentUser && currentUser.role === 'chatter';
+    
+    // For chatters, show ONLY Individual Analysis
+    if (isChatter) {
+        return `
+            <div class="mb-8">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                            <i class="fas fa-user-chart mr-3"></i>My Performance Analysis
+                        </h2>
+                        <p class="text-gray-400 text-lg">Deep insights into your individual performance</p>
+                    </div>
+                    <!-- Time Period Selector -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                        <button onclick="setAIInterval('24h')" class="ai-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                        <button onclick="setAIInterval('7d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                        <button onclick="setAIInterval('30d')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                        <button onclick="setAIInterval('custom')" class="ai-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                            <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Chatter Analysis -->
+            <div class="glass-card rounded-xl p-8 mb-8 border-2 border-cyan-500/30">
+                <div class="flex items-center mb-6">
+                    <div class="w-16 h-16 bg-cyan-600/20 rounded-2xl flex items-center justify-center mr-4">
+                        <i class="fas fa-user-chart text-cyan-400 text-3xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-bold text-white">Your Performance Deep-Dive</h3>
+                        <p class="text-gray-400 text-lg">Select a time period to analyze your performance</p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Select Your Account</label>
+                    <select id="chatterAnalysisSelect" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white">
+                        <option value="">Choose account to analyze...</option>
+                    </select>
+                </div>
+
+                <div id="chatterAnalysisResults" class="mt-6">
+                    <div class="text-center py-12">
+                        <i class="fas fa-user-times text-gray-400 text-4xl mb-4"></i>
+                        <p class="text-gray-400">Select your account above to see your detailed analysis</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // For managers, show both Agency and Individual Analysis options
     return `
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-            <div>
-                <h2 class="text-3xl font-bold mb-2">AI Analysis Center</h2>
-                <p class="text-gray-400">Deep performance insights with actionable recommendations</p>
-            </div>
-            
-            <!-- AI Analysis Time Controls -->
-            <div class="flex items-center space-x-2 mt-4 lg:mt-0">
-                <span class="text-sm text-gray-400 mr-3">Analysis Period:</span>
-                <button onclick="setAIAnalysisInterval('7d')" class="ai-time-btn bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7 Days</button>
-                <button onclick="setAIAnalysisInterval('30d')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30 Days</button>
-                <button onclick="setAIAnalysisInterval('custom')" class="ai-time-btn bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
-                    <i class="fas fa-calendar mr-2 text-xs"></i>Custom
-                </button>
-            </div>
+        <div class="mb-8">
+            <h2 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                <i class="fas fa-brain mr-3"></i>AI Intelligence Hub
+            </h2>
+            <p class="text-gray-400 text-lg">Choose an analysis type to get started</p>
         </div>
 
-        <!-- Analysis Type Selection -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Analysis Type Selection Cards -->
+        <div id="analysisTypeCards" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="glass-card rounded-xl p-8 hover:bg-gray-700/20 transition-all cursor-pointer" onclick="showAgencyAnalysis()">
                 <div class="flex items-center mb-6">
                     <div class="w-16 h-16 bg-purple-600/20 rounded-2xl flex items-center justify-center mr-4">
@@ -4141,12 +6877,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="border-t border-gray-700 pt-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Net Revenue ($)</label>
-                            <input type="number" id="ofNetRevenue" min="0" step="0.01"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-2">Recurring Revenue ($)</label>
                             <input type="number" id="ofRecurringRevenue" min="0" step="0.01"
@@ -4162,17 +6893,118 @@ function createDataUploadSection() {
                             <input type="number" id="ofNewSubs" min="0"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="handleOFAccountDataSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-save mr-2"></i>Submit OF Account Data
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Daily Account Snapshot Form (NEW - for custom date ranges) -->
+        <div class="glass-card rounded-xl p-6 mb-8 border-2 border-purple-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-calendar-day text-purple-400 mr-2"></i>
+                        Daily Account Snapshot
+                        <span class="ml-3 px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">NEW - Upload Daily!</span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Upload daily for custom date range support</p>
+                </div>
+            </div>
+            <form id="dailySnapshotForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" id="snapshotDate" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Creator Account</label>
+                        <select id="snapshotCreator" required
+                                  class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                              <option value="">Select Creator...</option>
+                              <option value="arya">Arya</option>
+                              <option value="iris">Iris</option>
+                              <option value="lilla">Lilla</option>
+                          </select>
+                    </div>
+                </div>
+
+                <div class="border-t border-purple-700/30 pt-6">
+                    <h4 class="text-lg font-medium mb-4 text-purple-400">Revenue</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
-                            <label class="block text-sm font-medium mb-2">Profile Clicks</label>
-                            <input type="number" id="ofProfileClicks" min="0"
+                            <label class="block text-sm font-medium mb-2">
+                                Recurring Revenue ($)
+                                <span class="text-xs text-gray-500 block">From subscriptions</span>
+                            </label>
+                            <input type="number" id="snapshotRecurringRevenue" min="0" step="0.01"
                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                         </div>
                     </div>
                 </div>
 
+                <div class="border-t border-purple-700/30 pt-6">
+                    <h4 class="text-lg font-medium mb-4 text-purple-400">Subscriber Metrics</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Total Subscribers
+                                <span class="text-xs text-gray-500 block">All current subs</span>
+                            </label>
+                            <input type="number" id="snapshotTotalSubs" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Active Fans
+                                <span class="text-xs text-gray-500 block">Fans currently active</span>
+                            </label>
+                            <input type="number" id="snapshotActiveFans" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Fans with Renew ON
+                                <span class="text-xs text-gray-500 block">Auto-renew enabled</span>
+                            </label>
+                            <input type="number" id="snapshotFansWithRenew" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                New Subs Today
+                                <span class="text-xs text-gray-500 block">Just today</span>
+                            </label>
+                            <input type="number" id="snapshotNewSubs" min="0" required
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Renew Rate (%)
+                                <span class="text-xs text-gray-500 block">Optional - will auto-calc if blank</span>
+                            </label>
+                            <input type="number" id="snapshotRenewRate" min="0" max="100" step="0.01"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank to auto-calculate">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+                        <p class="text-xs text-purple-300">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            If you leave Renew Rate blank, it will be auto-calculated: (Fans with Renew / Total Subs) × 100
+                        </p>
+                    </div>
+                </div>
+
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
-                        <i class="fas fa-save mr-2"></i>Submit OF Account Data
+                    <button type="button" onclick="handleDailySnapshotSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-save mr-2"></i>Save Daily Snapshot
                     </button>
                 </div>
             </form>
@@ -4250,7 +7082,7 @@ function createDataUploadSection() {
                 </div>
 
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleChatterDataSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Submit Chatter Data
                     </button>
                 </div>
@@ -4293,12 +7125,451 @@ function createDataUploadSection() {
                     <input type="file" id="messagesFile" accept=".csv" required
                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-600 file:text-white hover:file:bg-green-700">
                 </div>
-                <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                <button type="button" onclick="handleMessagesUploadDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                     <i class="fas fa-upload mr-2"></i>Upload Messages
                 </button>
             </form>
         </div>
+
+        <!-- Link Tracking Data Upload (MOVED from Marketing Dashboard) -->
+        <div class="glass-card rounded-xl p-6 border-2 border-blue-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold flex items-center">
+                        <i class="fas fa-link text-blue-400 mr-2"></i>
+                        Link Tracking Data
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Upload clicks and views per traffic category (weekly)</p>
+                </div>
+            </div>
+            <div class="mb-4 p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                <h4 class="font-medium text-blue-400 mb-2 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>How it works:
+                </h4>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• One link per <strong>category</strong> (e.g., one Reddit link for all subreddits)</li>
+                    <li>• Use link shortener analytics (bit.ly, Linktree, etc.)</li>
+                    <li>• Upload weekly to track performance over time</li>
+                    <li>• Connects to sales logs for ROI calculation</li>
+                </ul>
+            </div>
+            <form id="linkTrackingForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-300">
+                        <i class="fas fa-tag mr-1"></i>Category <span class="text-xs text-gray-500">(One link per category)</span>
+                    </label>
+                    <select id="linkCategory" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                        <option value="">Select category...</option>
+                        <option value="reddit">📱 Reddit</option>
+                        <option value="twitter">🐦 Twitter</option>
+                        <option value="instagram">📸 Instagram</option>
+                        <option value="tiktok">🎵 TikTok</option>
+                        <option value="youtube">📺 YouTube</option>
+                        <option value="other">🌐 Other</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-calendar mr-1"></i>Week Start
+                        </label>
+                        <input type="date" id="linkWeekStart" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-calendar mr-1"></i>Week End
+                        </label>
+                        <input type="date" id="linkWeekEnd" required
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-eye mr-1"></i>Landing Page Views
+                        </label>
+                        <input type="number" id="linkLandingViews" required min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                               placeholder="How many saw your link?">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">
+                            <i class="fas fa-mouse-pointer mr-1"></i>OnlyFans Clicks
+                        </label>
+                        <input type="number" id="linkOFClicks" required min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
+                               placeholder="How many clicked to OF?">
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                        <i class="fas fa-upload mr-2"></i>Upload Link Data
+                    </button>
+                </div>
+            </form>
+        </div>
     `;
+}
+
+function createNewAnalyticsSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 bg-clip-text text-transparent">
+                        <i class="fas fa-chart-line mr-2"></i>Analytics Overview
+                    </h2>
+                    <p class="text-gray-400">All your key metrics in one place</p>
+                </div>
+                
+                <!-- Custom Date Range Picker -->
+                <div class="flex items-center space-x-3 flex-wrap gap-2">
+                    <span class="text-sm text-gray-400 mr-1">Date Range:</span>
+                    
+                    <!-- Start Date -->
+                    <div class="flex items-center bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-blue-400 mr-2 text-sm"></i>
+                        <input type="date" id="analyticsStartDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- To -->
+                    <span class="text-gray-500 font-medium">→</span>
+                    
+                    <!-- End Date -->
+                    <div class="flex items-center bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl px-3 py-2 shadow-lg">
+                        <i class="fas fa-calendar text-purple-400 mr-2 text-sm"></i>
+                        <input type="date" id="analyticsEndDate" 
+                               class="bg-transparent text-white text-sm font-medium border-0 outline-none cursor-pointer"
+                               style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    <button onclick="applyAnalyticsDateFilter()" 
+                            class="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        Apply
+                    </button>
+                    
+                    <!-- Quick Filters -->
+                    <div class="flex items-center gap-2 ml-2 border-l border-gray-700 pl-3">
+                        <button onclick="setAnalyticsQuickFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-blue-600/50 text-gray-300 hover:text-white transition-all">
+                            This Week
+                        </button>
+                        <button onclick="setAnalyticsQuickFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-purple-600/50 text-gray-300 hover:text-white transition-all">
+                            This Month
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-dollar-sign text-green-400 mr-3"></i>
+                Sales
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Net Revenue</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsNetRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPV Revenue</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsPPVRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Tip Revenue</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsTipRevenue">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg PPV Price</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsAvgPPV">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Spenders</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsTotalSpenders">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatting Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-comments text-blue-400 mr-3"></i>
+                Chatting
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Messages Sent</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsMessagesSent">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Response Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsResponseRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">PPVs Unlocked</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsPPVsUnlocked">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Unlock Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsUnlockRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Avg Response Time</div>
+                    <div class="text-3xl font-bold text-orange-400" id="analyticsAvgResponse">0m</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketing Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-bullseye text-purple-400 mr-3"></i>
+                Marketing
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Clicks</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsLinkClicks">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Link Views</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsLinkViews">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Spender Rate</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsSpenderRate">0%</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Revenue/Click</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRevenuePerClick">$0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Click-to-Sub Rate</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsClickToSub">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscriber Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-3"></i>
+                Subscribers
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Total Subscribers</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsTotalSubs">0</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Active Fans</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsActiveFans">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Fans with Renew</div>
+                    <div class="text-3xl font-bold text-green-400" id="analyticsFansWithRenew">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Renew Rate</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="analyticsRenewRate">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">New Subscribers</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="analyticsNewSubs">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Quality Metrics -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-star text-yellow-400 mr-3"></i>
+                Team Quality
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Overall Score</div>
+                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
+                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
+                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                </div>
+                <div class="glass-card rounded-xl p-6">
+                    <div class="text-sm text-gray-400 mb-2">Top Performer</div>
+                    <div class="text-2xl font-bold text-green-400" id="analyticsTopPerformer">-</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Analytics Date Picker Functions
+function applyAnalyticsDateFilter() {
+    const startDate = document.getElementById('analyticsStartDate').value;
+    const endDate = document.getElementById('analyticsEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Analytics date filter applied:', customDateRange);
+    analyticsLoadAttempts = 0; // Reset attempts
+    loadAnalyticsData();
+}
+
+function setAnalyticsQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('analyticsStartDate').value = formatDate(startDate);
+    document.getElementById('analyticsEndDate').value = formatDate(endDate);
+    
+    applyAnalyticsDateFilter();
+}
+
+// Load Analytics Data
+let analyticsLoadAttempts = 0;
+async function loadAnalyticsData() {
+    try {
+        // Calculate date range based on current interval
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentAnalyticsInterval === 'custom' && analyticsCustomDates) {
+            startDate = new Date(analyticsCustomDates.start);
+            endDate = new Date(analyticsCustomDates.end);
+        } else if (currentAnalyticsInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentAnalyticsInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentAnalyticsInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
+        } else {
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        }
+        
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
+        console.log('Analytics URL:', url);
+        console.log('Analytics interval:', currentAnalyticsInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Cache-Control': 'no-cache'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Sales Metrics - check if elements exist first
+            const netRevEl = document.getElementById('analyticsNetRevenue');
+            if (!netRevEl) {
+                analyticsLoadAttempts++;
+                if (analyticsLoadAttempts > 10) {
+                    console.error('❌ Analytics elements never appeared after 10 attempts - giving up');
+                    return;
+                }
+                console.log(`Analytics elements not found (attempt ${analyticsLoadAttempts}/10) - waiting...`);
+                setTimeout(() => loadAnalyticsData(), 300);
+                return;
+            }
+            
+            analyticsLoadAttempts = 0; // Reset counter
+            console.log('✅ Analytics elements found! Loading data...');
+            
+            netRevEl.textContent = `$${(data.netRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsPPVRevenue').textContent = `$${(data.ppvRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsTipRevenue').textContent = `$${(data.tipRevenue || 0).toLocaleString()}`;
+            document.getElementById('analyticsAvgPPV').textContent = `$${(data.avgPPVPrice || 0)}`;
+            document.getElementById('analyticsTotalSpenders').textContent = (data.uniqueSpenders || 0).toLocaleString();
+            
+            // Chatting Metrics
+            document.getElementById('analyticsMessagesSent').textContent = (data.messagesSent || 0).toLocaleString();
+            // Response Rate: Calculate from message analysis data (placeholder for now)
+            document.getElementById('analyticsResponseRate').textContent = '-';
+            document.getElementById('analyticsPPVsUnlocked').textContent = (data.ppvsUnlocked || 0).toLocaleString();
+            const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsUnlockRate').textContent = `${unlockRate}%`;
+            document.getElementById('analyticsAvgResponse').textContent = `${data.avgResponseTime || 0}m`;
+            
+            // Marketing Metrics
+            document.getElementById('analyticsLinkClicks').textContent = (data.linkClicks || 0).toLocaleString();
+            document.getElementById('analyticsLinkViews').textContent = (data.linkViews || 0).toLocaleString();
+            const spenderRate = data.linkClicks > 0 ? ((data.uniqueSpenders / data.linkClicks) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsSpenderRate').textContent = `${spenderRate}%`;
+            const revenuePerClick = data.linkClicks > 0 ? (data.netRevenue / data.linkClicks).toFixed(2) : '0.00';
+            document.getElementById('analyticsRevenuePerClick').textContent = `$${revenuePerClick}`;
+            const clickToSub = data.linkClicks > 0 ? ((data.newSubs / data.linkClicks) * 100).toFixed(1) : '0';
+            document.getElementById('analyticsClickToSub').textContent = `${clickToSub}%`;
+            
+            // Subscriber Metrics
+            document.getElementById('analyticsTotalSubs').textContent = (data.totalSubs || 0).toLocaleString();
+            document.getElementById('analyticsActiveFans').textContent = data.activeFans > 0 ? data.activeFans.toLocaleString() : '-';
+            document.getElementById('analyticsFansWithRenew').textContent = data.fansWithRenew > 0 ? data.fansWithRenew.toLocaleString() : '-';
+            document.getElementById('analyticsRenewRate').textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
+            document.getElementById('analyticsNewSubs').textContent = (data.newSubs || 0).toLocaleString();
+            
+            // Team Quality Metrics
+            document.getElementById('analyticsOverallScore').textContent = data.avgOverallScore != null ? `${data.avgOverallScore}/100` : '-';
+            document.getElementById('analyticsGrammarScore').textContent = data.avgGrammarScore != null ? `${data.avgGrammarScore}/100` : '-';
+            document.getElementById('analyticsGuidelinesScore').textContent = data.avgGuidelinesScore != null ? `${data.avgGuidelinesScore}/100` : '-';
+            document.getElementById('analyticsTopPerformer').textContent = data.topPerformer || '-';
+        } else {
+            console.error('Failed to load analytics data');
+        }
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
 }
 
 function createGuidelinesSection() {
@@ -4351,20 +7622,537 @@ function createGuidelinesSection() {
     `;
 }
 
+// ==================== MARKETING DASHBOARD SECTION ====================
+
+function createMarketingDashboardSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        <i class="fas fa-rocket mr-2"></i>Marketing Analytics
+                    </h2>
+                    <p class="text-gray-400">Track traffic source performance and ROI</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Time Period Selector -->
+        <div class="mb-6 glass-card rounded-xl p-4">
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                <button onclick="setMarketingInterval('24h')" class="marketing-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                <button onclick="setMarketingInterval('7d')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                <button onclick="setMarketingInterval('30d')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                <button onclick="setMarketingInterval('custom')" class="marketing-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                    <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                </button>
+            </div>
+        </div>
+        
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="marketingOverviewCards">
+            <!-- Will be populated dynamically -->
+        </div>
+        
+        <!-- Source Performance Grid -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-trophy text-yellow-400 mr-2"></i>
+                Top Performing Sources
+            </h3>
+            <div id="sourcePerformanceGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Detailed Analytics Table -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-table text-purple-400 mr-2"></i>
+                All Sources - Detailed View
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full" id="marketingSourcesTable">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category / Source</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender Rate</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">% of Revenue</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Rev/Click</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">7-Day Retention</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Quality</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marketingDetailedTableBody">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== DATA MANAGEMENT SECTION ====================
+
+function createDataManagementSection() {
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                <i class="fas fa-database mr-2"></i>Data Management
+            </h2>
+            <p class="text-gray-400">View, verify, and delete all uploaded data</p>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="showDataTab('messages')" class="data-tab-btn active px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-comments mr-2"></i>Messages
+            </button>
+            <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-file-alt mr-2"></i>Daily Reports
+            </button>
+            <button onclick="showDataTab('link-tracking')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-link mr-2"></i>Link Tracking
+            </button>
+            <button onclick="showDataTab('traffic-sources')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-bullseye mr-2"></i>Traffic Sources
+            </button>
+            <button onclick="showDataTab('vip-fans')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-star mr-2"></i>VIP Fans
+            </button>
+        </div>
+        
+        <!-- Messages Tab -->
+        <div id="dataTab-messages" class="data-tab-content">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>
+                        Uploaded Messages
+                    </h3>
+                    <button onclick="refreshDataTab('messages')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Messages</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Creator</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Reports Tab -->
+        <div id="dataTab-daily-reports" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-file-alt text-purple-400 mr-2"></i>
+                        Daily Sales Reports
+                    </h3>
+                    <button onclick="refreshDataTab('daily-reports')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Shift</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">PPVs</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Tips</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyReportsTableBody">
+                            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Tracking Tab -->
+        <div id="dataTab-link-tracking" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-link text-cyan-400 mr-2"></i>
+                        Link Tracking Data
+                    </h3>
+                    <button onclick="refreshDataTab('link-tracking')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Views</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">CTR</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkTrackingTableBody">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Traffic Sources Tab -->
+        <div id="dataTab-traffic-sources" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-bullseye text-orange-400 mr-2"></i>
+                        Traffic Sources
+                    </h3>
+                    <button onclick="refreshDataTab('traffic-sources')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Name</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Subcategory</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Status</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trafficSourcesTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIP Fans Tab -->
+        <div id="dataTab-vip-fans" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>
+                        VIP Fans
+                    </h3>
+                    <button onclick="refreshDataTab('vip-fans')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Username</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Traffic Source</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Lifetime Spend</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Purchases</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Status</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vipFansTableBody">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== TRAFFIC SOURCES SECTION ====================
+
+function createTrafficSourcesSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        <i class="fas fa-bullseye mr-2"></i>Traffic Sources
+                    </h2>
+                    <p class="text-gray-400">Manage marketing channels and track performance</p>
+                </div>
+                <button onclick="showAddTrafficSourceModal()" class="premium-button text-white font-medium py-3 px-6 rounded-xl hover:scale-105 transition-transform">
+                    <i class="fas fa-plus mr-2"></i>Add Source
+                </button>
+            </div>
+        </div>
+        
+        <!-- Category Tabs -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="filterTrafficSources('all')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium">
+                All Sources
+            </button>
+            <button onclick="filterTrafficSources('reddit')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-reddit mr-1"></i>Reddit
+            </button>
+            <button onclick="filterTrafficSources('twitter')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-twitter mr-1"></i>Twitter
+            </button>
+            <button onclick="filterTrafficSources('instagram')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-instagram mr-1"></i>Instagram
+            </button>
+            <button onclick="filterTrafficSources('tiktok')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-tiktok mr-1"></i>TikTok
+            </button>
+            <button onclick="filterTrafficSources('youtube')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fab fa-youtube mr-1"></i>YouTube
+            </button>
+            <button onclick="filterTrafficSources('other')" class="traffic-source-filter px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium transition-all">
+                <i class="fas fa-globe mr-1"></i>Other
+            </button>
+        </div>
+        
+        <!-- Traffic Sources Grid -->
+        <div id="trafficSourcesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Will be populated dynamically -->
+        </div>
+        
+        <!-- Add/Edit Modal -->
+        <div id="trafficSourceModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50" style="display: none;">
+            <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/30 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    <span id="modalTitle">Add Traffic Source</span>
+                </h3>
+                <form id="trafficSourceForm" class="space-y-4">
+                    <input type="hidden" id="editSourceId">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Source Name</label>
+                        <input type="text" id="sourceName" required placeholder="e.g., Reddit - r/fitness"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Category</label>
+                        <select id="sourceCategory" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                            <option value="">Select category...</option>
+                            <option value="reddit">Reddit</option>
+                            <option value="twitter">Twitter</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-300">Subcategory <span class="text-gray-500 font-normal">(optional)</span></label>
+                        <input type="text" id="sourceSubcategory" placeholder="e.g., r/fitness, thread_id"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 premium-button text-white font-medium py-3 px-6 rounded-xl">
+                            <i class="fas fa-save mr-2"></i>Save
+                        </button>
+                        <button type="button" onclick="closeTrafficSourceModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-all">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== MARKETING DASHBOARD HTML ====================
+
+
+// ==================== DATA MANAGEMENT HTML ====================
+
+function createDataManagementSection() {
+    return `
+        <div class="mb-8">
+            <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                <i class="fas fa-database mr-2"></i>Data Management
+            </h2>
+            <p class="text-gray-400">View, verify, and delete all uploaded data</p>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="mb-6 flex flex-wrap gap-2">
+            <button onclick="showDataTab('messages')" class="data-tab-btn active px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-comments mr-2"></i>Messages
+            </button>
+            <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-file-alt mr-2"></i>Daily Reports
+            </button>
+            <button onclick="showDataTab('link-tracking')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-link mr-2"></i>Link Tracking
+            </button>
+            <button onclick="showDataTab('vip-fans')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-star mr-2"></i>VIP Fans
+            </button>
+        </div>
+        
+        <!-- Messages Tab -->
+        <div id="dataTab-messages" class="data-tab-content">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>Uploaded Messages
+                    </h3>
+                    <button onclick="refreshDataTab('messages')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Messages</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <tr><td colspan="4" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Reports Tab -->
+        <div id="dataTab-daily-reports" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-file-alt text-purple-400 mr-2"></i>Daily Sales Reports
+                    </h3>
+                    <button onclick="refreshDataTab('daily-reports')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Shift</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyReportsTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Tracking Tab -->
+        <div id="dataTab-link-tracking" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-link text-cyan-400 mr-2"></i>Link Tracking Data
+                    </h3>
+                    <button onclick="refreshDataTab('link-tracking')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Views</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linkTrackingTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIP Fans Tab -->
+        <div id="dataTab-vip-fans" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>VIP Fans
+                    </h3>
+                    <button onclick="refreshDataTab('vip-fans')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Username</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Lifetime</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Purchases</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vipFansTableBody">
+                            <tr><td colspan="4" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function createTeamManagementSection() {
     return `
         <div class="mb-8">
             <h2 class="text-3xl font-bold mb-2">Team Management</h2>
-            <p class="text-gray-400">Manage chatter accounts and permissions</p>
+            <p class="text-gray-400">Manage team accounts and permissions</p>
         </div>
         <div class="glass-card rounded-xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-4">Create New Chatter Account</h3>
+            <h3 class="text-xl font-semibold mb-4">Create New Team Member</h3>
             <form id="createUserForm" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Chatter Name</label>
-                        <input type="text" id="createChatterName" required
+                        <label class="block text-sm font-medium mb-2">Role</label>
+                        <select id="createRole" required onchange="toggleChatterNameField()"
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Role...</option>
+                            <option value="chatter">Chatter</option>
+                            <option value="marketer">Marketer</option>
+                        </select>
+                    </div>
+                    <div id="chatterNameField">
+                        <label class="block text-sm font-medium mb-2">Chatter Name</label>
+                        <input type="text" id="createChatterName"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <p class="text-xs text-gray-400 mt-1">Only required for chatters</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Username</label>
@@ -4382,7 +8170,7 @@ function createTeamManagementSection() {
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                     </div>
                 </div>
-                <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                <button type="button" onclick="handleCreateUserDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                     <i class="fas fa-user-plus mr-2"></i>Create Account
                 </button>
             </form>
@@ -4394,7 +8182,6 @@ function createTeamManagementSection() {
                     <thead>
                         <tr class="border-b border-gray-700">
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Username</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Chatter Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
@@ -4408,6 +8195,7 @@ function createTeamManagementSection() {
         </div>
     `;
 }
+
 
 function createSettingsSection() {
     return `
@@ -4434,7 +8222,67 @@ function createSettingsSection() {
                 </div>
             </div>
         </div>
+        
+        <!-- Danger Zone -->
+        <div class="glass-card rounded-xl p-6 mt-8 border-2 border-red-500/30">
+            <h3 class="text-xl font-semibold mb-4 text-red-400">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-red-900/20 rounded-lg">
+                    <div>
+                        <h4 class="font-medium text-red-300">Wipe All Data</h4>
+                        <p class="text-sm text-gray-400">Delete all operational data (keeps Messages, Analysis, Users, Creators)</p>
+                    </div>
+                    <button onclick="wipeProductionData()" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-xl transition-all">
+                        <i class="fas fa-trash mr-2"></i>Wipe Data
+                    </button>
+                </div>
+            </div>
+        </div>
     `;
+}
+
+// Wipe Production Data Function
+async function wipeProductionData() {
+    if (!confirm('⚠️ WARNING: This will delete ALL operational data!\n\nThis will DELETE:\n- Daily Reports\n- Account Data\n- Traffic Sources\n- VIP Fans\n- Fan Purchases\n- Link Tracking\n- Daily Snapshots\n\nThis will KEEP:\n- Messages & Analysis\n- Users & Chatters\n- Creator Accounts\n\nAre you sure?')) {
+        return;
+    }
+    
+    if (!confirm('🚨 FINAL WARNING: This cannot be undone!\n\nClick OK to proceed with data wipe.')) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch('/api/admin/wipe-data', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('✅ Data wiped successfully! Deleted ' + result.deleted.total + ' documents', 'success');
+            console.log('📊 Wipe Results:', result);
+            
+            // Reload page after 2 seconds
+            setTimeout(function() {
+                location.reload();
+            }, 2000);
+        } else {
+            showError(result.error || 'Failed to wipe data');
+        }
+    } catch (error) {
+        console.error('❌ Wipe error:', error);
+        showError('Connection error: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
 }
 
 function createChatterDashboardSection() {
@@ -4466,25 +8314,15 @@ function createChatterDashboardSection() {
                     <p class="text-gray-400">Combined analytics across all chatters</p>
                 </div>
                 
-                <!-- Week/Month Selector (Shared with Manager Dashboard) -->
-                <div class="flex items-center space-x-3 mt-4 lg:mt-0">
-                    <span class="text-sm text-gray-400 mr-3">Filter by:</span>
-                    
-                    <!-- Week Selector -->
-                    <select id="teamWeekSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-purple-600 to-pink-600 text-white border-0 hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-900/50 cursor-pointer">
-                        <option value="">Select Week...</option>
-                    </select>
-                    
-                    <!-- Month Selector -->
-                    <select id="teamMonthSelector" class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-pink-600 to-rose-600 text-white border-0 hover:from-pink-500 hover:to-rose-500 shadow-lg shadow-pink-900/50 cursor-pointer">
-                        <option value="">Select Month...</option>
-                    </select>
-                    
-                    <!-- Current Filter Display -->
-                    <div id="teamCurrentFilterDisplay" class="hidden text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-200 border border-purple-500/30 flex items-center gap-2 shadow-inner">
-                        <i class="fas fa-calendar-check text-purple-400"></i>
-                        <span id="teamCurrentFilterText" class="font-medium"></span>
-                    </div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setTeamDashInterval('24h')" class="team-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setTeamDashInterval('7d')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setTeamDashInterval('30d')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setTeamDashInterval('custom')" class="team-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                    </button>
                 </div>
             </div>
         </div>
@@ -4575,7 +8413,7 @@ function createDailyReportSection() {
                 </div>
                 <div class="border-t border-gray-700 pt-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Tips</h3>
+                        <h3 class="text-lg font-semibold">Tips (Optional)</h3>
                         <button type="button" id="addTip" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
                             <i class="fas fa-plus mr-1"></i>Add Tip
                         </button>
@@ -4590,7 +8428,7 @@ function createDailyReportSection() {
                               placeholder="Any additional notes about your shift..."></textarea>
                 </div>
                 <div class="flex justify-end">
-                    <button type="submit" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
+                    <button type="button" onclick="handleDailyReportSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
                         <i class="fas fa-save mr-2"></i>Save Report
                     </button>
                 </div>
@@ -4618,39 +8456,72 @@ function createMyPerformanceSection() {
     `;
 }
 
-function createTeamComparisonSection() {
-    return `
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold mb-2">Team Comparison</h2>
-            <p class="text-gray-400">See how you compare with other team members</p>
-        </div>
-        <div class="glass-card rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-4">Team Leaderboard</h3>
-            <div id="teamLeaderboard" class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-sm font-bold text-black">1</div>
-                        <span>Top Performer</span>
-                    </div>
-                    <span class="text-green-400">$2,450</span>
-                </div>
-                <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-sm font-bold">2</div>
-                        <span>You</span>
-                    </div>
-                    <span class="text-blue-400">$1,850</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 // ==================== TEAM DASHBOARD FUNCTIONS ====================
 
 let currentTeamInterval = '7d';
 let currentTeamDateRange = null;
 let currentChatterTab = null;
+
+// Team Dashboard Custom Date Picker Functions
+function applyTeamDateFilter() {
+    const startDate = document.getElementById('teamStartDate').value;
+    const endDate = document.getElementById('teamEndDate').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('Please select both start and end dates', 'error');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showNotification('Start date must be before end date', 'error');
+        return;
+    }
+    
+    // Set custom filter
+    currentFilterType = 'custom';
+    currentWeekFilter = null;
+    currentMonthFilter = null;
+    customDateRange = {
+        start: startDate,
+        end: endDate
+    };
+    
+    console.log('✅ Team custom date filter applied:', customDateRange);
+    loadTeamDashboard();
+}
+
+function setTeamQuickFilter(type) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    if (type === 'week') {
+        const dayOfWeek = today.getDay();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - dayOfWeek);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+    } else if (type === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    document.getElementById('teamStartDate').value = formatDate(startDate);
+    document.getElementById('teamEndDate').value = formatDate(endDate);
+    
+    applyTeamDateFilter();
+}
+
+function initializeTeamDatePicker() {
+    setTeamQuickFilter('week');
+}
 
 // Populate team week selector dropdown
 function populateTeamWeekSelector() {
@@ -4747,31 +8618,34 @@ async function loadTeamDashboard() {
     }
     
     try {
-        // Build URL based on filter type (use same filters as Manager Dashboard)
-        let url;
-        if (currentFilterType === 'week' && currentWeekFilter) {
-            url = `/api/analytics/team-dashboard?filterType=week&weekStart=${currentWeekFilter.start}&weekEnd=${currentWeekFilter.end}`;
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            url = `/api/analytics/team-dashboard?filterType=month&monthStart=${currentMonthFilter.firstDay}&monthEnd=${currentMonthFilter.lastDay}`;
+        // Use currentTeamDashInterval and calculate date range
+        const today = new Date();
+        let startDate, endDate = today;
+        
+        if (currentTeamDashInterval === 'custom' && teamDashCustomDates) {
+            startDate = new Date(teamDashCustomDates.start);
+            endDate = new Date(teamDashCustomDates.end);
+        } else if (currentTeamDashInterval === '24h') {
+            startDate = new Date(today);
+            startDate.setHours(today.getHours() - 24);
+        } else if (currentTeamDashInterval === '7d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+        } else if (currentTeamDashInterval === '30d') {
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 30);
         } else {
-            // Fallback: Load available periods first if not loaded
-            if (!currentFilterType && availableWeeks.length === 0) {
-                console.log('🔄 Team Dashboard: No filter set, loading available periods...');
-                await loadAvailablePeriods();
-                // After periods loaded, selectWeek() was called which triggers loadDashboardData() but not loadTeamDashboard()
-                // So we need to reload the team dashboard now
-                console.log('🔄 Team Dashboard: Periods loaded, reloading with filter...');
-                return loadTeamDashboard(); // Recursively call with filter now set
-            }
-            // Old behavior fallback - should not reach here anymore
-            console.warn('⚠️ Team Dashboard using old fallback - this should not happen!');
-            url = `/api/analytics/team-dashboard?interval=${currentTeamInterval || '7d'}`;
-            if (currentTeamDateRange) {
-                url += `&startDate=${currentTeamDateRange.start}&endDate=${currentTeamDateRange.end}`;
-            }
+            // Default to 7 days
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
         }
         
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const url = `/api/analytics/team-dashboard?filterType=custom&customStart=${formatDate(startDate)}&customEnd=${formatDate(endDate)}&_t=${Date.now()}`;
+        
         console.log('Team Dashboard URL:', url);
+        console.log('Team Dashboard interval:', currentTeamDashInterval);
+        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         
         const response = await fetch(url, {
             headers: {
@@ -4811,22 +8685,22 @@ function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
-    // Homogeneous color scheme - slate/purple/blue only
+    // Homogeneous color scheme - slate/purple/blue only (0-100 scale)
     const getScoreColor = (score) => {
-        if (score >= 85) return 'text-blue-400';
-        if (score >= 70) return 'text-purple-400';
-        return 'text-slate-400';
+        if (score >= 80) return 'text-blue-400'; // 80+/100
+        if (score >= 60) return 'text-purple-400'; // 60-79/100
+        return 'text-slate-400'; // Below 60/100
     };
     
     const getScoreBg = (score) => {
-        if (score >= 85) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
-        if (score >= 70) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
+        if (score >= 80) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
+        if (score >= 60) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
         return 'from-slate-500/10 to-slate-600/10 border-slate-500/20';
     };
     
     const getScoreGradient = (score) => {
-        if (score >= 85) return 'from-blue-500 to-blue-600';
-        if (score >= 70) return 'from-purple-500 to-purple-600';
+        if (score >= 80) return 'from-blue-500 to-blue-600';
+        if (score >= 60) return 'from-purple-500 to-purple-600';
         return 'from-slate-500 to-slate-600';
     };
     
@@ -5051,16 +8925,16 @@ function renderChatterContent(chatter) {
     
     const getScoreColor = (score) => {
         if (score === null || score === undefined) return 'text-gray-400';
-        if (score >= 85) return 'text-emerald-400';
-        if (score >= 70) return 'text-yellow-400';
-        return 'text-red-400';
+        if (score >= 85) return 'text-emerald-400'; // 85+/100
+        if (score >= 70) return 'text-yellow-400'; // 70-84/100
+        return 'text-red-400'; // Below 70/100
     };
     
     const getScoreBadge = (score) => {
         if (score === null || score === undefined) return '⚪';
-        if (score >= 85) return '✨';
-        if (score >= 70) return '⚡';
-        return '🔴';
+        if (score >= 85) return '✨'; // 85+/100
+        if (score >= 70) return '⚡'; // 70-84/100
+        return '🔴'; // Below 70/100
     };
     
     const formatScore = (score) => {
@@ -5271,15 +9145,38 @@ function applyTeamCustomDateRange() {
 
 // ==================== END TEAM DASHBOARD FUNCTIONS ====================
 
+// Toggle chatter name field visibility based on role
+function toggleChatterNameField() {
+    const role = document.getElementById('createRole')?.value;
+    const chatterNameField = document.getElementById('chatterNameField');
+    const chatterNameInput = document.getElementById('createChatterName');
+    
+    if (chatterNameField) {
+        if (role === 'chatter') {
+            chatterNameField.style.display = 'block';
+            chatterNameInput.required = true;
+        } else {
+            chatterNameField.style.display = 'none';
+            chatterNameInput.required = false;
+            chatterNameInput.value = '';
+        }
+    }
+}
+
 // Form handlers
 async function handleCreateUser(event) {
+    const role = document.getElementById('createRole').value;
     const userData = {
         username: document.getElementById('createUsername').value,
         email: document.getElementById('createEmail').value,
         password: document.getElementById('createPassword').value,
-        role: 'chatter',
-        chatterName: document.getElementById('createChatterName').value
+        role: role
     };
+    
+    // Only add chatterName if role is chatter
+    if (role === 'chatter') {
+        userData.chatterName = document.getElementById('createChatterName').value;
+    }
 
     showLoading(true);
 
@@ -5299,7 +9196,83 @@ async function handleCreateUser(event) {
         console.log('Registration response:', result);
 
         if (response.ok) {
-            showNotification('User created successfully!', 'success');
+            showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} created successfully!`, 'success');
+            document.getElementById('createUserForm').reset();
+            loadUsers();
+        } else {
+            showError(result.error || 'Failed to create user');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for create user button (bypasses event delegation)
+async function handleCreateUserDirect() {
+    console.log('🎯 Direct button handler called!');
+    
+    const role = document.getElementById('createRole').value;
+    const username = document.getElementById('createUsername').value;
+    const email = document.getElementById('createEmail').value;
+    const password = document.getElementById('createPassword').value;
+    
+    // Validate required fields
+    if (!role) {
+        showError('Please select a role');
+        return;
+    }
+    if (!username) {
+        showError('Please enter a username');
+        return;
+    }
+    if (!email) {
+        showError('Please enter an email');
+        return;
+    }
+    if (!password || password.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+    }
+    
+    const userData = {
+        username,
+        email,
+        password,
+        role
+    };
+    
+    // Only add chatterName if role is chatter
+    if (role === 'chatter') {
+        const chatterName = document.getElementById('createChatterName').value;
+        if (!chatterName) {
+            showError('Please enter a chatter name');
+            return;
+        }
+        userData.chatterName = chatterName;
+    }
+
+    showLoading(true);
+
+    try {
+        console.log('Creating user with data:', userData);
+        const response = await fetch('/api/auth/register-manager', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(userData)
+        });
+
+        console.log('Registration response status:', response.status);
+        const result = await response.json();
+        console.log('Registration response:', result);
+
+        if (response.ok) {
+            showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} created successfully!`, 'success');
             document.getElementById('createUserForm').reset();
             loadUsers();
         } else {
@@ -5471,20 +9444,13 @@ async function handleOFAccountDataSubmit(event) {
         startDate: document.getElementById('ofAccountStartDate').value,
         endDate: document.getElementById('ofAccountEndDate').value,
         creator: document.getElementById('ofAccountCreator').value,
-        netRevenue: parseFloat(document.getElementById('ofNetRevenue').value) || 0,
         recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
         totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
         newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
-        profileClicks: parseInt(document.getElementById('ofProfileClicks').value) || 0,
         dataType: 'of_account'
     };
     
     console.log('OF Account form data collected:', formData);
-    console.log('Raw values:', {
-        netRevenue: document.getElementById('ofNetRevenue').value,
-        totalSubs: document.getElementById('ofTotalSubs').value,
-        newSubs: document.getElementById('ofNewSubs').value
-    });
 
     if (!formData.startDate || !formData.endDate || !formData.creator) {
         showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
@@ -5516,6 +9482,266 @@ async function handleOFAccountDataSubmit(event) {
             showError(result.error || 'Failed to submit data');
         }
     } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for OF Account Data button (bypasses event delegation)
+async function handleOFAccountDataSubmitDirect() {
+    console.log('🎯 OF Account Data direct button handler called!');
+    
+    const formData = {
+        startDate: document.getElementById('ofAccountStartDate').value,
+        endDate: document.getElementById('ofAccountEndDate').value,
+        creator: document.getElementById('ofAccountCreator').value,
+        recurringRevenue: parseFloat(document.getElementById('ofRecurringRevenue').value) || 0,
+        totalSubs: parseInt(document.getElementById('ofTotalSubs').value) || 0,
+        newSubs: parseInt(document.getElementById('ofNewSubs').value) || 0,
+        dataType: 'of_account'
+    };
+    
+    console.log('OF Account form data collected:', formData);
+
+    if (!formData.startDate || !formData.endDate || !formData.creator) {
+        showError('Please fill in all required fields: Start Date, End Date, and Creator Account');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/of-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('OF Account data submitted successfully!', 'success');
+            document.getElementById('ofAccountDataForm').reset();
+            // Update dashboard if we're on it
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit data');
+        }
+    } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Daily Snapshot button (bypasses event delegation)
+async function handleDailySnapshotSubmitDirect() {
+    console.log('🎯 Daily Snapshot direct button handler called!');
+    
+    const renewRateInput = document.getElementById('snapshotRenewRate').value;
+    const recurringRevenueInput = document.getElementById('snapshotRecurringRevenue').value;
+    
+    const formData = {
+        date: document.getElementById('snapshotDate').value,
+        creator: document.getElementById('snapshotCreator').value,
+        totalSubs: parseInt(document.getElementById('snapshotTotalSubs').value) || 0,
+        activeFans: parseInt(document.getElementById('snapshotActiveFans').value) || 0,
+        fansWithRenew: parseInt(document.getElementById('snapshotFansWithRenew').value) || 0,
+        newSubsToday: parseInt(document.getElementById('snapshotNewSubs').value) || 0
+    };
+    
+    // Only add renewRate if user provided it
+    if (renewRateInput && renewRateInput.trim() !== '') {
+        formData.renewRate = parseFloat(renewRateInput);
+    }
+    
+    // Only add recurringRevenue if user provided it
+    if (recurringRevenueInput && recurringRevenueInput.trim() !== '') {
+        formData.recurringRevenue = parseFloat(recurringRevenueInput);
+    }
+    
+    console.log('📊 Daily Snapshot form data:', formData);
+
+    if (!formData.date || !formData.creator) {
+        showError('Please fill in Date and Creator Account');
+        return;
+    }
+    
+    if (!formData.totalSubs || !formData.activeFans || !formData.fansWithRenew) {
+        showError('Please fill in all subscriber metrics');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/daily-snapshot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            const renewRate = result.data.renewRate || 0;
+            showNotification(`Daily snapshot saved! Renew rate: ${renewRate}%`, 'success');
+            document.getElementById('dailySnapshotForm').reset();
+            // Update dashboard if we're on it
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to save snapshot');
+        }
+    } catch (error) {
+        console.error('Daily snapshot error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleDailySnapshotSubmit(event) {
+    console.log('📊 Daily Snapshot form submit triggered');
+    
+    const renewRateInput = document.getElementById('snapshotRenewRate').value;
+    const recurringRevenueInput = document.getElementById('snapshotRecurringRevenue').value;
+    
+    const formData = {
+        date: document.getElementById('snapshotDate').value,
+        creator: document.getElementById('snapshotCreator').value,
+        totalSubs: parseInt(document.getElementById('snapshotTotalSubs').value) || 0,
+        activeFans: parseInt(document.getElementById('snapshotActiveFans').value) || 0,
+        fansWithRenew: parseInt(document.getElementById('snapshotFansWithRenew').value) || 0,
+        newSubsToday: parseInt(document.getElementById('snapshotNewSubs').value) || 0
+    };
+    
+    // Only add renewRate if user provided it
+    if (renewRateInput && renewRateInput.trim() !== '') {
+        formData.renewRate = parseFloat(renewRateInput);
+    }
+    
+    // Only add recurringRevenue if user provided it
+    if (recurringRevenueInput && recurringRevenueInput.trim() !== '') {
+        formData.recurringRevenue = parseFloat(recurringRevenueInput);
+    }
+    
+    console.log('📊 Daily Snapshot form data:', formData);
+
+    if (!formData.date || !formData.creator) {
+        showError('Please fill in Date and Creator Account');
+        return;
+    }
+    
+    if (!formData.totalSubs || !formData.activeFans || !formData.fansWithRenew) {
+        showError('Please fill in all subscriber metrics');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/daily-snapshot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            const renewRate = result.data.renewRate || 0;
+            showNotification(`Daily snapshot saved! Renew rate: ${renewRate}%`, 'success');
+            document.getElementById('dailySnapshotForm').reset();
+            
+            // Update dashboards if we're on them
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit snapshot');
+        }
+    } catch (error) {
+        console.error('Daily snapshot error:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Chatter Data button (bypasses event delegation)
+async function handleChatterDataSubmitDirect() {
+    console.log('🎯 Chatter Data direct button handler called!');
+    
+    const chatterSelect = document.getElementById('chatterDataChatter');
+    const selectedChatterText = chatterSelect.options[chatterSelect.selectedIndex].text;
+    
+    // Get form values and only include non-empty fields
+    const messagesSentValue = document.getElementById('chatterMessagesSent').value;
+    const ppvsSentValue = document.getElementById('chatterPPVsSent').value;
+    const ppvsUnlockedValue = document.getElementById('chatterPPVsUnlocked').value;
+    const fansChattedValue = document.getElementById('chatterFansChatted').value;
+    const avgResponseTimeValue = document.getElementById('chatterAvgResponseTime').value;
+    const netSalesValue = document.getElementById('chatterNetSales').value;
+
+    const formData = {
+        startDate: document.getElementById('chatterDataStartDate').value,
+        endDate: document.getElementById('chatterDataEndDate').value,
+        chatter: selectedChatterText,
+        dataType: 'chatter'
+    };
+
+    // Only include fields that have values (not empty)
+    if (messagesSentValue) formData.messagesSent = parseInt(messagesSentValue);
+    if (ppvsSentValue) formData.ppvsSent = parseInt(ppvsSentValue);
+    if (ppvsUnlockedValue) formData.ppvsUnlocked = parseInt(ppvsUnlockedValue);
+    if (fansChattedValue) formData.fansChatted = parseInt(fansChattedValue);
+    if (avgResponseTimeValue) formData.avgResponseTime = parseFloat(avgResponseTimeValue);
+    if (netSalesValue) formData.netSales = parseFloat(netSalesValue);
+
+    if (!formData.startDate || !formData.endDate || !formData.chatter || formData.chatter === 'Select Chatter...') {
+        showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch('/api/analytics/chatter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Chatter data submitted successfully!', 'success');
+            document.getElementById('chatterDataForm').reset();
+            if (currentUser && currentUser.role === 'manager') {
+                loadDashboardData();
+            }
+        } else {
+            showError(result.error || 'Failed to submit data');
+        }
+    } catch (error) {
+        console.error('Chatter data error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
@@ -5579,6 +9805,78 @@ async function handleChatterDataSubmit(event) {
             showError(result.error || 'Failed to submit data');
         }
     } catch (error) {
+        showError('Connection error. Please try again.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Direct handler for Messages Upload button (bypasses event delegation)
+async function handleMessagesUploadDirect() {
+    console.log('🎯 Messages Upload direct button handler called!');
+    
+    if (!authToken) {
+        showError('Please log in first');
+        return;
+    }
+    
+    const file = document.getElementById('messagesFile').files[0];
+    const chatter = document.getElementById('messagesChatter').value;
+    const startDate = document.getElementById('messagesStartDate').value;
+    const endDate = document.getElementById('messagesEndDate').value;
+    
+    console.log('Form data:', { file: file?.name, chatter, startDate, endDate });
+    
+    if (!file) {
+        showError('Please select a file first');
+        return;
+    }
+    
+    if (!chatter) {
+        showError('Please select a chatter/employee');
+        return;
+    }
+    
+    if (!startDate || !endDate) {
+        showError('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Start date cannot be after end date');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('messages', file);
+    formData.append('chatter', chatter);
+    formData.append('startDate', startDate);
+    formData.append('endDate', endDate);
+
+    showLoading(true);
+
+    try {
+        console.log('Sending request to /api/upload/messages');
+        const response = await fetch('/api/upload/messages', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        });
+
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Response result:', result);
+
+        if (response.ok) {
+            showNotification('Message data uploaded successfully!', 'success');
+            document.getElementById('messagesUploadForm').reset();
+        } else {
+            showError(result.error || 'Failed to upload messages');
+        }
+    } catch (error) {
+        console.error('Messages upload error:', error);
         showError('Connection error. Please try again.');
     } finally {
         showLoading(false);
@@ -5657,58 +9955,290 @@ async function handleMessagesUpload(event) {
 }
 
 // Daily report functions
-function addPPVSaleField() {
+window.addPPVSaleField = function() {
+    console.log('🎯 addPPVSaleField called!');
     const container = document.getElementById('ppvSalesContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('ppvSalesContainer not found!');
+        return;
+    }
 
     const index = container.children.length;
 
     const saleDiv = document.createElement('div');
-    saleDiv.className = 'ppv-sale-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
+    saleDiv.className = 'ppv-sale-entry p-4 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl hover:border-purple-500/50 transition-all';
     saleDiv.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium mb-1">PPV Price ($)</label>
-            <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
-        </div>
-        <div class="flex items-end">
-            <button type="button" class="remove-ppv-sale bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
-                <i class="fas fa-trash"></i>
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Amount -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-dollar-sign mr-1"></i>Amount
+                </label>
+                <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00"
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Traffic Source -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
+                </label>
+                <select name="ppvSource" class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all traffic-source-select">
+                    <option value="">Unknown</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- VIP Fan Username (Optional) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input type="text" name="ppvVipFan" placeholder="username" list="vipFansList"
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Remove Button -->
+            <div class="flex items-end">
+                <button type="button" onclick="removePPVSale(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            </div>
         </div>
     `;
 
     container.appendChild(saleDiv);
+    
+    // Populate traffic sources for this new field
+    populateTrafficSourceDropdowns();
 }
 
-function addTipField() {
+window.addTipField = function() {
+    console.log('🎯 addTipField called!');
     const container = document.getElementById('tipsContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('tipsContainer not found!');
+        return;
+    }
 
     const tipDiv = document.createElement('div');
-    tipDiv.className = 'tip-entry grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-gray-800/50 rounded-lg';
+    tipDiv.className = 'tip-entry p-4 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl hover:border-green-500/50 transition-all';
     tipDiv.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium mb-1">Tip Amount ($)</label>
-            <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00" required
-                   class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm">
-        </div>
-        <div class="flex items-end">
-            <button type="button" class="remove-tip bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
-                <i class="fas fa-trash"></i>
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Amount -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-dollar-sign mr-1"></i>Amount
+                </label>
+                <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00"
+                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+            </div>
+            
+            <!-- Traffic Source -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
+                </label>
+                <select name="tipSource" class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all traffic-source-select">
+                    <option value="">Unknown</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- VIP Fan Username (Optional) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input type="text" name="tipVipFan" placeholder="username" list="vipFansList"
+                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+            </div>
+            
+            <!-- Remove Button -->
+            <div class="flex items-end">
+                <button type="button" onclick="removeTip(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            </div>
         </div>
     `;
 
     container.appendChild(tipDiv);
+    
+    // Populate traffic sources for this new field
+    populateTrafficSourceDropdowns();
 }
 
-function removePPVSale(button) {
+window.removePPVSale = function(button) {
+    console.log('🎯 removePPVSale called!');
     button.closest('.ppv-sale-entry').remove();
 }
 
-function removeTip(button) {
+window.removeTip = function(button) {
+    console.log('🎯 removeTip called!');
     button.closest('.tip-entry').remove();
+}
+
+// Direct handler for Daily Report button (bypasses event delegation)
+async function handleDailyReportSubmitDirect() {
+    console.log('🎯 Daily Report direct button handler called!');
+
+    const data = {
+        date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        shift: document.getElementById('reportShift')?.value || 'morning',
+        fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
+        avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
+        notes: document.getElementById('reportNotes')?.value || '',
+        ppvSales: [],
+        tips: []
+    };
+
+    // Collect PPV sales with traffic source and VIP fan
+    const ppvContainer = document.getElementById('ppvSalesContainer');
+    const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
+    ppvEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const source = entry.querySelector('select[name="ppvSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        
+        if (amount) {
+            const saleData = {
+                amount: parseFloat(amount)
+            };
+            if (source) saleData.trafficSource = source;
+            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            
+            data.ppvSales.push(saleData);
+        }
+    });
+
+    // Collect tips with traffic source and VIP fan (OPTIONAL)
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
+    tipEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const source = entry.querySelector('select[name="tipSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        
+        if (amount) {
+            const tipData = {
+                amount: parseFloat(amount)
+            };
+            if (source) tipData.trafficSource = source;
+            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            
+            data.tips.push(tipData);
+        }
+    });
+
+    console.log('📊 Submitting daily report:', data);
+
+    try {
+        const response = await fetch('/api/daily-reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Daily report saved successfully!', 'success');
+            document.getElementById('dailyReportForm')?.reset();
+            if (ppvContainer) ppvContainer.innerHTML = '';
+            if (tipsContainer) tipsContainer.innerHTML = '';
+            console.log('✅ Daily report saved:', result);
+        } else {
+            showNotification(result.error || 'Failed to save report', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting daily report:', error);
+        showNotification('Connection error. Please try again.', 'error');
+    }
+}
+
+// Daily Report Form Submission
+async function handleDailyReportSubmit(event) {
+    event.preventDefault();
+
+    const data = {
+        date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        shift: document.getElementById('reportShift')?.value || 'morning',
+        fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
+        avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
+        notes: document.getElementById('reportNotes')?.value || '',
+        ppvSales: [],
+        tips: []
+    };
+
+    // Collect PPV sales with traffic source and VIP fan
+    const ppvContainer = document.getElementById('ppvSalesContainer');
+    const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
+    ppvEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const source = entry.querySelector('select[name="ppvSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        
+        if (amount) {
+            const saleData = {
+                amount: parseFloat(amount)
+            };
+            if (source) saleData.trafficSource = source;
+            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            
+            data.ppvSales.push(saleData);
+        }
+    });
+
+    // Collect tips with traffic source and VIP fan
+    const tipsContainer = document.getElementById('tipsContainer');
+    const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
+    tipEntries.forEach(entry => {
+        const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const source = entry.querySelector('select[name="tipSource"]')?.value;
+        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        
+        if (amount) {
+            const tipData = {
+                amount: parseFloat(amount)
+            };
+            if (source) tipData.trafficSource = source;
+            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            
+            data.tips.push(tipData);
+        }
+    });
+
+    console.log('📊 Submitting daily report:', data);
+
+    try {
+        const response = await fetch('/api/daily-reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showNotification('Daily report saved successfully!', 'success');
+            document.getElementById('dailyReportForm')?.reset();
+            if (ppvContainer) ppvContainer.innerHTML = '';
+            if (tipsContainer) tipsContainer.innerHTML = '';
+            console.log('✅ Daily report saved:', result);
+        } else {
+            showNotification(result.error || 'Failed to save report', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting daily report:', error);
+        showNotification('Connection error. Please try again.', 'error');
+    }
 }
 
 // My Performance functions
@@ -5752,18 +10282,19 @@ async function loadMyPerformanceData() {
         document.getElementById('myAvgPPVPrice').textContent = `$${data.avgPPVPrice || 0}`;
         document.getElementById('myResponseTime').textContent = `${data.avgResponseTime || 0}m`;
 
-        // Update combined analytics
+        // Update Conversion Metrics
         const revenuePerPPV = data.ppvsSent > 0 ? (data.totalRevenue / data.ppvsSent) : 0;
-        const revenuePerHour = data.totalRevenue / (currentMyPerformanceInterval === '24h' ? 24 : currentMyPerformanceInterval === '7d' ? 168 : 720);
+        const unlockRate = data.ppvsSent > 0 && data.ppvsUnlocked ? ((data.ppvsUnlocked / data.ppvsSent) * 100) : 0;
+        const messagesPerPPV = data.ppvsSent > 0 && data.messagesSent ? (data.messagesSent / data.ppvsSent) : 0;
         
         document.getElementById('myRevenuePerPPV').textContent = `$${revenuePerPPV.toFixed(2)}`;
-        document.getElementById('myRevenuePerHour').textContent = `$${revenuePerHour.toFixed(2)}`;
-        document.getElementById('myConversionRate').textContent = `${data.conversionRate || 0}%`;
+        document.getElementById('myUnlockRate').textContent = `${unlockRate.toFixed(1)}%`;
+        document.getElementById('myMessagesPerPPV').textContent = messagesPerPPV.toFixed(1);
 
-        // Update performance trends (no fake data)
-        document.getElementById('myWeeklyGrowth').textContent = 'No trend data available';
-        document.getElementById('myBestDay').textContent = 'No data available';
-        document.getElementById('myPeakHour').textContent = 'No data available';
+        // Update Activity Metrics
+        document.getElementById('myFansChatted').textContent = data.fansChatted || 0;
+        document.getElementById('myMessagesSent').textContent = data.messagesSent || 0;
+        document.getElementById('myAvgResponseTime').textContent = `${data.avgResponseTime || 0}m`;
 
         // Load message analysis
         await loadMyMessageAnalysis();
@@ -5798,33 +10329,39 @@ async function loadMyMessageAnalysis() {
             const analysis = analyses && analyses.length > 0 ? analyses[0] : null;
             
             if (analysis) {
-                document.getElementById('myMessageScore').textContent = analysis.overallScore ? `${analysis.overallScore}/100` : 'No Data';
-                document.getElementById('myGrammarScore').textContent = analysis.grammarScore ? `${analysis.grammarScore}/100` : 'No Data';
-                document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore ? `${analysis.guidelinesScore}/100` : 'No Data';
+                document.getElementById('myMessageScore').textContent = analysis.overallScore || '0';
+                document.getElementById('myGrammarScore').textContent = analysis.grammarScore || '0';
+                document.getElementById('myGuidelinesScore').textContent = analysis.guidelinesScore || '0';
             } else {
-                document.getElementById('myMessageScore').textContent = 'No Data';
-                document.getElementById('myGrammarScore').textContent = 'No Data';
-                document.getElementById('myGuidelinesScore').textContent = 'No Data';
+                document.getElementById('myMessageScore').textContent = '0';
+                document.getElementById('myGrammarScore').textContent = '0';
+                document.getElementById('myGuidelinesScore').textContent = '0';
             }
 
-            // Update strengths and weaknesses
+            // Update strengths and weaknesses with enhanced styling
             const strengthsDiv = document.getElementById('myMessageStrengths');
             const weaknessesDiv = document.getElementById('myMessageWeaknesses');
 
             if (analysis && analysis.strengths && analysis.strengths.length > 0) {
                 strengthsDiv.innerHTML = analysis.strengths.map(strength => 
-                    `<div class="text-green-300 text-sm">• ${strength}</div>`
+                    `<div class="flex items-start p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <i class="fas fa-check text-green-400 mr-3 mt-0.5 text-sm"></i>
+                        <span class="text-gray-300 text-sm leading-relaxed">${strength}</span>
+                    </div>`
                 ).join('');
             } else {
-                strengthsDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+                strengthsDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
             }
             
             if (analysis && analysis.weaknesses && analysis.weaknesses.length > 0) {
                 weaknessesDiv.innerHTML = analysis.weaknesses.map(weakness => 
-                    `<div class="text-red-300 text-sm">• ${weakness}</div>`
+                    `<div class="flex items-start p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <i class="fas fa-arrow-up text-red-400 mr-3 mt-0.5 text-sm"></i>
+                        <span class="text-gray-300 text-sm leading-relaxed">${weakness}</span>
+                    </div>`
                 ).join('');
             } else {
-                weaknessesDiv.innerHTML = '<div class="text-gray-300 text-sm">No message analysis available yet</div>';
+                weaknessesDiv.innerHTML = '<div class="text-gray-400 text-sm">No message analysis available yet</div>';
             }
         }
     } catch (error) {
@@ -5900,69 +10437,6 @@ function loadMyPerformanceChart(data) {
     });
 }
 
-async function handleDailyReportSubmit(event) {
-    event.preventDefault();
-
-    const data = {
-        date: document.getElementById('reportDate').value,
-        shift: document.getElementById('reportShift').value,
-        shiftDuration: parseFloat(document.getElementById('shiftDuration').value) || 0,
-        notes: document.getElementById('shiftNotes').value || '',
-        ppvSales: [],
-        tips: []
-    };
-
-    // Collect PPV sales
-    const ppvContainer = document.getElementById('ppvSalesContainer');
-    const ppvInputs = ppvContainer.querySelectorAll('input[name="ppvAmount"]');
-    ppvInputs.forEach(input => {
-        if (input.value) {
-            data.ppvSales.push({
-                amount: parseFloat(input.value)
-            });
-        }
-    });
-
-    // Collect tips
-    const tipsContainer = document.getElementById('tipsContainer');
-    const tipInputs = tipsContainer.querySelectorAll('input[name="tipAmount"]');
-    tipInputs.forEach(input => {
-        if (input.value) {
-            data.tips.push({
-                amount: parseFloat(input.value)
-            });
-        }
-    });
-
-    showLoading(true);
-
-    try {
-        const response = await fetch('/api/daily-reports', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showNotification('Daily report saved successfully!', 'success');
-            document.getElementById('dailyReportForm').reset();
-            document.getElementById('ppvSalesContainer').innerHTML = '';
-            document.getElementById('tipsContainer').innerHTML = '';
-            setDefaultDate();
-        } else {
-            showError(result.error || 'Failed to save report');
-        }
-    } catch (error) {
-        showError('Connection error. Please try again.');
-    } finally {
-        showLoading(false);
-    }
-}
 
 // Utility functions
 function showLoading(show) {
@@ -6823,6 +11297,95 @@ function renderSophisticatedChatterAnalysis(data) {
                 </div>
             </div>
             ` : ''}
+        </div>
+    `;
+}
+
+// ==================== TEAM COMPARISON SECTION ====================
+
+function createTeamComparisonSection() {
+    return `
+        <div class="mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h2 class="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                        <i class="fas fa-trophy mr-3"></i>Team Leaderboard
+                    </h2>
+                    <p class="text-gray-400 text-lg">See how you stack up against the team</p>
+                </div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-400 mr-2">Time Period:</span>
+                    <button onclick="setTeamComparisonInterval('24h')" class="team-comparison-interval-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="24h">24h</button>
+                    <button onclick="setTeamComparisonInterval('7d')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="7d">7d</button>
+                    <button onclick="setTeamComparisonInterval('30d')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="30d">30d</button>
+                    <button onclick="setTeamComparisonInterval('custom')" class="team-comparison-interval-btn bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-all" data-interval="custom">
+                        <i class="fas fa-calendar mr-1 text-xs"></i>Custom
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Position Card -->
+        <div id="yourPositionCard" class="mb-8">
+            <!-- Will be populated dynamically -->
+        </div>
+
+        <!-- Team Leaderboard Table -->
+        <div class="glass-card rounded-2xl p-8 border-2 border-yellow-500/30">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-white flex items-center">
+                    <i class="fas fa-users text-yellow-400 mr-3"></i>
+                    Full Team Rankings
+                </h3>
+                <div class="text-sm text-gray-400">
+                    Click any column header to sort
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-700">
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('rank')">
+                                <i class="fas fa-hashtag mr-2"></i>Rank
+                            </th>
+                            <th class="px-4 py-4 text-left text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('name')">
+                                <i class="fas fa-user mr-2"></i>Chatter
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('revenue')">
+                                <i class="fas fa-dollar-sign mr-2"></i>Revenue
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('unlockRate')">
+                                <i class="fas fa-unlock mr-2"></i>Unlock %
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('responseTime')">
+                                <i class="fas fa-clock mr-2"></i>Avg Response
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('messagesPerPPV')">
+                                <i class="fas fa-comments mr-2"></i>Msgs/PPV
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('overallScore')">
+                                <i class="fas fa-star mr-2"></i>Overall
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('grammarScore')">
+                                <i class="fas fa-spell-check mr-2"></i>Grammar
+                            </th>
+                            <th class="px-4 py-4 text-right text-sm font-bold text-gray-300 cursor-pointer hover:text-white transition-colors" onclick="sortTeamBy('guidelinesScore')">
+                                <i class="fas fa-clipboard-check mr-2"></i>Guidelines
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamComparisonTableBody" class="divide-y divide-gray-700">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Team Average Row -->
+            <div id="teamAverageRow" class="mt-6 pt-6 border-t-2 border-gray-700">
+                <!-- Will be populated dynamically -->
+            </div>
         </div>
     `;
 }
