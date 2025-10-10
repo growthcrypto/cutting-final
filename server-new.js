@@ -974,7 +974,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       netRevenue: sumField(prevAccountData, 'netRevenue'),
       newSubs: sumField(prevAccountData, 'newSubs'),
       profileClicks: sumField(prevAccountData, 'profileClicks'),
-      totalSubs: sumField(prevAccountData, 'totalSubs')
+      totalSubs: Math.round(avgField(prevAccountData, 'totalSubs'))
     };
     
     prevMetrics.unlockRate = prevMetrics.ppvsSent > 0 ? (prevMetrics.ppvsUnlocked / prevMetrics.ppvsSent * 100) : 0;
@@ -3006,7 +3006,9 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         : 0;
 
       const netRevenue = ofAccountData.reduce((sum, data) => sum + (data.netRevenue || 0), 0);
-      const totalSubs = ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0);
+      const totalSubs = ofAccountData.length > 0 
+        ? Math.round(ofAccountData.reduce((sum, data) => sum + (data.totalSubs || 0), 0) / ofAccountData.length)
+        : 0;
       const newSubs = ofAccountData.reduce((sum, data) => sum + (data.newSubs || 0), 0);
       const profileClicks = ofAccountData.reduce((sum, data) => sum + (data.profileClicks || 0), 0);
 
