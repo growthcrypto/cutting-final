@@ -9872,7 +9872,7 @@ window.addPPVSaleField = function() {
             
             <!-- Remove Button -->
             <div class="flex items-end">
-                <button type="button" class="remove-ppv-sale w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                <button type="button" onclick="removePPVSale(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
                     <i class="fas fa-trash mr-1"></i>Remove
                 </button>
             </div>
@@ -9928,7 +9928,7 @@ window.addTipField = function() {
             
             <!-- Remove Button -->
             <div class="flex items-end">
-                <button type="button" class="remove-tip w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                <button type="button" onclick="removeTip(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
                     <i class="fas fa-trash mr-1"></i>Remove
                 </button>
             </div>
