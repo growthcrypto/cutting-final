@@ -1555,9 +1555,18 @@ function setupEventListeners() {
 
     // Nuclear option: Capture phase event listener for PPV/Tip buttons
     document.addEventListener('click', function(e) {
-        console.log('🔍 Click event:', e.target.id, e.target.tagName);
+        // Check if the click is on the button or any child of the button (like the icon)
+        const addPPVBtn = e.target.id === 'addPPVSale' ? e.target : e.target.closest('#addPPVSale');
+        const addTipBtn = e.target.id === 'addTip' ? e.target : e.target.closest('#addTip');
         
-        if (e.target.id === 'addPPVSale' || e.target.closest('#addPPVSale')) {
+        console.log('🔍 Click detected:', {
+            targetId: e.target.id,
+            targetTag: e.target.tagName,
+            closestPPV: addPPVBtn ? 'YES' : 'NO',
+            closestTip: addTipBtn ? 'YES' : 'NO'
+        });
+        
+        if (addPPVBtn) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -1566,7 +1575,7 @@ function setupEventListeners() {
             return false;
         }
         
-        if (e.target.id === 'addTip' || e.target.closest('#addTip')) {
+        if (addTipBtn) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
