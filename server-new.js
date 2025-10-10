@@ -460,28 +460,7 @@ app.get('/api/auth/me', checkDatabaseConnection, authenticateToken, async (req, 
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const chatters = await User.find({ role: 'chatter' }, { password: 0 });
-    
-    // If no chatters exist, create some test users
-    if (chatters.length === 0) {
-      console.log('No chatters found, creating test users...');
-      const testChatters = [
-        { username: 'Agile', email: 'agile@agency.com', role: 'chatter', chatterName: 'Agile', password: 'password123' },
-        { username: 'gypsy', email: 'gypsy@agency.com', role: 'chatter', chatterName: 'gypsy', password: 'password123' },
-        { username: 'John', email: 'john@agency.com', role: 'chatter', chatterName: 'John', password: 'password123' },
-        { username: 'ceejay', email: 'ceejay@agency.com', role: 'chatter', chatterName: 'ceejay', password: 'password123' }
-      ];
-      
-      for (const chatter of testChatters) {
-        const newUser = new User(chatter);
-        await newUser.save();
-      }
-      
-      console.log('Test chatters created successfully');
-      const updatedChatters = await User.find({ role: 'chatter' }, { password: 0 });
-      res.json(updatedChatters);
-    } else {
-      res.json(chatters);
-    }
+    res.json(chatters);
   } catch (error) {
     console.error('Error fetching chatters:', error);
     res.status(500).json({ error: 'Failed to fetch chatters' });
