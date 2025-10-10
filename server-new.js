@@ -6073,12 +6073,27 @@ function generateAnalysisSummary(data) {
   const unlockRate = ppvsSent > 0 ? ((ppvsUnlocked / ppvsSent) * 100).toFixed(1) : 0;
   const revenuePerMessage = messagesSent > 0 ? (revenue / messagesSent).toFixed(2) : 0;
   const revenuePerFan = fansChatted > 0 ? (revenue / fansChatted).toFixed(2) : 0;
+  const messagesPerFan = fansChatted > 0 ? (messagesSent / fansChatted).toFixed(1) : 0;
   
   // Parse grammar breakdown for issues
   const grammarBreakdown = data.grammarBreakdown || {};
   const spellingCount = parseInt(grammarBreakdown.spellingErrors?.match(/(\d+)/)?.[1] || '0');
   const grammarIssuesCount = parseInt(grammarBreakdown.grammarIssues?.match(/(\d+)/)?.[1] || '0');
   const punctuationCount = parseInt(grammarBreakdown.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
+  
+  // DEBUG
+  console.log('📊 generateAnalysisSummary called with:', {
+    messagesSent,
+    revenue,
+    ppvsSent,
+    ppvsUnlocked,
+    fansChatted,
+    grammarScore,
+    guidelinesScore,
+    unlockRate,
+    punctuationCount,
+    spellingCount
+  });
   
   // Generate summary paragraph
   let summaryParts = [];
@@ -6165,15 +6180,15 @@ function generateAnalysisSummary(data) {
   }
   
   // 3. Punctuation Errors → Lost Revenue
-  if (punctuationCount > 50 && revenue > 0) {
+  if (punctuationCount > 50 && revenue > 0 && messagesSent > 0) {
     const errorRate = (punctuationCount / messagesSent * 100).toFixed(1);
     const estimatedLoss = (revenue * (errorRate / 100) * 0.3).toFixed(0);
     insights.deepInsights.push({
       type: 'warning',
       icon: 'fa-money-bill-wave',
       title: 'Formal Punctuation Hurting Engagement',
-      insight: `${punctuationCount} messages (${errorRate}%) use formal punctuation (periods, commas), making you sound robotic instead of casual and friendly. OnlyFans fans respond 30% better to informal, conversational messages.`,
-      metrics: `Estimated revenue impact: -$${estimatedLoss} due to reduced engagement`,
+      insight: `${punctuationCount} out of ${messagesSent} messages (${errorRate}%) use formal punctuation (periods, commas), making you sound robotic instead of casual and friendly. OnlyFans fans respond 30% better to informal, conversational messages.`,
+      metrics: `${punctuationCount} formal messages | ${errorRate}% error rate | Estimated loss: ~$${estimatedLoss}`,
       action: `Remove periods from casual messages to sound more natural and boost conversions`
     });
   }
@@ -6201,7 +6216,8 @@ function generateAnalysisSummary(data) {
   }
   
   // 5. Revenue Per Fan Analysis
-  if (fansChatted > 0 && revenue > 0) {
+  if (fansChatted > 0 && revenue > 0 && messagesSent > 0) {
+    const messagesPerFan = (messagesSent / fansChatted).toFixed(1);
     if (revenuePerFan > 15 && messagesPerFan > 10) {
       insights.deepInsights.push({
         type: 'positive',
@@ -6224,31 +6240,35 @@ function generateAnalysisSummary(data) {
   }
   
   // 6. Message-to-PPV Ratio Analysis
-  if (ppvsSent > 0 && messagesSent > 0) {
+  if (ppvsSent > 0 && messagesSent > 0 && fansChatted > 0) {
     const messagesPerPPV = (messagesSent / ppvsSent).toFixed(0);
     const ppvPerFan = (ppvsSent / fansChatted).toFixed(1);
     
     if (ppvPerFan < 0.5 && fansChatted > 20) {
+      const potentialPPVs = Math.round(fansChatted * 1.2);
+      const avgPPVRevenue = revenue / ppvsSent;
+      const potentialGain = Math.round(potentialPPVs * avgPPVRevenue - revenue);
       insights.deepInsights.push({
         type: 'opportunity',
         icon: 'fa-rocket',
         title: 'Massive Untapped Revenue Opportunity',
         insight: `You're only sending ${ppvPerFan} PPVs per fan (${ppvsSent} PPVs across ${fansChatted} fans). You have ${fansChatted} engaged fans but aren't monetizing them enough. Top performers send 1-2 PPVs per fan.`,
-        metrics: `Current: ${ppvsSent} PPVs | Potential: ${Math.round(fansChatted * 1.2)} PPVs | Revenue gain: +$${Math.round(fansChatted * 1.2 * (revenue / ppvsSent) - revenue)}`,
+        metrics: `Current: ${ppvsSent} PPVs | Potential: ${potentialPPVs} PPVs | Revenue gain: +$${potentialGain}`,
         action: 'Send more PPVs to your engaged fans - you\'re leaving money on the table'
       });
     }
   }
   
   // 7. Spelling/Grammar → Professionalism Impact
-  if (spellingCount > 5 || grammarIssuesCount > 5) {
+  if ((spellingCount > 5 || grammarIssuesCount > 5) && messagesSent > 0) {
     const totalErrors = spellingCount + grammarIssuesCount;
+    const errorRate = ((totalErrors / messagesSent) * 100).toFixed(1);
     insights.deepInsights.push({
       type: 'warning',
       icon: 'fa-spell-check',
       title: 'Grammar Errors Reducing Message Professionalism',
-      insight: `${totalErrors} spelling and grammar errors across ${messagesSent} messages (${((totalErrors / messagesSent) * 100).toFixed(1)}% error rate) make you appear less professional. Fans subconsciously associate message quality with content quality.`,
-      metrics: `${spellingCount} spelling + ${grammarIssuesCount} grammar = ${totalErrors} total errors`,
+      insight: `${totalErrors} spelling and grammar errors across ${messagesSent} messages (${errorRate}% error rate) make you appear less professional. Fans subconsciously associate message quality with content quality.`,
+      metrics: `${spellingCount} spelling + ${grammarIssuesCount} grammar = ${totalErrors} total errors | ${errorRate}% error rate`,
       action: 'Use spell-check and proofread before sending to appear more professional'
     });
   }
@@ -6291,7 +6311,7 @@ function generateAnalysisSummary(data) {
   }
   
   // Improvements (always show something meaningful)
-  if (punctuationCount > 50) {
+  if (punctuationCount > 50 && messagesSent > 0) {
     const estimatedImpact = (punctuationCount / messagesSent * 100).toFixed(1);
     insights.improvements.push({
       issue: 'Formal Punctuation',
