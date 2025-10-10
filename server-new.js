@@ -1186,6 +1186,28 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       }
     });
 
+    // ALSO get revenue from Daily Chatter Reports (daily sales logs)
+    const dailyReportsQuery = {
+      date: { $gte: start, $lte: end }
+    };
+    const dailyReports = await DailyChatterReport.find(dailyReportsQuery);
+    console.log('📊 Team Dashboard - DailyChatterReport found:', dailyReports.length, 'records');
+    
+    dailyReports.forEach(report => {
+      // Add revenue from daily sales logs
+      const ppvRevenue = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
+      const tipRevenue = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
+      teamMetrics.totalRevenue += ppvRevenue + tipRevenue;
+      
+      // Also count messages and fans if available
+      if (report.messagesSent) teamMetrics.messagesSent += report.messagesSent;
+      if (report.fansChatted) teamMetrics.fansChatted += report.fansChatted;
+      if (report.avgResponseTime && report.avgResponseTime > 0) {
+        teamMetrics.responseTimesSum += report.avgResponseTime;
+        teamMetrics.responseTimeCount++;
+      }
+    });
+
     // Aggregate scores from AI analyses
     let grammarCount = 0, guidelinesCount = 0, overallCount = 0;
     
@@ -1235,14 +1257,23 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
       ? Math.round((teamMetrics.totalRevenue / teamMetrics.messagesSent) * 100) / 100
       : 0;
 
-    // Find top performer
-    const chatterRevenues = chatterPerformance.reduce((acc, data) => {
+    // Find top performer (include both ChatterPerformance and DailyChatterReport revenue)
+    const chatterRevenues = {};
+    
+    // Add revenue from ChatterPerformance
+    chatterPerformance.forEach(data => {
       const revenue = (data.ppvRevenue || 0) + (data.tipRevenue || 0);
-      if (!acc[data.chatterName] || acc[data.chatterName] < revenue) {
-        acc[data.chatterName] = revenue;
-      }
-      return acc;
-    }, {});
+      if (!chatterRevenues[data.chatterName]) chatterRevenues[data.chatterName] = 0;
+      chatterRevenues[data.chatterName] += revenue;
+    });
+    
+    // Add revenue from DailyChatterReport
+    dailyReports.forEach(report => {
+      const ppvRev = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
+      const tipRev = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
+      if (!chatterRevenues[report.chatterName]) chatterRevenues[report.chatterName] = 0;
+      chatterRevenues[report.chatterName] += ppvRev + tipRev;
+    });
     
     const topPerformer = Object.entries(chatterRevenues).sort((a, b) => b[1] - a[1])[0];
 
@@ -1250,12 +1281,28 @@ app.get('/api/analytics/team-dashboard', checkDatabaseConnection, authenticateTo
     const chatterData = chatterNames.map(name => {
       const perfData = chatterPerformance.filter(p => p.chatterName === name);
       const analysisData = chatterAnalyses.find(a => a.chatterName === name)?.analysis;
+      const chatterDailyReports = dailyReports.filter(r => r.chatterName === name);
       
-      const chatterRevenue = perfData.reduce((sum, p) => sum + (p.ppvRevenue || 0) + (p.tipRevenue || 0), 0);
+      // Revenue from ChatterPerformance
+      let chatterRevenue = perfData.reduce((sum, p) => sum + (p.ppvRevenue || 0) + (p.tipRevenue || 0), 0);
+      
+      // ALSO add revenue from daily reports
+      chatterDailyReports.forEach(report => {
+        const ppvRev = report.ppvSales?.reduce((sum, sale) => sum + sale.amount, 0) || 0;
+        const tipRev = report.tips?.reduce((sum, tip) => sum + tip.amount, 0) || 0;
+        chatterRevenue += ppvRev + tipRev;
+      });
+      
       const chatterPPVsSent = perfData.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
       const chatterPPVsUnlocked = perfData.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
-      const chatterMessages = perfData.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
-      const chatterFans = perfData.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+      let chatterMessages = perfData.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+      let chatterFans = perfData.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+      
+      // Add messages/fans from daily reports
+      chatterDailyReports.forEach(report => {
+        if (report.messagesSent) chatterMessages += report.messagesSent;
+        if (report.fansChatted) chatterFans += report.fansChatted;
+      });
       
       const responseTimes = perfData.filter(p => p.avgResponseTime && p.avgResponseTime > 0).map(p => p.avgResponseTime);
       const chatterAvgResponseTime = responseTimes.length > 0
