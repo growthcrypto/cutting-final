@@ -4371,21 +4371,18 @@ async function runChatterAnalysis() {
         // Get chatter name from select
         const chatterName = select.options[select.selectedIndex].text;
         
-        // Build query params for date range
+        // Build query params using the date range we calculated above
         let params = new URLSearchParams();
-        if (currentFilterType === 'custom' && customDateRange) {
-            params.append('filterType', 'custom');
-            params.append('customStart', customDateRange.start);
-            params.append('customEnd', customDateRange.end);
-        } else if (currentFilterType === 'week' && currentWeekFilter) {
-            params.append('filterType', 'week');
-            params.append('weekStart', currentWeekFilter.start);
-            params.append('weekEnd', currentWeekFilter.end);
-        } else if (currentFilterType === 'month' && currentMonthFilter) {
-            params.append('filterType', 'month');
-            params.append('monthStart', currentMonthFilter.firstDay);
-            params.append('monthEnd', currentMonthFilter.lastDay);
-        }
+        params.append('filterType', 'custom');
+        params.append('customStart', formatDate(startDate));
+        params.append('customEnd', formatDate(endDate));
+        
+        console.log('🔍 AI Analysis API call:', {
+            chatterName,
+            filterType: 'custom',
+            start: formatDate(startDate),
+            end: formatDate(endDate)
+        });
         
         // Call NEW enhanced API
         const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
