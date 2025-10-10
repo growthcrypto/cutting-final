@@ -2614,14 +2614,28 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       let grammarScore = null;
       let guidelinesScore = null;
       
-      // Extract grammar score from scoreExplanation
-      if (analysisResult.grammarBreakdown && analysisResult.grammarBreakdown.scoreExplanation) {
-        const grammarScoreMatch = analysisResult.grammarBreakdown.scoreExplanation.match(/Grammar score:\s*(\d+)/i);
-        if (grammarScoreMatch) {
-          grammarScore = parseInt(grammarScoreMatch[1]);
-          console.log('✅ Extracted grammar score:', grammarScore);
-        }
-      }
+      // BRUTAL SCORING: Calculate based on error percentage
+      // Parse error counts from breakdown
+      const spellingCount = parseInt(analysisResult.grammarBreakdown?.spellingErrors?.match(/(\d+)/)?.[1] || '0');
+      const grammarIssuesCount = parseInt(analysisResult.grammarBreakdown?.grammarIssues?.match(/(\d+)/)?.[1] || '0');
+      const punctuationCount = parseInt(analysisResult.grammarBreakdown?.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
+      const totalErrors = spellingCount + grammarIssuesCount + punctuationCount;
+      const totalMessages = sampledMessages.length;
+      const errorPercentage = totalMessages > 0 ? (totalErrors / totalMessages) * 100 : 0;
+      
+      // BRUTAL FORMULA: 100 - (errorPercentage * 5)
+      // 5% errors = 75/100
+      // 10% errors = 50/100
+      // 20% errors = 0/100
+      grammarScore = Math.max(0, Math.round(100 - (errorPercentage * 5)));
+      
+      console.log('🔥 BRUTAL GRAMMAR SCORE:', {
+        totalErrors,
+        totalMessages,
+        errorPercentage: errorPercentage.toFixed(2) + '%',
+        brutalScore: grammarScore,
+        breakdown: { spellingCount, grammarIssuesCount, punctuationCount }
+      });
       
       // Extract guidelines score from GUIDELINES_V2_JSON section
       if (responseText.includes('GUIDELINES_V2_JSON')) {
@@ -2647,12 +2661,19 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
               }
             });
             
-            // Score: 100 - (violations / guidelines) * 100, minimum 0
-            guidelinesScore = totalGuidelines > 0 
-              ? Math.max(0, Math.round(100 - (totalViolations / totalGuidelines) * 10))
-              : null;
+            // BRUTAL SCORING for Guidelines
+            // Calculate violation percentage across all messages
+            const violationPercentage = totalMessages > 0 ? (totalViolations / totalMessages) * 100 : 0;
+            // Apply BRUTAL formula: 100 - (violationPercentage * 5)
+            guidelinesScore = Math.max(0, Math.round(100 - (violationPercentage * 5)));
             
-            console.log('✅ Extracted guidelines score:', guidelinesScore, '(', totalViolations, 'violations across', totalGuidelines, 'guidelines)');
+            console.log('🔥 BRUTAL GUIDELINES SCORE:', {
+              totalViolations,
+              totalGuidelines,
+              totalMessages,
+              violationPercentage: violationPercentage.toFixed(2) + '%',
+              brutalScore: guidelinesScore
+            });
           } catch (e) {
             console.error('Failed to parse GUIDELINES_V2_JSON:', e.message);
           }
@@ -2662,7 +2683,12 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       // Calculate overall score as average
       if (grammarScore !== null && guidelinesScore !== null) {
         analysisResult.overallScore = Math.round((grammarScore + guidelinesScore) / 2);
-        console.log('✅ Calculated overall score:', analysisResult.overallScore);
+        console.log('🔥 BRUTAL OVERALL SCORE:', {
+          grammarScore,
+          guidelinesScore,
+          overallScore: analysisResult.overallScore,
+          formula: '(grammar + guidelines) / 2'
+        });
       } else if (grammarScore !== null) {
         analysisResult.overallScore = grammarScore;
         console.log('⚠️ Using grammar score as overall score:', analysisResult.overallScore);
