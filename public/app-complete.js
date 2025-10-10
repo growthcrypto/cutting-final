@@ -1033,9 +1033,6 @@ async function loadMessagesData() {
                 <td class="px-4 py-4 text-right text-blue-400">${msg.totalMessages || 0}</td>
                 <td class="px-4 py-4 text-right text-gray-300">${msg.creatorAccount || 'N/A'}</td>
                 <td class="px-4 py-4 text-center">
-                    <button onclick="reanalyzeMessages('${msg._id}')" class="px-3 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/30 hover:border-cyan-500 text-cyan-300 rounded-lg text-sm transition-all mr-2">
-                        <i class="fas fa-brain mr-1"></i>Re-analyze
-                    </button>
                     <button onclick="deleteMessageRecord('${msg._id}', '${msg.chatterName}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
                         <i class="fas fa-trash mr-1"></i>Delete
                     </button>
@@ -4438,7 +4435,40 @@ async function runChatterAnalysis() {
             end: formatDate(endDate)
         });
         
-        // Call NEW enhanced API
+        // First, get the MessageAnalysis ID for this chatter
+        const messagesListResponse = await fetch(`/api/message-analysis/${encodeURIComponent(chatterName)}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!messagesListResponse.ok) {
+            throw new Error('No messages found for this chatter. Upload messages first in Data Management.');
+        }
+        
+        const messagesList = await messagesListResponse.json();
+        if (!messagesList || messagesList.length === 0) {
+            throw new Error('No messages found for this chatter. Upload messages first in Data Management.');
+        }
+        
+        // Get the most recent message analysis
+        const latestMessage = messagesList[0];
+        console.log('🔍 Found message analysis:', latestMessage._id);
+        
+        // Trigger RE-ANALYSIS
+        const reanalyzeResponse = await fetch(`/api/messages/reanalyze/${latestMessage._id}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!reanalyzeResponse.ok) {
+            throw new Error('Failed to run analysis');
+        }
+        
+        console.log('✅ Analysis triggered, now fetching results...');
+        
+        // Now fetch the updated analysis
         const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
