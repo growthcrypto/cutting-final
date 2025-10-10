@@ -11428,7 +11428,8 @@ async function loadMyPerformanceData() {
         // Build API URL with custom dates if applicable
         let apiUrl = `/api/analytics/dashboard?interval=${currentMyPerformanceInterval}`;
         if (currentMyPerformanceInterval === 'custom' && myPerformanceCustomDates) {
-            apiUrl = `/api/analytics/dashboard?interval=custom&customStart=${myPerformanceCustomDates.start}&customEnd=${myPerformanceCustomDates.end}`;
+            apiUrl = `/api/analytics/dashboard?filterType=custom&customStart=${myPerformanceCustomDates.start}&customEnd=${myPerformanceCustomDates.end}`;
+            console.log('🗓️ My Performance using custom dates:', myPerformanceCustomDates);
         }
 
         // Get performance data
