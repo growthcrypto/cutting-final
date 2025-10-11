@@ -7086,6 +7086,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chattingStyle: messageAnalysis?.chattingStyle || null,
       messagePatterns: messageAnalysis?.messagePatterns || null,
       engagementMetrics: messageAnalysis?.engagementMetrics || null,
+      totalMessages: messageAnalysis?.totalMessages || chatterMessagesSent || 0,
       revenue: chatterRevenue,
       ppvsSent: chatterPPVsSent,
       ppvsUnlocked: chatterPPVsUnlocked,

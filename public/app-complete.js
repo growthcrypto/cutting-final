@@ -5710,7 +5710,7 @@ function renderNewChatterAnalysis(data) {
     const punctuationCount = data.grammarBreakdown?.punctuationProblems?.match(/Found (\d+)/)?.[1] || '0';
     
     // Calculate percentages
-    const totalMessages = data.grammarBreakdown?.totalMessages || data.messagesSent || 544;
+    const totalMessages = data.totalMessages || data.messagesSent || data.grammarBreakdown?.totalMessages || 0;
     const spellingPct = ((parseInt(spellingCount) / totalMessages) * 100).toFixed(1);
     const grammarPct = ((parseInt(grammarCount) / totalMessages) * 100).toFixed(1);
     const punctuationPct = ((parseInt(punctuationCount) / totalMessages) * 100).toFixed(1);
