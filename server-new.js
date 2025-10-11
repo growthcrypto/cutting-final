@@ -1988,7 +1988,9 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       guidelinesScore: verifyRecord.guidelinesScore,
       overallScore: verifyRecord.overallScore,
       hasGrammarBreakdown: !!verifyRecord.grammarBreakdown,
-      hasGuidelinesBreakdown: !!verifyRecord.guidelinesBreakdown
+      hasGuidelinesBreakdown: !!verifyRecord.guidelinesBreakdown,
+      guidelinesBreakdownKeys: Object.keys(verifyRecord.guidelinesBreakdown || {}),
+      guidelinesBreakdownSample: JSON.stringify(verifyRecord.guidelinesBreakdown).substring(0, 300)
     });
     
     res.json({
