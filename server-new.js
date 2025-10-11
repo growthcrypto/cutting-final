@@ -1967,6 +1967,17 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       hasGuidelinesBreakdown: !!analysisResult.guidelinesBreakdown
     });
     
+    // Verify the save worked by re-fetching
+    const verifyRecord = await MessageAnalysis.findById(messageAnalysisId);
+    console.log('🔍 VERIFICATION - Record after save:', {
+      id: verifyRecord._id,
+      grammarScore: verifyRecord.grammarScore,
+      guidelinesScore: verifyRecord.guidelinesScore,
+      overallScore: verifyRecord.overallScore,
+      hasGrammarBreakdown: !!verifyRecord.grammarBreakdown,
+      hasGuidelinesBreakdown: !!verifyRecord.guidelinesBreakdown
+    });
+    
     res.json({
       message: 'Messages re-analyzed successfully',
       analysis: {
