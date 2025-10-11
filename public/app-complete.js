@@ -9991,23 +9991,29 @@ function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
-    // Homogeneous color scheme - slate/purple/blue only (0-100 scale)
+    // Green-to-red color scheme based on quality (0-100 scale)
     const getScoreColor = (score) => {
-        if (score >= 80) return 'text-blue-400'; // 80+/100
-        if (score >= 60) return 'text-purple-400'; // 60-79/100
-        return 'text-slate-400'; // Below 60/100
+        if (score === null || score === undefined) return 'text-gray-400';
+        if (score >= 80) return 'text-green-400'; // 80+/100 - Excellent
+        if (score >= 70) return 'text-yellow-400'; // 70-79/100 - Good
+        if (score >= 50) return 'text-orange-400'; // 50-69/100 - Needs Improvement
+        return 'text-red-400'; // <50/100 - Critical
     };
     
     const getScoreBg = (score) => {
-        if (score >= 80) return 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
-        if (score >= 60) return 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
-        return 'from-slate-500/10 to-slate-600/10 border-slate-500/20';
+        if (score === null || score === undefined) return 'from-gray-500/10 to-gray-600/10 border-gray-500/20';
+        if (score >= 80) return 'from-green-500/10 to-green-600/10 border-green-500/20';
+        if (score >= 70) return 'from-yellow-500/10 to-yellow-600/10 border-yellow-500/20';
+        if (score >= 50) return 'from-orange-500/10 to-orange-600/10 border-orange-500/20';
+        return 'from-red-500/10 to-red-600/10 border-red-500/20';
     };
     
     const getScoreGradient = (score) => {
-        if (score >= 80) return 'from-blue-500 to-blue-600';
-        if (score >= 60) return 'from-purple-500 to-purple-600';
-        return 'from-slate-500 to-slate-600';
+        if (score === null || score === undefined) return 'from-gray-500 to-gray-600';
+        if (score >= 80) return 'from-green-500 to-green-600';
+        if (score >= 70) return 'from-yellow-500 to-yellow-600';
+        if (score >= 50) return 'from-orange-500 to-orange-600';
+        return 'from-red-500 to-red-600';
     };
     
     // Render change badge (green for positive, red for negative)
@@ -10074,41 +10080,41 @@ function renderTeamMetrics(metrics) {
             </div>
         </div>
         
-        <!-- Grammar Score - COMPACT SLATE/PURPLE/BLUE -->
-        <div class="group relative overflow-hidden rounded-xl p-3 border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:border-${getScoreColor(metrics.avgGrammarScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgGrammarScore).includes('purple') ? 'purple' : 'slate'}-500/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
+        <!-- Grammar Score - GREEN TO RED GRADIENT -->
+        <div class="group relative overflow-hidden rounded-xl p-3 border ${getScoreBg(metrics.avgGrammarScore)} bg-gradient-to-br from-slate-800/80 to-slate-900/80 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
             <div class="relative">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgGrammarScore)}/20 border border-${getScoreColor(metrics.avgGrammarScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgGrammarScore).includes('purple') ? 'purple' : 'slate'}-500/30">
+                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgGrammarScore)}/20">
                         <i class="fas fa-spell-check ${getScoreColor(metrics.avgGrammarScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold ${getScoreColor(metrics.avgGrammarScore)} mb-0.5">${Math.round(metrics.avgGrammarScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Grammar Score</div>
             </div>
         </div>
         
-        <!-- Guidelines Score - COMPACT SLATE/PURPLE/BLUE -->
-        <div class="group relative overflow-hidden rounded-xl p-3 border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:border-${getScoreColor(metrics.avgGuidelinesScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgGuidelinesScore).includes('purple') ? 'purple' : 'slate'}-500/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
+        <!-- Guidelines Score - GREEN TO RED GRADIENT -->
+        <div class="group relative overflow-hidden rounded-xl p-3 border ${getScoreBg(metrics.avgGuidelinesScore)} bg-gradient-to-br from-slate-800/80 to-slate-900/80 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
             <div class="relative">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgGuidelinesScore)}/20 border border-${getScoreColor(metrics.avgGuidelinesScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgGuidelinesScore).includes('purple') ? 'purple' : 'slate'}-500/30">
+                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgGuidelinesScore)}/20">
                         <i class="fas fa-clipboard-check ${getScoreColor(metrics.avgGuidelinesScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold ${getScoreColor(metrics.avgGuidelinesScore)} mb-0.5">${Math.round(metrics.avgGuidelinesScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Guidelines Score</div>
             </div>
         </div>
         
-        <!-- Overall Score - COMPACT SLATE/PURPLE/BLUE -->
-        <div class="group relative overflow-hidden rounded-xl p-3 border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/80 hover:border-${getScoreColor(metrics.avgOverallScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgOverallScore).includes('purple') ? 'purple' : 'slate'}-500/50 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
+        <!-- Overall Score - GREEN TO RED GRADIENT -->
+        <div class="group relative overflow-hidden rounded-xl p-3 border ${getScoreBg(metrics.avgOverallScore)} bg-gradient-to-br from-slate-800/80 to-slate-900/80 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg backdrop-blur-sm">
             <div class="relative">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgOverallScore)}/20 border border-${getScoreColor(metrics.avgOverallScore).includes('blue') ? 'blue' : getScoreColor(metrics.avgOverallScore).includes('purple') ? 'purple' : 'slate'}-500/30">
+                    <div class="p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(metrics.avgOverallScore)}/20">
                         <i class="fas fa-star ${getScoreColor(metrics.avgOverallScore)} text-sm"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-white mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
+                <div class="text-2xl font-bold ${getScoreColor(metrics.avgOverallScore)} mb-0.5">${Math.round(metrics.avgOverallScore)}<span class="text-lg text-gray-400">/100</span></div>
                 <div class="text-[11px] text-gray-400 font-medium">Overall Score</div>
             </div>
         </div>
