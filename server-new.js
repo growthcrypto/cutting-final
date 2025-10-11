@@ -5294,8 +5294,16 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
           vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
           vipFan.status = 'active';
           vipFan.updatedAt = new Date();
+          
+          // 🎯 AUTO VIP PROMOTION: Promote to VIP at $500+ lifetime spend
+          if (vipFan.lifetimeSpend >= 500 && !vipFan.isVIP) {
+            vipFan.isVIP = true;
+            vipFan.vipPromotedDate = new Date();
+            console.log(`🌟 AUTO-PROMOTED TO VIP: ${sale.vipFanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
+          }
+          
           await vipFan.save();
-          console.log(`⭐ Updated VIP fan: ${sale.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${sale.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
         }
         
         fanPurchase.vipFan = vipFan._id;
@@ -5351,8 +5359,16 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
           vipFan.avgPurchaseValue = vipFan.lifetimeSpend / vipFan.purchaseCount;
           vipFan.status = 'active';
           vipFan.updatedAt = new Date();
+          
+          // 🎯 AUTO VIP PROMOTION: Promote to VIP at $500+ lifetime spend
+          if (vipFan.lifetimeSpend >= 500 && !vipFan.isVIP) {
+            vipFan.isVIP = true;
+            vipFan.vipPromotedDate = new Date();
+            console.log(`🌟 AUTO-PROMOTED TO VIP: ${tip.vipFanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
+          }
+          
           await vipFan.save();
-          console.log(`⭐ Updated VIP fan: ${tip.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${tip.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
         }
         
         fanPurchase.vipFan = vipFan._id;
@@ -5674,33 +5690,41 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       // Calculate avg per spender
       const avgPerSpender = spenderCount > 0 ? source.revenue / spenderCount : 0;
       
-      // Calculate 7-day retention (based on messaging activity)
-      // TODO: This requires message data from OnlyFans exports or manual updates
-      // For now, we check if lastMessageDate exists and is within 7 days
+      // Calculate retention rates (7-day and 30-day based on purchase activity)
       const vipFans = await VIPFan.find({
         _id: { $in: Array.from(source.vipPurchases) },
         trafficSource: source.id
       });
       
-      let retainedCount = 0;
+      let retainedCount7d = 0;
+      let retainedCount30d = 0;
       let totalTracked = 0;
       
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
       vipFans.forEach(fan => {
         if (fan.firstSeenDate) {
           totalTracked++;
-          // Retained if they have messaged in the last 7 days
-          // If lastMessageDate not set, use lastPurchaseDate as fallback (purchase = activity)
-          const lastActivity = fan.lastMessageDate || fan.lastPurchaseDate;
+          // Retained if they purchased in the last X days
+          // Use lastPurchaseDate (purchase = active engagement and revenue)
+          const lastActivity = fan.lastPurchaseDate;
+          
           if (lastActivity && lastActivity >= sevenDaysAgo) {
-            retainedCount++;
+            retainedCount7d++;
+          }
+          
+          if (lastActivity && lastActivity >= thirtyDaysAgo) {
+            retainedCount30d++;
           }
         }
       });
       
-      const retentionRate = totalTracked > 0 ? (retainedCount / totalTracked) * 100 : 0;
+      const retentionRate = totalTracked > 0 ? (retainedCount7d / totalTracked) * 100 : 0;
+      const retentionRate30d = totalTracked > 0 ? (retainedCount30d / totalTracked) * 100 : 0;
       
       // NEW: Calculate renew rate (% of VIP fans with auto-renew enabled)
       let renewCount = 0;
@@ -5744,8 +5768,10 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
         revenuePerClick: revenuePerClick, // KEY METRIC!
         avgPerSpender: avgPerSpender,
         // Retention
-        retentionRate: retentionRate, // KEY METRIC!
-        retainedCount: retainedCount,
+        retentionRate: retentionRate, // 7-day retention
+        retentionRate30d: retentionRate30d, // 30-day retention
+        retainedCount7d: retainedCount7d,
+        retainedCount30d: retainedCount30d,
         totalTracked: totalTracked,
         // NEW: Renew rate
         renewRate: renewRate, // KEY METRIC! % with auto-renew on
