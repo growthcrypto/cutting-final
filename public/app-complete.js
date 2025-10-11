@@ -5172,7 +5172,7 @@ async function runChatterAnalysis() {
         console.log('   Deep Insights:', analysisData.deepInsights?.length || 0);
         
         // If scores are null, we need to trigger analysis first!
-        if (analysisData.overallScore === null || analysisData.overallScore === 0) {
+        if (analysisData.overallScore === null || analysisData.overallScore === undefined) {
             console.log('⚠️ No analysis scores found - need to run analysis first!');
             resultsContainer.innerHTML = `
                 <div class="text-center py-12">
