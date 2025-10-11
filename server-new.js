@@ -1588,9 +1588,14 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
       existingSnapshot.newSubsToday = req.body.newSubsToday || 0;
       existingSnapshot.uploadedBy = req.user.userId;
       
+      console.log('📊 Snapshot update - renewRate from request:', req.body.renewRate);
+      
       // Only set renewRate if provided (otherwise it will auto-calculate)
       if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
         existingSnapshot.renewRate = req.body.renewRate;
+        console.log('📊 Set renewRate to:', existingSnapshot.renewRate);
+      } else {
+        console.log('📊 renewRate not provided, will auto-calculate from fansWithRenew/totalSubs');
       }
       
       // Only set recurringRevenue if provided
@@ -1599,7 +1604,7 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
       }
       
       await existingSnapshot.save();
-      console.log('📊 Updated existing snapshot:', existingSnapshot._id);
+      console.log('📊 Updated existing snapshot:', existingSnapshot._id, '| Final renewRate:', existingSnapshot.renewRate);
       return res.json({ message: 'Daily snapshot updated successfully', data: existingSnapshot });
     }
     
@@ -1615,9 +1620,14 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
       uploadedBy: req.user.userId
     };
     
+    console.log('📊 New snapshot - renewRate from request:', req.body.renewRate);
+    
     // Only set renewRate if provided (otherwise it will auto-calculate)
     if (req.body.renewRate !== undefined && req.body.renewRate !== null) {
       snapshotData.renewRate = req.body.renewRate;
+      console.log('📊 Set renewRate to:', snapshotData.renewRate);
+    } else {
+      console.log('📊 renewRate not provided, will auto-calculate from fansWithRenew/totalSubs');
     }
     
     // Only set recurringRevenue if provided
@@ -1628,7 +1638,7 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
     const snapshot = new DailyAccountSnapshot(snapshotData);
     
     await snapshot.save();
-    console.log('📊 Daily snapshot saved:', snapshot._id, 'Renew rate:', snapshot.renewRate + '%');
+    console.log('📊 Daily snapshot saved:', snapshot._id, '| Final renewRate:', snapshot.renewRate + '%');
     res.json({ message: 'Daily snapshot saved successfully', data: snapshot });
   } catch (error) {
     console.error('Daily snapshot submission error:', error);

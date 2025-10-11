@@ -517,8 +517,9 @@ const dailyAccountSnapshotSchema = new mongoose.Schema({
 
 // Calculate renew rate before saving (only if not manually provided)
 dailyAccountSnapshotSchema.pre('save', function(next) {
-  // Only auto-calculate if renewRate wasn't manually set
-  if (!this.renewRate || this.renewRate === 0) {
+  // Only auto-calculate if renewRate wasn't manually set (null or undefined)
+  // If user manually enters 0, respect that value!
+  if (this.renewRate === null || this.renewRate === undefined) {
     if (this.totalSubs > 0) {
       this.renewRate = Math.round((this.fansWithRenew / this.totalSubs) * 100 * 10) / 10;
     }
