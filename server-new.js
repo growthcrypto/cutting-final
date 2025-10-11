@@ -651,17 +651,20 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       dateQuery = { date: { $gte: start, $lte: end } };
       console.log('📅 Using month overlap query');
     } else {
-      // Fallback: overlap query
+      // Fallback: FIXED to use strict range matching (was grabbing all records!)
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      
       accountDataQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
+        weekStartDate: { $gte: start, $lte: end },
+        weekEndDate: { $gte: start, $lte: end }
       };
       chatterPerformanceQuery = { 
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
+        weekStartDate: { $gte: start, $lte: end },
+        weekEndDate: { $gte: start, $lte: end }
       };
       dateQuery = { date: { $gte: start, $lte: end } };
-      console.log('📅 Using fallback overlap query');
+      console.log('📅 Using STRICT fallback query:', start.toISOString(), 'to', end.toISOString());
     }
     
     // Fetch data
