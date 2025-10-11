@@ -5344,6 +5344,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
   try {
     const {
       date,
+      creator,
       shift,
       ppvSales,
       tips,
@@ -5361,6 +5362,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
 
     const report = new DailyChatterReport({
       chatterName: req.user.chatterName,
+      creator: creator,
       date: new Date(date),
       shift,
       ppvSales,

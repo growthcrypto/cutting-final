@@ -46,6 +46,7 @@ const guidelineSchema = new mongoose.Schema({
 // Daily Chatter Reports
 const dailyChatterReportSchema = new mongoose.Schema({
   chatterName: { type: String, required: true },
+  creator: { type: String }, // Creator account name (arya, iris, lilla)
   date: { type: Date, required: true },
   shift: { type: String, enum: ['morning', 'afternoon', 'evening', 'night'], required: true },
   
