@@ -753,9 +753,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       console.log('📊 Using DailyAccountSnapshot data');
       
       // Group snapshots by creator, calculate average per creator, then sum
+      console.log(`📊 Processing ${dailySnapshots.length} snapshots for date range`);
+      
       const creatorGroups = {};
       dailySnapshots.forEach(snapshot => {
         const creator = snapshot.creator || 'unknown';
+        console.log(`  - Snapshot: ${creator} | Date: ${snapshot.date} | Subs: ${snapshot.totalSubs} | Active: ${snapshot.activeFans}`);
+        
         if (!creatorGroups[creator]) {
           creatorGroups[creator] = {
             totalSubs: [],
@@ -780,11 +784,19 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       let creatorCount = 0;
       newSubs = 0;
       
-      Object.values(creatorGroups).forEach(group => {
+      Object.entries(creatorGroups).forEach(([creator, group]) => {
         const avgTotalSubs = group.totalSubs.reduce((a, b) => a + b, 0) / group.totalSubs.length;
         const avgActiveFans = group.activeFans.reduce((a, b) => a + b, 0) / group.activeFans.length;
         const avgFansWithRenew = group.fansWithRenew.reduce((a, b) => a + b, 0) / group.fansWithRenew.length;
         const avgRenewRate = group.renewRate.reduce((a, b) => a + b, 0) / group.renewRate.length;
+        
+        console.log(`  📊 ${creator} averages:`, {
+          subs: avgTotalSubs.toFixed(0),
+          active: avgActiveFans.toFixed(0),
+          withRenew: avgFansWithRenew.toFixed(0),
+          renewRate: avgRenewRate.toFixed(1) + '%',
+          snapshots: group.totalSubs.length
+        });
         
         totalSubs += avgTotalSubs;
         activeFans += avgActiveFans;
