@@ -1936,12 +1936,17 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     console.log('📧 Extracted', messages.length, 'messages for re-analysis');
     
     // Run AI analysis
+    console.log('🤖 Calling analyzeMessages with', messages.length, 'messages...');
     const analysisResult = await analyzeMessages(messages, existingAnalysis.chatterName);
-    console.log('✅ Re-analysis complete:', {
+    console.log('✅ Re-analysis complete - RAW RESULT:', JSON.stringify({
       overallScore: analysisResult.overallScore,
       grammarScore: analysisResult.grammarScore,
-      guidelinesScore: analysisResult.guidelinesScore
-    });
+      guidelinesScore: analysisResult.guidelinesScore,
+      hasGrammarBreakdown: !!analysisResult.grammarBreakdown,
+      hasGuidelinesBreakdown: !!analysisResult.guidelinesBreakdown,
+      strengthsCount: analysisResult.strengths?.length || 0,
+      weaknessesCount: analysisResult.weaknesses?.length || 0
+    }, null, 2));
     
     // Update the existing record
     existingAnalysis.overallScore = analysisResult.overallScore || null;
@@ -2679,6 +2684,12 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       analysisResult.grammarScore = grammarScore;
       analysisResult.guidelinesScore = guidelinesScore;
       
+      console.log('🎯 SCORES SET IN analysisResult:', {
+        grammarScore: analysisResult.grammarScore,
+        guidelinesScore: analysisResult.guidelinesScore,
+        overallScore: analysisResult.overallScore
+      });
+      
       // GENERATE strengths, weaknesses, and recommendations from the analysis data
       const strengths = [];
       const weaknesses = [];
@@ -2742,6 +2753,13 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
         strengthsCount: strengths.length,
         weaknessesCount: weaknesses.length,
         recommendationsCount: recommendations.length
+      });
+      
+      console.log('📤 RETURNING analysisResult:', {
+        grammarScore: analysisResult.grammarScore,
+        guidelinesScore: analysisResult.guidelinesScore,
+        overallScore: analysisResult.overallScore,
+        type: typeof analysisResult.grammarScore
       });
       
       return analysisResult;
