@@ -1065,17 +1065,16 @@ async function loadDailyReportsData() {
         if (!tbody) return;
         
         if (!data.reports || data.reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No daily reports yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No daily reports yet</td></tr>';
             return;
         }
         
         tbody.innerHTML = data.reports.map(report => `
             <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all cursor-pointer" onclick="toggleReportDetails('${report._id}')">
+                <td class="px-4 py-4 text-yellow-400 font-medium capitalize">${report.creator || 'N/A'}</td>
                 <td class="px-4 py-4 text-white font-medium">${report.chatterName}</td>
                 <td class="px-4 py-4 text-gray-300">${new Date(report.date).toLocaleDateString()}</td>
                 <td class="px-4 py-4 text-gray-300 capitalize">${report.shift}</td>
-                <td class="px-4 py-4 text-right text-purple-400">${report.ppvSales?.length || 0}</td>
-                <td class="px-4 py-4 text-right text-green-400">${report.tips?.length || 0}</td>
                 <td class="px-4 py-4 text-right text-white font-bold">$${report.totalRevenue?.toFixed(2) || '0.00'}</td>
                 <td class="px-4 py-4 text-center" onclick="event.stopPropagation()">
                     <button onclick="deleteReport('${report._id}', '${report.chatterName}', '${new Date(report.date).toLocaleDateString()}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
@@ -1084,7 +1083,7 @@ async function loadDailyReportsData() {
                 </td>
             </tr>
             <tr id="reportDetails-${report._id}" class="hidden bg-gray-900/50">
-                <td colspan="7" class="px-4 py-4">
+                <td colspan="6" class="px-4 py-4">
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <div class="font-semibold text-purple-400 mb-2">PPV Sales:</div>
@@ -1126,12 +1125,13 @@ async function loadDailySnapshotsData() {
         if (!tbody) return;
         
         if (!data.snapshots || data.snapshots.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No daily snapshots uploaded yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No daily snapshots uploaded yet</td></tr>';
             return;
         }
         
         tbody.innerHTML = data.snapshots.map(snapshot => `
             <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-yellow-400 font-medium capitalize">${snapshot.creator || 'N/A'}</td>
                 <td class="px-4 py-4 text-white font-medium">${new Date(snapshot.date).toLocaleDateString()}</td>
                 <td class="px-4 py-4 text-right text-blue-400">${snapshot.totalSubs || 0}</td>
                 <td class="px-4 py-4 text-right text-green-400">${snapshot.activeFans || 0}</td>
@@ -9256,6 +9256,7 @@ function createDataManagementSection() {
                     <table class="min-w-full">
                         <thead>
                             <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Creator</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Shift</th>
@@ -9264,7 +9265,7 @@ function createDataManagementSection() {
                             </tr>
                         </thead>
                         <tbody id="dailyReportsTableBody">
-                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -9286,6 +9287,7 @@ function createDataManagementSection() {
                     <table class="min-w-full">
                         <thead>
                             <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Creator</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Subs</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Active Fans</th>
@@ -9294,7 +9296,7 @@ function createDataManagementSection() {
                             </tr>
                         </thead>
                         <tbody id="dailySnapshotsTableBody">
-                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
