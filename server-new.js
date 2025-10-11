@@ -1925,9 +1925,16 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       return res.status(400).json({ error: 'No message records found in this analysis. Please re-upload the messages.' });
     }
     
-    // Extract message text from records
-    const messages = existingAnalysis.messageRecords.map(record => record.messageText);
-    console.log('📧 Extracted', messages.length, 'messages for re-analysis');
+    // Extract full message objects (not just text) to preserve replyTime, fanUsername, isPPV, etc.
+    const messages = existingAnalysis.messageRecords.map(record => ({
+      text: record.messageText,
+      replyTime: record.replyTime || 0,
+      timestamp: record.timestamp,
+      fanUsername: record.fanUsername,
+      ppvRevenue: record.ppvRevenue || 0,
+      isPPV: record.isPPV || false
+    }));
+    console.log('📧 Extracted', messages.length, 'message objects for re-analysis (with metadata)');
     
     // Run AI analysis
     console.log('🤖 Calling analyzeMessages with', messages.length, 'messages...');
@@ -2104,6 +2111,26 @@ async function analyzeMessages(messages, chatterName) {
     }
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
+  
+  // SERVER-SIDE COUNTING: Count reply time violations for accuracy
+  let serverSideReplyTimeViolations = 0;
+  const replyTimeThreshold = 5; // 5 minutes from "Reply time" guideline
+  
+  const messagesWithReplyTime = sampledMessages.filter(msg => 
+    typeof msg === 'object' && msg.replyTime && msg.replyTime > 0
+  );
+  
+  if (messagesWithReplyTime.length > 0) {
+    serverSideReplyTimeViolations = messagesWithReplyTime.filter(msg => msg.replyTime > replyTimeThreshold).length;
+    const minReplyTime = Math.min(...messagesWithReplyTime.map(m => m.replyTime));
+    const maxReplyTime = Math.max(...messagesWithReplyTime.map(m => m.replyTime));
+    console.log(`📊 SERVER-SIDE REPLY TIME ANALYSIS:`);
+    console.log(`   Messages with reply time data: ${messagesWithReplyTime.length}/${sampledMessages.length}`);
+    console.log(`   Reply time range: ${minReplyTime.toFixed(1)} - ${maxReplyTime.toFixed(1)} minutes`);
+    console.log(`   Violations (>${replyTimeThreshold} min): ${serverSideReplyTimeViolations}`);
+  } else {
+    console.log(`⚠️ No reply time data found in messages - cannot count reply time violations`);
+  }
 
             const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. 
 
@@ -2651,6 +2678,44 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
                 });
               }
             });
+            
+            // 🔥 INJECT SERVER-SIDE REPLY TIME VIOLATIONS
+            if (serverSideReplyTimeViolations > 0) {
+              console.log(`🔧 INJECTING ${serverSideReplyTimeViolations} server-side reply time violations into guidelines analysis`);
+              
+              // Find the "General Chatting" category (or whichever category has Reply time)
+              const categories = Object.keys(guidelinesData);
+              for (const categoryKey of categories) {
+                const category = guidelinesData[categoryKey];
+                if (category.items && Array.isArray(category.items)) {
+                  // Check if this category has a reply time guideline
+                  const replyTimeItem = category.items.find(item => 
+                    item.title?.toLowerCase().includes('reply time') || 
+                    item.description?.toLowerCase().includes('reply time')
+                  );
+                  
+                  if (replyTimeItem) {
+                    console.log(`✅ Found reply time guideline in ${categoryKey}: "${replyTimeItem.title}"`);
+                    replyTimeItem.count = serverSideReplyTimeViolations;
+                    replyTimeItem.examples = []; // We could add message indices here if needed
+                    console.log(`✅ Updated count to ${serverSideReplyTimeViolations} violations`);
+                    break;
+                  }
+                }
+              }
+              
+              // Recalculate total violations with server-side data
+              totalViolations = 0;
+              Object.values(guidelinesData).forEach(category => {
+                if (category.items && Array.isArray(category.items)) {
+                  category.items.forEach(item => {
+                    totalViolations += (item.count || 0);
+                  });
+                }
+              });
+              
+              console.log(`📊 Recalculated total violations with server-side data: ${totalViolations}`);
+            }
             
             // BRUTAL SCORING for Guidelines
             // Calculate violation percentage across all messages
