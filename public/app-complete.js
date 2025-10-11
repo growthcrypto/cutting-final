@@ -3389,11 +3389,26 @@ function updateIntelligentMetrics(analytics, intelligent) {
         avgGuidelinesScore: analytics.avgGuidelinesScore != null ? `${analytics.avgGuidelinesScore}/100` : '-'
     };
 
+    console.log('🎨 Dashboard quality scores:', {
+        grammar: analytics.avgGrammarScore,
+        guidelines: analytics.avgGuidelinesScore,
+        overall: analytics.avgOverallScore
+    });
+
     // Update all elements
     Object.entries(elements).forEach(([id, value]) => {
         const element = document.getElementById(id);
         if (element) {
             element.textContent = value;
+            
+            // Apply color coding to quality scores
+            if (id === 'avgGrammarScore' || id === 'avgGuidelinesScore' || id === 'avgOverallScore') {
+                const scoreKey = id.replace('avg', '').replace('Score', '');
+                const scoreValue = analytics[id];
+                const color = window.getScoreColor(scoreValue);
+                console.log(`🎨 ${id}: ${scoreValue} → ${color}`);
+                element.className = element.className.replace(/text-\w+-\d+/g, '') + ' ' + color;
+            }
             
             // Add color classes for growth indicators
             if (id.includes('Growth')) {
