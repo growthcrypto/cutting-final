@@ -5002,6 +5002,8 @@ async function loadPerformanceTrends(chatterName) {
 // Enhanced Chatter Analysis
 async function runChatterAnalysis() {
     console.log('🔍 runChatterAnalysis called!');
+    console.log('📊 Current AI Interval:', currentAIInterval);
+    console.log('📊 Custom Dates:', aiAnalysisCustomDates);
     
     const select = document.getElementById('chatterAnalysisSelect');
     const resultsContainer = document.getElementById('chatterAnalysisResults');
