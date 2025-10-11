@@ -11320,6 +11320,7 @@ async function handleDailyReportSubmitDirect() {
 
     const data = {
         date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        creator: document.getElementById('creatorAccount')?.value || '',
         shift: document.getElementById('reportShift')?.value || 'morning',
         fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
         avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
@@ -11401,6 +11402,7 @@ async function handleDailyReportSubmit(event) {
 
     const data = {
         date: document.getElementById('reportDate')?.value || new Date().toISOString().split('T')[0],
+        creator: document.getElementById('creatorAccount')?.value || '',
         shift: document.getElementById('reportShift')?.value || 'morning',
         fansChatted: parseInt(document.getElementById('fansChatted')?.value || 0),
         avgResponseTime: parseFloat(document.getElementById('avgResponseTimeInput')?.value || 0),
