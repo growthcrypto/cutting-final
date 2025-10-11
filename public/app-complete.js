@@ -2526,13 +2526,15 @@ async function loadTeamComparisonData() {
             c.revenue > 0 || c.messagesSent > 0 || c.ppvsSent > 0 || c.fansChatted > 0
         );
 
-        console.log('🎯 Filtered team data:', {
+        console.log('🎯 Filtered team data for period:', {
+            interval: currentTeamComparisonInterval,
+            dateRange: `${formatDate(startDate)} to ${formatDate(endDate)}`,
             total: data.chatters?.length || 0,
             withData: teamComparisonData.length,
             filtered: (data.chatters?.length || 0) - teamComparisonData.length
         });
 
-        // Sort by revenue by default
+        // Sort by revenue by default (this will trigger renderTeamComparison which updates "Your Position")
         sortTeamBy('revenue');
     } catch (error) {
         console.error('Error loading team comparison:', error);
@@ -2594,6 +2596,14 @@ function renderTeamComparison() {
         c.chatterName === currentUser.chatterName || c.username === currentUser.username
     );
     const userRank = teamComparisonData.indexOf(currentUserData) + 1;
+
+    console.log('👤 Your Position for period:', {
+        interval: currentTeamComparisonInterval,
+        rank: userRank,
+        totalChatters: teamComparisonData.length,
+        yourRevenue: currentUserData?.revenue || 0,
+        topRevenue: teamComparisonData[0]?.revenue || 0
+    });
 
     // Render "Your Position" card
     if (currentUserData && userRank > 0) {
