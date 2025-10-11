@@ -7047,9 +7047,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
         fansChatted: chatterFansChatted,
         vipCount: chatterVIPsFromPurchases,
         avgVIPSpend: chatterAvgVIPSpend,
-        grammarScore: messageAnalysis?.grammarScore || null,
-        guidelinesScore: messageAnalysis?.guidelinesScore || null,
-        overallScore: messageAnalysis?.overallScore || null
+        grammarScore: messageAnalysis?.grammarScore !== undefined ? messageAnalysis.grammarScore : null,
+        guidelinesScore: messageAnalysis?.guidelinesScore !== undefined ? messageAnalysis.guidelinesScore : null,
+        overallScore: messageAnalysis?.overallScore !== undefined ? messageAnalysis.overallScore : null
       },
       team: {
         avgRevenue: teamAvgRevenue,
@@ -7075,9 +7075,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       },
       
       // Flat properties for frontend compatibility
-      overallScore: messageAnalysis?.overallScore || null,
-      grammarScore: messageAnalysis?.grammarScore || null,
-      guidelinesScore: messageAnalysis?.guidelinesScore || null,
+      overallScore: messageAnalysis?.overallScore !== undefined ? messageAnalysis.overallScore : null,
+      grammarScore: messageAnalysis?.grammarScore !== undefined ? messageAnalysis.grammarScore : null,
+      guidelinesScore: messageAnalysis?.guidelinesScore !== undefined ? messageAnalysis.guidelinesScore : null,
       strengths: messageAnalysis?.strengths || [],
       weaknesses: messageAnalysis?.weaknesses || [],
       recommendations: messageAnalysis?.recommendations || [],
