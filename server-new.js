@@ -2717,6 +2717,11 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
               console.log(`📊 Recalculated total violations with server-side data: ${totalViolations}`);
             }
             
+            // 🔥 CRITICAL: Update analysisResult.guidelinesBreakdown with the modified guidelinesData
+            // This ensures the frontend receives the server-side injected violations
+            analysisResult.guidelinesBreakdown = guidelinesData;
+            console.log('✅ Updated analysisResult.guidelinesBreakdown with server-side violations');
+            
             // BRUTAL SCORING for Guidelines
             // Calculate violation percentage across all messages
             const violationPercentage = totalMessages > 0 ? (totalViolations / totalMessages) * 100 : 0;
