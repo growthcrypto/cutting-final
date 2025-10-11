@@ -8045,64 +8045,6 @@ function createDataUploadSection() {
             <p class="text-gray-400">Submit analytics data and message exports</p>
         </div>
         
-        <!-- OF Account Data Form -->
-        <div class="glass-card rounded-xl p-6 mb-8">
-            <h3 class="text-xl font-semibold mb-6">OF Account Data</h3>
-            <form id="ofAccountDataForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Start Date</label>
-                        <input type="date" id="ofAccountStartDate" required
-                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">End Date</label>
-                        <input type="date" id="ofAccountEndDate" required
-                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Creator Account</label>
-                        <select id="ofAccountCreator" required
-                                  class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                              <option value="">Select Creator...</option>
-                              <option value="arya">Arya</option>
-                              <option value="iris">Iris</option>
-                              <option value="lilla">Lilla</option>
-                          </select>
-                    </div>
-                </div>
-
-                <div class="border-t border-gray-700 pt-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Recurring Revenue ($)</label>
-                            <input type="number" id="ofRecurringRevenue" min="0" step="0.01"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Total Subscribers</label>
-                            <input type="number" id="ofTotalSubs" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">New Subscribers</label>
-                            <input type="number" id="ofNewSubs" min="0"
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end">
-                    <button type="button" onclick="handleOFAccountDataSubmitDirect()" class="premium-button text-white font-medium py-3 px-6 rounded-xl">
-                        <i class="fas fa-save mr-2"></i>Submit OF Account Data
-                    </button>
-                </div>
-            </form>
-        </div>
-
         <!-- Daily Account Snapshot Form (NEW - for custom date ranges) -->
         <div class="glass-card rounded-xl p-6 mb-8 border-2 border-purple-500/30">
             <div class="flex items-center justify-between mb-6">
