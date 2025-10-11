@@ -8763,10 +8763,29 @@ async function loadAnalyticsData() {
             document.getElementById('analyticsRenewRate').textContent = data.renewRate > 0 ? `${data.renewRate.toFixed(1)}%` : '-';
             document.getElementById('analyticsNewSubs').textContent = (data.newSubs || 0).toLocaleString();
             
-            // Team Quality Metrics
-            document.getElementById('analyticsOverallScore').textContent = data.avgOverallScore != null ? `${data.avgOverallScore}/100` : '-';
-            document.getElementById('analyticsGrammarScore').textContent = data.avgGrammarScore != null ? `${data.avgGrammarScore}/100` : '-';
-            document.getElementById('analyticsGuidelinesScore').textContent = data.avgGuidelinesScore != null ? `${data.avgGuidelinesScore}/100` : '-';
+            // Team Quality Metrics with color coding
+            const overallScoreEl = document.getElementById('analyticsOverallScore');
+            const grammarScoreEl = document.getElementById('analyticsGrammarScore');
+            const guidelinesScoreEl = document.getElementById('analyticsGuidelinesScore');
+            
+            if (overallScoreEl) {
+                const score = data.avgOverallScore;
+                overallScoreEl.textContent = score != null ? `${score}/100` : '-';
+                overallScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+            }
+            
+            if (grammarScoreEl) {
+                const score = data.avgGrammarScore;
+                grammarScoreEl.textContent = score != null ? `${score}/100` : '-';
+                grammarScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+            }
+            
+            if (guidelinesScoreEl) {
+                const score = data.avgGuidelinesScore;
+                guidelinesScoreEl.textContent = score != null ? `${score}/100` : '-';
+                guidelinesScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+            }
+            
             document.getElementById('analyticsTopPerformer').textContent = data.topPerformer || '-';
         } else {
             console.error('Failed to load analytics data');
@@ -11905,6 +11924,15 @@ function showError(message) {
     } else {
         showNotification(message, 'error');
     }
+}
+
+// Helper: Get color class based on score (0-100 scale)
+function getScoreColor(score) {
+    if (score === null || score === undefined) return 'text-gray-400';
+    if (score >= 80) return 'text-green-400';
+    if (score >= 70) return 'text-yellow-400';
+    if (score >= 50) return 'text-orange-400';
+    return 'text-red-400';
 }
 
 // Helper: Render change indicator (green/red %)
