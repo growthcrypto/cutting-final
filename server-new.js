@@ -1955,6 +1955,13 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     existingAnalysis.guidelinesScore = analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null;
     existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
     existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
+    
+    console.log('🔍 BREAKDOWN DEBUG BEFORE SAVE:');
+    console.log('   grammarBreakdown type:', typeof analysisResult.grammarBreakdown);
+    console.log('   guidelinesBreakdown type:', typeof analysisResult.guidelinesBreakdown);
+    console.log('   guidelinesBreakdown keys:', Object.keys(analysisResult.guidelinesBreakdown || {}));
+    console.log('   guidelinesBreakdown sample:', JSON.stringify(analysisResult.guidelinesBreakdown).substring(0, 500));
+    
     existingAnalysis.strengths = analysisResult.strengths || [];
     existingAnalysis.weaknesses = analysisResult.weaknesses || [];
     existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
