@@ -8768,22 +8768,34 @@ async function loadAnalyticsData() {
             const grammarScoreEl = document.getElementById('analyticsGrammarScore');
             const guidelinesScoreEl = document.getElementById('analyticsGuidelinesScore');
             
+            console.log('🎨 Applying score colors:', {
+                overall: data.avgOverallScore,
+                grammar: data.avgGrammarScore,
+                guidelines: data.avgGuidelinesScore
+            });
+            
             if (overallScoreEl) {
                 const score = data.avgOverallScore;
+                const color = window.getScoreColor(score);
+                console.log(`🎨 Overall: ${score} → ${color}`);
                 overallScoreEl.textContent = score != null ? `${score}/100` : '-';
-                overallScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+                overallScoreEl.className = `text-3xl font-bold ${color}`;
             }
             
             if (grammarScoreEl) {
                 const score = data.avgGrammarScore;
+                const color = window.getScoreColor(score);
+                console.log(`🎨 Grammar: ${score} → ${color}`);
                 grammarScoreEl.textContent = score != null ? `${score}/100` : '-';
-                grammarScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+                grammarScoreEl.className = `text-3xl font-bold ${color}`;
             }
             
             if (guidelinesScoreEl) {
                 const score = data.avgGuidelinesScore;
+                const color = window.getScoreColor(score);
+                console.log(`🎨 Guidelines: ${score} → ${color}`);
                 guidelinesScoreEl.textContent = score != null ? `${score}/100` : '-';
-                guidelinesScoreEl.className = `text-3xl font-bold ${getScoreColor(score)}`;
+                guidelinesScoreEl.className = `text-3xl font-bold ${color}`;
             }
             
             document.getElementById('analyticsTopPerformer').textContent = data.topPerformer || '-';
@@ -11927,13 +11939,13 @@ function showError(message) {
 }
 
 // Helper: Get color class based on score (0-100 scale)
-function getScoreColor(score) {
+window.getScoreColor = function(score) {
     if (score === null || score === undefined) return 'text-gray-400';
     if (score >= 80) return 'text-green-400';
     if (score >= 70) return 'text-yellow-400';
     if (score >= 50) return 'text-orange-400';
     return 'text-red-400';
-}
+};
 
 // Helper: Render change indicator (green/red %)
 function renderChangeIndicator(change, reverseColors = false) {
