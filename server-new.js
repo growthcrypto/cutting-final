@@ -6413,10 +6413,24 @@ async function buildTeamData(allPurchases, allPerformance, excludeChatter) {
   }
   
   const avgRevenue = chatters.reduce((sum, c) => sum + c.revenue, 0) / count;
-  const totalUnlockRate = chatters.reduce((sum, c) => {
-    return sum + (c.ppvsSent > 0 ? (c.ppvsUnlocked / c.ppvsSent) * 100 : 0);
+  
+  // Calculate unlock rate - include chatters with 0% (0 unlocked out of X sent)
+  const chattersWithPPVs = chatters.filter(c => c.ppvsSent > 0);
+  console.log(`📊 Unlock Rate Calculation: ${chattersWithPPVs.length} chatters sent PPVs out of ${count} total`);
+  
+  chattersWithPPVs.forEach(c => {
+    const rate = (c.ppvsUnlocked / c.ppvsSent) * 100;
+    console.log(`  - ${c.chatterName}: ${c.ppvsUnlocked}/${c.ppvsSent} = ${rate.toFixed(1)}%`);
+  });
+  
+  const totalUnlockRate = chattersWithPPVs.reduce((sum, c) => {
+    return sum + (c.ppvsUnlocked / c.ppvsSent) * 100;
   }, 0);
-  const avgUnlockRate = totalUnlockRate / count;
+  
+  // Average across chatters WHO SENT PPVs (not all chatters)
+  const avgUnlockRate = chattersWithPPVs.length > 0 ? totalUnlockRate / chattersWithPPVs.length : 0;
+  
+  console.log(`📊 Total unlock rate sum: ${totalUnlockRate.toFixed(1)} / ${chattersWithPPVs.length} chatters = ${avgUnlockRate.toFixed(1)}%`);
   
   const totalPPVsPerFan = chatters.reduce((sum, c) => {
     return sum + (c.fansChatted > 0 ? c.ppvsSent / c.fansChatted : 0);
