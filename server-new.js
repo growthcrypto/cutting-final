@@ -3499,29 +3499,35 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       } catch (_) {}
       console.log('🔍 Name candidates:', nameCandidates);
 
-      // Build date-overlap query (same logic as dashboard)
+      // Build date query - FIXED to use exact range matching
       let chatterPerformanceQuery = {};
       if (startDate && endDate) {
         const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
         const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
+        console.log(`📅 My Performance CUSTOM range: ${start.toISOString()} to ${end.toISOString()}`);
+        
+        // FIXED: Records must fall WITHIN the date range (not just overlap)
         chatterPerformanceQuery = {
-          $or: [
-            { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-            { weekStartDate: { $gte: start, $lte: end } },
-            { weekEndDate: { $gte: start, $lte: end } }
-          ]
+          weekStartDate: { $gte: start, $lte: end },
+          weekEndDate: { $gte: start, $lte: end }
         };
       } else {
         const days = interval === '24h' ? 1 : interval === '7d' ? 7 : interval === '30d' ? 30 : 7;
         const start = new Date();
         start.setDate(start.getDate() - days);
+        start.setHours(0, 0, 0, 0);
         const end = new Date();
+        end.setHours(23, 59, 59, 999);
+        
+        console.log(`📅 My Performance INTERVAL ${interval}: ${start.toISOString()} to ${end.toISOString()}`);
+        
+        // FIXED: Same strict range matching for intervals
         chatterPerformanceQuery = {
-          $or: [
-            { weekStartDate: { $lte: end }, weekEndDate: { $gte: start } },
-            { weekStartDate: { $gte: start, $lte: end } },
-            { weekEndDate: { $gte: start, $lte: end } }
-          ]
+          weekStartDate: { $gte: start, $lte: end },
+          weekEndDate: { $gte: start, $lte: end }
         };
       }
 
@@ -3530,7 +3536,10 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         chatterName: { $in: [...new Set(nameCandidates)] }
       });
       
-      console.log('Found chatter performance data:', chatterData.length, 'records');
+      console.log(`📊 My Performance - ChatterPerformance found: ${chatterData.length} records`);
+      chatterData.forEach(rec => {
+        console.log(`  - ${rec.chatterName} | ${rec.weekStartDate?.toISOString().split('T')[0]} to ${rec.weekEndDate?.toISOString().split('T')[0]} | ${rec.messagesSent} msgs | ${rec.ppvsSent} PPVs sent | ${rec.ppvsUnlocked} unlocked`);
+      });
       
       // Also fetch DailyChatterReports to calculate avgPPVPrice from actual ppvSales logs
       let dailyReportsQuery = { chatterName: { $in: [...new Set(nameCandidates)] } };
@@ -3544,7 +3553,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       }
       
       const dailyReports = await DailyChatterReport.find(dailyReportsQuery);
-      console.log('Found daily chatter reports:', dailyReports.length, 'records');
+      console.log(`📊 My Performance - DailyReports found: ${dailyReports.length} records`);
+      dailyReports.forEach(rep => {
+        const ppvCount = rep.ppvSales?.length || 0;
+        const ppvRev = rep.ppvSales?.reduce((sum, s) => sum + s.amount, 0) || 0;
+        console.log(`  - ${rep.chatterName} | ${rep.date?.toISOString().split('T')[0]} | ${ppvCount} PPV sales | $${ppvRev} PPV revenue`);
+      });
 
       // Also load message analysis for same chatter and date range
       console.log('🔍 About to query message analysis...');
@@ -3623,6 +3637,14 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       const netSales = chatterData.reduce((sum, data) => sum + (data.netSales || 0), 0);
       const totalPPVsSent = chatterData.reduce((sum, data) => sum + (data.ppvsSent || 0), 0);
       const totalPPVsUnlocked = chatterData.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
+      
+      console.log(`📊 My Performance TOTALS from ChatterPerformance:`, {
+        records: chatterData.length,
+        ppvsSent: totalPPVsSent,
+        ppvsUnlocked: totalPPVsUnlocked,
+        messages: chatterData.reduce((sum, data) => sum + (data.messagesSent || 0), 0),
+        fans: chatterData.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0)
+      });
       
       // Calculate avg response time only from records that have response time data
       const chatterDataWithResponseTime = chatterData.filter(data => data.avgResponseTime != null && data.avgResponseTime > 0);
