@@ -7851,15 +7851,15 @@ function createAnalyticsSection() {
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Overall Score</div>
-                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsOverallScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
-                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsGrammarScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
-                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsGuidelinesScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Top Performer</div>
@@ -8600,15 +8600,15 @@ function createNewAnalyticsSection() {
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Overall Score</div>
-                    <div class="text-3xl font-bold text-white" id="analyticsOverallScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsOverallScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Grammar Score</div>
-                    <div class="text-3xl font-bold text-blue-400" id="analyticsGrammarScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsGrammarScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Guidelines Score</div>
-                    <div class="text-3xl font-bold text-purple-400" id="analyticsGuidelinesScore">-</div>
+                    <div class="text-3xl font-bold text-gray-400" id="analyticsGuidelinesScore">-</div>
                 </div>
                 <div class="glass-card rounded-xl p-6">
                     <div class="text-sm text-gray-400 mb-2">Top Performer</div>
