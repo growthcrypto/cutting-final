@@ -1969,6 +1969,11 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
     existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
     
+    // 🔥 CRITICAL: Mark nested objects as modified so Mongoose saves them
+    existingAnalysis.markModified('grammarBreakdown');
+    existingAnalysis.markModified('guidelinesBreakdown');
+    console.log('✅ Marked breakdowns as modified for Mongoose');
+    
     await existingAnalysis.save();
     console.log('✅ Updated MessageAnalysis saved with breakdowns:', {
       hasGrammarBreakdown: !!analysisResult.grammarBreakdown,
