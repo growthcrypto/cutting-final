@@ -11661,11 +11661,21 @@ async function loadMyPerformanceData() {
         });
         const user = await userResponse.json();
 
-        // Build API URL with custom dates if applicable
-        let apiUrl = `/api/analytics/dashboard?interval=${currentMyPerformanceInterval}`;
+        // Build API URL based on interval
+        let apiUrl;
         if (currentMyPerformanceInterval === 'custom' && myPerformanceCustomDates) {
             apiUrl = `/api/analytics/dashboard?filterType=custom&customStart=${myPerformanceCustomDates.start}&customEnd=${myPerformanceCustomDates.end}`;
             console.log('🗓️ My Performance using custom dates:', myPerformanceCustomDates);
+        } else {
+            // Calculate date range for 24h/7d/30d
+            const days = currentMyPerformanceInterval === '24h' ? 1 : currentMyPerformanceInterval === '7d' ? 7 : 30;
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - days);
+            
+            const formatDate = (d) => d.toISOString().split('T')[0];
+            apiUrl = `/api/analytics/dashboard?filterType=custom&customStart=${formatDate(start)}&customEnd=${formatDate(end)}`;
+            console.log(`🗓️ My Performance using ${currentMyPerformanceInterval}: ${formatDate(start)} to ${formatDate(end)}`);
         }
 
         // Get performance data
