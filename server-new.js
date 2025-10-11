@@ -1780,7 +1780,6 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     const messages = messageRecords.map(record => record.messageText);
     
     // ❌ DO NOT analyze on upload - analysis happens from AI Analysis page only
-    const analysisResult = null;
     console.log('✅ Messages uploaded - analysis will run from AI Analysis page');
     
     // Save to MessageAnalysis collection
@@ -1798,16 +1797,16 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       weekEndDate: new Date(endDate),
       totalMessages: messageRecords.length,
       messageRecords: messageRecords, // Store the full message records
-      overallScore: analysisResult.overallScore || null,
-      grammarScore: analysisResult.grammarScore || null,
-      guidelinesScore: analysisResult.guidelinesScore || null,
-      strengths: analysisResult.strengths || [],
-      weaknesses: analysisResult.weaknesses || [],
-      recommendations: analysisResult.suggestions || analysisResult.recommendations || [],
+      overallScore: null,
+      grammarScore: null,
+      guidelinesScore: null,
+      strengths: [],
+      weaknesses: [],
+      recommendations: [],
       // CHATTING STYLE ANALYSIS
-      chattingStyle: analysisResult.chattingStyle || null,
-      messagePatterns: analysisResult.messagePatterns || null,
-      engagementMetrics: analysisResult.engagementMetrics || null
+      chattingStyle: null,
+      messagePatterns: null,
+      engagementMetrics: null
     });
     
     console.log('MessageAnalysis object created:', messageAnalysis._id);
