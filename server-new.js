@@ -1581,6 +1581,7 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
     
     if (existingSnapshot) {
       // Update existing
+      existingSnapshot.creator = req.body.creator;
       existingSnapshot.totalSubs = req.body.totalSubs || 0;
       existingSnapshot.activeFans = req.body.activeFans || 0;
       existingSnapshot.fansWithRenew = req.body.fansWithRenew || 0;
@@ -1605,6 +1606,7 @@ app.post('/api/analytics/daily-snapshot', checkDatabaseConnection, authenticateT
     // Create new snapshot
     const snapshotData = {
       creatorAccount: creatorAccount._id,
+      creator: req.body.creator,
       date: new Date(req.body.date),
       totalSubs: req.body.totalSubs || 0,
       activeFans: req.body.activeFans || 0,

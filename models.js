@@ -495,10 +495,12 @@ const LinkTrackingData = mongoose.model('LinkTrackingData', linkTrackingDataSche
 // Daily Account Snapshot - Daily subscriber metrics for custom date ranges
 const dailyAccountSnapshotSchema = new mongoose.Schema({
   creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
+  creator: { type: String }, // Creator name (arya, iris, lilla) for easy querying
   date: { type: Date, required: true }, // Exact date (not week range!)
   
   // Revenue
   recurringRevenue: { type: Number, default: 0 }, // Monthly recurring revenue from subscriptions
+  totalRevenue: { type: Number, default: 0 }, // Total revenue for the day
   
   // Subscriber Metrics
   totalSubs: { type: Number, required: true }, // Total subscriber count
