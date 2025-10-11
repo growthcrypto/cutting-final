@@ -7953,11 +7953,13 @@ function createAIAnalysisSection() {
                             <i class="fas fa-user-chart text-cyan-400 mr-3"></i>
                             Individual Performance Analysis
                         </h3>
-                        <div class="flex items-center space-x-4 mt-3">
-                            <select id="chatterAnalysisSelect" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                        <div class="flex items-center gap-4 mt-3">
+                            <select id="chatterAnalysisSelect" class="flex-1 max-w-md bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
                                 <option value="">Select Chatter...</option>
                             </select>
-                            <span class="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-sm font-medium rounded-full">DETAILED</span>
+                            <button id="runChatterAnalysisBtn" onclick="runChatterAnalysis()" class="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-cyan-500/50">
+                                <i class="fas fa-play mr-2"></i>START ANALYSIS
+                            </button>
                         </div>
                     </div>
                     <button onclick="hideAnalysisResults()" class="text-gray-400 hover:text-white transition">
