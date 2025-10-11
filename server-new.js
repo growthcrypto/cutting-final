@@ -6162,6 +6162,38 @@ app.delete('/api/data-management/daily-reports/:id', authenticateToken, requireM
   }
 });
 
+// Get all chatter performance data for data management
+app.get('/api/data-management/chatter-performance', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const performance = await ChatterPerformance.find()
+      .sort({ weekStartDate: -1 })
+      .limit(100);
+    
+    res.json({ performance });
+  } catch (error) {
+    console.error('Error fetching chatter performance:', error);
+    res.status(500).json({ error: 'Failed to fetch chatter performance' });
+  }
+});
+
+// Delete chatter performance record
+app.delete('/api/data-management/chatter-performance/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const performance = await ChatterPerformance.findById(req.params.id);
+    if (!performance) {
+      return res.status(404).json({ error: 'Performance record not found' });
+    }
+    
+    await ChatterPerformance.findByIdAndDelete(req.params.id);
+    console.log(`🗑️ Deleted chatter performance: ${performance.chatterName} - ${performance.weekStartDate}`);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting chatter performance:', error);
+    res.status(500).json({ error: 'Failed to delete chatter performance' });
+  }
+});
+
 // Get all daily snapshots for data management
 app.get('/api/data-management/daily-snapshots', authenticateToken, requireManager, async (req, res) => {
   try {

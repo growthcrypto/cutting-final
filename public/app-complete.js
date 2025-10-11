@@ -969,6 +969,9 @@ async function refreshDataTab(tabName) {
         case 'daily-reports':
             await loadDailyReportsData();
             break;
+        case 'chatter-performance':
+            await loadChatterPerformanceData();
+            break;
         case 'daily-snapshots':
             await loadDailySnapshotsData();
             break;
@@ -1111,6 +1114,45 @@ async function loadDailyReportsData() {
     } catch (error) {
         console.error('Error loading daily reports:', error);
         showNotification('Failed to load daily reports', 'error');
+    }
+}
+
+async function loadChatterPerformanceData() {
+    try {
+        const response = await fetch('/api/data-management/chatter-performance', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('chatterPerformanceTableBody');
+        if (!tbody) return;
+        
+        if (!data.performance || data.performance.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">No chatter performance data uploaded yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.performance.map(perf => {
+            const unlockRate = perf.ppvsSent > 0 ? ((perf.ppvsUnlocked / perf.ppvsSent) * 100).toFixed(1) : '0.0';
+            return `
+                <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                    <td class="px-4 py-4 text-white font-medium">${perf.chatterName}</td>
+                    <td class="px-4 py-4 text-gray-300">${new Date(perf.weekStartDate).toLocaleDateString()} - ${new Date(perf.weekEndDate).toLocaleDateString()}</td>
+                    <td class="px-4 py-4 text-right text-blue-400">${perf.messagesSent || 0}</td>
+                    <td class="px-4 py-4 text-right text-purple-400">${perf.ppvsSent || 0}</td>
+                    <td class="px-4 py-4 text-right text-green-400">${perf.ppvsUnlocked || 0}</td>
+                    <td class="px-4 py-4 text-right font-bold ${unlockRate >= 50 ? 'text-green-400' : unlockRate >= 30 ? 'text-yellow-400' : 'text-red-400'}">${unlockRate}%</td>
+                    <td class="px-4 py-4 text-center">
+                        <button onclick="deleteChatterPerformance('${perf._id}', '${perf.chatterName}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                            <i class="fas fa-trash mr-1"></i>Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading chatter performance:', error);
+        showNotification('Failed to load chatter performance', 'error');
     }
 }
 
@@ -1313,6 +1355,27 @@ async function deleteReport(id, chatterName, date) {
     } catch (error) {
         console.error('Error deleting report:', error);
         showNotification('Failed to delete report', 'error');
+    }
+}
+
+async function deleteChatterPerformance(id, chatterName) {
+    if (!confirm(`Delete chatter performance data for ${chatterName}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/chatter-performance/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Chatter performance data deleted', 'success');
+            refreshDataTab('chatter-performance');
+        } else {
+            showNotification('Failed to delete chatter performance', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting chatter performance:', error);
+        showNotification('Failed to delete chatter performance', 'error');
     }
 }
 
@@ -9143,6 +9206,9 @@ function createDataManagementSection() {
             <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-file-alt mr-2"></i>Daily Reports
             </button>
+            <button onclick="showDataTab('chatter-performance')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-chart-line mr-2"></i>Chatter Performance
+            </button>
             <button onclick="showDataTab('daily-snapshots')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-camera mr-2"></i>Daily Snapshots
             </button>
@@ -9208,6 +9274,38 @@ function createDataManagementSection() {
                         </thead>
                         <tbody id="dailyReportsTableBody">
                             <tr><td colspan="6" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chatter Performance Tab -->
+        <div id="dataTab-chatter-performance" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-chart-line text-blue-400 mr-2"></i>Chatter Performance Data
+                    </h3>
+                    <button onclick="refreshDataTab('chatter-performance')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Week</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Messages</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">PPVs Sent</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Unlocked</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Unlock %</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chatterPerformanceTableBody">
+                            <tr><td colspan="7" class="text-center py-8 text-gray-400">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
