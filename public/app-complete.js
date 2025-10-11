@@ -5999,7 +5999,17 @@ function parseGuidelinesByCategory(guidelinesBreakdown) {
         const items = guidelinesBreakdown[cat.key]?.items || [];
         const violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
         const pct = ((violations / totalMessages) * 100).toFixed(1);
-        return { name: cat.name, violations, pct };
+        
+        // Get titles of violated guidelines (count > 0)
+        const violatedTitles = items
+            .filter(item => item.count > 0)
+            .map(item => item.title)
+            .join(', ');
+        
+        // Create display name with violated guideline titles
+        const displayName = violatedTitles ? `${cat.name} - ${violatedTitles}` : cat.name;
+        
+        return { name: displayName, violations, pct };
     });
 }
 
