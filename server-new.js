@@ -1943,9 +1943,9 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     }, null, 2));
     
     // Update the existing record
-    existingAnalysis.overallScore = analysisResult.overallScore || null;
-    existingAnalysis.grammarScore = analysisResult.grammarScore || null;
-    existingAnalysis.guidelinesScore = analysisResult.guidelinesScore || null;
+    existingAnalysis.overallScore = analysisResult.overallScore !== undefined ? analysisResult.overallScore : null;
+    existingAnalysis.grammarScore = analysisResult.grammarScore !== undefined ? analysisResult.grammarScore : null;
+    existingAnalysis.guidelinesScore = analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null;
     existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
     existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
     existingAnalysis.strengths = analysisResult.strengths || [];
