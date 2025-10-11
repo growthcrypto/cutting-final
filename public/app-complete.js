@@ -5043,19 +5043,24 @@ async function runChatterAnalysis() {
         if (currentAIInterval === 'custom' && aiAnalysisCustomDates) {
             startDate = new Date(aiAnalysisCustomDates.start);
             endDate = new Date(aiAnalysisCustomDates.end);
+            console.log('🗓️ Using CUSTOM dates:', aiAnalysisCustomDates);
         } else if (currentAIInterval === '24h') {
             startDate = new Date(today);
             startDate.setHours(today.getHours() - 24);
+            console.log('🗓️ Using 24h interval');
         } else if (currentAIInterval === '7d') {
             startDate = new Date(today);
             startDate.setDate(today.getDate() - 7);
+            console.log('🗓️ Using 7d interval');
         } else if (currentAIInterval === '30d') {
             startDate = new Date(today);
             startDate.setDate(today.getDate() - 30);
+            console.log('🗓️ Using 30d interval');
         } else {
             // Default to 7 days
             startDate = new Date(today);
             startDate.setDate(today.getDate() - 7);
+            console.log('🗓️ Using DEFAULT 7d interval');
         }
         
         const formatDate = (d) => d.toISOString().split('T')[0];
@@ -5070,7 +5075,7 @@ async function runChatterAnalysis() {
         };
         
         console.log('✅ AI Analysis using interval:', currentAIInterval);
-        console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
+        console.log('📅 Chatter Analysis Date Range:', formatDate(startDate), 'to', formatDate(endDate));
         
         // OLD CODE - Remove this
         if (false && currentFilterType === 'month' && currentMonthFilter) {
@@ -5122,6 +5127,7 @@ async function runChatterAnalysis() {
         console.log('🔍 Found message analysis:', latestMessage._id);
         
         // Trigger RE-ANALYSIS
+        console.log('🔄 Triggering re-analysis for message ID:', latestMessage._id);
         const reanalyzeResponse = await fetch(`/api/messages/reanalyze/${latestMessage._id}`, {
             method: 'POST',
             headers: {
@@ -5131,10 +5137,16 @@ async function runChatterAnalysis() {
         });
         
         if (!reanalyzeResponse.ok) {
-            throw new Error('Failed to run analysis');
+            const errorText = await reanalyzeResponse.text();
+            console.error('❌ Re-analyze failed:', reanalyzeResponse.status, errorText);
+            throw new Error(`Failed to run analysis: ${reanalyzeResponse.status}`);
         }
         
-        console.log('✅ Analysis triggered, now fetching results...');
+        const reanalyzeData = await reanalyzeResponse.json();
+        console.log('✅ Analysis triggered successfully:', reanalyzeData);
+        console.log('   Grammar Score:', reanalyzeData.grammarScore);
+        console.log('   Guidelines Score:', reanalyzeData.guidelinesScore);
+        console.log('   Overall Score:', reanalyzeData.overallScore);
         
         // Now fetch the updated analysis
         const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
@@ -5150,7 +5162,12 @@ async function runChatterAnalysis() {
         }
 
         const analysisData = await response.json();
-        console.log('✅ Enhanced chatter analysis data:', analysisData);
+        console.log('✅ Enhanced chatter analysis data received');
+        console.log('   Overall Score:', analysisData.overallScore);
+        console.log('   Grammar Score:', analysisData.grammarScore);
+        console.log('   Guidelines Score:', analysisData.guidelinesScore);
+        console.log('   Analysis Summary:', analysisData.analysisSummary);
+        console.log('   Deep Insights:', analysisData.deepInsights?.length || 0);
         
         // If scores are null, we need to trigger analysis first!
         if (analysisData.overallScore === null || analysisData.overallScore === 0) {
