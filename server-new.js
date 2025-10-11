@@ -752,18 +752,65 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       // NEW: Use daily snapshots (better granularity)
       console.log('📊 Using DailyAccountSnapshot data');
       
-      // Average snapshot metrics (they're point-in-time values)
-      totalSubs = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.totalSubs || 0), 0) / dailySnapshots.length);
-      activeFans = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.activeFans || 0), 0) / dailySnapshots.length);
-      fansWithRenew = Math.round(dailySnapshots.reduce((sum, s) => sum + (s.fansWithRenew || 0), 0) / dailySnapshots.length);
-      renewRate = dailySnapshots.reduce((sum, s) => sum + (s.renewRate || 0), 0) / dailySnapshots.length;
+      // Group snapshots by creator, calculate average per creator, then sum
+      const creatorGroups = {};
+      dailySnapshots.forEach(snapshot => {
+        const creator = snapshot.creator || 'unknown';
+        if (!creatorGroups[creator]) {
+          creatorGroups[creator] = {
+            totalSubs: [],
+            activeFans: [],
+            fansWithRenew: [],
+            renewRate: [],
+            newSubs: 0
+          };
+        }
+        creatorGroups[creator].totalSubs.push(snapshot.totalSubs || 0);
+        creatorGroups[creator].activeFans.push(snapshot.activeFans || 0);
+        creatorGroups[creator].fansWithRenew.push(snapshot.fansWithRenew || 0);
+        creatorGroups[creator].renewRate.push(snapshot.renewRate || 0);
+        creatorGroups[creator].newSubs += (snapshot.newSubsToday || 0);
+      });
       
-      // Sum new subs (cumulative)
-      newSubs = dailySnapshots.reduce((sum, s) => sum + (s.newSubsToday || 0), 0);
+      // Calculate average per creator, then sum across all creators
+      totalSubs = 0;
+      activeFans = 0;
+      fansWithRenew = 0;
+      let totalRenewRate = 0;
+      let creatorCount = 0;
+      newSubs = 0;
+      
+      Object.values(creatorGroups).forEach(group => {
+        const avgTotalSubs = group.totalSubs.reduce((a, b) => a + b, 0) / group.totalSubs.length;
+        const avgActiveFans = group.activeFans.reduce((a, b) => a + b, 0) / group.activeFans.length;
+        const avgFansWithRenew = group.fansWithRenew.reduce((a, b) => a + b, 0) / group.fansWithRenew.length;
+        const avgRenewRate = group.renewRate.reduce((a, b) => a + b, 0) / group.renewRate.length;
+        
+        totalSubs += avgTotalSubs;
+        activeFans += avgActiveFans;
+        fansWithRenew += avgFansWithRenew;
+        totalRenewRate += avgRenewRate;
+        newSubs += group.newSubs;
+        creatorCount++;
+      });
+      
+      // Round the summed averages
+      totalSubs = Math.round(totalSubs);
+      activeFans = Math.round(activeFans);
+      fansWithRenew = Math.round(fansWithRenew);
+      renewRate = creatorCount > 0 ? totalRenewRate / creatorCount : 0;
       
       // Calculate recurring revenue: fans with renew × avg sub price
       // Assuming $10/month subscription (you can make this configurable)
       recurringRevenue = fansWithRenew * 10;
+      
+      console.log('📊 Calculated metrics by creator:', {
+        creators: Object.keys(creatorGroups),
+        totalSubs,
+        activeFans,
+        fansWithRenew,
+        renewRate: renewRate.toFixed(1)
+      });
     } else {
       // FALLBACK: Use old OF Account data
       console.log('📊 Falling back to OF Account data (upload daily snapshots for better metrics!)');
