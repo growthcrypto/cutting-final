@@ -9991,6 +9991,12 @@ function renderTeamMetrics(metrics) {
     const grid = document.getElementById('teamMetricsGrid');
     if (!grid) return;
     
+    console.log('🎨 renderTeamMetrics called with scores:', {
+        grammar: metrics.avgGrammarScore,
+        guidelines: metrics.avgGuidelinesScore,
+        overall: metrics.avgOverallScore
+    });
+    
     // Green-to-red color scheme based on quality (0-100 scale)
     const getScoreColor = (score) => {
         if (score === null || score === undefined) return 'text-gray-400';
