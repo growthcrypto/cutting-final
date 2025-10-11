@@ -1936,9 +1936,36 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     }));
     console.log('📧 Extracted', messages.length, 'message objects for re-analysis (with metadata)');
     
-    // Run AI analysis
+    // Run AI analysis with timeout
     console.log('🤖 Calling analyzeMessages with', messages.length, 'messages...');
-    const analysisResult = await analyzeMessages(messages, existingAnalysis.chatterName);
+    
+    // Create a timeout promise (60 seconds for OpenAI)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Analysis timed out after 60 seconds')), 60000);
+    });
+    
+    // Race between analysis and timeout
+    let analysisResult;
+    try {
+      analysisResult = await Promise.race([
+        analyzeMessages(messages, existingAnalysis.chatterName),
+        timeoutPromise
+      ]);
+    } catch (analysisError) {
+      console.error('❌ Analysis failed:', analysisError.message);
+      if (analysisError.message.includes('timed out')) {
+        return res.status(504).json({ 
+          error: 'Analysis timed out. Please try again or contact support if the issue persists.',
+          details: 'The AI service took too long to respond.'
+        });
+      }
+      // For other errors, return appropriate message
+      return res.status(500).json({ 
+        error: 'Analysis failed',
+        details: analysisError.message 
+      });
+    }
+    
     console.log('✅ Re-analysis complete - RAW RESULT:', JSON.stringify({
       overallScore: analysisResult.overallScore,
       grammarScore: analysisResult.grammarScore,
