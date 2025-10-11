@@ -667,6 +667,13 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       console.log('📅 Using STRICT fallback query:', start.toISOString(), 'to', end.toISOString());
     }
     
+    // If user is a chatter, filter to only their data
+    if (req.user.role === 'chatter' && req.user.chatterName) {
+      dateQuery.chatterName = req.user.chatterName;
+      chatterPerformanceQuery.chatterName = req.user.chatterName;
+      console.log(`👤 Filtering to chatter: ${req.user.chatterName}`);
+    }
+    
     // Fetch data
     const dailyReports = await DailyChatterReport.find(dateQuery);
     const ofAccountData = await AccountData.find(accountDataQuery);
