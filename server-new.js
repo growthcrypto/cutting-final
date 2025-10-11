@@ -612,17 +612,20 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     let accountDataQuery, chatterPerformanceQuery, dateQuery;
     
     if (isCustomFilter) {
-      // NEW: Custom date range - query daily data AND OF account data that overlaps
+      // FIXED: Custom date range - strict range matching to prevent grabbing all records
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      
       accountDataQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
+        weekStartDate: { $gte: start, $lte: end },
+        weekEndDate: { $gte: start, $lte: end }
       };
       chatterPerformanceQuery = {
-        weekStartDate: { $lte: end },
-        weekEndDate: { $gte: start }
+        weekStartDate: { $gte: start, $lte: end },
+        weekEndDate: { $gte: start, $lte: end }
       };
       dateQuery = { date: { $gte: start, $lte: end } };
-      console.log('📅 Using custom date range query with overlap for weekly data');
+      console.log('📅 Using STRICT custom date range query:', start.toISOString(), 'to', end.toISOString());
     } else if (isWeekFilter) {
       // EXACT WEEK MATCH
       accountDataQuery = {
@@ -675,7 +678,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
       dailySnapshots: dailySnapshots.length,
       chatterPerformance: chatterPerformance.length
     });
-    console.log('ChatterPerformance data found:', JSON.stringify(chatterPerformance, null, 2));
+    console.log('📊 ChatterPerformance records matched:');
+    chatterPerformance.forEach(rec => {
+      console.log(`  - ${rec.chatterName} | ${rec.weekStartDate?.toISOString().split('T')[0]} to ${rec.weekEndDate?.toISOString().split('T')[0]} | ${rec.messagesSent} msgs | ${rec.ppvsSent} sent | ${rec.ppvsUnlocked} unlocked`);
+    });
     
     console.log('Dashboard query:', {
       dailyReports: dailyReports.length,
@@ -727,6 +733,14 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     const chatterPPVsUnlocked = chatterPerformance.reduce((sum, data) => sum + (data.ppvsUnlocked || 0), 0);
     const chatterMessagesSent = chatterPerformance.reduce((sum, data) => sum + (data.messagesSent || 0), 0);
     const chatterFansChatted = chatterPerformance.reduce((sum, data) => sum + (data.fansChattedWith || 0), 0);
+    
+    console.log('📊 Dashboard TOTALS from ChatterPerformance:', {
+      records: chatterPerformance.length,
+      ppvsSent: chatterPPVsSent,
+      ppvsUnlocked: chatterPPVsUnlocked,
+      messages: chatterMessagesSent,
+      fans: chatterFansChatted
+    });
     
     // Calculate response time from both sources (only count non-null values)
     const dailyReportsWithResponseTime = dailyReports.filter(report => report.avgResponseTime != null && report.avgResponseTime > 0);
