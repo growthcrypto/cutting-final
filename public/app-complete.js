@@ -2652,6 +2652,17 @@ function renderTeamComparison() {
                 </div>
             </div>
         `;
+    } else {
+        // No data for this period - show message
+        yourPositionCard.innerHTML = `
+            <div class="glass-card rounded-2xl p-8 border-2 border-gray-600/30">
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times text-gray-500 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-400 mb-2">No Data for Selected Period</h3>
+                    <p class="text-gray-500">You don't have any performance data for this date range. Try selecting a different period.</p>
+                </div>
+            </div>
+        `;
     }
 
     // Render table rows
