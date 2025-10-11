@@ -969,6 +969,9 @@ async function refreshDataTab(tabName) {
         case 'daily-reports':
             await loadDailyReportsData();
             break;
+        case 'daily-snapshots':
+            await loadDailySnapshotsData();
+            break;
         case 'link-tracking':
             await loadLinkTrackingData();
             break;
@@ -1109,6 +1112,40 @@ async function loadDailyReportsData() {
     } catch (error) {
         console.error('Error loading daily reports:', error);
         showNotification('Failed to load daily reports', 'error');
+    }
+}
+
+async function loadDailySnapshotsData() {
+    try {
+        const response = await fetch('/api/data-management/daily-snapshots', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const tbody = document.getElementById('dailySnapshotsTableBody');
+        if (!tbody) return;
+        
+        if (!data.snapshots || data.snapshots.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No daily snapshots uploaded yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.snapshots.map(snapshot => `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                <td class="px-4 py-4 text-white font-medium">${new Date(snapshot.date).toLocaleDateString()}</td>
+                <td class="px-4 py-4 text-right text-blue-400">${snapshot.totalSubs || 0}</td>
+                <td class="px-4 py-4 text-right text-green-400">${snapshot.activeFans || 0}</td>
+                <td class="px-4 py-4 text-right text-purple-400 font-bold">$${snapshot.totalRevenue?.toFixed(2) || '0.00'}</td>
+                <td class="px-4 py-4 text-center">
+                    <button onclick="deleteSnapshot('${snapshot._id}', '${new Date(snapshot.date).toLocaleDateString()}')" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded-lg text-sm transition-all">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading daily snapshots:', error);
+        showNotification('Failed to load daily snapshots', 'error');
     }
 }
 
@@ -1276,6 +1313,27 @@ async function deleteReport(id, chatterName, date) {
     } catch (error) {
         console.error('Error deleting report:', error);
         showNotification('Failed to delete report', 'error');
+    }
+}
+
+async function deleteSnapshot(id, date) {
+    if (!confirm(`Delete daily snapshot for ${date}? This cannot be undone.`)) return;
+    
+    try {
+        const response = await fetch(`/api/data-management/daily-snapshots/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Daily snapshot deleted', 'success');
+            refreshDataTab('daily-snapshots');
+        } else {
+            showNotification('Failed to delete snapshot', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting snapshot:', error);
+        showNotification('Failed to delete snapshot', 'error');
     }
 }
 
@@ -9143,6 +9201,9 @@ function createDataManagementSection() {
             <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-file-alt mr-2"></i>Daily Reports
             </button>
+            <button onclick="showDataTab('daily-snapshots')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
+                <i class="fas fa-camera mr-2"></i>Daily Snapshots
+            </button>
             <button onclick="showDataTab('link-tracking')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-link mr-2"></i>Link Tracking
             </button>
@@ -9203,6 +9264,36 @@ function createDataManagementSection() {
                             </tr>
                         </thead>
                         <tbody id="dailyReportsTableBody">
+                            <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Snapshots Tab -->
+        <div id="dataTab-daily-snapshots" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold">
+                        <i class="fas fa-camera text-green-400 mr-2"></i>Daily Account Snapshots
+                    </h3>
+                    <button onclick="refreshDataTab('daily-snapshots')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Subs</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Active Fans</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Total Revenue</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailySnapshotsTableBody">
                             <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading...</td></tr>
                         </tbody>
                     </table>

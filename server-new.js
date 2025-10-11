@@ -6089,6 +6089,38 @@ app.delete('/api/data-management/daily-reports/:id', authenticateToken, requireM
   }
 });
 
+// Get all daily snapshots for data management
+app.get('/api/data-management/daily-snapshots', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const snapshots = await DailyAccountSnapshot.find()
+      .sort({ date: -1 })
+      .limit(100);
+    
+    res.json({ snapshots });
+  } catch (error) {
+    console.error('Error fetching daily snapshots:', error);
+    res.status(500).json({ error: 'Failed to fetch daily snapshots' });
+  }
+});
+
+// Delete daily snapshot
+app.delete('/api/data-management/daily-snapshots/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const snapshot = await DailyAccountSnapshot.findById(req.params.id);
+    if (!snapshot) {
+      return res.status(404).json({ error: 'Snapshot not found' });
+    }
+    
+    await DailyAccountSnapshot.findByIdAndDelete(req.params.id);
+    console.log(`🗑️ Deleted daily snapshot: ${snapshot.date}`);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting daily snapshot:', error);
+    res.status(500).json({ error: 'Failed to delete daily snapshot' });
+  }
+});
+
 // Get all link tracking data for data management
 app.get('/api/data-management/link-tracking', authenticateToken, requireManager, async (req, res) => {
   try {
