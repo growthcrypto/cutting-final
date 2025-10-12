@@ -1,0 +1,48 @@
+CHATTER PERFORMANCE DATA
+Chatter Name,Date,Messages Sent,PPVs Sent,PPVs Unlocked,Fans Chatted,Avg Response Time
+Gypsy,10/09/2025,632,18,10,41,4.5
+Gypsy,10/10/2025,725,17,5,45,3.2
+CJ,10/09/2025,268,4,2,47,5.1
+Agile,10/09/2025,31,0,0,15,7.2
+John,10/09/2025,283,1,0,38,6.0
+
+ACCOUNT SNAPSHOTS DATA
+Creator Name,Date,Total Subs,Active Fans,With Renew
+Arya,10/09/2025,171,163,25
+Arya,10/10/2025,186,184,26
+Iris,10/09/2025,282,358,35
+Iris,10/10/2025,302,311,44
+Lilla,10/09/2025,286,318,20
+Lilla,10/10/2025,306,26,25
+
+DAILY SALES DATA
+Chatter Name,Date,Revenue
+Gypsy,10/09/2025,666.00
+Gypsy,10/10/2025,223.69
+Gypsy,10/11/2025,320.00
+CJ,10/09/2025,55.00
+Agile,10/10/2025,215.00
+John,10/10/2025,1030.00
+
+LINK TRACKING DATA
+Category,Creator Name,Date,Landing Page Views,OnlyFans Clicks
+reddit,Arya,10/09/2025,1250,456
+twitter,Arya,10/09/2025,890,123
+reddit,Iris,10/09/2025,2100,678
+instagram,Lilla,10/09/2025,1450,234
+
+VIP FANS DATA
+Fan Username,Total Spent,Creator Name
+john_doe_123,587.50,Arya
+mike_premium,1250.00,Iris
+alex_vip,342.00,Lilla
+sarah_top_fan,2100.50,Arya
+
+MESSAGES DATA (for AI Analysis)
+Chatter Name,Message Text,Timestamp,Fan Username
+Gypsy,hey babe how are you today,10/09/2025 10:30,john123
+Gypsy,want to see something special? 😏,10/09/2025 10:35,john123
+Gypsy,this will brighten ur day promise! 😉,10/09/2025 11:20,mike456
+CJ,good morning handsome,10/09/2025 09:15,alex789
+CJ,thinking about you,10/09/2025 14:30,alex789
+
