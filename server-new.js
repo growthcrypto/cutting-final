@@ -7267,7 +7267,10 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       if (chatterAvgResponseTime === 0 && perf.avgResponseTime > 0) {
         chatterAvgResponseTime = perf.avgResponseTime;
       }
-      if (chatterPPVsUnlocked === 0 && perf.ppvsUnlocked > 0) {
+      // CRITICAL FIX: ALWAYS use ChatterPerformance ppvsUnlocked (not FanPurchase count)
+      // FanPurchase counts ALL purchases, but ChatterPerformance has the correct PPV unlock data
+      if (perf.ppvsUnlocked !== undefined && perf.ppvsUnlocked !== null) {
+        console.log(`⚠️  Overriding ppvsUnlocked: ${chatterPPVsUnlocked} → ${perf.ppvsUnlocked} (ChatterPerformance is source of truth)`);
         chatterPPVsUnlocked = perf.ppvsUnlocked;
       }
       // Recalculate unlock rate with corrected data
