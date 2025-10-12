@@ -1630,19 +1630,12 @@ function showMainApp() {
     loadCreatorAccounts();
     if (currentUser.role === 'manager') {
         loadUsers();
-        // Force clear dashboard to ensure clean state
+        // Clear dashboard to zero on initial load only
         clearDashboardToZero();
-        // Aggressively clear specific metrics immediately
-        forceClearSpecificMetrics();
-        // Initialize dashboard with default 7d interval
+        // Initialize dashboard with default 7d interval (this will load real data)
         setDashboardInterval('7d');
         loadAIRecommendations();
-        
-        // Also clear again after a short delay to override any cached values
-        setTimeout(() => {
-            forceClearSpecificMetrics();
-            console.log('Delayed metric clearing executed');
-        }, 1000);
+        // Removed aggressive metric clearing - it was interfering with data display
     }
 }
 
@@ -2006,10 +1999,7 @@ function showSection(sectionId) {
     // If showing dashboard, load available periods
     if (sectionId === 'dashboard' && currentUser?.role === 'manager') {
         loadAvailablePeriods();
-        setTimeout(() => {
-            forceClearSpecificMetrics();
-            console.log('Dashboard section shown - clearing metrics');
-        }, 100);
+        // Don't forcibly clear metrics here - let the data load update them properly
     }
     
     // If showing AI analysis, populate selectors
