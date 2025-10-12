@@ -6532,23 +6532,24 @@ async function buildTeamData(allPurchases, allPerformance, excludeChatter) {
   
   const avgRevenue = chatters.reduce((sum, c) => sum + c.revenue, 0) / count;
   
-  // Calculate unlock rate - include chatters with 0% (0 unlocked out of X sent)
-  const chattersWithPPVs = chatters.filter(c => c.ppvsSent > 0);
-  console.log(`📊 Unlock Rate Calculation: ${chattersWithPPVs.length} chatters sent PPVs out of ${count} total`);
+  // Calculate unlock rate - use OVERALL team rate (total unlocked / total sent)
+  // This matches the dashboard calculation and gives true team-wide performance
+  const totalPPVsSent = chatters.reduce((sum, c) => sum + c.ppvsSent, 0);
+  const totalPPVsUnlocked = chatters.reduce((sum, c) => sum + c.ppvsUnlocked, 0);
   
+  const avgUnlockRate = totalPPVsSent > 0 ? (totalPPVsUnlocked / totalPPVsSent) * 100 : 0;
+  
+  console.log(`📊 Unlock Rate Calculation (OVERALL):`)
+  console.log(`   Total PPVs Sent: ${totalPPVsSent}`);
+  console.log(`   Total PPVs Unlocked: ${totalPPVsUnlocked}`);
+  console.log(`   Overall Unlock Rate: ${totalPPVsUnlocked}/${totalPPVsSent} = ${avgUnlockRate.toFixed(1)}%`);
+  
+  // Also show individual chatter rates for debugging
+  const chattersWithPPVs = chatters.filter(c => c.ppvsSent > 0);
   chattersWithPPVs.forEach(c => {
     const rate = (c.ppvsUnlocked / c.ppvsSent) * 100;
-    console.log(`  - ${c.chatterName}: ${c.ppvsUnlocked}/${c.ppvsSent} = ${rate.toFixed(1)}%`);
+    console.log(`   - ${c.chatterName}: ${c.ppvsUnlocked}/${c.ppvsSent} = ${rate.toFixed(1)}%`);
   });
-  
-  const totalUnlockRate = chattersWithPPVs.reduce((sum, c) => {
-    return sum + (c.ppvsUnlocked / c.ppvsSent) * 100;
-  }, 0);
-  
-  // Average across chatters WHO SENT PPVs (not all chatters)
-  const avgUnlockRate = chattersWithPPVs.length > 0 ? totalUnlockRate / chattersWithPPVs.length : 0;
-  
-  console.log(`📊 Total unlock rate sum: ${totalUnlockRate.toFixed(1)} / ${chattersWithPPVs.length} chatters = ${avgUnlockRate.toFixed(1)}%`);
   
   const totalPPVsPerFan = chatters.reduce((sum, c) => {
     return sum + (c.fansChatted > 0 ? c.ppvsSent / c.fansChatted : 0);
