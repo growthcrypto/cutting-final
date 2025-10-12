@@ -8175,15 +8175,41 @@ app.get('/api/analytics/agency-intelligence', checkDatabaseConnection, authentic
     const prevStart = new Date(start.getTime() - periodDuration);
     const prevEnd = new Date(start.getTime());
     
+    // Set time to start/end of day for accurate matching
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    prevStart.setHours(0, 0, 0, 0);
+    prevEnd.setHours(23, 59, 59, 999);
+    
     const dateQuery = { date: { $gte: start, $lte: end } };
     const prevDateQuery = { date: { $gte: prevStart, $lte: prevEnd } };
+    
+    // FIXED: Use strict range matching to catch all records within the period
     const performanceQuery = {
-      weekStartDate: { $lte: end },
-      weekEndDate: { $gte: start }
+      $or: [
+        // Records that fall completely within the range
+        {
+          weekStartDate: { $gte: start, $lte: end },
+          weekEndDate: { $gte: start, $lte: end }
+        },
+        // Records that overlap with the range
+        {
+          weekStartDate: { $lte: end },
+          weekEndDate: { $gte: start }
+        }
+      ]
     };
     const prevPerformanceQuery = {
-      weekStartDate: { $lte: prevEnd },
-      weekEndDate: { $gte: prevStart }
+      $or: [
+        {
+          weekStartDate: { $gte: prevStart, $lte: prevEnd },
+          weekEndDate: { $gte: prevStart, $lte: prevEnd }
+        },
+        {
+          weekStartDate: { $lte: prevEnd },
+          weekEndDate: { $gte: prevStart }
+        }
+      ]
     };
     
     // ==================== DATA COLLECTION ====================
@@ -8224,6 +8250,17 @@ app.get('/api/analytics/agency-intelligence', checkDatabaseConnection, authentic
       prevPurchases: prevPurchases.length,
       prevPerformance: prevPerformance.length
     });
+    
+    // Debug: Show what performance records were found
+    if (allPerformance.length > 0) {
+      console.log('📊 Performance records found:');
+      allPerformance.forEach(p => {
+        console.log(`  - ${p.chatterName}: ${p.weekStartDate?.toISOString().split('T')[0]} to ${p.weekEndDate?.toISOString().split('T')[0]} | ${p.messagesSent} msgs | ${p.ppvsSent} PPVs | ${p.ppvsUnlocked} unlocked`);
+      });
+    } else {
+      console.log('⚠️ NO ChatterPerformance records found for this period!');
+      console.log('   Query used:', JSON.stringify(performanceQuery, null, 2));
+    }
     
     // ==================== ANALYSIS ENGINE ====================
     const intelligence = await generateAgencyIntelligence({
