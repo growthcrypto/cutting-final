@@ -3926,6 +3926,13 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
       aiAnalysis.ppvsUnlocked = analyticsData.ppvsUnlocked;
       aiAnalysis.messagesSent = analyticsData.messagesSent;
       
+      console.log('📊 RAW METRICS BEING ADDED TO AI ANALYSIS:');
+      console.log(`   ppvsSent: ${analyticsData.ppvsSent}`);
+      console.log(`   ppvsUnlocked: ${analyticsData.ppvsUnlocked}`);
+      console.log(`   messagesSent: ${analyticsData.messagesSent}`);
+      console.log(`   ppvMessages (from message analysis): ${analyticsData.ppvMessages}`);
+      console.log(`   purchasedPPVs (from message analysis): ${analyticsData.purchasedPPVs}`);
+      
       // FORCE RE-ANALYSIS WITH NEW PROMPT - ALWAYS OVERRIDE OLD DATA
       console.log('🔄 FORCING RE-ANALYSIS WITH NEW PROMPT');
       if (analysisMessageTexts && analysisMessageTexts.length > 0) {
@@ -5299,6 +5306,12 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
         console.error('❌ Scores:', { grammar: aiAnalysis.grammarScore, guidelines: aiAnalysis.guidelinesScore, overall: aiAnalysis.overallScore });
         // Don't fail the request if save fails - still return the analysis
       }
+      
+      console.log('📊 FINAL AI ANALYSIS RESPONSE BEING SENT:');
+      console.log(`   ppvsSent: ${aiAnalysis.ppvsSent}`);
+      console.log(`   ppvsUnlocked: ${aiAnalysis.ppvsUnlocked}`);
+      console.log(`   messagesSent: ${aiAnalysis.messagesSent}`);
+      console.log(`   Unlock rate: ${aiAnalysis.ppvsSent > 0 ? ((aiAnalysis.ppvsUnlocked / aiAnalysis.ppvsSent) * 100).toFixed(1) : 0}%`);
       
       res.json(aiAnalysis);
     } catch (aiError) {
