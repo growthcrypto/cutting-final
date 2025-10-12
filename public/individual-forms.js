@@ -92,12 +92,17 @@ function initIndividualForms() {
             
             const formData = new FormData(e.target);
             const data = {
-                creatorName: formData.get('creatorName'),
+                creator: formData.get('creator'),
                 date: formData.get('date'),
                 totalSubs: parseInt(formData.get('totalSubs')),
                 activeFans: parseInt(formData.get('activeFans')),
-                fansWithRenewOn: parseInt(formData.get('withRenew')) || 0
+                fansWithRenew: parseInt(formData.get('fansWithRenew')),
+                newSubsToday: parseInt(formData.get('newSubsToday')) || 0,
+                renewRate: formData.get('renewRate') ? parseFloat(formData.get('renewRate')) : null,
+                recurringRevenue: formData.get('recurringRevenue') ? parseFloat(formData.get('recurringRevenue')) : null
             };
+
+            console.log('📊 Submitting account snapshot:', data);
 
             try {
                 const response = await fetch('/api/analytics/daily-snapshot', {
@@ -113,10 +118,12 @@ function initIndividualForms() {
                     showNotification('Account snapshot uploaded successfully!', 'success');
                     e.target.reset();
                 } else {
-                    throw new Error('Upload failed');
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
                 }
             } catch (error) {
-                showNotification('Error uploading account snapshot', 'error');
+                console.error('Snapshot upload error:', error);
+                showNotification('Error: ' + error.message, 'error');
             }
         });
     }

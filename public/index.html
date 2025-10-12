@@ -1778,15 +1778,15 @@
                             <div class="glass-card rounded-2xl p-8 border border-gray-600">
                                 <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
                                     <i class="fas fa-camera text-purple-400 mr-3"></i>
-                                    Upload Account Snapshot
+                                    Upload Daily Account Snapshot
                                 </h3>
-                                <p class="text-gray-400 mb-6">Enter daily snapshot data for a creator account</p>
+                                <p class="text-gray-400 mb-6">Enter complete daily snapshot data for a creator account</p>
 
                                 <form id="accountSnapshotForm" class="space-y-6">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-300 mb-2">Creator Name *</label>
-                                            <select name="creatorName" required
+                                            <select name="creator" required
                                                     class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
                                                 <option value="">Select Creator...</option>
                                                 <option value="Arya">Arya</option>
@@ -1801,34 +1801,70 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Total Subscribers *</label>
-                                            <input type="number" name="totalSubs" required min="0"
-                                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                                                   placeholder="171">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Active Fans *</label>
-                                            <input type="number" name="activeFans" required min="0"
-                                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                                                   placeholder="163">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">With Renew On</label>
-                                            <input type="number" name="withRenew" min="0"
-                                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
-                                                   placeholder="25">
+                                    <div class="border-t border-gray-700 pt-6">
+                                        <h4 class="text-lg font-semibold text-white mb-4">Subscriber Metrics</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">Total Subscribers *</label>
+                                                <input type="number" name="totalSubs" required min="0"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="171">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">Active Fans *</label>
+                                                <input type="number" name="activeFans" required min="0"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="163">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">New Subs Today</label>
+                                                <input type="number" name="newSubsToday" min="0"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="5">
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="flex justify-end gap-3 pt-4">
+                                    <div class="border-t border-gray-700 pt-6">
+                                        <h4 class="text-lg font-semibold text-white mb-4">Retention Metrics</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">Fans with Renew On *</label>
+                                                <input type="number" name="fansWithRenew" required min="0"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="25">
+                                                <p class="text-xs text-gray-500 mt-1">Number of fans with auto-renew enabled</p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">Renewal Rate (%)</label>
+                                                <input type="number" step="0.1" name="renewRate" min="0" max="100"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="15.0">
+                                                <p class="text-xs text-gray-500 mt-1">Optional - auto-calculated if not provided</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-700 pt-6">
+                                        <h4 class="text-lg font-semibold text-white mb-4">Revenue Metrics</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-300 mb-2">Recurring Revenue (Monthly)</label>
+                                                <input type="number" step="0.01" name="recurringRevenue" min="0"
+                                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                                       placeholder="2500.00">
+                                                <p class="text-xs text-gray-500 mt-1">Expected monthly subscription revenue</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-700">
                                         <button type="button" onclick="document.getElementById('accountSnapshotForm').reset()"
                                                 class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition-all">
-                                            Clear
+                                            <i class="fas fa-times mr-2"></i>Clear
                                         </button>
                                         <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all">
-                                            <i class="fas fa-check mr-2"></i>Submit
+                                            <i class="fas fa-check mr-2"></i>Submit Snapshot
                                         </button>
                                     </div>
                                 </form>
