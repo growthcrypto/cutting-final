@@ -10,6 +10,7 @@
     <title>Agency Analytics Pro - OnlyFans Performance Intelligence</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -1442,6 +1443,233 @@
                     </div>
                 </div>
 
+                <!-- Bulk Data Upload Section -->
+                <div id="data-upload" class="section hidden p-8">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="mb-8">
+                            <h2 class="text-4xl font-bold text-white mb-3 flex items-center">
+                                <i class="fas fa-file-upload text-purple-400 mr-4"></i>
+                                Bulk Data Upload
+                            </h2>
+                            <p class="text-gray-400 text-lg">Upload all your data at once - one file, multiple data types</p>
+                        </div>
+
+                        <!-- Upload Card -->
+                        <div class="glass-card rounded-2xl p-8 mb-8 border border-gray-600">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Left: Upload Zone -->
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
+                                        <i class="fas fa-cloud-upload-alt text-blue-400 mr-3"></i>
+                                        Upload File
+                                    </h3>
+                                    
+                                    <div id="dropZone" class="border-2 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-purple-500 transition-all cursor-pointer bg-gray-800/30">
+                                        <i class="fas fa-file-excel text-green-400 text-6xl mb-4"></i>
+                                        <p class="text-white text-xl font-semibold mb-2">Drop Excel file here</p>
+                                        <p class="text-gray-400 mb-4">or click to browse</p>
+                                        <input type="file" id="bulkFileInput" accept=".xlsx,.xls,.csv" class="hidden">
+                                        <button onclick="document.getElementById('bulkFileInput').click()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-all">
+                                            <i class="fas fa-folder-open mr-2"></i>Choose File
+                                        </button>
+                                        <p class="text-gray-500 text-sm mt-4">Supports: .xlsx, .xls, .csv</p>
+                                    </div>
+
+                                    <div id="fileInfo" class="mt-6 hidden">
+                                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-file-excel text-green-400 text-2xl mr-3"></i>
+                                                    <div>
+                                                        <p id="fileName" class="text-white font-semibold"></p>
+                                                        <p id="fileSize" class="text-gray-400 text-sm"></p>
+                                                    </div>
+                                                </div>
+                                                <button onclick="clearFile()" class="text-red-400 hover:text-red-300">
+                                                    <i class="fas fa-times text-xl"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Instructions -->
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
+                                        <i class="fas fa-info-circle text-cyan-400 mr-3"></i>
+                                        How It Works
+                                    </h3>
+                                    
+                                    <div class="space-y-4">
+                                        <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                            <div class="flex items-start">
+                                                <div class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <span class="text-white font-bold">1</span>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-white font-semibold mb-1">Prepare Your Excel</h4>
+                                                    <p class="text-gray-400 text-sm">Use separate sheets for each data type or clearly labeled sections in one sheet</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                            <div class="flex items-start">
+                                                <div class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <span class="text-white font-bold">2</span>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-white font-semibold mb-1">Upload & Preview</h4>
+                                                    <p class="text-gray-400 text-sm">We'll auto-detect your data types and show you a preview</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                            <div class="flex items-start">
+                                                <div class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">
+                                                    <span class="text-white font-bold">3</span>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-white font-semibold mb-1">Confirm & Import</h4>
+                                                    <p class="text-gray-400 text-sm">Review the preview and click import - we'll handle the rest!</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-6 bg-blue-900/30 border border-blue-700/50 rounded-lg p-4">
+                                        <div class="flex items-start">
+                                            <i class="fas fa-lightbulb text-yellow-400 mr-3 mt-1"></i>
+                                            <div>
+                                                <p class="text-white font-semibold mb-1">Pro Tip</p>
+                                                <p class="text-gray-300 text-sm">Column headers should match: "Chatter Name", "Date", "Revenue", "PPVs Sent", "PPVs Unlocked", "Messages Sent", etc.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div id="previewSection" class="hidden">
+                            <div class="glass-card rounded-2xl p-8 border border-gray-600">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h3 class="text-2xl font-bold text-white flex items-center">
+                                        <i class="fas fa-eye text-cyan-400 mr-3"></i>
+                                        Data Preview
+                                    </h3>
+                                    <div class="flex gap-3">
+                                        <button onclick="clearFile()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-xl transition-all">
+                                            <i class="fas fa-times mr-2"></i>Cancel
+                                        </button>
+                                        <button id="importDataBtn" onclick="importBulkData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-xl transition-all">
+                                            <i class="fas fa-check mr-2"></i>Import Data
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="previewContent" class="space-y-6">
+                                    <!-- Preview content will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Supported Data Types -->
+                        <div class="glass-card rounded-2xl p-8 border border-gray-600">
+                            <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
+                                <i class="fas fa-table text-green-400 mr-3"></i>
+                                Supported Data Types
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-dollar-sign text-green-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">Daily Sales</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Chatter Name</li>
+                                        <li>• Date</li>
+                                        <li>• Revenue</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-chart-line text-blue-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">Chatter Performance</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Chatter Name</li>
+                                        <li>• Date (or Date Range)</li>
+                                        <li>• Messages Sent</li>
+                                        <li>• PPVs Sent</li>
+                                        <li>• PPVs Unlocked</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-camera text-purple-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">Account Snapshots</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Creator Name</li>
+                                        <li>• Date</li>
+                                        <li>• Total Subs</li>
+                                        <li>• Active Fans</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-comments text-cyan-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">Messages</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Chatter Name</li>
+                                        <li>• Message Text</li>
+                                        <li>• Timestamp (optional)</li>
+                                        <li>• Fan Username (optional)</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-star text-yellow-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">VIP Fans</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Fan Username</li>
+                                        <li>• Total Spent</li>
+                                        <li>• Creator Name</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                                    <div class="flex items-center mb-3">
+                                        <i class="fas fa-link text-orange-400 text-xl mr-3"></i>
+                                        <h4 class="text-white font-semibold">Traffic Sources</h4>
+                                    </div>
+                                    <p class="text-gray-400 text-sm mb-2">Columns needed:</p>
+                                    <ul class="text-gray-500 text-xs space-y-1">
+                                        <li>• Source Name</li>
+                                        <li>• Category</li>
+                                        <li>• Clicks</li>
+                                        <li>• Date</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -1500,6 +1728,7 @@
         </div>
     </div>
 
-        <script src="app-complete.js?v=1760226500"></script>
+        <script src="app-complete.js?v=1760300000"></script>
+        <script src="bulk-upload.js?v=1760300000"></script>
 </body>
 </html>

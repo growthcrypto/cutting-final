@@ -10604,6 +10604,353 @@ function calculateMessageToSaleImprovement(chatterMetrics, lowMessageToSaleChatt
   return totalCurrentRevenue > 0 ? (totalPotentialIncrease / totalCurrentRevenue) * 100 : 0;
 }
 
+// ==================== BULK DATA IMPORT ENDPOINTS ====================
+
+// Bulk import daily sales
+app.post('/api/bulk/daily-sales', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} daily sales records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        // Map column names (flexible mapping)
+        const chatterName = row['Chatter Name'] || row['chatterName'] || row['Chatter'] || row['chatter'];
+        const date = row['Date'] || row['date'];
+        const revenue = parseFloat(row['Revenue'] || row['revenue'] || row['Total Revenue'] || 0);
+
+        if (!chatterName || !date) {
+          results.skipped++;
+          continue;
+        }
+
+        // Create daily report
+        await DailyChatterReport.findOneAndUpdate(
+          {
+            chatterName,
+            date: new Date(date)
+          },
+          {
+            $set: {
+              totalRevenue: revenue,
+              ppvSales: [],
+              tips: [],
+              uploadedAt: new Date()
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Daily sales imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk daily sales import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import chatter performance
+app.post('/api/bulk/chatter-performance', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} chatter performance records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        // Flexible column mapping
+        const chatterName = row['Chatter Name'] || row['chatterName'] || row['Chatter'];
+        const date = row['Date'] || row['date'] || row['Start Date'];
+        const endDate = row['End Date'] || row['endDate'] || date;
+        const messagesSent = parseInt(row['Messages Sent'] || row['messagesSent'] || row['Messages'] || 0);
+        const ppvsSent = parseInt(row['PPVs Sent'] || row['ppvsSent'] || row['PPV Sent'] || 0);
+        const ppvsUnlocked = parseInt(row['PPVs Unlocked'] || row['ppvsUnlocked'] || row['PPV Unlocked'] || row['PPVs Purchased'] || 0);
+        const fansChatted = parseInt(row['Fans Chatted'] || row['fansChatted'] || row['Fans'] || 0);
+        const avgResponseTime = parseFloat(row['Avg Response Time'] || row['avgResponseTime'] || row['Response Time'] || 0);
+
+        if (!chatterName || !date) {
+          results.skipped++;
+          continue;
+        }
+
+        await ChatterPerformance.findOneAndUpdate(
+          {
+            chatterName,
+            weekStartDate: new Date(date)
+          },
+          {
+            $set: {
+              weekEndDate: new Date(endDate || date),
+              messagesSent,
+              ppvsSent,
+              ppvsUnlocked,
+              fansChattedWith: fansChatted,
+              avgResponseTime,
+              uploadedAt: new Date()
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Chatter performance imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk chatter performance import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import account snapshots
+app.post('/api/bulk/account-snapshots', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} account snapshot records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        const creatorName = row['Creator Name'] || row['creatorName'] || row['Creator'] || row['Model'];
+        const date = row['Date'] || row['date'];
+        const totalSubs = parseInt(row['Total Subs'] || row['totalSubs'] || row['Subscribers'] || 0);
+        const activeFans = parseInt(row['Active Fans'] || row['activeFans'] || row['Active'] || 0);
+        const withRenew = parseInt(row['With Renew'] || row['withRenew'] || row['Renew On'] || 0);
+
+        if (!creatorName || !date) {
+          results.skipped++;
+          continue;
+        }
+
+        await DailyAccountSnapshot.findOneAndUpdate(
+          {
+            creatorName,
+            date: new Date(date)
+          },
+          {
+            $set: {
+              totalSubs,
+              activeFans,
+              fansWithRenewOn: withRenew,
+              uploadedAt: new Date()
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Account snapshots imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk account snapshots import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import messages (for AI analysis)
+app.post('/api/bulk/messages', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} messages`);
+
+    // Group by chatter
+    const byChatter = {};
+    data.forEach(row => {
+      const chatterName = row['Chatter Name'] || row['chatterName'] || row['Chatter'];
+      const messageText = row['Message Text'] || row['message'] || row['text'] || row['Message'];
+      const timestamp = row['Timestamp'] || row['timestamp'] || row['Date'];
+      const fanUsername = row['Fan Username'] || row['fan'] || row['fanUsername'];
+
+      if (!chatterName || !messageText) return;
+
+      if (!byChatter[chatterName]) {
+        byChatter[chatterName] = [];
+      }
+
+      byChatter[chatterName].push({
+        messageText,
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
+        fanUsername,
+        isPPV: messageText.toLowerCase().includes('ppv') || messageText.includes('$')
+      });
+    });
+
+    const results = { success: 0, errors: 0 };
+
+    // Create/update message analysis for each chatter
+    for (const [chatterName, messages] of Object.entries(byChatter)) {
+      try {
+        await MessageAnalysis.findOneAndUpdate(
+          { chatterName },
+          {
+            $set: {
+              totalMessages: messages.length,
+              messageRecords: messages,
+              weekStartDate: new Date(),
+              weekEndDate: new Date(),
+              uploadedAt: new Date()
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error(`Error importing messages for ${chatterName}:`, error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Messages imported',
+      results: {
+        ...results,
+        chattersProcessed: Object.keys(byChatter).length
+      }
+    });
+  } catch (error) {
+    console.error('Bulk messages import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import VIP fans
+app.post('/api/bulk/vip-fans', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} VIP fan records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        const fanUsername = row['Fan Username'] || row['fanUsername'] || row['Username'] || row['Fan'];
+        const totalSpent = parseFloat(row['Total Spent'] || row['totalSpent'] || row['LTV'] || 0);
+        const creatorName = row['Creator Name'] || row['creatorName'] || row['Model'];
+
+        if (!fanUsername || totalSpent < 100) {
+          results.skipped++;
+          continue;
+        }
+
+        await VIPFan.findOneAndUpdate(
+          { fanUsername },
+          {
+            $set: {
+              totalSpent,
+              creatorName,
+              lastPurchaseDate: new Date(),
+              status: totalSpent > 500 ? 'platinum' : totalSpent > 200 ? 'gold' : 'vip'
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'VIP fans imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk VIP fans import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import traffic sources
+app.post('/api/bulk/traffic-sources', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} traffic source records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        const sourceName = row['Source Name'] || row['sourceName'] || row['Source'];
+        const category = row['Category'] || row['category'] || 'general';
+        const clicks = parseInt(row['Clicks'] || row['clicks'] || 0);
+        const date = row['Date'] || row['date'];
+
+        if (!sourceName) {
+          results.skipped++;
+          continue;
+        }
+
+        // Create or update traffic source
+        let source = await TrafficSource.findOne({ name: sourceName });
+        if (!source) {
+          source = await TrafficSource.create({
+            name: sourceName,
+            category,
+            url: '#',
+            isActive: true
+          });
+        }
+
+        // Create performance record
+        if (date && clicks > 0) {
+          await TrafficSourcePerformance.create({
+            trafficSource: source._id,
+            weekStartDate: new Date(date),
+            weekEndDate: new Date(date),
+            clicks,
+            views: clicks,
+            conversions: 0
+          });
+        }
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Traffic sources imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk traffic sources import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Handle errors
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
