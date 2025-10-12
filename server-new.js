@@ -7235,44 +7235,65 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterAvgResponseTime = 0;
     } else if (chatterPerformance.length > 0) {
       // FALLBACK: Use ChatterPerformance (weekly data)
-      console.log('📊 Using ChatterPerformance fallback for', chatterName);
-      const perf = chatterPerformance[0]; // Use first record if multiple
-      chatterRevenue = perf.netSales || 0;
-      chatterPPVRevenue = perf.ppvRevenue || 0;
-      chatterPPVsSent = perf.ppvsSent || 0;
-      chatterPPVsUnlocked = perf.ppvsUnlocked || 0;
+      console.log(`📊 Using ChatterPerformance fallback for ${chatterName} (${chatterPerformance.length} records)`);
+      
+      // CRITICAL: Sum ALL ChatterPerformance records in date range, not just first one
+      chatterRevenue = chatterPerformance.reduce((sum, p) => sum + (p.netSales || 0), 0);
+      chatterPPVRevenue = chatterPerformance.reduce((sum, p) => sum + (p.ppvRevenue || 0), 0);
+      chatterPPVsSent = chatterPerformance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+      chatterPPVsUnlocked = chatterPerformance.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
       chatterPPVCount = chatterPPVsUnlocked;
-      chatterAvgPPVPrice = perf.avgPPVPrice || 0;
       chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
-      chatterFansChatted = perf.fansChattedWith || 0;
-      chatterMessagesSent = perf.messagesSent || 0;
-      chatterAvgResponseTime = perf.avgResponseTime || 0;
+      chatterFansChatted = chatterPerformance.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+      chatterMessagesSent = chatterPerformance.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+      
+      // Average PPV price across all records (weighted by count)
+      const totalPPVRevenue = chatterPerformance.reduce((sum, p) => sum + (p.ppvRevenue || 0), 0);
+      chatterAvgPPVPrice = chatterPPVsUnlocked > 0 ? totalPPVRevenue / chatterPPVsUnlocked : 0;
+      
+      // Average response time across records (simple average)
+      const recordsWithResponseTime = chatterPerformance.filter(p => p.avgResponseTime && p.avgResponseTime > 0);
+      chatterAvgResponseTime = recordsWithResponseTime.length > 0
+        ? recordsWithResponseTime.reduce((sum, p) => sum + p.avgResponseTime, 0) / recordsWithResponseTime.length
+        : 0;
+      
+      console.log(`   📊 Aggregated from ${chatterPerformance.length} records: ${chatterPPVsUnlocked}/${chatterPPVsSent} PPVs = ${chatterUnlockRate.toFixed(1)}%`);
     }
     
     // 🔥 CRITICAL FIX: Override with ChatterPerformance if DailyChatterReport is incomplete
     if (chatterPerformance.length > 0) {
-      const perf = chatterPerformance[0];
-      if (chatterMessagesSent === 0 && perf.messagesSent > 0) {
-        console.log('⚠️  Overriding messagesSent from ChatterPerformance:', perf.messagesSent);
-        chatterMessagesSent = perf.messagesSent;
+      // Sum ALL ChatterPerformance records (not just first one)
+      const totalMessagesSent = chatterPerformance.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+      const totalPPVsSent = chatterPerformance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+      const totalPPVsUnlocked = chatterPerformance.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
+      const totalFansChatted = chatterPerformance.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+      
+      if (chatterMessagesSent === 0 && totalMessagesSent > 0) {
+        console.log(`⚠️  Overriding messagesSent from ChatterPerformance: ${totalMessagesSent} (${chatterPerformance.length} records)`);
+        chatterMessagesSent = totalMessagesSent;
       }
-      if (chatterPPVsSent === 0 && perf.ppvsSent > 0) {
-        console.log('⚠️  Overriding ppvsSent from ChatterPerformance:', perf.ppvsSent);
-        chatterPPVsSent = perf.ppvsSent;
+      if (chatterPPVsSent === 0 && totalPPVsSent > 0) {
+        console.log(`⚠️  Overriding ppvsSent from ChatterPerformance: ${totalPPVsSent} (${chatterPerformance.length} records)`);
+        chatterPPVsSent = totalPPVsSent;
       }
-      if (chatterFansChatted === 0 && perf.fansChattedWith > 0) {
-        console.log('⚠️  Overriding fansChatted from ChatterPerformance:', perf.fansChattedWith);
-        chatterFansChatted = perf.fansChattedWith;
+      if (chatterFansChatted === 0 && totalFansChatted > 0) {
+        console.log(`⚠️  Overriding fansChatted from ChatterPerformance: ${totalFansChatted} (${chatterPerformance.length} records)`);
+        chatterFansChatted = totalFansChatted;
       }
-      if (chatterAvgResponseTime === 0 && perf.avgResponseTime > 0) {
-        chatterAvgResponseTime = perf.avgResponseTime;
+      
+      // Average response time across all records
+      const recordsWithResponseTime = chatterPerformance.filter(p => p.avgResponseTime && p.avgResponseTime > 0);
+      if (chatterAvgResponseTime === 0 && recordsWithResponseTime.length > 0) {
+        chatterAvgResponseTime = recordsWithResponseTime.reduce((sum, p) => sum + p.avgResponseTime, 0) / recordsWithResponseTime.length;
       }
+      
       // CRITICAL FIX: ALWAYS use ChatterPerformance ppvsUnlocked (not FanPurchase count)
       // FanPurchase counts ALL purchases, but ChatterPerformance has the correct PPV unlock data
-      if (perf.ppvsUnlocked !== undefined && perf.ppvsUnlocked !== null) {
-        console.log(`⚠️  Overriding ppvsUnlocked: ${chatterPPVsUnlocked} → ${perf.ppvsUnlocked} (ChatterPerformance is source of truth)`);
-        chatterPPVsUnlocked = perf.ppvsUnlocked;
+      if (totalPPVsUnlocked !== undefined && totalPPVsUnlocked !== null) {
+        console.log(`⚠️  Overriding ppvsUnlocked: ${chatterPPVsUnlocked} → ${totalPPVsUnlocked} (${chatterPerformance.length} records, ChatterPerformance is source of truth)`);
+        chatterPPVsUnlocked = totalPPVsUnlocked;
       }
+      
       // Recalculate unlock rate with corrected data
       chatterUnlockRate = chatterPPVsSent > 0 ? (chatterPPVsUnlocked / chatterPPVsSent) * 100 : 0;
     }
