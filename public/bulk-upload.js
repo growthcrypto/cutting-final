@@ -171,12 +171,11 @@ function detectDataType(headers) {
     return null;
 }
 
-// Render preview
+// Render preview with confirmation summary
 function renderPreview(data) {
     const previewContent = document.getElementById('previewContent');
     document.getElementById('previewSection').classList.remove('hidden');
 
-    let html = '';
     const dataTypeNames = {
         dailySales: { name: 'Daily Sales', icon: 'dollar-sign', color: 'green' },
         chatterPerformance: { name: 'Chatter Performance', icon: 'chart-line', color: 'blue' },
@@ -186,11 +185,64 @@ function renderPreview(data) {
         trafficSources: { name: 'Traffic Sources', icon: 'link', color: 'orange' }
     };
 
+    // Calculate totals for confirmation summary
+    const summary = calculateDataSummary(data);
+    
+    // Build confirmation summary at the top
+    let html = `
+        <div class="bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-xl p-8 border-2 border-purple-500/50 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 text-4xl mr-4"></i>
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Data Ready to Import</h3>
+                        <p class="text-gray-300">Review the summary below and confirm to import</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-4xl font-bold text-purple-400">${Object.keys(data).length}</div>
+                    <div class="text-sm text-gray-400">Data Types</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                ${summary.map(item => `
+                    <div class="bg-gray-800/60 rounded-lg p-4 border border-gray-700 hover:border-${item.color}-500/50 transition-all">
+                        <div class="text-${item.color}-400 text-2xl mb-2">
+                            <i class="fas fa-${item.icon}"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-white mb-1">${typeof item.value === 'string' ? item.value : item.value.toLocaleString()}</div>
+                        <div class="text-sm text-gray-400">${item.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            ${generateChatterBreakdown(data)}
+            ${generateRevenueBreakdown(data)}
+
+            <div class="bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 mt-4">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-400 mr-3 mt-1"></i>
+                    <div>
+                        <p class="text-white font-semibold mb-1">What will happen:</p>
+                        <ul class="text-gray-300 text-sm space-y-1">
+                            <li>• Existing records will be <strong>updated</strong> with new data</li>
+                            <li>• New records will be <strong>created</strong></li>
+                            <li>• Your dashboard will <strong>refresh automatically</strong></li>
+                            <li>• This usually takes <strong>5-10 seconds</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add detailed preview sections
     Object.entries(data).forEach(([type, rows]) => {
         const info = dataTypeNames[type] || { name: type, icon: 'table', color: 'gray' };
         
         html += `
-            <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+            <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700 mb-4">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="text-xl font-bold text-white flex items-center">
                         <i class="fas fa-${info.icon} text-${info.color}-400 mr-3"></i>
@@ -233,6 +285,280 @@ function renderPreview(data) {
     });
 
     previewContent.innerHTML = html;
+}
+
+// Calculate summary statistics from parsed data
+function calculateDataSummary(data) {
+    const summary = [];
+
+    // Total rows
+    const totalRows = Object.values(data).reduce((sum, rows) => sum + rows.length, 0);
+    summary.push({
+        icon: 'table',
+        color: 'purple',
+        value: totalRows,
+        label: 'Total Rows'
+    });
+
+    // Chatter Performance metrics
+    if (data.chatterPerformance) {
+        const totalMessages = data.chatterPerformance.reduce((sum, row) => {
+            const messages = parseInt(row['Messages Sent'] || row['messagesSent'] || row['Messages'] || 0);
+            return sum + messages;
+        }, 0);
+        
+        const totalPPVsSent = data.chatterPerformance.reduce((sum, row) => {
+            const ppvs = parseInt(row['PPVs Sent'] || row['ppvsSent'] || row['PPV Sent'] || 0);
+            return sum + ppvs;
+        }, 0);
+
+        const totalPPVsUnlocked = data.chatterPerformance.reduce((sum, row) => {
+            const unlocked = parseInt(row['PPVs Unlocked'] || row['ppvsUnlocked'] || row['PPV Unlocked'] || 0);
+            return sum + unlocked;
+        }, 0);
+
+        if (totalMessages > 0) {
+            summary.push({
+                icon: 'comments',
+                color: 'cyan',
+                value: totalMessages,
+                label: 'Messages'
+            });
+        }
+
+        if (totalPPVsSent > 0) {
+            summary.push({
+                icon: 'paper-plane',
+                color: 'blue',
+                value: totalPPVsSent,
+                label: 'PPVs Sent'
+            });
+        }
+
+        if (totalPPVsUnlocked > 0) {
+            summary.push({
+                icon: 'unlock',
+                color: 'green',
+                value: totalPPVsUnlocked,
+                label: 'PPVs Unlocked'
+            });
+        }
+
+        // Calculate unlock rate
+        if (totalPPVsSent > 0) {
+            const unlockRate = ((totalPPVsUnlocked / totalPPVsSent) * 100).toFixed(1);
+            summary.push({
+                icon: 'percent',
+                color: 'yellow',
+                value: unlockRate + '%',
+                label: 'Unlock Rate'
+            });
+        }
+    }
+
+    // Daily Sales metrics
+    if (data.dailySales) {
+        const totalRevenue = data.dailySales.reduce((sum, row) => {
+            const revenue = parseFloat(row['Revenue'] || row['revenue'] || row['Total Revenue'] || 0);
+            return sum + revenue;
+        }, 0);
+
+        if (totalRevenue > 0) {
+            summary.push({
+                icon: 'dollar-sign',
+                color: 'green',
+                value: '$' + totalRevenue.toFixed(0),
+                label: 'Total Revenue'
+            });
+        }
+    }
+
+    // Account Snapshot metrics
+    if (data.accountSnapshot) {
+        const uniqueCreators = new Set(data.accountSnapshot.map(row => 
+            row['Creator Name'] || row['creatorName'] || row['Creator'] || row['Model']
+        )).size;
+
+        summary.push({
+            icon: 'user',
+            color: 'purple',
+            value: uniqueCreators,
+            label: 'Creators'
+        });
+    }
+
+    // Messages
+    if (data.messages) {
+        const uniqueChatters = new Set(data.messages.map(row => 
+            row['Chatter Name'] || row['chatterName'] || row['Chatter']
+        )).size;
+
+        summary.push({
+            icon: 'users',
+            color: 'cyan',
+            value: uniqueChatters,
+            label: 'Chatters'
+        });
+
+        summary.push({
+            icon: 'comment-dots',
+            color: 'blue',
+            value: data.messages.length,
+            label: 'Message Records'
+        });
+    }
+
+    // VIP Fans
+    if (data.vipFans) {
+        const totalVIPSpend = data.vipFans.reduce((sum, row) => {
+            const spent = parseFloat(row['Total Spent'] || row['totalSpent'] || row['LTV'] || 0);
+            return sum + spent;
+        }, 0);
+
+        summary.push({
+            icon: 'star',
+            color: 'yellow',
+            value: data.vipFans.length,
+            label: 'VIP Fans'
+        });
+
+        if (totalVIPSpend > 0) {
+            summary.push({
+                icon: 'gem',
+                color: 'purple',
+                value: '$' + totalVIPSpend.toFixed(0),
+                label: 'VIP Revenue'
+            });
+        }
+    }
+
+    return summary;
+}
+
+// Generate chatter-by-chatter breakdown
+function generateChatterBreakdown(data) {
+    if (!data.chatterPerformance) return '';
+
+    // Group by chatter
+    const byChatter = {};
+    data.chatterPerformance.forEach(row => {
+        const chatter = row['Chatter Name'] || row['chatterName'] || row['Chatter'];
+        if (!chatter) return;
+
+        if (!byChatter[chatter]) {
+            byChatter[chatter] = {
+                messages: 0,
+                ppvsSent: 0,
+                ppvsUnlocked: 0,
+                fans: 0,
+                records: 0
+            };
+        }
+
+        byChatter[chatter].messages += parseInt(row['Messages Sent'] || row['messagesSent'] || row['Messages'] || 0);
+        byChatter[chatter].ppvsSent += parseInt(row['PPVs Sent'] || row['ppvsSent'] || row['PPV Sent'] || 0);
+        byChatter[chatter].ppvsUnlocked += parseInt(row['PPVs Unlocked'] || row['ppvsUnlocked'] || row['PPV Unlocked'] || 0);
+        byChatter[chatter].fans += parseInt(row['Fans Chatted'] || row['fansChatted'] || row['Fans'] || 0);
+        byChatter[chatter].records++;
+    });
+
+    if (Object.keys(byChatter).length === 0) return '';
+
+    return `
+        <div class="bg-gray-800/40 rounded-lg p-6 border border-gray-700 mb-4">
+            <h4 class="text-lg font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-users text-cyan-400 mr-2"></i>
+                Breakdown by Chatter
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                ${Object.entries(byChatter).map(([name, stats]) => {
+                    const unlockRate = stats.ppvsSent > 0 
+                        ? ((stats.ppvsUnlocked / stats.ppvsSent) * 100).toFixed(1)
+                        : 0;
+                    return `
+                        <div class="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-white font-bold">${name}</span>
+                                <span class="text-xs text-gray-500">${stats.records} record${stats.records > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Messages:</span>
+                                    <span class="text-cyan-400 font-semibold">${stats.messages.toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">PPVs Sent:</span>
+                                    <span class="text-blue-400 font-semibold">${stats.ppvsSent}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">PPVs Unlocked:</span>
+                                    <span class="text-green-400 font-semibold">${stats.ppvsUnlocked}</span>
+                                </div>
+                                <div class="flex justify-between border-t border-gray-700 pt-1 mt-1">
+                                    <span class="text-gray-400">Unlock Rate:</span>
+                                    <span class="text-yellow-400 font-bold">${unlockRate}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Generate revenue breakdown
+function generateRevenueBreakdown(data) {
+    if (!data.dailySales) return '';
+
+    // Group by chatter
+    const byChatter = {};
+    data.dailySales.forEach(row => {
+        const chatter = row['Chatter Name'] || row['chatterName'] || row['Chatter'];
+        const revenue = parseFloat(row['Revenue'] || row['revenue'] || row['Total Revenue'] || 0);
+        
+        if (!chatter) return;
+
+        if (!byChatter[chatter]) {
+            byChatter[chatter] = {
+                revenue: 0,
+                records: 0
+            };
+        }
+
+        byChatter[chatter].revenue += revenue;
+        byChatter[chatter].records++;
+    });
+
+    if (Object.keys(byChatter).length === 0) return '';
+
+    // Sort by revenue descending
+    const sorted = Object.entries(byChatter).sort((a, b) => b[1].revenue - a[1].revenue);
+    const totalRevenue = Object.values(byChatter).reduce((sum, c) => sum + c.revenue, 0);
+
+    return `
+        <div class="bg-gray-800/40 rounded-lg p-6 border border-gray-700 mb-4">
+            <h4 class="text-lg font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-dollar-sign text-green-400 mr-2"></i>
+                Revenue Breakdown
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                ${sorted.map(([name, stats]) => {
+                    const percentage = totalRevenue > 0 ? ((stats.revenue / totalRevenue) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-white font-bold">${name}</span>
+                                <span class="text-xs text-gray-500">${stats.records} day${stats.records > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="text-2xl font-bold text-green-400 mb-1">$${stats.revenue.toFixed(2)}</div>
+                            <div class="text-xs text-gray-400">${percentage}% of total</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
 }
 
 // Import bulk data
