@@ -7569,6 +7569,12 @@ async function generateAgencyIntelligence(data) {
 function analyzeTrafficSources(current, previous) {
   const sourceMetrics = {};
   
+  console.log('🔍 Analyzing traffic sources from', current.purchases.length, 'purchases');
+  const purchasesWithSource = current.purchases.filter(p => p.trafficSource);
+  const purchasesWithoutSource = current.purchases.filter(p => !p.trafficSource);
+  console.log(`   - With traffic source: ${purchasesWithSource.length}`);
+  console.log(`   - Without traffic source: ${purchasesWithoutSource.length}`);
+  
   // Aggregate current period by source
   current.purchases.forEach(purchase => {
     if (!purchase.trafficSource) return;
@@ -7955,21 +7961,53 @@ function analyzeRevenueMechanics(current, previous) {
 function detectPatterns(current, previous) {
   const patterns = [];
   
+  console.log('🔍 Detecting patterns...');
+  
   // Pattern: Traffic source quality correlation
-  const sourceQualityPattern = analyzeSourceQualityPattern(current);
-  if (sourceQualityPattern) patterns.push(sourceQualityPattern);
+  try {
+    const sourceQualityPattern = analyzeSourceQualityPattern(current);
+    if (sourceQualityPattern) {
+      patterns.push(sourceQualityPattern);
+      console.log('   ✅ Source quality pattern detected');
+    }
+  } catch (e) {
+    console.log('   ⚠️ Source quality pattern failed:', e.message);
+  }
   
   // Pattern: Retention vs revenue correlation
-  const retentionRevenuePattern = analyzeRetentionRevenuePattern(current);
-  if (retentionRevenuePattern) patterns.push(retentionRevenuePattern);
+  try {
+    const retentionRevenuePattern = analyzeRetentionRevenuePattern(current);
+    if (retentionRevenuePattern) {
+      patterns.push(retentionRevenuePattern);
+      console.log('   ✅ Retention-revenue pattern detected');
+    }
+  } catch (e) {
+    console.log('   ⚠️ Retention-revenue pattern failed:', e.message);
+  }
   
   // Pattern: Quality score impact across team
-  const qualityImpactPattern = analyzeQualityImpactPattern(current);
-  if (qualityImpactPattern) patterns.push(qualityImpactPattern);
+  try {
+    const qualityImpactPattern = analyzeQualityImpactPattern(current);
+    if (qualityImpactPattern) {
+      patterns.push(qualityImpactPattern);
+      console.log('   ✅ Quality impact pattern detected');
+    }
+  } catch (e) {
+    console.log('   ⚠️ Quality impact pattern failed:', e.message);
+  }
   
   // Pattern: PPV saturation detection
-  const saturationPattern = analyzeSaturationPattern(current, previous);
-  if (saturationPattern) patterns.push(saturationPattern);
+  try {
+    const saturationPattern = analyzeSaturationPattern(current, previous);
+    if (saturationPattern) {
+      patterns.push(saturationPattern);
+      console.log('   ✅ Saturation pattern detected');
+    }
+  } catch (e) {
+    console.log('   ⚠️ Saturation pattern failed:', e.message);
+  }
+  
+  console.log(`🔍 Total patterns detected: ${patterns.length}`);
   
   return patterns;
 }
@@ -8089,6 +8127,15 @@ function analyzeSaturationPattern(current, previous) {
 function generateStrategicRecommendations(intelligence) {
   const recommendations = [];
   
+  console.log('🔍 Generating strategic recommendations...');
+  console.log('   Intelligence data:', {
+    hasTraffic: !!intelligence.traffic,
+    trafficSources: Object.keys(intelligence.traffic?.sources || {}).length,
+    hasRetention: !!intelligence.retention,
+    hasTeam: !!intelligence.team,
+    patterns: intelligence.patterns?.length || 0
+  });
+  
   // Traffic source recommendations
   if (intelligence.traffic.concentration > 70) {
     recommendations.push({
@@ -8144,6 +8191,63 @@ function generateStrategicRecommendations(intelligence) {
       });
     }
   });
+  
+  // FALLBACK: Generate basic recommendations from available data if we have none
+  if (recommendations.length === 0) {
+    console.log('⚠️ No advanced recommendations - generating basic ones from team performance');
+    
+    // Team unlock rate recommendation
+    if (intelligence.team && intelligence.team.avgUnlockRate) {
+      const unlockRate = parseFloat(intelligence.team.avgUnlockRate);
+      if (unlockRate < 40) {
+        recommendations.push({
+          priority: 'high',
+          category: 'conversion',
+          title: 'Improve Team PPV Unlock Rate',
+          issue: `Team unlock rate is ${unlockRate}%, below 50% target`,
+          impact: `Reaching 50% unlock rate would increase revenue by ~${Math.round((50 - unlockRate) * intelligence.revenue.current.revenue / unlockRate)}`,
+          action: 'Focus on PPV hooks, timing, and message quality. Review top performers strategies.',
+          timeframe: '14 days'
+        });
+      }
+    }
+    
+    // Low activity recommendation
+    if (intelligence.team && intelligence.team.chatters) {
+      const lowActivityChatters = intelligence.team.chatters.filter(c => 
+        c.ppvsSent < 15 || c.messagesSent < 500
+      );
+      if (lowActivityChatters.length > 0) {
+        recommendations.push({
+          priority: 'high',
+          category: 'performance',
+          title: 'Address Low Activity Chatters',
+          issue: `${lowActivityChatters.length} chatters with low PPV/message volume`,
+          impact: 'All chatters work equal hours - low activity = underperformance',
+          action: `Review performance with: ${lowActivityChatters.map(c => c.chatterName).join(', ')}. Set daily minimums: 20 PPVs, 700 messages.`,
+          timeframe: '7 days'
+        });
+      }
+    }
+    
+    // Quality score recommendation
+    if (intelligence.team && intelligence.team.avgGuidelinesScore) {
+      const avgScore = intelligence.team.avgGuidelinesScore;
+      if (avgScore < 70) {
+        recommendations.push({
+          priority: 'medium',
+          category: 'quality',
+          title: 'Improve Team Message Quality',
+          issue: `Team guidelines score is ${avgScore}/100`,
+          impact: 'Better message quality correlates with higher unlock rates',
+          action: 'Team training session on messaging guidelines. Focus on reply time, follow-ups, and information gathering.',
+          timeframe: '14 days'
+        });
+      }
+    }
+  }
+  
+  console.log(`🔍 Total recommendations generated: ${recommendations.length}`);
   
   return recommendations.sort((a, b) => {
     const priority = { high: 1, medium: 2, low: 3 };
