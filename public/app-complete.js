@@ -11577,7 +11577,7 @@ async function handleDailyReportSubmit(event) {
 }
 
 // My Performance functions
-let currentMyPerformanceInterval = '7d';
+let currentMyPerformanceInterval = '24h';  // FIXED: Default to 24h to match button UI
 let myPerformanceCustomDates = null;
 
 function setMyPerformanceInterval(interval) {
