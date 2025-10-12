@@ -163,9 +163,15 @@ function detectDataType(headers) {
         return 'vipFans';
     }
 
-    // Traffic Sources
+    // Traffic Sources / Link Tracking
     if (headerStr.includes('source') && headerStr.includes('clicks')) {
         return 'trafficSources';
+    }
+
+    // Link Tracking Data
+    if ((headerStr.includes('link') || headerStr.includes('landing')) && 
+        (headerStr.includes('clicks') || headerStr.includes('views'))) {
+        return 'linkTracking';
     }
 
     return null;
@@ -182,7 +188,8 @@ function renderPreview(data) {
         accountSnapshot: { name: 'Account Snapshots', icon: 'camera', color: 'purple' },
         messages: { name: 'Messages', icon: 'comments', color: 'cyan' },
         vipFans: { name: 'VIP Fans', icon: 'star', color: 'yellow' },
-        trafficSources: { name: 'Traffic Sources', icon: 'link', color: 'orange' }
+        trafficSources: { name: 'Traffic Sources', icon: 'link', color: 'orange' },
+        linkTracking: { name: 'Link Tracking', icon: 'external-link-alt', color: 'pink' }
     };
 
     // Calculate totals for confirmation summary
@@ -523,6 +530,64 @@ function calculateDataSummary(data) {
         }
     }
 
+    // Link Tracking / Traffic Data
+    if (data.linkTracking) {
+        const totalViews = data.linkTracking.reduce((sum, row) => {
+            return sum + parseInt(row['Landing Page Views'] || row['landingPageViews'] || row['Views'] || 0);
+        }, 0);
+
+        const totalClicks = data.linkTracking.reduce((sum, row) => {
+            return sum + parseInt(row['OnlyFans Clicks'] || row['onlyFansClicks'] || row['Clicks'] || row['OF Clicks'] || 0);
+        }, 0);
+
+        const clickThroughRate = totalViews > 0 
+            ? ((totalClicks / totalViews) * 100).toFixed(1)
+            : 0;
+
+        if (totalViews > 0) {
+            summary.push({
+                icon: 'eye',
+                color: 'blue',
+                value: totalViews,
+                label: 'Landing Views'
+            });
+        }
+
+        if (totalClicks > 0) {
+            summary.push({
+                icon: 'mouse-pointer',
+                color: 'pink',
+                value: totalClicks,
+                label: 'OF Link Clicks'
+            });
+        }
+
+        if (totalViews > 0 && totalClicks > 0) {
+            summary.push({
+                icon: 'percentage',
+                color: 'cyan',
+                value: clickThroughRate + '%',
+                label: 'Click-Through Rate'
+            });
+        }
+    }
+
+    // Traffic Sources (if separate)
+    if (data.trafficSources) {
+        const totalTrafficClicks = data.trafficSources.reduce((sum, row) => {
+            return sum + parseInt(row['Clicks'] || row['clicks'] || 0);
+        }, 0);
+
+        if (totalTrafficClicks > 0) {
+            summary.push({
+                icon: 'link',
+                color: 'orange',
+                value: totalTrafficClicks,
+                label: 'Traffic Clicks'
+            });
+        }
+    }
+
     return summary;
 }
 
@@ -828,7 +893,8 @@ function getBulkImportEndpoint(dataType) {
         accountSnapshot: '/api/bulk/account-snapshots',
         messages: '/api/bulk/messages',
         vipFans: '/api/bulk/vip-fans',
-        trafficSources: '/api/bulk/traffic-sources'
+        trafficSources: '/api/bulk/traffic-sources',
+        linkTracking: '/api/bulk/link-tracking'
     };
     return endpoints[dataType];
 }

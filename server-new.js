@@ -10891,6 +10891,74 @@ app.post('/api/bulk/vip-fans', checkDatabaseConnection, authenticateToken, async
   }
 });
 
+// Bulk import link tracking
+app.post('/api/bulk/link-tracking', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { data } = req.body;
+    console.log(`📊 Bulk importing ${data.length} link tracking records`);
+
+    const results = { success: 0, errors: 0, skipped: 0 };
+
+    for (const row of data) {
+      try {
+        const category = (row['Category'] || row['category'] || '').toLowerCase();
+        const creatorName = row['Creator Name'] || row['creatorName'] || row['Creator'] || row['Model'];
+        const views = parseInt(row['Landing Page Views'] || row['landingPageViews'] || row['Views'] || 0);
+        const clicks = parseInt(row['OnlyFans Clicks'] || row['onlyFansClicks'] || row['Clicks'] || row['OF Clicks'] || 0);
+        const date = row['Date'] || row['date'];
+
+        if (!category || !creatorName || !date) {
+          results.skipped++;
+          continue;
+        }
+
+        // Find or create creator account
+        let creator = await CreatorAccount.findOne({ name: creatorName });
+        if (!creator) {
+          creator = await CreatorAccount.create({
+            name: creatorName,
+            platformUsername: creatorName.toLowerCase()
+          });
+        }
+
+        const clickThroughRate = views > 0 ? (clicks / views) * 100 : 0;
+
+        // Create link tracking record
+        await LinkTrackingData.findOneAndUpdate(
+          {
+            category,
+            creatorAccount: creator._id,
+            weekStartDate: new Date(date)
+          },
+          {
+            $set: {
+              weekEndDate: new Date(date),
+              landingPageViews: views,
+              onlyFansClicks: clicks,
+              clickThroughRate,
+              uploadedAt: new Date()
+            }
+          },
+          { upsert: true, new: true }
+        );
+
+        results.success++;
+      } catch (error) {
+        console.error('Error importing row:', error);
+        results.errors++;
+      }
+    }
+
+    res.json({ 
+      message: 'Link tracking data imported',
+      results
+    });
+  } catch (error) {
+    console.error('Bulk link tracking import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Bulk import traffic sources
 app.post('/api/bulk/traffic-sources', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
