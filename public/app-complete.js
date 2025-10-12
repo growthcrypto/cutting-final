@@ -5264,14 +5264,22 @@ async function runChatterAnalysis() {
         const latestMessage = messagesList[0];
         console.log('🔍 Found message analysis:', latestMessage._id);
         
-        // Trigger RE-ANALYSIS
+        // Trigger RE-ANALYSIS with date range filter
         console.log('🔄 Triggering re-analysis for message ID:', latestMessage._id);
+        console.log('📅 Sending date range to reanalyze:', {
+            startDate: formatDate(startDate),
+            endDate: formatDate(endDate)
+        });
         const reanalyzeResponse = await fetch(`/api/messages/reanalyze/${latestMessage._id}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                startDate: formatDate(startDate),
+                endDate: formatDate(endDate)
+            })
         });
         
         if (!reanalyzeResponse.ok) {
@@ -5282,9 +5290,10 @@ async function runChatterAnalysis() {
         
         const reanalyzeData = await reanalyzeResponse.json();
         console.log('✅ Analysis triggered successfully:', reanalyzeData);
-        console.log('   Grammar Score:', reanalyzeData.grammarScore);
-        console.log('   Guidelines Score:', reanalyzeData.guidelinesScore);
-        console.log('   Overall Score:', reanalyzeData.overallScore);
+        console.log('   Grammar Score:', reanalyzeData.analysis?.grammarScore);
+        console.log('   Guidelines Score:', reanalyzeData.analysis?.guidelinesScore);
+        console.log('   Overall Score:', reanalyzeData.analysis?.overallScore);
+        console.log('   Messages Analyzed:', reanalyzeData.analysis?.messagesAnalyzed);
         
         // Now fetch the updated analysis
         const response = await fetch(`/api/analytics/chatter-deep-analysis/${encodeURIComponent(chatterName)}?${params}`, {
@@ -5306,6 +5315,12 @@ async function runChatterAnalysis() {
         console.log('   Guidelines Score:', analysisData.guidelinesScore);
         console.log('   Analysis Summary:', analysisData.analysisSummary);
         console.log('   Deep Insights:', analysisData.deepInsights?.length || 0);
+        
+        // Override totalMessages with the filtered count from reanalyze
+        if (reanalyzeData.analysis?.messagesAnalyzed) {
+            analysisData.totalMessages = reanalyzeData.analysis.messagesAnalyzed;
+            console.log('   ✅ Using filtered message count:', analysisData.totalMessages);
+        }
         
         // Render analysis even if scores are null - the render function will handle it
         renderNewChatterAnalysis(analysisData);

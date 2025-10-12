@@ -2000,7 +2000,9 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
 app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
     const messageAnalysisId = req.params.id;
+    const { startDate, endDate } = req.body;
     console.log('🔄 RE-ANALYZING MessageAnalysis:', messageAnalysisId);
+    console.log('📅 Date range filter:', { startDate, endDate });
     
     // Get the existing MessageAnalysis record
     const existingAnalysis = await MessageAnalysis.findById(messageAnalysisId);
@@ -2021,7 +2023,7 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     }
     
     // Extract full message objects (not just text) to preserve replyTime, fanUsername, isPPV, etc.
-    const messages = existingAnalysis.messageRecords.map(record => ({
+    let messages = existingAnalysis.messageRecords.map(record => ({
       text: record.messageText,
       replyTime: record.replyTime || 0,
       timestamp: record.timestamp,
@@ -2029,7 +2031,34 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       ppvRevenue: record.ppvRevenue || 0,
       isPPV: record.isPPV || false
     }));
-    console.log('📧 Extracted', messages.length, 'message objects for re-analysis (with metadata)');
+    
+    console.log('📧 Extracted', messages.length, 'total message objects');
+    
+    // Filter messages by date range if provided
+    if (startDate && endDate) {
+      const filterStart = new Date(startDate);
+      const filterEnd = new Date(endDate);
+      filterEnd.setHours(23, 59, 59, 999); // Include the entire end date
+      
+      const beforeFilter = messages.length;
+      messages = messages.filter(msg => {
+        if (!msg.timestamp) return true; // Include messages without timestamp
+        const msgDate = new Date(msg.timestamp);
+        return msgDate >= filterStart && msgDate <= filterEnd;
+      });
+      
+      console.log(`📅 Filtered messages: ${beforeFilter} → ${messages.length} (date range: ${startDate} to ${endDate})`);
+      
+      if (messages.length === 0) {
+        return res.status(400).json({ 
+          error: 'No messages found in the selected date range. Try a different date range or upload messages for this period.',
+          dateRange: { startDate, endDate },
+          totalMessagesAvailable: beforeFilter
+        });
+      }
+    }
+    
+    console.log('📧 Analyzing', messages.length, 'message objects (with metadata)');
     
     // Run AI analysis with timeout
     console.log('🤖 Calling analyzeMessages with', messages.length, 'messages...');
@@ -2120,7 +2149,9 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       analysis: {
         overallScore: existingAnalysis.overallScore,
         grammarScore: existingAnalysis.grammarScore,
-        guidelinesScore: existingAnalysis.guidelinesScore
+        guidelinesScore: existingAnalysis.guidelinesScore,
+        messagesAnalyzed: messages.length,
+        dateRange: startDate && endDate ? { startDate, endDate } : null
       }
     });
   } catch (error) {
