@@ -218,6 +218,7 @@ function renderPreview(data) {
             </div>
 
             ${generateChatterBreakdown(data)}
+            ${generateCreatorBreakdown(data)}
             ${generateRevenueBreakdown(data)}
 
             <div class="bg-blue-900/30 border border-blue-700/50 rounded-lg p-4 mt-4">
@@ -317,12 +318,28 @@ function calculateDataSummary(data) {
             return sum + unlocked;
         }, 0);
 
+        const totalFans = data.chatterPerformance.reduce((sum, row) => {
+            const fans = parseInt(row['Fans Chatted'] || row['fansChatted'] || row['Fans'] || 0);
+            return sum + fans;
+        }, 0);
+
+        // Calculate avg response time
+        const responseTimeRows = data.chatterPerformance.filter(row => {
+            const rt = parseFloat(row['Avg Response Time'] || row['avgResponseTime'] || row['Response Time'] || 0);
+            return rt > 0;
+        });
+        const avgResponseTime = responseTimeRows.length > 0
+            ? responseTimeRows.reduce((sum, row) => {
+                return sum + parseFloat(row['Avg Response Time'] || row['avgResponseTime'] || row['Response Time'] || 0);
+            }, 0) / responseTimeRows.length
+            : 0;
+
         if (totalMessages > 0) {
             summary.push({
                 icon: 'comments',
                 color: 'cyan',
                 value: totalMessages,
-                label: 'Messages'
+                label: 'Messages Sent'
             });
         }
 
@@ -344,6 +361,15 @@ function calculateDataSummary(data) {
             });
         }
 
+        if (totalFans > 0) {
+            summary.push({
+                icon: 'user-friends',
+                color: 'purple',
+                value: totalFans,
+                label: 'Fans Chatted'
+            });
+        }
+
         // Calculate unlock rate
         if (totalPPVsSent > 0) {
             const unlockRate = ((totalPPVsUnlocked / totalPPVsSent) * 100).toFixed(1);
@@ -352,6 +378,27 @@ function calculateDataSummary(data) {
                 color: 'yellow',
                 value: unlockRate + '%',
                 label: 'Unlock Rate'
+            });
+        }
+
+        // Show avg response time
+        if (avgResponseTime > 0) {
+            summary.push({
+                icon: 'clock',
+                color: 'orange',
+                value: avgResponseTime.toFixed(1) + 'm',
+                label: 'Avg Response Time'
+            });
+        }
+
+        // Calculate messages per PPV
+        if (totalPPVsSent > 0) {
+            const messagesPerPPV = (totalMessages / totalPPVsSent).toFixed(1);
+            summary.push({
+                icon: 'chart-line',
+                color: 'indigo',
+                value: messagesPerPPV,
+                label: 'Messages per PPV'
             });
         }
     }
@@ -379,12 +426,56 @@ function calculateDataSummary(data) {
             row['Creator Name'] || row['creatorName'] || row['Creator'] || row['Model']
         )).size;
 
+        // Calculate averages across all snapshots
+        const totalSubs = data.accountSnapshot.reduce((sum, row) => {
+            return sum + parseInt(row['Total Subs'] || row['totalSubs'] || row['Subscribers'] || 0);
+        }, 0);
+
+        const totalActive = data.accountSnapshot.reduce((sum, row) => {
+            return sum + parseInt(row['Active Fans'] || row['activeFans'] || row['Active'] || 0);
+        }, 0);
+
+        const totalWithRenew = data.accountSnapshot.reduce((sum, row) => {
+            return sum + parseInt(row['With Renew'] || row['withRenew'] || row['Renew On'] || 0);
+        }, 0);
+
+        const avgSubs = data.accountSnapshot.length > 0 ? Math.round(totalSubs / data.accountSnapshot.length) : 0;
+        const avgActive = data.accountSnapshot.length > 0 ? Math.round(totalActive / data.accountSnapshot.length) : 0;
+        const renewRate = avgSubs > 0 ? ((totalWithRenew / totalSubs) * 100).toFixed(1) : 0;
+
         summary.push({
-            icon: 'user',
+            icon: 'users',
             color: 'purple',
             value: uniqueCreators,
             label: 'Creators'
         });
+
+        if (avgSubs > 0) {
+            summary.push({
+                icon: 'user-plus',
+                color: 'blue',
+                value: avgSubs,
+                label: 'Avg Subscribers'
+            });
+        }
+
+        if (avgActive > 0) {
+            summary.push({
+                icon: 'user-check',
+                color: 'green',
+                value: avgActive,
+                label: 'Avg Active Fans'
+            });
+        }
+
+        if (totalWithRenew > 0) {
+            summary.push({
+                icon: 'sync',
+                color: 'cyan',
+                value: renewRate + '%',
+                label: 'Renewal Rate'
+            });
+        }
     }
 
     // Messages
@@ -451,7 +542,8 @@ function generateChatterBreakdown(data) {
                 ppvsSent: 0,
                 ppvsUnlocked: 0,
                 fans: 0,
-                records: 0
+                records: 0,
+                responseTimes: []
             };
         }
 
@@ -459,6 +551,12 @@ function generateChatterBreakdown(data) {
         byChatter[chatter].ppvsSent += parseInt(row['PPVs Sent'] || row['ppvsSent'] || row['PPV Sent'] || 0);
         byChatter[chatter].ppvsUnlocked += parseInt(row['PPVs Unlocked'] || row['ppvsUnlocked'] || row['PPV Unlocked'] || 0);
         byChatter[chatter].fans += parseInt(row['Fans Chatted'] || row['fansChatted'] || row['Fans'] || 0);
+        
+        const rt = parseFloat(row['Avg Response Time'] || row['avgResponseTime'] || row['Response Time'] || 0);
+        if (rt > 0) {
+            byChatter[chatter].responseTimes.push(rt);
+        }
+        
         byChatter[chatter].records++;
     });
 
@@ -468,23 +566,34 @@ function generateChatterBreakdown(data) {
         <div class="bg-gray-800/40 rounded-lg p-6 border border-gray-700 mb-4">
             <h4 class="text-lg font-bold text-white mb-4 flex items-center">
                 <i class="fas fa-users text-cyan-400 mr-2"></i>
-                Breakdown by Chatter
+                Performance by Chatter
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 ${Object.entries(byChatter).map(([name, stats]) => {
                     const unlockRate = stats.ppvsSent > 0 
                         ? ((stats.ppvsUnlocked / stats.ppvsSent) * 100).toFixed(1)
                         : 0;
+                    const avgResponseTime = stats.responseTimes.length > 0
+                        ? (stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length).toFixed(1)
+                        : null;
+                    const messagesPerPPV = stats.ppvsSent > 0 
+                        ? (stats.messages / stats.ppvsSent).toFixed(1)
+                        : 0;
+                    
                     return `
                         <div class="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
                             <div class="flex items-center justify-between mb-3">
-                                <span class="text-white font-bold">${name}</span>
+                                <span class="text-white font-bold text-lg">${name}</span>
                                 <span class="text-xs text-gray-500">${stats.records} record${stats.records > 1 ? 's' : ''}</span>
                             </div>
-                            <div class="space-y-1 text-sm">
+                            <div class="space-y-1.5 text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-400">Messages:</span>
                                     <span class="text-cyan-400 font-semibold">${stats.messages.toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Fans Chatted:</span>
+                                    <span class="text-purple-400 font-semibold">${stats.fans.toLocaleString()}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-400">PPVs Sent:</span>
@@ -494,9 +603,103 @@ function generateChatterBreakdown(data) {
                                     <span class="text-gray-400">PPVs Unlocked:</span>
                                     <span class="text-green-400 font-semibold">${stats.ppvsUnlocked}</span>
                                 </div>
-                                <div class="flex justify-between border-t border-gray-700 pt-1 mt-1">
+                                <div class="flex justify-between border-t border-gray-700 pt-1.5 mt-1.5">
                                     <span class="text-gray-400">Unlock Rate:</span>
                                     <span class="text-yellow-400 font-bold">${unlockRate}%</span>
+                                </div>
+                                ${avgResponseTime ? `
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">Avg Response:</span>
+                                        <span class="text-orange-400 font-semibold">${avgResponseTime}m</span>
+                                    </div>
+                                ` : ''}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Msgs per PPV:</span>
+                                    <span class="text-indigo-400 font-semibold">${messagesPerPPV}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Generate creator/account breakdown
+function generateCreatorBreakdown(data) {
+    if (!data.accountSnapshot) return '';
+
+    // Group by creator
+    const byCreator = {};
+    data.accountSnapshot.forEach(row => {
+        const creator = row['Creator Name'] || row['creatorName'] || row['Creator'] || row['Model'];
+        if (!creator) return;
+
+        if (!byCreator[creator]) {
+            byCreator[creator] = {
+                subs: [],
+                active: [],
+                withRenew: [],
+                records: 0
+            };
+        }
+
+        const subs = parseInt(row['Total Subs'] || row['totalSubs'] || row['Subscribers'] || 0);
+        const active = parseInt(row['Active Fans'] || row['activeFans'] || row['Active'] || 0);
+        const renew = parseInt(row['With Renew'] || row['withRenew'] || row['Renew On'] || 0);
+
+        if (subs > 0) byCreator[creator].subs.push(subs);
+        if (active > 0) byCreator[creator].active.push(active);
+        if (renew > 0) byCreator[creator].withRenew.push(renew);
+        
+        byCreator[creator].records++;
+    });
+
+    if (Object.keys(byCreator).length === 0) return '';
+
+    return `
+        <div class="bg-gray-800/40 rounded-lg p-6 border border-gray-700 mb-4">
+            <h4 class="text-lg font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-camera text-purple-400 mr-2"></i>
+                Account Snapshots by Creator
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                ${Object.entries(byCreator).map(([name, stats]) => {
+                    const avgSubs = stats.subs.length > 0
+                        ? Math.round(stats.subs.reduce((a, b) => a + b, 0) / stats.subs.length)
+                        : 0;
+                    const avgActive = stats.active.length > 0
+                        ? Math.round(stats.active.reduce((a, b) => a + b, 0) / stats.active.length)
+                        : 0;
+                    const totalWithRenew = stats.withRenew.reduce((a, b) => a + b, 0);
+                    const totalSubs = stats.subs.reduce((a, b) => a + b, 0);
+                    const renewRate = totalSubs > 0
+                        ? ((totalWithRenew / totalSubs) * 100).toFixed(1)
+                        : 0;
+                    
+                    return `
+                        <div class="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-white font-bold text-lg">${name}</span>
+                                <span class="text-xs text-gray-500">${stats.records} snapshot${stats.records > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="space-y-1.5 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Avg Subscribers:</span>
+                                    <span class="text-blue-400 font-bold text-lg">${avgSubs.toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Avg Active:</span>
+                                    <span class="text-green-400 font-semibold">${avgActive.toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Total w/ Renew:</span>
+                                    <span class="text-purple-400 font-semibold">${totalWithRenew.toLocaleString()}</span>
+                                </div>
+                                <div class="flex justify-between border-t border-gray-700 pt-1.5 mt-1.5">
+                                    <span class="text-gray-400">Renewal Rate:</span>
+                                    <span class="text-cyan-400 font-bold">${renewRate}%</span>
                                 </div>
                             </div>
                         </div>
