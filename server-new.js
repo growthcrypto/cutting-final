@@ -982,7 +982,12 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     
     // Combine data from all sources
     const combinedPPVsSent = chatterPPVsSent; // 'sent' comes from chatter performance
-    const combinedPPVsUnlocked = totalPPVsUnlocked + chatterPPVsUnlocked; // unlocked = sales from reports + unlocked from chatter perf
+    // FIXED: PPVs unlocked should ONLY come from FanPurchase (actual sales), not double-counted
+    // If we have FanPurchase data (daily sales logs), use that as the single source of truth
+    // Only use ChatterPerformance unlocked count if we have NO sales log data
+    const combinedPPVsUnlocked = totalPPVsUnlocked > 0 
+      ? totalPPVsUnlocked  // Use actual sales from daily logs
+      : chatterPPVsUnlocked; // Fallback to chatter performance if no sales logs
     const combinedMessagesSent = dailyReports.reduce((sum, report) => sum + (report.fansChatted || 0) * 15, 0) + chatterMessagesSent;
 
     const analytics = {
