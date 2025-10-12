@@ -43,8 +43,46 @@ function showUploadTab(tabName) {
 // INDIVIDUAL UPLOAD FORM HANDLERS
 // ========================================
 
+// Populate chatter dropdowns
+async function populateChatterDropdowns() {
+    try {
+        const response = await fetch('/api/users', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (!response.ok) return;
+
+        const users = await response.json();
+        const chatters = users.filter(u => u.role === 'chatter');
+
+        // Populate all chatter dropdowns
+        const chatterSelects = [
+            document.getElementById('chatterPerformanceChatterSelect'),
+            document.getElementById('messagesChatterSelect')
+        ];
+
+        chatterSelects.forEach(select => {
+            if (select) {
+                chatters.forEach(chatter => {
+                    const option = document.createElement('option');
+                    option.value = chatter.chatterName || chatter.username;
+                    option.textContent = chatter.chatterName || chatter.username;
+                    select.appendChild(option);
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error loading chatters:', error);
+    }
+}
+
 // Handle chatter performance form
 function initIndividualForms() {
+    // Populate dropdowns
+    populateChatterDropdowns();
+
     const chatterForm = document.getElementById('chatterPerformanceForm');
     if (chatterForm) {
         chatterForm.addEventListener('submit', async (e) => {
