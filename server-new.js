@@ -2303,6 +2303,13 @@ async function analyzeMessages(messages, chatterName) {
 
             const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. 
 
+🚨 CRITICAL CONTEXT: ALL CHATTERS WORK THE SAME HOURS EVERY WEEK. This means:
+- Low message counts indicate underperformance, NOT reduced hours
+- Fewer PPVs sent indicates underperformance, NOT scheduling differences
+- Lower revenue with equal hours is ALWAYS a performance issue
+- When comparing to team averages, hour differences DO NOT explain gaps
+📌 In your analysis, flag low activity/volume as performance weaknesses
+
 🚨 CRITICAL: DO NOT MAKE UP NUMBERS. You MUST actually analyze each message and count real violations. If you cannot find specific violations, report 0. Do NOT generate random numbers.
 
 You must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
@@ -8923,11 +8930,31 @@ function generateDeterministicIndividualAnalysis(analyticsData, interval, totalM
   insights.push(`Average response time: ${Math.round((analyticsData.avgResponseTime || 0) * 10) / 10} minutes`);
 
   const weakPoints = [];
+  
+  // CRITICAL: All chatters work the same hours - low activity is a performance issue, not scheduling
+  if (analyticsData.ppvsSent < 15) {
+    weakPoints.push(`⚠️ Low PPV volume (${analyticsData.ppvsSent} sent). All chatters work equal hours - this indicates underperformance`);
+  }
+  if (totalMessages < 500) {
+    weakPoints.push(`⚠️ Low message count (${totalMessages}). With equal working hours, this suggests reduced effort or engagement`);
+  }
+  
+  // Conversion & quality metrics
   if (ppvUnlockRate < 40 && analyticsData.ppvsSent > 0) weakPoints.push(`Low PPV unlock rate (${ppvUnlockRate}%). Target: 50-60%`);
   if ((analyticsData.avgResponseTime || 0) > 3) weakPoints.push(`Response time is high (${Math.round(analyticsData.avgResponseTime * 10) / 10}m). Target: under 3m`);
   if (messagesPerFan < 5 && analyticsData.fansChatted > 0) weakPoints.push(`Low messages per fan (${messagesPerFan}). Target: 6-8`);
 
   const opportunities = [];
+  
+  // Activity-based opportunities (equal hours = equal opportunity)
+  if (analyticsData.ppvsSent < 20) {
+    opportunities.push(`⚡ Increase PPV sending volume - you have the same time as top performers, aim for 20+ PPVs per period`);
+  }
+  if (totalMessages < 700) {
+    opportunities.push(`⚡ Boost message activity - top chatters send 700+ messages in the same hours you work`);
+  }
+  
+  // Quality-based opportunities
   if (ppvUnlockRate < 50 && analyticsData.ppvsSent > 0) opportunities.push(`Improve PPV hooks and timing to reach 50%+ unlocks`);
   if ((analyticsData.avgResponseTime || 0) > 3) opportunities.push(`Response templates and shortcuts to reduce response time`);
   if (messagesPerFan < 6 && analyticsData.fansChatted > 0) opportunities.push(`Increase follow-ups per fan to lift conversions`);
