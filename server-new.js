@@ -5518,6 +5518,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
       shift,
       ppvSales,
       tips,
+      spenders, // NEW: Generic spender tracking (all paying fans)
       fansChatted,
       avgResponseTime,
       notes
@@ -5537,6 +5538,7 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
       shift,
       ppvSales,
       tips,
+      spenders: spenders || [], // NEW: Save spenders list
       fansChatted,
       avgResponseTime,
       totalPPVRevenue,
@@ -5683,7 +5685,83 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
       await fanPurchase.save();
     }
     
-    console.log(`💰 Created ${ppvSales.length + tips.length} FanPurchase records`);
+    // ==================== NEW: Process SPENDERS (all paying fans) ====================
+    // This is the SOURCE OF TRUTH for retention & traffic source analytics
+    // VIPs are just spenders with isVIP=true ($500+ lifetime spend)
+    
+    if (spenders && spenders.length > 0) {
+      for (const spender of spenders) {
+        // Check if spender exists (VIPFan model tracks ALL spenders now)
+        let fan = await VIPFan.findOne({ 
+          username: spender.fanUsername,
+          creatorAccount: creatorAccount?._id
+        });
+        
+        if (!fan) {
+          // Create new spender
+          fan = new VIPFan({
+            username: spender.fanUsername,
+            creatorAccount: creatorAccount?._id,
+            trafficSource: spender.trafficSource,
+            joinDate: reportDate,
+            firstSeenDate: reportDate,
+            lifetimeSpend: spender.amount,
+            lastPurchaseDate: reportDate,
+            purchaseCount: 1,
+            avgPurchaseValue: spender.amount,
+            isVIP: spender.amount >= 500 // Auto-promote if first purchase is $500+
+          });
+          
+          if (fan.isVIP) {
+            fan.vipPromotedDate = reportDate;
+            console.log(`🌟 NEW VIP: ${spender.fanUsername} - first purchase $${spender.amount.toFixed(2)}`);
+          } else {
+            console.log(`💵 New spender: ${spender.fanUsername} - $${spender.amount.toFixed(2)}`);
+          }
+        } else {
+          // Update existing spender
+          fan.lifetimeSpend += spender.amount;
+          fan.lastPurchaseDate = reportDate;
+          fan.purchaseCount += 1;
+          fan.avgPurchaseValue = fan.lifetimeSpend / fan.purchaseCount;
+          fan.status = 'active';
+          fan.updatedAt = new Date();
+          
+          // 🎯 AUTO VIP PROMOTION: Promote to VIP at $500+ lifetime spend
+          if (fan.lifetimeSpend >= 500 && !fan.isVIP) {
+            fan.isVIP = true;
+            fan.vipPromotedDate = new Date();
+            console.log(`🌟 AUTO-PROMOTED TO VIP: ${spender.fanUsername} reached $${fan.lifetimeSpend.toFixed(2)} lifetime!`);
+          } else {
+            console.log(`💵 Updated ${fan.isVIP ? 'VIP' : 'spender'}: ${spender.fanUsername} - $${fan.lifetimeSpend.toFixed(2)} lifetime`);
+          }
+        }
+        
+        await fan.save();
+        
+        // Create FanPurchase record for analytics
+        const fanPurchase = new FanPurchase({
+          vipFan: fan._id,
+          fanUsername: spender.fanUsername,
+          amount: spender.amount,
+          type: 'message', // Generic spender (could be PPV, tip, message unlock, etc.)
+          date: reportDate,
+          creatorAccount: creatorAccount?._id,
+          chatterName: req.user.chatterName,
+          dailyReport: report._id
+        });
+        
+        if (spender.trafficSource) {
+          fanPurchase.trafficSource = spender.trafficSource;
+        }
+        
+        await fanPurchase.save();
+      }
+      
+      console.log(`💰 Processed ${spenders.length} spenders (${spenders.filter(s => s.amount >= 500).length} potential VIPs)`);
+    }
+    
+    console.log(`💰 Created ${ppvSales.length + tips.length + (spenders?.length || 0)} FanPurchase records`);
     
     // Recalculate avgPPVPrice from ALL daily reports for this chatter
     // This ensures Dashboard/Analytics/Analysis all show the updated avgPPVPrice

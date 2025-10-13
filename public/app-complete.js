@@ -1715,17 +1715,19 @@ function setupEventListeners() {
         dailyReportForm.addEventListener('submit', handleDailyReportSubmit);
     }
 
-    // Nuclear option: Capture phase event listener for PPV/Tip buttons
+    // Nuclear option: Capture phase event listener for PPV/Tip/Spender buttons
     document.addEventListener('click', function(e) {
         // Check if the click is on the button or any child of the button (like the icon)
         const addPPVBtn = e.target.id === 'addPPVSale' ? e.target : e.target.closest('#addPPVSale');
         const addTipBtn = e.target.id === 'addTip' ? e.target : e.target.closest('#addTip');
+        const addSpenderBtn = e.target.id === 'addSpender' ? e.target : e.target.closest('#addSpender');
         
         console.log('🔍 Click detected:', {
             targetId: e.target.id,
             targetTag: e.target.tagName,
             closestPPV: addPPVBtn ? 'YES' : 'NO',
-            closestTip: addTipBtn ? 'YES' : 'NO'
+            closestTip: addTipBtn ? 'YES' : 'NO',
+            closestSpender: addSpenderBtn ? 'YES' : 'NO'
         });
         
         if (addPPVBtn) {
@@ -1743,6 +1745,15 @@ function setupEventListeners() {
             e.stopImmediatePropagation();
             console.log('🔥 CAPTURED Add Tip click!');
             window.addTipField();
+            return false;
+        }
+        
+        if (addSpenderBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔥 CAPTURED Add Spender click!');
+            window.addSpenderField();
             return false;
         }
     }, true); // TRUE = capture phase (fires BEFORE any other handlers)
@@ -11407,6 +11418,62 @@ window.addTipField = function() {
     populateTrafficSourceDropdowns();
 }
 
+window.addSpenderField = function() {
+    console.log('🎯 addSpenderField called!');
+    const container = document.getElementById('spendersContainer');
+    if (!container) {
+        console.error('spendersContainer not found!');
+        return;
+    }
+
+    const spenderDiv = document.createElement('div');
+    spenderDiv.className = 'spender-entry p-4 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl hover:border-purple-500/50 transition-all';
+    spenderDiv.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <!-- Fan Username -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-user mr-1"></i>Fan Username
+                </label>
+                <input type="text" name="spenderUsername" placeholder="fan_username" required
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Amount -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-dollar-sign mr-1"></i>Amount Spent
+                </label>
+                <input type="number" name="spenderAmount" min="0.01" step="0.01" placeholder="25.00" required
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Traffic Source -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
+                </label>
+                <select name="spenderSource" class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all traffic-source-select">
+                    <option value="">Unknown</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <!-- Remove Button -->
+            <div class="flex items-end">
+                <button type="button" onclick="removeSpender(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
+                    <i class="fas fa-trash mr-1"></i>Remove
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(spenderDiv);
+    
+    // Populate traffic sources for this new field
+    populateTrafficSourceDropdowns();
+}
+
 window.removePPVSale = function(button) {
     console.log('🎯 removePPVSale called!');
     button.closest('.ppv-sale-entry').remove();
@@ -11415,6 +11482,11 @@ window.removePPVSale = function(button) {
 window.removeTip = function(button) {
     console.log('🎯 removeTip called!');
     button.closest('.tip-entry').remove();
+}
+
+window.removeSpender = function(button) {
+    console.log('🎯 removeSpender called!');
+    button.closest('.spender-entry').remove();
 }
 
 // Direct handler for Daily Report button (bypasses event delegation)
@@ -11467,6 +11539,26 @@ async function handleDailyReportSubmitDirect() {
             if (vipFan) tipData.vipFanUsername = vipFan.trim();
             
             data.tips.push(tipData);
+        }
+    });
+
+    // Collect spenders (ALL paying fans - used for retention & traffic source analytics)
+    data.spenders = [];
+    const spendersContainer = document.getElementById('spendersContainer');
+    const spenderEntries = spendersContainer?.querySelectorAll('.spender-entry') || [];
+    spenderEntries.forEach(entry => {
+        const username = entry.querySelector('input[name="spenderUsername"]')?.value;
+        const amount = entry.querySelector('input[name="spenderAmount"]')?.value;
+        const source = entry.querySelector('select[name="spenderSource"]')?.value;
+        
+        if (username && amount) {
+            const spenderData = {
+                fanUsername: username.trim(),
+                amount: parseFloat(amount)
+            };
+            if (source) spenderData.trafficSource = source;
+            
+            data.spenders.push(spenderData);
         }
     });
 
@@ -11552,6 +11644,26 @@ async function handleDailyReportSubmit(event) {
         }
     });
 
+    // Collect spenders (ALL paying fans - used for retention & traffic source analytics)
+    data.spenders = [];
+    const spendersContainer = document.getElementById('spendersContainer');
+    const spenderEntries = spendersContainer?.querySelectorAll('.spender-entry') || [];
+    spenderEntries.forEach(entry => {
+        const username = entry.querySelector('input[name="spenderUsername"]')?.value;
+        const amount = entry.querySelector('input[name="spenderAmount"]')?.value;
+        const source = entry.querySelector('select[name="spenderSource"]')?.value;
+        
+        if (username && amount) {
+            const spenderData = {
+                fanUsername: username.trim(),
+                amount: parseFloat(amount)
+            };
+            if (source) spenderData.trafficSource = source;
+            
+            data.spenders.push(spenderData);
+        }
+    });
+
     console.log('📊 Submitting daily report:', data);
 
     try {
@@ -11571,6 +11683,8 @@ async function handleDailyReportSubmit(event) {
             document.getElementById('dailyReportForm')?.reset();
             if (ppvContainer) ppvContainer.innerHTML = '';
             if (tipsContainer) tipsContainer.innerHTML = '';
+            const spendersContainer = document.getElementById('spendersContainer');
+            if (spendersContainer) spendersContainer.innerHTML = '';
             console.log('✅ Daily report saved:', result);
         } else {
             showNotification(result.error || 'Failed to save report', 'error');

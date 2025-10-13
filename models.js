@@ -54,8 +54,8 @@ const dailyChatterReportSchema = new mongoose.Schema({
   ppvSales: [{
     amount: { type: Number, required: true },
     creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
-    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' }, // NEW: Track source
-    vipFanUsername: { type: String }, // NEW: VIP fan username (optional)
+    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' },
+    fanUsername: { type: String }, // Fan username (tracked as spender)
     timestamp: { type: Date, default: Date.now }
   }],
   
@@ -63,8 +63,17 @@ const dailyChatterReportSchema = new mongoose.Schema({
   tips: [{
     amount: { type: Number, required: true },
     creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount' },
-    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' }, // NEW: Track source
-    vipFanUsername: { type: String }, // NEW: VIP fan username (optional)
+    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' },
+    fanUsername: { type: String }, // Fan username (tracked as spender)
+    timestamp: { type: Date, default: Date.now }
+  }],
+  
+  // NEW: Generic Spenders List (any purchase type, any amount)
+  // This is where you manually log spenders from the daily form
+  spenders: [{
+    fanUsername: { type: String, required: true },
+    amount: { type: Number, required: true },
+    trafficSource: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource' },
     timestamp: { type: Date, default: Date.now }
   }],
   
@@ -358,7 +367,9 @@ const trafficSourceSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
-// VIP Fans - High-value fans tracked individually
+// Spender Tracking - ALL paying fans tracked individually
+// This is the SOURCE OF TRUTH for retention, traffic source quality, etc.
+// VIPs are just spenders with isVIP=true ($500+ lifetime spend)
 const vipFanSchema = new mongoose.Schema({
   username: { type: String, required: true }, // OnlyFans username
   creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
@@ -366,7 +377,7 @@ const vipFanSchema = new mongoose.Schema({
   
   // Fan Details
   joinDate: { type: Date, required: true },
-  firstSeenDate: { type: Date }, // NEW: When we first tracked this fan
+  firstSeenDate: { type: Date }, // When we first tracked this fan
   status: { 
     type: String, 
     enum: ['active', 'churned'], 
@@ -379,13 +390,17 @@ const vipFanSchema = new mongoose.Schema({
   purchaseCount: { type: Number, default: 0 },
   avgPurchaseValue: { type: Number, default: 0 },
   
+  // VIP Status (auto-promoted at $500+ lifetime spend)
+  isVIP: { type: Boolean, default: false }, // TRUE if lifetime spend >= $500
+  vipPromotedDate: { type: Date }, // When they reached $500+ lifetime spend
+  
   // Engagement
   isEngaged: { type: Boolean, default: false }, // Has responded to messages
   isGhost: { type: Boolean, default: false }, // Never responds
   firstResponseDate: { type: Date },
-  lastMessageDate: { type: Date }, // NEW: Last time they messaged (for retention tracking)
+  lastMessageDate: { type: Date }, // Last time they messaged (for retention tracking)
   
-  // Subscription Status (NEW for Marketing Analytics)
+  // Subscription Status
   hasRenewOn: { type: Boolean, default: false }, // Auto-renew enabled
   lastRenewCheckDate: { type: Date }, // When we last checked their renew status
   
