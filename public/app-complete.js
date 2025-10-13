@@ -1715,19 +1715,17 @@ function setupEventListeners() {
         dailyReportForm.addEventListener('submit', handleDailyReportSubmit);
     }
 
-    // Nuclear option: Capture phase event listener for PPV/Tip/Spender buttons
+    // Nuclear option: Capture phase event listener for PPV/Tip buttons
     document.addEventListener('click', function(e) {
         // Check if the click is on the button or any child of the button (like the icon)
         const addPPVBtn = e.target.id === 'addPPVSale' ? e.target : e.target.closest('#addPPVSale');
         const addTipBtn = e.target.id === 'addTip' ? e.target : e.target.closest('#addTip');
-        const addSpenderBtn = e.target.id === 'addSpender' ? e.target : e.target.closest('#addSpender');
         
         console.log('🔍 Click detected:', {
             targetId: e.target.id,
             targetTag: e.target.tagName,
             closestPPV: addPPVBtn ? 'YES' : 'NO',
-            closestTip: addTipBtn ? 'YES' : 'NO',
-            closestSpender: addSpenderBtn ? 'YES' : 'NO'
+            closestTip: addTipBtn ? 'YES' : 'NO'
         });
         
         if (addPPVBtn) {
@@ -1745,15 +1743,6 @@ function setupEventListeners() {
             e.stopImmediatePropagation();
             console.log('🔥 CAPTURED Add Tip click!');
             window.addTipField();
-            return false;
-        }
-        
-        if (addSpenderBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            console.log('🔥 CAPTURED Add Spender click!');
-            window.addSpenderField();
             return false;
         }
     }, true); // TRUE = capture phase (fires BEFORE any other handlers)
@@ -11317,13 +11306,22 @@ window.addPPVSaleField = function() {
     const saleDiv = document.createElement('div');
     saleDiv.className = 'ppv-sale-entry p-4 bg-gradient-to-br from-purple-900/20 to-indigo-900/20 border border-purple-500/30 rounded-xl hover:border-purple-500/50 transition-all';
     saleDiv.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <!-- Amount -->
             <div>
                 <label class="block text-xs font-semibold mb-1.5 text-purple-300">
                     <i class="fas fa-dollar-sign mr-1"></i>Amount
                 </label>
                 <input type="number" name="ppvAmount" min="0" step="0.01" placeholder="25.00"
+                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+            </div>
+            
+            <!-- Spender Username (All paying fans) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
+                    <i class="fas fa-user mr-1"></i>Fan Username
+                </label>
+                <input type="text" name="ppvSpender" placeholder="username"
                        class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
             </div>
             
@@ -11338,13 +11336,16 @@ window.addPPVSaleField = function() {
                 </select>
             </div>
             
-            <!-- VIP Fan Username (Optional) -->
+            <!-- VIP Flag (Optional - if they're already a VIP) -->
             <div>
                 <label class="block text-xs font-semibold mb-1.5 text-purple-300">
-                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                    <i class="fas fa-crown mr-1"></i>VIP? <span class="text-gray-500 font-normal">(optional)</span>
                 </label>
-                <input type="text" name="ppvVipFan" placeholder="username" list="vipFansList"
-                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                <select name="ppvIsVIP" class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                    <option value="">Unknown</option>
+                    <option value="yes">Yes (VIP)</option>
+                    <option value="no">No</option>
+                </select>
             </div>
             
             <!-- Remove Button -->
@@ -11373,13 +11374,22 @@ window.addTipField = function() {
     const tipDiv = document.createElement('div');
     tipDiv.className = 'tip-entry p-4 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl hover:border-green-500/50 transition-all';
     tipDiv.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <!-- Amount -->
             <div>
                 <label class="block text-xs font-semibold mb-1.5 text-green-300">
                     <i class="fas fa-dollar-sign mr-1"></i>Amount
                 </label>
                 <input type="number" name="tipAmount" min="0" step="0.01" placeholder="10.00"
+                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+            </div>
+            
+            <!-- Spender Username (All paying fans) -->
+            <div>
+                <label class="block text-xs font-semibold mb-1.5 text-green-300">
+                    <i class="fas fa-user mr-1"></i>Fan Username
+                </label>
+                <input type="text" name="tipSpender" placeholder="username"
                        class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
             </div>
             
@@ -11394,13 +11404,16 @@ window.addTipField = function() {
                 </select>
             </div>
             
-            <!-- VIP Fan Username (Optional) -->
+            <!-- VIP Flag (Optional - if they're already a VIP) -->
             <div>
                 <label class="block text-xs font-semibold mb-1.5 text-green-300">
-                    <i class="fas fa-star mr-1"></i>VIP Fan <span class="text-gray-500 font-normal">(optional)</span>
+                    <i class="fas fa-crown mr-1"></i>VIP? <span class="text-gray-500 font-normal">(optional)</span>
                 </label>
-                <input type="text" name="tipVipFan" placeholder="username" list="vipFansList"
-                       class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+                <select name="tipIsVIP" class="w-full bg-gray-800 border border-green-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all">
+                    <option value="">Unknown</option>
+                    <option value="yes">Yes (VIP)</option>
+                    <option value="no">No</option>
+                </select>
             </div>
             
             <!-- Remove Button -->
@@ -11418,61 +11431,6 @@ window.addTipField = function() {
     populateTrafficSourceDropdowns();
 }
 
-window.addSpenderField = function() {
-    console.log('🎯 addSpenderField called!');
-    const container = document.getElementById('spendersContainer');
-    if (!container) {
-        console.error('spendersContainer not found!');
-        return;
-    }
-
-    const spenderDiv = document.createElement('div');
-    spenderDiv.className = 'spender-entry p-4 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl hover:border-purple-500/50 transition-all';
-    spenderDiv.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <!-- Fan Username -->
-            <div>
-                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
-                    <i class="fas fa-user mr-1"></i>Fan Username
-                </label>
-                <input type="text" name="spenderUsername" placeholder="fan_username" required
-                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
-            </div>
-            
-            <!-- Amount -->
-            <div>
-                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
-                    <i class="fas fa-dollar-sign mr-1"></i>Amount Spent
-                </label>
-                <input type="number" name="spenderAmount" min="0.01" step="0.01" placeholder="25.00" required
-                       class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
-            </div>
-            
-            <!-- Traffic Source -->
-            <div>
-                <label class="block text-xs font-semibold mb-1.5 text-purple-300">
-                    <i class="fas fa-bullseye mr-1"></i>Traffic Source
-                </label>
-                <select name="spenderSource" class="w-full bg-gray-800 border border-purple-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all traffic-source-select">
-                    <option value="">Unknown</option>
-                    <!-- Will be populated dynamically -->
-                </select>
-            </div>
-            
-            <!-- Remove Button -->
-            <div class="flex items-end">
-                <button type="button" onclick="removeSpender(this)" class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm transition-all">
-                    <i class="fas fa-trash mr-1"></i>Remove
-                </button>
-            </div>
-        </div>
-    `;
-
-    container.appendChild(spenderDiv);
-    
-    // Populate traffic sources for this new field
-    populateTrafficSourceDropdowns();
-}
 
 window.removePPVSale = function(button) {
     console.log('🎯 removePPVSale called!');
@@ -11484,10 +11442,6 @@ window.removeTip = function(button) {
     button.closest('.tip-entry').remove();
 }
 
-window.removeSpender = function(button) {
-    console.log('🎯 removeSpender called!');
-    button.closest('.spender-entry').remove();
-}
 
 // Direct handler for Daily Report button (bypasses event delegation)
 async function handleDailyReportSubmitDirect() {
@@ -11504,61 +11458,47 @@ async function handleDailyReportSubmitDirect() {
         tips: []
     };
 
-    // Collect PPV sales with traffic source and VIP fan
+    // Collect PPV sales with spender tracking
     const ppvContainer = document.getElementById('ppvSalesContainer');
     const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
     ppvEntries.forEach(entry => {
         const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const fanUsername = entry.querySelector('input[name="ppvSpender"]')?.value;
         const source = entry.querySelector('select[name="ppvSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        const isVIP = entry.querySelector('select[name="ppvIsVIP"]')?.value;
         
         if (amount) {
             const saleData = {
                 amount: parseFloat(amount)
             };
+            if (fanUsername) saleData.fanUsername = fanUsername.trim();
             if (source) saleData.trafficSource = source;
-            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            if (isVIP === 'yes') saleData.isVIP = true;
+            else if (isVIP === 'no') saleData.isVIP = false;
             
             data.ppvSales.push(saleData);
         }
     });
 
-    // Collect tips with traffic source and VIP fan (OPTIONAL)
+    // Collect tips with spender tracking (OPTIONAL)
     const tipsContainer = document.getElementById('tipsContainer');
     const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
     tipEntries.forEach(entry => {
         const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const fanUsername = entry.querySelector('input[name="tipSpender"]')?.value;
         const source = entry.querySelector('select[name="tipSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        const isVIP = entry.querySelector('select[name="tipIsVIP"]')?.value;
         
         if (amount) {
             const tipData = {
                 amount: parseFloat(amount)
             };
+            if (fanUsername) tipData.fanUsername = fanUsername.trim();
             if (source) tipData.trafficSource = source;
-            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            if (isVIP === 'yes') tipData.isVIP = true;
+            else if (isVIP === 'no') tipData.isVIP = false;
             
             data.tips.push(tipData);
-        }
-    });
-
-    // Collect spenders (ALL paying fans - used for retention & traffic source analytics)
-    data.spenders = [];
-    const spendersContainer = document.getElementById('spendersContainer');
-    const spenderEntries = spendersContainer?.querySelectorAll('.spender-entry') || [];
-    spenderEntries.forEach(entry => {
-        const username = entry.querySelector('input[name="spenderUsername"]')?.value;
-        const amount = entry.querySelector('input[name="spenderAmount"]')?.value;
-        const source = entry.querySelector('select[name="spenderSource"]')?.value;
-        
-        if (username && amount) {
-            const spenderData = {
-                fanUsername: username.trim(),
-                amount: parseFloat(amount)
-            };
-            if (source) spenderData.trafficSource = source;
-            
-            data.spenders.push(spenderData);
         }
     });
 
@@ -11606,61 +11546,47 @@ async function handleDailyReportSubmit(event) {
         tips: []
     };
 
-    // Collect PPV sales with traffic source and VIP fan
+    // Collect PPV sales with spender tracking
     const ppvContainer = document.getElementById('ppvSalesContainer');
     const ppvEntries = ppvContainer?.querySelectorAll('.ppv-sale-entry') || [];
     ppvEntries.forEach(entry => {
         const amount = entry.querySelector('input[name="ppvAmount"]')?.value;
+        const fanUsername = entry.querySelector('input[name="ppvSpender"]')?.value;
         const source = entry.querySelector('select[name="ppvSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="ppvVipFan"]')?.value;
+        const isVIP = entry.querySelector('select[name="ppvIsVIP"]')?.value;
         
         if (amount) {
             const saleData = {
                 amount: parseFloat(amount)
             };
+            if (fanUsername) saleData.fanUsername = fanUsername.trim();
             if (source) saleData.trafficSource = source;
-            if (vipFan) saleData.vipFanUsername = vipFan.trim();
+            if (isVIP === 'yes') saleData.isVIP = true;
+            else if (isVIP === 'no') saleData.isVIP = false;
             
             data.ppvSales.push(saleData);
         }
     });
 
-    // Collect tips with traffic source and VIP fan
+    // Collect tips with spender tracking
     const tipsContainer = document.getElementById('tipsContainer');
     const tipEntries = tipsContainer?.querySelectorAll('.tip-entry') || [];
     tipEntries.forEach(entry => {
         const amount = entry.querySelector('input[name="tipAmount"]')?.value;
+        const fanUsername = entry.querySelector('input[name="tipSpender"]')?.value;
         const source = entry.querySelector('select[name="tipSource"]')?.value;
-        const vipFan = entry.querySelector('input[name="tipVipFan"]')?.value;
+        const isVIP = entry.querySelector('select[name="tipIsVIP"]')?.value;
         
         if (amount) {
             const tipData = {
                 amount: parseFloat(amount)
             };
+            if (fanUsername) tipData.fanUsername = fanUsername.trim();
             if (source) tipData.trafficSource = source;
-            if (vipFan) tipData.vipFanUsername = vipFan.trim();
+            if (isVIP === 'yes') tipData.isVIP = true;
+            else if (isVIP === 'no') tipData.isVIP = false;
             
             data.tips.push(tipData);
-        }
-    });
-
-    // Collect spenders (ALL paying fans - used for retention & traffic source analytics)
-    data.spenders = [];
-    const spendersContainer = document.getElementById('spendersContainer');
-    const spenderEntries = spendersContainer?.querySelectorAll('.spender-entry') || [];
-    spenderEntries.forEach(entry => {
-        const username = entry.querySelector('input[name="spenderUsername"]')?.value;
-        const amount = entry.querySelector('input[name="spenderAmount"]')?.value;
-        const source = entry.querySelector('select[name="spenderSource"]')?.value;
-        
-        if (username && amount) {
-            const spenderData = {
-                fanUsername: username.trim(),
-                amount: parseFloat(amount)
-            };
-            if (source) spenderData.trafficSource = source;
-            
-            data.spenders.push(spenderData);
         }
     });
 
@@ -11683,8 +11609,6 @@ async function handleDailyReportSubmit(event) {
             document.getElementById('dailyReportForm')?.reset();
             if (ppvContainer) ppvContainer.innerHTML = '';
             if (tipsContainer) tipsContainer.innerHTML = '';
-            const spendersContainer = document.getElementById('spendersContainer');
-            if (spendersContainer) spendersContainer.innerHTML = '';
             console.log('✅ Daily report saved:', result);
         } else {
             showNotification(result.error || 'Failed to save report', 'error');
