@@ -9210,6 +9210,7 @@ function createTrafficSourcesSection() {
                             <option value="">Select category...</option>
                             <option value="reddit">Reddit</option>
                             <option value="twitter">Twitter</option>
+                            <option value="threads">Threads</option>
                             <option value="instagram">Instagram</option>
                             <option value="tiktok">TikTok</option>
                             <option value="youtube">YouTube</option>
