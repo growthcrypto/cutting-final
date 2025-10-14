@@ -74,6 +74,7 @@ function populateTrafficSourceDropdowns() {
         const categories = {
             reddit: [],
             twitter: [],
+            threads: [],
             instagram: [],
             tiktok: [],
             youtube: [],
