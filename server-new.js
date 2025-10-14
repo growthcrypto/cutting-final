@@ -5880,7 +5880,7 @@ app.get('/api/marketing/traffic-sources', authenticateToken, async (req, res) =>
 });
 
 // Create traffic source
-app.post('/api/marketing/traffic-sources', authenticateToken, requireManager, async (req, res) => {
+app.post('/api/marketing/traffic-sources', authenticateToken, async (req, res) => {
   try {
     const { name, category, subcategory } = req.body;
     
@@ -5905,7 +5905,7 @@ app.post('/api/marketing/traffic-sources', authenticateToken, requireManager, as
 });
 
 // Update traffic source
-app.put('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
+app.put('/api/marketing/traffic-sources/:id', authenticateToken, async (req, res) => {
   try {
     const { name, category, subcategory, isActive } = req.body;
     
@@ -5928,7 +5928,7 @@ app.put('/api/marketing/traffic-sources/:id', authenticateToken, requireManager,
 });
 
 // Delete traffic source
-app.delete('/api/marketing/traffic-sources/:id', authenticateToken, requireManager, async (req, res) => {
+app.delete('/api/marketing/traffic-sources/:id', authenticateToken, async (req, res) => {
   try {
     const source = await TrafficSource.findByIdAndDelete(req.params.id);
     

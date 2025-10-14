@@ -430,6 +430,7 @@ document.addEventListener('submit', async function(e) {
                 loadTrafficSourcesData();
             } else {
                 const result = await response.json();
+                console.error('Traffic source creation failed:', result);
                 showNotification(result.error || 'Failed to save traffic source', 'error');
             }
         } catch (error) {
