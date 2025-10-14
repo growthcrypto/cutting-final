@@ -360,7 +360,7 @@ const Analytics = mongoose.model('Analytics', analyticsSchema);
 // Traffic Sources - Track different marketing channels
 const trafficSourceSchema = new mongoose.Schema({
   name: { type: String, required: true }, // "Reddit - r/fitness"
-  category: { type: String, enum: ['reddit', 'twitter', 'instagram', 'tiktok', 'youtube', 'other'], required: true },
+  category: { type: String, enum: ['reddit', 'twitter', 'threads', 'instagram', 'tiktok', 'youtube', 'other'], required: true },
   subcategory: { type: String }, // "r/fitness", "viral_thread_123"
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
@@ -480,7 +480,7 @@ const trafficSourcePerformanceSchema = new mongoose.Schema({
 
 // Link Tracking Data - Weekly uploads from Bitly/Linktree
 const linkTrackingDataSchema = new mongoose.Schema({
-  category: { type: String, enum: ['reddit', 'twitter', 'instagram', 'tiktok', 'youtube', 'other'], required: true }, // NEW: Track by category, not specific source
+  category: { type: String, enum: ['reddit', 'twitter', 'threads', 'instagram', 'tiktok', 'youtube', 'other'], required: true }, // NEW: Track by category, not specific source
   creatorAccount: { type: mongoose.Schema.Types.ObjectId, ref: 'CreatorAccount', required: true },
   
   weekStartDate: { type: Date, required: true },
