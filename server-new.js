@@ -5570,19 +5570,22 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
         fanPurchase.trafficSource = sale.trafficSource;
       }
       
-      if (sale.vipFanUsername) {
-        fanPurchase.fanUsername = sale.vipFanUsername;
+      // Accept both 'fanUsername' and 'vipFanUsername' for backwards compatibility
+      const fanUsername = sale.fanUsername || sale.vipFanUsername;
+      
+      if (fanUsername) {
+        fanPurchase.fanUsername = fanUsername;
         
         // Check if VIP fan exists, create or update
         let vipFan = await VIPFan.findOne({ 
-          username: sale.vipFanUsername,
+          username: fanUsername,
           creatorAccount: creatorAccount?._id
         });
         
         if (!vipFan) {
           // Create new VIP fan
           vipFan = new VIPFan({
-            username: sale.vipFanUsername,
+            username: fanUsername,
             creatorAccount: creatorAccount?._id,
             trafficSource: sale.trafficSource,
             joinDate: reportDate,
@@ -5590,10 +5593,11 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
             lifetimeSpend: sale.amount,
             lastPurchaseDate: reportDate,
             purchaseCount: 1,
-            avgPurchaseValue: sale.amount
+            avgPurchaseValue: sale.amount,
+            isVIP: sale.isVIP || false // Store the isVIP flag from the form
           });
           await vipFan.save();
-          console.log(`⭐ Created new VIP fan: ${sale.vipFanUsername}`);
+          console.log(`⭐ Created new ${sale.isVIP ? 'VIP' : 'spender'}: ${fanUsername}`);
         } else {
           // Update existing VIP fan
           vipFan.lifetimeSpend += sale.amount;
@@ -5607,11 +5611,11 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
           if (vipFan.lifetimeSpend >= 500 && !vipFan.isVIP) {
             vipFan.isVIP = true;
             vipFan.vipPromotedDate = new Date();
-            console.log(`🌟 AUTO-PROMOTED TO VIP: ${sale.vipFanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
+            console.log(`🌟 AUTO-PROMOTED TO VIP: ${fanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
           }
           
           await vipFan.save();
-          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${sale.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${fanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
         }
         
         fanPurchase.vipFan = vipFan._id;
@@ -5635,19 +5639,22 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
         fanPurchase.trafficSource = tip.trafficSource;
       }
       
-      if (tip.vipFanUsername) {
-        fanPurchase.fanUsername = tip.vipFanUsername;
+      // Accept both 'fanUsername' and 'vipFanUsername' for backwards compatibility
+      const fanUsername = tip.fanUsername || tip.vipFanUsername;
+      
+      if (fanUsername) {
+        fanPurchase.fanUsername = fanUsername;
         
         // Check if VIP fan exists, create or update
         let vipFan = await VIPFan.findOne({ 
-          username: tip.vipFanUsername,
+          username: fanUsername,
           creatorAccount: creatorAccount?._id
         });
         
         if (!vipFan) {
           // Create new VIP fan
           vipFan = new VIPFan({
-            username: tip.vipFanUsername,
+            username: fanUsername,
             creatorAccount: creatorAccount?._id,
             trafficSource: tip.trafficSource,
             joinDate: reportDate,
@@ -5655,10 +5662,11 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
             lifetimeSpend: tip.amount,
             lastPurchaseDate: reportDate,
             purchaseCount: 1,
-            avgPurchaseValue: tip.amount
+            avgPurchaseValue: tip.amount,
+            isVIP: tip.isVIP || false // Store the isVIP flag from the form
           });
           await vipFan.save();
-          console.log(`⭐ Created new VIP fan: ${tip.vipFanUsername}`);
+          console.log(`⭐ Created new ${tip.isVIP ? 'VIP' : 'spender'}: ${fanUsername}`);
         } else {
           // Update existing VIP fan
           vipFan.lifetimeSpend += tip.amount;
@@ -5672,11 +5680,11 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
           if (vipFan.lifetimeSpend >= 500 && !vipFan.isVIP) {
             vipFan.isVIP = true;
             vipFan.vipPromotedDate = new Date();
-            console.log(`🌟 AUTO-PROMOTED TO VIP: ${tip.vipFanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
+            console.log(`🌟 AUTO-PROMOTED TO VIP: ${fanUsername} reached $${vipFan.lifetimeSpend.toFixed(2)} lifetime!`);
           }
           
           await vipFan.save();
-          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${tip.vipFanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
+          console.log(`⭐ Updated ${vipFan.isVIP ? 'VIP' : 'spender'}: ${fanUsername} - $${vipFan.lifetimeSpend.toFixed(2)} lifetime`);
         }
         
         fanPurchase.vipFan = vipFan._id;
