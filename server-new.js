@@ -6010,6 +6010,7 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     const sourceMap = {};
     let totalRevenue = 0;
     const vipSet = new Set();
+    const allBuyersSet = new Set(); // Track unique buyers globally
     
     purchases.forEach(purchase => {
       totalRevenue += purchase.amount;
@@ -6017,6 +6018,11 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       // Track VIPs
       if (purchase.vipFan) {
         vipSet.add(purchase.vipFan._id.toString());
+      }
+      
+      // Track all unique buyers (by username)
+      if (purchase.fanUsername) {
+        allBuyersSet.add(purchase.fanUsername);
       }
       
       // Aggregate by source
@@ -6225,6 +6231,7 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       totalRevenue,
       totalSubscribers: 0,
       totalVIPs: vipSet.size,
+      totalSpenders: allBuyersSet.size, // NEW: Global unique spenders count
       avgRevenuePerSub: 0,
       sources, // Individual source data
       categories // NEW: Category-level aggregated data
@@ -6233,6 +6240,7 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     console.log('📊 Dashboard aggregated:', {
       totalRevenue,
       totalVIPs: vipSet.size,
+      totalSpenders: allBuyersSet.size,
       sourcesCount: sources.length,
       categoriesCount: categories.length
     });

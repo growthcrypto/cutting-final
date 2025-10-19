@@ -576,10 +576,8 @@ function renderMarketingDashboard() {
     // Render overview cards
     const overviewCards = document.getElementById('marketingOverviewCards');
     if (overviewCards) {
-        let totalSpenders = 0;
-        if (data.sources) {
-            data.sources.forEach(s => totalSpenders += (s.spenders || 0));
-        }
+        // Use backend's global unique spenders count (not summed from sources to avoid double-counting)
+        const totalSpenders = data.totalSpenders || 0;
         
         overviewCards.innerHTML = `
             <div class="glass-card rounded-xl p-6 border border-green-500/30 hover:border-green-500/50 transition-all">
