@@ -1679,26 +1679,34 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     console.log('avgResponseTime value:', req.body.avgResponseTime);
     console.log('avgResponseTime type:', typeof req.body.avgResponseTime);
     
+    // Support multiple field name formats (frontend sends different names)
+    const chatterName = req.body.chatterName || req.body.chatter;
+    
     // Validate required fields
-    if (!req.body.chatter || req.body.chatter === 'Select Chatter...') {
+    if (!chatterName || chatterName === 'Select Chatter...') {
       return res.status(400).json({ error: 'Chatter name is required' });
     }
     
-    // Support both single-date (new form) and date-range (old form) formats
+    // Support multiple date field formats
     let startDate, endDate;
     
-    if (req.body.date) {
-      // NEW FORM: Single date field
+    if (req.body.weekStartDate && req.body.weekEndDate) {
+      // Frontend sends weekStartDate/weekEndDate directly
+      startDate = new Date(req.body.weekStartDate);
+      endDate = new Date(req.body.weekEndDate);
+      console.log('📅 Direct week dates: using weekStartDate', req.body.weekStartDate, 'and weekEndDate', req.body.weekEndDate);
+    } else if (req.body.date) {
+      // Single date field
       startDate = new Date(req.body.date);
-      endDate = new Date(req.body.date); // Same date for both
+      endDate = new Date(req.body.date);
       console.log('📅 Single-date form: using date', req.body.date, 'for both weekStartDate and weekEndDate');
     } else if (req.body.startDate && req.body.endDate) {
-      // OLD FORM: Separate start and end dates
+      // Separate start and end dates
       startDate = new Date(req.body.startDate);
       endDate = new Date(req.body.endDate);
       console.log('📅 Date-range form: using startDate', req.body.startDate, 'and endDate', req.body.endDate);
     } else {
-      return res.status(400).json({ error: 'Date is required (either "date" or "startDate" and "endDate")' });
+      return res.status(400).json({ error: 'Date is required' });
     }
     
     // Validate dates are valid
@@ -1718,10 +1726,10 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     
     // Create chatter data object with only provided fields
     const chatterDataObj = {
-      chatterName: req.body.chatter,
+      chatterName: chatterName,
       creatorAccount: creatorAccount._id,
-      weekStartDate: startDate,  // Can be a single day
-      weekEndDate: endDate        // Can be same as startDate for daily tracking
+      weekStartDate: startDate,
+      weekEndDate: endDate
     };
 
     // Only add fields that were provided (not undefined)
