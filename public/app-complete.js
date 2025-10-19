@@ -747,10 +747,11 @@ function renderMarketingDashboard() {
                             <span class="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded">${cat.sources.length} sources</span>
                         </div>
                     </td>
+                    <td class="px-4 py-4 text-right text-green-400 font-bold text-lg">$${cat.totalRevenue?.toFixed(2) || '0.00'}</td>
+                    <td class="px-4 py-4 text-right text-green-300 font-semibold">${cat.revenuePercent?.toFixed(1) || '0'}%</td>
                     <td class="px-4 py-4 text-right text-white font-semibold">${cat.totalClicks}</td>
                     <td class="px-4 py-4 text-right text-blue-400 font-semibold">${cat.totalSpenders}</td>
                     <td class="px-4 py-4 text-right ${spenderRateColor} font-semibold">${cat.spenderRate?.toFixed(1) || '0'}%</td>
-                    <td class="px-4 py-4 text-right text-green-400 font-bold">${cat.revenuePercent?.toFixed(1) || '0'}%</td>
                     <td class="px-4 py-4 text-right text-cyan-400 font-semibold">$${cat.revenuePerClick?.toFixed(2) || '0.00'}</td>
                     <td class="px-4 py-4 text-right ${retentionColor} font-semibold">${cat.avgRetention?.toFixed(0) || '0'}%</td>
                     <td class="px-4 py-4 text-right ${retention30dColor} font-semibold">${cat.avgRetention30d?.toFixed(0) || '0'}%</td>
@@ -773,10 +774,11 @@ function renderMarketingDashboard() {
                         <td class="px-4 py-3 pl-12">
                             <div class="text-sm text-gray-300">${source.name}</div>
                         </td>
+                        <td class="px-4 py-3 text-right text-sm text-green-300 font-semibold">$${source.revenue?.toFixed(2) || '0.00'}</td>
+                        <td class="px-4 py-3 text-right text-sm text-gray-400">${sourceRevenuePercent?.toFixed(1) || '0'}%</td>
                         <td class="px-4 py-3 text-right text-sm text-gray-400">${source.linkClicks || 0}</td>
                         <td class="px-4 py-3 text-right text-sm text-blue-300">${source.spenders || 0}</td>
                         <td class="px-4 py-3 text-right text-sm ${sourceSpenderRateColor}">${source.spenderRate?.toFixed(1) || '0'}%</td>
-                        <td class="px-4 py-3 text-right text-sm text-green-300">${sourceRevenuePercent?.toFixed(1) || '0'}%</td>
                         <td class="px-4 py-3 text-right text-sm text-cyan-300">$${source.revenuePerClick?.toFixed(2) || '0.00'}</td>
                         <td class="px-4 py-3 text-right text-sm ${sourceRetentionColor}">${source.retentionRate?.toFixed(0) || '0'}%</td>
                         <td class="px-4 py-3 text-right text-sm ${sourceRetention30dColor}">${source.retentionRate30d?.toFixed(0) || '0'}%</td>
@@ -8932,10 +8934,11 @@ function createMarketingDashboardSection() {
                     <thead>
                         <tr class="border-b border-gray-700">
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Category / Source</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Revenue</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">% of Total</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Clicks</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spenders</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Spender Rate</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">% of Revenue</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">Rev/Click</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">7d Retention</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase">30d Retention</th>
