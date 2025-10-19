@@ -1684,26 +1684,30 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
       return res.status(400).json({ error: 'Chatter name is required' });
     }
     
-    if (!req.body.startDate || !req.body.endDate) {
-      return res.status(400).json({ error: 'Start date and end date are required' });
+    // Support both single-date (new form) and date-range (old form) formats
+    let startDate, endDate;
+    
+    if (req.body.date) {
+      // NEW FORM: Single date field
+      startDate = new Date(req.body.date);
+      endDate = new Date(req.body.date); // Same date for both
+      console.log('📅 Single-date form: using date', req.body.date, 'for both weekStartDate and weekEndDate');
+    } else if (req.body.startDate && req.body.endDate) {
+      // OLD FORM: Separate start and end dates
+      startDate = new Date(req.body.startDate);
+      endDate = new Date(req.body.endDate);
+      console.log('📅 Date-range form: using startDate', req.body.startDate, 'and endDate', req.body.endDate);
+    } else {
+      return res.status(400).json({ error: 'Date is required (either "date" or "startDate" and "endDate")' });
     }
     
     // Validate dates are valid
-    const startDate = new Date(req.body.startDate);
-    let endDate = new Date(req.body.endDate);
-    
     if (isNaN(startDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid start date format' });
+      return res.status(400).json({ error: 'Invalid date format' });
     }
     
     if (isNaN(endDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid end date format' });
-    }
-    
-    // For single-day entries, set end date = start date
-    // This allows daily performance tracking instead of requiring weekly ranges
-    if (startDate.toDateString() === endDate.toDateString()) {
-      console.log('📅 Single-day entry detected - using same date for weekStartDate and weekEndDate');
+      return res.status(400).json({ error: 'Invalid date format' });
     }
     
     // Find the creator account (for now, we'll use a default or first available)
