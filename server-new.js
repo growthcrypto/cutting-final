@@ -1679,6 +1679,27 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     console.log('avgResponseTime value:', req.body.avgResponseTime);
     console.log('avgResponseTime type:', typeof req.body.avgResponseTime);
     
+    // Validate required fields
+    if (!req.body.chatter || req.body.chatter === 'Select Chatter...') {
+      return res.status(400).json({ error: 'Chatter name is required' });
+    }
+    
+    if (!req.body.startDate || !req.body.endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+    
+    // Validate dates are valid
+    const startDate = new Date(req.body.startDate);
+    const endDate = new Date(req.body.endDate);
+    
+    if (isNaN(startDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid start date format' });
+    }
+    
+    if (isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid end date format' });
+    }
+    
     // Find the creator account (for now, we'll use a default or first available)
     const creatorAccount = await CreatorAccount.findOne({ isActive: true });
     if (!creatorAccount) {
@@ -1689,8 +1710,8 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     const chatterDataObj = {
       chatterName: req.body.chatter,
       creatorAccount: creatorAccount._id,
-      weekStartDate: new Date(req.body.startDate),
-      weekEndDate: new Date(req.body.endDate)
+      weekStartDate: startDate,
+      weekEndDate: endDate
     };
 
     // Only add fields that were provided (not undefined)
