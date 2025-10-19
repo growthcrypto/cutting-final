@@ -963,10 +963,10 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     
     console.log('🏆 Top performer:', topPerformer, 'with $', topRevenue);
     
-    // Calculate VIP metrics
-    const allVIPFans = await VIPFan.find({ status: 'active' });
+    // Calculate VIP metrics (only count ACTUAL VIPs with isVIP=true)
+    const allVIPFans = await VIPFan.find({ status: 'active', isVIP: true });
     const vipRevenue = fanPurchases
-      .filter(p => p.vipFan != null)
+      .filter(p => p.vipFan != null && p.vipFan.isVIP === true)
       .reduce((sum, p) => sum + (p.amount || 0), 0);
     const vipRevenuePercent = totalRevenue > 0 ? (vipRevenue / totalRevenue) * 100 : 0;
     const avgVIPSpend = allVIPFans.length > 0 
