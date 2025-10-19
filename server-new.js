@@ -1753,14 +1753,14 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     
     // Auto-save performance snapshot for trend tracking
     const messageData = await MessageAnalysis.findOne({
-      chatterName: req.body.chatter,
+      chatterName: chatterName,
       $or: [
-        { weekStartDate: { $gte: new Date(req.body.startDate), $lte: new Date(req.body.endDate) } },
-        { weekEndDate: { $gte: new Date(req.body.startDate), $lte: new Date(req.body.endDate) } }
+        { weekStartDate: { $gte: startDate, $lte: endDate } },
+        { weekEndDate: { $gte: startDate, $lte: endDate } }
       ]
     });
     
-    await autoSavePerformanceSnapshot(req.body.chatter, req.body.startDate, req.body.endDate, chatterData, messageData);
+    await autoSavePerformanceSnapshot(chatterName, startDate, endDate, chatterData, messageData);
     
     res.json({ message: 'Chatter data saved successfully', data: chatterData });
   } catch (error) {
