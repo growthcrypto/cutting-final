@@ -710,7 +710,7 @@ app.get('/api/analytics/dashboard', checkDatabaseConnection, authenticateToken, 
     });
     
     // Calculate metrics from FanPurchase records (daily logs - single source of truth)
-    const fanPurchases = await FanPurchase.find(dateQuery);
+    const fanPurchases = await FanPurchase.find(dateQuery).populate('vipFan');
     
     const totalPPVRevenue = fanPurchases
       .filter(p => p.type === 'ppv')
