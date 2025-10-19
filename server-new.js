@@ -6067,7 +6067,7 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     // Convert to array and calculate ENHANCED metrics
     const sources = await Promise.all(Object.values(sourceMap).map(async (source) => {
       const vipCount = source.vipPurchases.size;
-      const spenderCount = source.vipPurchases.size; // Unique spenders
+      const spenderCount = source.buyers.size; // Unique spenders (by username, not VIP records)
       
       // Get link tracking data for this source's CATEGORY
       const linkData = linkTrackingMap[source.category] || { clicks: 0, views: 0 };
