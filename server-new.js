@@ -6015,8 +6015,8 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     purchases.forEach(purchase => {
       totalRevenue += purchase.amount;
       
-      // Track VIPs
-      if (purchase.vipFan) {
+      // Track VIPs (only count if VIPFan exists AND isVIP flag is true)
+      if (purchase.vipFan && purchase.vipFan.isVIP === true) {
         vipSet.add(purchase.vipFan._id.toString());
       }
       
