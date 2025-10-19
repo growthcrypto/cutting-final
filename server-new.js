@@ -1690,7 +1690,7 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     
     // Validate dates are valid
     const startDate = new Date(req.body.startDate);
-    const endDate = new Date(req.body.endDate);
+    let endDate = new Date(req.body.endDate);
     
     if (isNaN(startDate.getTime())) {
       return res.status(400).json({ error: 'Invalid start date format' });
@@ -1698,6 +1698,12 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     
     if (isNaN(endDate.getTime())) {
       return res.status(400).json({ error: 'Invalid end date format' });
+    }
+    
+    // For single-day entries, set end date = start date
+    // This allows daily performance tracking instead of requiring weekly ranges
+    if (startDate.toDateString() === endDate.toDateString()) {
+      console.log('📅 Single-day entry detected - using same date for weekStartDate and weekEndDate');
     }
     
     // Find the creator account (for now, we'll use a default or first available)
@@ -1710,8 +1716,8 @@ app.post('/api/analytics/chatter', checkDatabaseConnection, authenticateToken, a
     const chatterDataObj = {
       chatterName: req.body.chatter,
       creatorAccount: creatorAccount._id,
-      weekStartDate: startDate,
-      weekEndDate: endDate
+      weekStartDate: startDate,  // Can be a single day
+      weekEndDate: endDate        // Can be same as startDate for daily tracking
     };
 
     // Only add fields that were provided (not undefined)
