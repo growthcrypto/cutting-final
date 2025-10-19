@@ -11045,6 +11045,11 @@ async function handleChatterDataSubmitDirect() {
         chatter: selectedChatterText,
         dataType: 'chatter'
     };
+    
+    console.log('📊 Chatter Performance Form Data:', formData);
+    console.log('  Start Date:', formData.startDate);
+    console.log('  End Date:', formData.endDate);
+    console.log('  Chatter:', formData.chatter);
 
     // Only include fields that have values (not empty)
     if (messagesSentValue) formData.messagesSent = parseInt(messagesSentValue);
@@ -11055,6 +11060,7 @@ async function handleChatterDataSubmitDirect() {
     if (netSalesValue) formData.netSales = parseFloat(netSalesValue);
 
     if (!formData.startDate || !formData.endDate || !formData.chatter || formData.chatter === 'Select Chatter...') {
+        console.error('❌ Form validation failed - missing required fields');
         showError('Please fill in all required fields: Start Date, End Date, and Chatter Name');
         return;
     }
