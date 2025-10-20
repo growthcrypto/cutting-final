@@ -1456,6 +1456,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
     
     setDefaultDate();
+    setupDropdownAutopopulate(); // Setup auto-populate on dropdown focus
     // loadEmployees() will be called after authentication in checkAuthStatus()
 });
 
