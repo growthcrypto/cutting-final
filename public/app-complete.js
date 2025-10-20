@@ -5363,12 +5363,9 @@ async function runChatterAnalysis() {
         console.log('   Guidelines Score:', analysisData.guidelinesScore);
         console.log('   Analysis Summary:', analysisData.analysisSummary);
         console.log('   Deep Insights:', analysisData.deepInsights?.length || 0);
+        console.log('   Total Messages (from backend):', analysisData.totalMessages);
         
-        // Override totalMessages with the filtered count from reanalyze
-        if (reanalyzeData.analysis?.messagesAnalyzed) {
-            analysisData.totalMessages = reanalyzeData.analysis.messagesAnalyzed;
-            console.log('   ✅ Using filtered message count:', analysisData.totalMessages);
-        }
+        // Note: Backend now correctly sums totalMessages from all analyzed days, so don't override it!
         
         // Render analysis even if scores are null - the render function will handle it
         renderNewChatterAnalysis(analysisData);
