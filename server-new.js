@@ -7305,34 +7305,45 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       allPerformance: allPerformance.length
     });
     
-    // Get message analysis for this chatter (try to find one that overlaps with date range)
-    // Use case-insensitive search
+    // Get ALL message analyses for this chatter in the date range
     const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
     
-    let messageAnalysis = await MessageAnalysis.findOne({
+    const allMessageAnalyses = await MessageAnalysis.find({
       chatterName: chatterNameRegex,
       weekStartDate: { $lte: end },
       weekEndDate: { $gte: start }
-    }).sort({ createdAt: -1 });
+    }).sort({ weekStartDate: 1 });
     
-    // Fallback: Get ANY analysis for this chatter if no overlap found
-    if (!messageAnalysis) {
-      messageAnalysis = await MessageAnalysis.findOne({
-        chatterName: chatterNameRegex
-      }).sort({ createdAt: -1 });
-      console.log('⚠️ No message analysis found for date range, using latest available');
+    console.log(`💬 MessageAnalysis records found: ${allMessageAnalyses.length}`);
+    
+    // Aggregate scores from all analyzed records (ignore unanalyzed ones with null scores)
+    const analyzedRecords = allMessageAnalyses.filter(ma => ma.overallScore != null);
+    console.log(`✅ Analyzed records: ${analyzedRecords.length} of ${allMessageAnalyses.length}`);
+    
+    let messageAnalysis = null;
+    if (analyzedRecords.length > 0) {
+      // Combine data from all analyzed records
+      const avgGrammar = analyzedRecords.reduce((sum, ma) => sum + (ma.grammarScore || 0), 0) / analyzedRecords.length;
+      const avgGuidelines = analyzedRecords.reduce((sum, ma) => sum + (ma.guidelinesScore || 0), 0) / analyzedRecords.length;
+      const avgOverall = analyzedRecords.reduce((sum, ma) => sum + (ma.overallScore || 0), 0) / analyzedRecords.length;
+      
+      // Use the most recent analyzed record as base, but with averaged scores
+      messageAnalysis = analyzedRecords[analyzedRecords.length - 1];
+      messageAnalysis.grammarScore = Math.round(avgGrammar);
+      messageAnalysis.guidelinesScore = Math.round(avgGuidelines);
+      messageAnalysis.overallScore = Math.round(avgOverall);
+      
+      console.log('📊 Averaged scores from', analyzedRecords.length, 'analyzed days:', {
+        grammar: messageAnalysis.grammarScore,
+        guidelines: messageAnalysis.guidelinesScore,
+        overall: messageAnalysis.overallScore
+      });
+    } else {
+      console.log('⚠️ No analyzed records found - user needs to run analysis');
     }
     
-    console.log('💬 MessageAnalysis found:', messageAnalysis ? 'YES' : 'NO');
     if (messageAnalysis) {
-      console.log('   - Overall Score:', messageAnalysis.overallScore);
-      console.log('   - Grammar Score:', messageAnalysis.grammarScore);
-      console.log('   - Guidelines Score:', messageAnalysis.guidelinesScore);
-      console.log('   - Grammar Breakdown:', JSON.stringify(messageAnalysis.grammarBreakdown));
-      console.log('   - Guidelines Breakdown:', JSON.stringify(messageAnalysis.guidelinesBreakdown));
-      console.log('   - Strengths:', messageAnalysis.strengths);
-      console.log('   - Weaknesses:', messageAnalysis.weaknesses);
-      console.log('   - Recommendations:', messageAnalysis.recommendations);
+      console.log('💬 Using MessageAnalysis with scores:', messageAnalysis.overallScore, '/', messageAnalysis.grammarScore, '/', messageAnalysis.guidelinesScore);
     }
     
     // Calculate this chatter's metrics (use ChatterPerformance as fallback)
