@@ -1515,12 +1515,13 @@ async function loadEmployees() {
 
 // Update employee dropdown with real data
 function updateEmployeeDropdown(selectId, employees) {
-    console.log(`Updating dropdown ${selectId} with ${employees.length} employees:`, employees);
     const select = document.getElementById(selectId);
     if (!select) {
-        console.error(`Dropdown ${selectId} not found`);
+        console.log(`Dropdown ${selectId} not found (may not be visible yet)`);
         return;
     }
+    
+    console.log(`Updating dropdown ${selectId} with ${employees.length} employees`);
     
     // Clear existing options
     select.innerHTML = '';
@@ -1534,12 +1535,23 @@ function updateEmployeeDropdown(selectId, employees) {
     // Add employee options
     employees.forEach(employee => {
         const option = document.createElement('option');
-        option.value = employee.chatterName || employee.username; // Use chatter name instead of ID
+        option.value = employee.chatterName || employee.username;
         option.textContent = employee.chatterName || employee.username;
         select.appendChild(option);
     });
     
-    console.log(`Dropdown ${selectId} updated with ${employees.length} options`);
+    console.log(`✅ Dropdown ${selectId} updated with ${employees.length} options`);
+}
+
+// Populate all chatter dropdowns (call this when showing forms)
+function populateAllChatterDropdowns() {
+    if (cachedChatters.length > 0) {
+        updateEmployeeDropdown('chatterDataChatter', cachedChatters);
+        updateEmployeeDropdown('messagesChatter', cachedChatters);
+    } else {
+        console.log('No cached chatters, loading from API...');
+        loadEmployees();
+    }
 }
 
 function checkAuthStatus() {
@@ -11176,8 +11188,12 @@ async function handleMessagesUploadDirect() {
     // Ensure employees are loaded before trying to upload
     const dropdown = document.getElementById('messagesChatter');
     if (dropdown && dropdown.options.length <= 1) {
-        console.log('Dropdown empty, loading employees first...');
-        await loadEmployees();
+        console.log('Dropdown empty, populating now...');
+        if (cachedChatters.length > 0) {
+            updateEmployeeDropdown('messagesChatter', cachedChatters);
+        } else {
+            await loadEmployees();
+        }
     }
     
     const file = document.getElementById('messagesFile').files[0];
