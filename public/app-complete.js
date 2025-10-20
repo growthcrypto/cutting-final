@@ -533,18 +533,34 @@ function initializeMarketingDatePicker() {
 async function populateMarketingModelDropdown() {
     try {
         const dropdown = document.getElementById('marketingModelFilter');
-        if (!dropdown) return;
+        if (!dropdown) {
+            console.log('⚠️ Marketing model dropdown not found');
+            return;
+        }
         
+        console.log('🔍 Fetching creator accounts...');
         const response = await fetch('/api/creator-accounts', {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
         
+        console.log('📡 Creator accounts response status:', response.status);
+        
         if (response.ok) {
             const creators = await response.json();
+            console.log('✅ Creator accounts loaded:', creators);
+            
+            if (creators.length === 0) {
+                console.log('⚠️ No creator accounts found in database');
+                dropdown.innerHTML = `
+                    <option value="all">🌐 All Models (Global View)</option>
+                    <option value="" disabled>No models found - create in Settings</option>
+                `;
+                return;
+            }
             
             // Keep "All Models" as first option, add specific models
             const modelOptions = creators.map(creator => 
-                `<option value="${creator._id}">${creator.name}</option>`
+                `<option value="${creator._id}">${creator.name} - @${creator.accountName}</option>`
             ).join('');
             
             dropdown.innerHTML = `
@@ -553,6 +569,8 @@ async function populateMarketingModelDropdown() {
             `;
             
             console.log(`✅ Populated marketing model dropdown with ${creators.length} models`);
+        } else {
+            console.error('❌ Failed to fetch creator accounts:', response.status);
         }
     } catch (error) {
         console.error('Error populating model dropdown:', error);
