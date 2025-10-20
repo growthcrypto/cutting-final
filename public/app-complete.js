@@ -8181,34 +8181,38 @@ function createDataUploadSection() {
                         <div>
                             <label class="block text-sm font-medium mb-2">
                                 Total Subscribers
-                                <span class="text-xs text-gray-500 block">All current subs</span>
+                                <span class="text-xs text-gray-500 block">Optional - if you have it</span>
                             </label>
-                            <input type="number" id="snapshotTotalSubs" min="0" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <input type="number" id="snapshotTotalSubs" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank if unknown">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">
                                 Active Fans
-                                <span class="text-xs text-gray-500 block">Fans currently active</span>
+                                <span class="text-xs text-gray-500 block">Optional - if you have it</span>
                             </label>
-                            <input type="number" id="snapshotActiveFans" min="0" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <input type="number" id="snapshotActiveFans" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank if unknown">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">
                                 Fans with Renew ON
-                                <span class="text-xs text-gray-500 block">Auto-renew enabled</span>
+                                <span class="text-xs text-gray-500 block">Optional - if you have it</span>
                             </label>
-                            <input type="number" id="snapshotFansWithRenew" min="0" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <input type="number" id="snapshotFansWithRenew" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank if unknown">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">
                                 New Subs Today
-                                <span class="text-xs text-gray-500 block">Just today</span>
+                                <span class="text-xs text-gray-500 block">Optional - if you have it</span>
                             </label>
-                            <input type="number" id="snapshotNewSubs" min="0" required
-                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <input type="number" id="snapshotNewSubs" min="0"
+                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                                   placeholder="Leave blank if unknown">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2">
