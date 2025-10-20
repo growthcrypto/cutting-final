@@ -11,6 +11,23 @@ let currentWeekFilter = null;
 let currentMonthFilter = null;
 let trafficSources = []; // Marketing: Available traffic sources
 let vipFans = []; // Marketing: VIP fans for autocomplete
+let cachedChatters = []; // Cache for chatter dropdown population
+
+// Auto-populate dropdown on focus if empty
+function setupDropdownAutopopulate() {
+    document.addEventListener('focus', (e) => {
+        if (e.target.id === 'messagesChatter' || e.target.id === 'chatterDataChatter') {
+            if (e.target.options.length <= 1) {
+                console.log(`Dropdown ${e.target.id} focused but empty, populating...`);
+                if (cachedChatters.length > 0) {
+                    updateEmployeeDropdown(e.target.id, cachedChatters);
+                } else {
+                    loadEmployees();
+                }
+            }
+        }
+    }, true);
+}
 
 // ==================== MARKETING FUNCTIONS ====================
 
