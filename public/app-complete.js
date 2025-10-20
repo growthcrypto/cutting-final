@@ -8142,6 +8142,7 @@ function createDataUploadSection() {
                     <p class="text-xs text-gray-400 mt-1">Upload daily for custom date range support</p>
                 </div>
             </div>
+            <!-- v2.1 - All subscriber fields optional -->
             <form id="dailySnapshotForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
