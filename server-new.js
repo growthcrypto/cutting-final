@@ -1912,77 +1912,74 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     
     console.log(`Parsed ${messageRecords.length} message records for analysis`);
     
-    // Extract just the message text for AI analysis (for now)
-    const messages = messageRecords.map(record => record.messageText);
-    
-    // ❌ DO NOT analyze on upload - analysis happens from AI Analysis page only
-    console.log('✅ Messages uploaded - analysis will run from AI Analysis page');
-    
-    // Save to MessageAnalysis collection
-    console.log('Creating MessageAnalysis object with:', {
-      chatterName: chatter,
-      weekStartDate: startDate,
-      weekEndDate: endDate,
-      totalMessages: messageRecords.length,
-      messageRecords: messageRecords.length
+    // 🆕 GROUP MESSAGES BY DATE (auto-split multi-day uploads)
+    const messagesByDate = {};
+    messageRecords.forEach(record => {
+      const dateKey = record.date.toISOString().split('T')[0]; // YYYY-MM-DD
+      if (!messagesByDate[dateKey]) {
+        messagesByDate[dateKey] = [];
+      }
+      messagesByDate[dateKey].push(record);
     });
     
-    const messageAnalysis = new MessageAnalysis({
-      chatterName: chatter,
-      weekStartDate: new Date(startDate),
-      weekEndDate: new Date(endDate),
-      totalMessages: messageRecords.length,
-      messageRecords: messageRecords, // Store the full message records
-      overallScore: null,
-      grammarScore: null,
-      guidelinesScore: null,
-      strengths: [],
-      weaknesses: [],
-      recommendations: [],
-      // CHATTING STYLE ANALYSIS
-      chattingStyle: null,
-      messagePatterns: null,
-      engagementMetrics: null
-    });
+    const uniqueDates = Object.keys(messagesByDate).sort();
+    console.log(`📅 Messages span ${uniqueDates.length} unique dates:`, uniqueDates);
     
-    console.log('MessageAnalysis object created:', messageAnalysis._id);
-    console.log('MessageAnalysis data:', {
-      chattingStyle: messageAnalysis.chattingStyle,
-      messagePatterns: messageAnalysis.messagePatterns,
-      engagementMetrics: messageAnalysis.engagementMetrics,
-      recommendations: messageAnalysis.recommendations,
-      totalMessages: messageAnalysis.totalMessages
-    });
+    // Create ONE MessageAnalysis record PER DATE
+    const createdRecords = [];
     
-    try {
-      console.log('Attempting to save message analysis:', {
-        chatterName: messageAnalysis.chatterName,
-        weekStartDate: messageAnalysis.weekStartDate,
-        weekEndDate: messageAnalysis.weekEndDate,
-        totalMessages: messageAnalysis.totalMessages,
-        hasChattingStyle: !!messageAnalysis.chattingStyle,
-        hasMessagePatterns: !!messageAnalysis.messagePatterns,
-        hasEngagementMetrics: !!messageAnalysis.engagementMetrics
-      });
-      await messageAnalysis.save();
-      console.log('✅ Message analysis saved successfully:', messageAnalysis._id);
+    for (const dateKey of uniqueDates) {
+      const dailyMessages = messagesByDate[dateKey];
+      const dayDate = new Date(dateKey);
       
-      // Verify the data was actually saved
-      const savedRecord = await MessageAnalysis.findById(messageAnalysis._id);
-      console.log('🔍 Verification - saved record has data:', {
-        hasChattingStyle: !!savedRecord.chattingStyle,
-        hasMessagePatterns: !!savedRecord.messagePatterns,
-        hasEngagementMetrics: !!savedRecord.engagementMetrics,
-        chattingStyleKeys: savedRecord.chattingStyle ? Object.keys(savedRecord.chattingStyle) : 'null',
-        messagePatternsKeys: savedRecord.messagePatterns ? Object.keys(savedRecord.messagePatterns) : 'null'
+      console.log(`📅 Creating MessageAnalysis for ${dateKey}: ${dailyMessages.length} messages`);
+      
+      const messageAnalysis = new MessageAnalysis({
+        chatterName: chatter,
+        weekStartDate: dayDate,
+        weekEndDate: dayDate, // Single day
+        totalMessages: dailyMessages.length,
+        messageRecords: dailyMessages,
+        overallScore: null,
+        grammarScore: null,
+        guidelinesScore: null,
+        strengths: [],
+        weaknesses: [],
+        recommendations: [],
+        chattingStyle: null,
+        messagePatterns: null,
+        engagementMetrics: null
       });
-    } catch (saveError) {
-      console.error('❌ Error saving message analysis:', saveError);
-      console.error('❌ Full error details:', JSON.stringify(saveError, null, 2));
-      throw saveError;
+      
+      try {
+        console.log(`  💾 Saving MessageAnalysis for ${dateKey}...`);
+        await messageAnalysis.save();
+        console.log(`  ✅ Saved: ${messageAnalysis._id}`);
+        createdRecords.push({
+          date: dateKey,
+          messageCount: dailyMessages.length,
+          id: messageAnalysis._id
+        });
+      } catch (saveError) {
+        console.error(`❌ Error saving MessageAnalysis for ${dateKey}:`, saveError);
+        throw saveError;
+      }
     }
     
-    // Update VIP fan lastMessageDate for retention tracking
+    console.log(`✅ Created ${createdRecords.length} MessageAnalysis records (one per day)`);
+    createdRecords.forEach(rec => {
+      console.log(`  - ${rec.date}: ${rec.messageCount} messages`);
+    });
+    
+    // Return success response
+    res.json({
+      message: `Successfully uploaded and split into ${createdRecords.length} daily records`,
+      totalMessages: messageRecords.length,
+      daysCreated: createdRecords.length,
+      breakdown: createdRecords
+    });
+    
+    // Update VIP fan lastMessageDate for retention tracking (async, after response)
     console.log('📝 Updating lastMessageDate for VIP fans from message data...');
     const fanMessageDates = {};
     
@@ -2020,17 +2017,6 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
     }
     
     console.log(`✅ Updated lastMessageDate for ${vipFansUpdated} VIP fans`);
-    
-    res.json({ 
-      message: 'Messages analyzed and saved successfully',
-      analysis: {
-        messageCount: messages.length,
-        overallScore: messageAnalysis.overallScore,
-        grammarScore: messageAnalysis.grammarScore,
-        guidelinesScore: messageAnalysis.guidelinesScore
-      },
-      vipFansUpdated: vipFansUpdated
-    });
   } catch (error) {
     console.error('Message upload error:', error);
     res.status(500).json({ error: error.message });
