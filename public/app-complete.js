@@ -1508,15 +1508,15 @@ async function loadEmployees() {
         if (response.ok) {
             const chatters = await response.json();
             console.log('Loaded chatters:', chatters);
-            const activeChatters = chatters.filter(chatter => chatter.isActive);
+            cachedChatters = chatters.filter(chatter => chatter.isActive);
             
             // Wait for elements to be available before updating
             await waitForElement('chatterDataChatter');
             await waitForElement('messagesChatter');
             
             // Update both dropdowns
-            updateEmployeeDropdown('chatterDataChatter', activeChatters);
-            updateEmployeeDropdown('messagesChatter', activeChatters);
+            updateEmployeeDropdown('chatterDataChatter', cachedChatters);
+            updateEmployeeDropdown('messagesChatter', cachedChatters);
         } else {
             console.error('Failed to load employees:', response.statusText);
             // Fallback to empty dropdowns
