@@ -529,9 +529,43 @@ function initializeMarketingDatePicker() {
     setMarketingQuickFilter('week');
 }
 
+// Populate model dropdown for marketing dashboard
+async function populateMarketingModelDropdown() {
+    try {
+        const dropdown = document.getElementById('marketingModelFilter');
+        if (!dropdown) return;
+        
+        const response = await fetch('/api/creator-accounts', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            const creators = await response.json();
+            
+            // Keep "All Models" as first option, add specific models
+            const modelOptions = creators.map(creator => 
+                `<option value="${creator._id}">${creator.name}</option>`
+            ).join('');
+            
+            dropdown.innerHTML = `
+                <option value="all">🌐 All Models (Global View)</option>
+                ${modelOptions}
+            `;
+            
+            console.log(`✅ Populated marketing model dropdown with ${creators.length} models`);
+        }
+    } catch (error) {
+        console.error('Error populating model dropdown:', error);
+    }
+}
+
 async function loadMarketingDashboard() {
     console.log('🚀 loadMarketingDashboard() called');
     try {
+        // Get selected model from dropdown
+        const modelFilter = document.getElementById('marketingModelFilter');
+        const selectedModel = modelFilter ? modelFilter.value : 'all';
+        
         // Calculate date range based on current interval
         const today = new Date();
         let startDate, endDate = today;
@@ -561,9 +595,11 @@ async function loadMarketingDashboard() {
         params.append('filterType', 'custom');
         params.append('customStart', formatDate(startDate));
         params.append('customEnd', formatDate(endDate));
+        params.append('creatorAccountId', selectedModel); // Add model filter
         
         console.log('📡 Fetching marketing dashboard from:', `/api/marketing/dashboard?${params}`);
         console.log('Marketing interval:', currentMarketingInterval);
+        console.log('Model filter:', selectedModel);
         console.log('Date range:', formatDate(startDate), 'to', formatDate(endDate));
         const response = await fetch(`/api/marketing/dashboard?${params}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
@@ -2248,8 +2284,9 @@ function loadSectionData(sectionId) {
             loadMyPerformanceData();
             break;
         case 'marketing-dashboard':
-            // Initialize date picker and load marketing dashboard data
+            // Initialize date picker, populate model dropdown, and load marketing dashboard data
             initializeMarketingDatePicker();
+            populateMarketingModelDropdown();
             break;
         case 'data-management':
             // Load all data for management
@@ -8949,6 +8986,17 @@ function createMarketingDashboardSection() {
                     </h2>
                     <p class="text-gray-400">Track traffic source performance and ROI</p>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Model Selector -->
+        <div class="mb-6 glass-card rounded-xl p-4">
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-gray-400">Model:</span>
+                <select id="marketingModelFilter" onchange="loadMarketingDashboard()" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white">
+                    <option value="all">🌐 All Models (Global View)</option>
+                    <!-- Populated dynamically -->
+                </select>
             </div>
         </div>
         

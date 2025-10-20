@@ -5995,7 +5995,7 @@ app.get('/api/marketing/vip-fans', authenticateToken, async (req, res) => {
 // Get marketing dashboard data
 app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
   try {
-    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd } = req.query;
+    const { filterType, weekStart, weekEnd, monthStart, monthEnd, customStart, customEnd, creatorAccountId } = req.query;
     
     let dateQuery = {};
     
@@ -6017,6 +6017,14 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
         $gte: new Date(monthStart),
         $lte: new Date(monthEnd)
       };
+    }
+    
+    // Filter by model if specified (otherwise show all models)
+    if (creatorAccountId && creatorAccountId !== 'all') {
+      dateQuery.creatorAccount = creatorAccountId;
+      console.log('📊 Marketing Dashboard filtered to model:', creatorAccountId);
+    } else {
+      console.log('📊 Marketing Dashboard showing ALL models (global view)');
     }
     
     console.log('📊 Marketing Dashboard query:', dateQuery);
@@ -6078,8 +6086,18 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
     });
     
     // Get link tracking data BY CATEGORY (reddit, twitter, etc.)
+    // Build link tracking query with same date range and model filter
+    let linkTrackingQuery = {};
+    if (dateQuery.date) {
+      linkTrackingQuery.weekStartDate = { $lte: dateQuery.date.$lte };
+      linkTrackingQuery.weekEndDate = { $gte: dateQuery.date.$gte };
+    }
+    if (creatorAccountId && creatorAccountId !== 'all') {
+      linkTrackingQuery.creatorAccount = creatorAccountId;
+    }
+    
     const linkTrackingMap = {};
-    const linkTracking = await LinkTrackingData.find(dateQuery);
+    const linkTracking = await LinkTrackingData.find(linkTrackingQuery);
     linkTracking.forEach(lt => {
       if (lt.category) {
         if (!linkTrackingMap[lt.category]) {
