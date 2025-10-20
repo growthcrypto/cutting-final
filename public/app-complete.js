@@ -5282,16 +5282,42 @@ async function runChatterAnalysis() {
             throw new Error('No messages found for this chatter. Upload messages first in Data Management.');
         }
         
-        // Get the most recent message analysis
-        const latestMessage = messagesList[0];
-        console.log('🔍 Found message analysis:', latestMessage._id);
+        console.log(`🔍 Found ${messagesList.length} message analysis records for ${chatterName}`);
         
-        // Trigger RE-ANALYSIS with date range filter
-        console.log('🔄 Triggering re-analysis for message ID:', latestMessage._id);
-        console.log('📅 Sending date range to reanalyze:', {
-            startDate: formatDate(startDate),
-            endDate: formatDate(endDate)
+        // Filter records that fall within the date range and haven't been analyzed
+        const recordsInRange = messagesList.filter(ma => {
+            const maStart = new Date(ma.weekStartDate);
+            const maEnd = new Date(ma.weekEndDate);
+            return maStart <= endDate && maEnd >= startDate;
         });
+        
+        const unanalyzedRecords = recordsInRange.filter(ma => ma.overallScore == null);
+        console.log(`📊 Records in date range: ${recordsInRange.length}, Unanalyzed: ${unanalyzedRecords.length}`);
+        
+        // Analyze all unanalyzed records
+        if (unanalyzedRecords.length > 0) {
+            console.log(`🔄 Analyzing ${unanalyzedRecords.length} unanalyzed records...`);
+            for (const record of unanalyzedRecords) {
+                console.log(`  - Analyzing ${record.weekStartDate}: ${record.totalMessages} messages`);
+                await fetch(`/api/messages/reanalyze/${record._id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startDate: formatDate(new Date(record.weekStartDate)),
+                        endDate: formatDate(new Date(record.weekEndDate))
+                    })
+                });
+            }
+            console.log(`✅ All ${unanalyzedRecords.length} records analyzed!`);
+        } else {
+            console.log('✅ All records already analyzed!');
+        }
+        
+        // Just trigger one analysis to get the response (the backend will average all analyzed records)
+        const latestMessage = recordsInRange[0] || messagesList[0];
         const reanalyzeResponse = await fetch(`/api/messages/reanalyze/${latestMessage._id}`, {
             method: 'POST',
             headers: {
