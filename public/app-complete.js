@@ -554,7 +554,7 @@ async function populateMarketingModelDropdown() {
             if (creators.length === 0) {
                 console.log('⚠️ No creator accounts found in database');
                 dropdown.innerHTML = `
-                    <option value="all">🌐 All Models (Global View)</option>
+                    <option value="all">All Models</option>
                     <option value="" disabled>No models found - create in Settings</option>
                 `;
                 return;
@@ -562,11 +562,11 @@ async function populateMarketingModelDropdown() {
             
             // Keep "All Models" as first option, add specific models
             const modelOptions = creators.map(creator => 
-                `<option value="${creator._id}">${creator.name} - @${creator.accountName}</option>`
+                `<option value="${creator._id}">${creator.name}</option>`
             ).join('');
             
             dropdown.innerHTML = `
-                <option value="all">🌐 All Models (Global View)</option>
+                <option value="all">All Models</option>
                 ${modelOptions}
             `;
             
@@ -576,6 +576,35 @@ async function populateMarketingModelDropdown() {
         }
     } catch (error) {
         console.error('Error populating model dropdown:', error);
+    }
+}
+
+// Populate creator dropdown for daily report form
+async function populateDailyReportCreatorDropdown() {
+    try {
+        const dropdown = document.getElementById('creatorAccount');
+        if (!dropdown) return;
+        
+        const response = await fetch('/api/creator-accounts', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            const creators = await response.json();
+            
+            const options = creators.map(creator => 
+                `<option value="${creator._id}">${creator.name}</option>`
+            ).join('');
+            
+            dropdown.innerHTML = `
+                <option value="">Select Creator...</option>
+                ${options}
+            `;
+            
+            console.log(`✅ Populated daily report creator dropdown with ${creators.length} creators`);
+        }
+    } catch (error) {
+        console.error('Error populating creator dropdown:', error);
     }
 }
 
@@ -2218,8 +2247,10 @@ function createSection(sectionId) {
             break;
         case 'daily-report':
             section.innerHTML = createDailyReportSection();
-            // Attach event listeners after section is created
+            // Populate creator dropdown and attach event listeners
             setTimeout(() => {
+                populateDailyReportCreatorDropdown();
+                
                 const addPPVBtn = document.getElementById('addPPVSale');
                 const addTipBtn = document.getElementById('addTip');
                 if (addPPVBtn) {
@@ -9828,11 +9859,19 @@ function createDailyReportSection() {
         </div>
         <div class="glass-card rounded-xl p-6">
             <form id="dailyReportForm" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">Date</label>
                         <input type="date" id="reportDate" required
                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Creator Account</label>
+                        <select id="dailyReportCreatorAccount" required
+                                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            <option value="">Select Creator...</option>
+                            <!-- Populated dynamically from database -->
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Shift</label>

@@ -5577,7 +5577,27 @@ app.post('/api/daily-reports', authenticateToken, async (req, res) => {
     await report.save();
     
     // ==================== MARKETING ANALYTICS: Create FanPurchase records ====================
-    const creatorAccount = await CreatorAccount.findOne(); // Get default creator account
+    // Find the creator account from the form (use creator name or ID)
+    let creatorAccount;
+    if (creator) {
+      // Try to find by ID first, then by name
+      creatorAccount = await CreatorAccount.findById(creator).catch(() => null);
+      if (!creatorAccount) {
+        // Fallback: find by name (case-insensitive)
+        creatorAccount = await CreatorAccount.findOne({ 
+          name: new RegExp(`^${creator}$`, 'i') 
+        });
+      }
+    }
+    
+    // If still not found, use the first available account as fallback
+    if (!creatorAccount) {
+      creatorAccount = await CreatorAccount.findOne();
+      console.log('⚠️ No creator account specified, using default:', creatorAccount?.name);
+    } else {
+      console.log('✅ Using creator account:', creatorAccount.name, '(ID:', creatorAccount._id, ')');
+    }
+    
     const reportDate = new Date(date);
     
     // Process PPV sales
