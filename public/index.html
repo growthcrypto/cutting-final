@@ -1891,11 +1891,24 @@
                                 <form id="messagesUploadForm" enctype="multipart/form-data" class="space-y-6">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-300 mb-2">Chatter Name *</label>
-                                        <select name="chatterName" id="messagesChatterSelect" required
+                                        <select name="chatterName" id="messagesChatter" required
                                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
                                             <option value="">Select Chatter...</option>
                                             <!-- Populated dynamically -->
                                         </select>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Start Date *</label>
+                                            <input type="date" id="messagesStartDate" required
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">End Date *</label>
+                                            <input type="date" id="messagesEndDate" required
+                                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                                        </div>
                                     </div>
 
                                     <div>
