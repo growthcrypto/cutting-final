@@ -6573,6 +6573,51 @@ app.delete('/api/data-management/daily-snapshots/:id', authenticateToken, requir
   }
 });
 
+// Get all sales logs (FanPurchase records) for data management
+app.get('/api/data-management/sales-logs', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const salesLogs = await FanPurchase.find()
+      .populate('creatorAccount')
+      .populate('trafficSource')
+      .sort({ createdAt: -1 })
+      .limit(500); // Show last 500 sales
+    
+    // Format data with all details
+    const formattedLogs = salesLogs.map(sale => ({
+      _id: sale._id,
+      createdAt: sale.createdAt,
+      date: sale.date,
+      creatorAccountName: sale.creatorAccount?.name || null,
+      creatorAccountId: sale.creatorAccount?._id || null,
+      chatterName: sale.chatterName,
+      fanUsername: sale.fanUsername,
+      type: sale.type,
+      amount: sale.amount,
+      trafficSourceName: sale.trafficSource?.name || null
+    }));
+    
+    res.json({ salesLogs: formattedLogs });
+  } catch (error) {
+    console.error('Error fetching sales logs:', error);
+    res.status(500).json({ error: 'Failed to fetch sales logs' });
+  }
+});
+
+// Delete a sales log
+app.delete('/api/data-management/sales-logs/:id', authenticateToken, requireManager, async (req, res) => {
+  try {
+    const result = await FanPurchase.findByIdAndDelete(req.params.id);
+    if (!result) {
+      return res.status(404).json({ error: 'Sales log not found' });
+    }
+    console.log(`🗑️ Deleted sales log: ${result.fanUsername} - $${result.amount} (${result.type})`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting sales log:', error);
+    res.status(500).json({ error: 'Failed to delete sales log' });
+  }
+});
+
 // Get all link tracking data for data management
 app.get('/api/data-management/link-tracking', authenticateToken, requireManager, async (req, res) => {
   try {

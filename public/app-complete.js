@@ -1044,6 +1044,9 @@ async function refreshDataTab(tabName) {
         case 'daily-reports':
             await loadDailyReportsData();
             break;
+        case 'sales-logs':
+            await loadSalesLogsData();
+            break;
         case 'chatter-performance':
             await loadChatterPerformanceData();
             break;
@@ -1128,6 +1131,83 @@ async function loadMessagesData() {
     } catch (error) {
         console.error('Error loading messages:', error);
         showNotification('Failed to load messages', 'error');
+    }
+}
+
+// Load Sales Logs Data (Individual FanPurchase records)
+async function loadSalesLogsData() {
+    try {
+        const response = await fetch('/api/data-management/sales-logs', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load sales logs');
+        
+        const data = await response.json();
+        const tbody = document.getElementById('salesLogsTableBody');
+        
+        if (!tbody) return;
+        
+        if (!data.salesLogs || data.salesLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-gray-400">No sales logs found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = data.salesLogs.map(sale => {
+            const uploadDate = new Date(sale.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const saleDate = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const modelName = sale.creatorAccountName || 'Unknown';
+            const sourceName = sale.trafficSourceName || '-';
+            
+            return `
+                <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all">
+                    <td class="px-3 py-3 text-xs text-gray-400">${uploadDate}</td>
+                    <td class="px-3 py-3 text-sm text-white">${saleDate}</td>
+                    <td class="px-3 py-3 text-sm text-cyan-400">${modelName}</td>
+                    <td class="px-3 py-3 text-sm text-purple-400">${sale.chatterName || '-'}</td>
+                    <td class="px-3 py-3 text-sm text-blue-400">${sale.fanUsername || '-'}</td>
+                    <td class="px-3 py-3 text-xs">
+                        <span class="px-2 py-1 rounded ${sale.type === 'ppv' ? 'bg-purple-600/20 text-purple-300' : 'bg-green-600/20 text-green-300'}">${sale.type.toUpperCase()}</span>
+                    </td>
+                    <td class="px-3 py-3 text-right text-green-400 font-bold">$${sale.amount.toFixed(2)}</td>
+                    <td class="px-3 py-3 text-xs text-gray-400">${sourceName}</td>
+                    <td class="px-3 py-3 text-center">
+                        <button onclick="deleteSaleLog('${sale._id}', '${saleDate}', '${sale.fanUsername}')" class="px-2 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 text-red-300 rounded text-xs transition-all">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading sales logs:', error);
+        const tbody = document.getElementById('salesLogsTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-red-400">Failed to load sales logs</td></tr>';
+        }
+    }
+}
+
+async function deleteSaleLog(saleId, date, fan) {
+    if (!confirm(`Delete this sale?\n\nDate: ${date}\nFan: ${fan || 'Unknown'}\n\nThis cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/data-management/sales-logs/${saleId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            showNotification('Sale deleted successfully', 'success');
+            refreshDataTab('sales-logs');
+        } else {
+            showNotification('Failed to delete sale', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+        showNotification('Error deleting sale', 'error');
     }
 }
 
@@ -9175,6 +9255,44 @@ function createDataManagementSection() {
             </div>
         </div>
         
+        <!-- Sales Logs Tab -->
+        <div id="dataTab-sales-logs" class="data-tab-content hidden">
+            <div class="glass-card rounded-xl p-6 border border-yellow-500/30">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-dollar-sign text-yellow-400 mr-2"></i>
+                            Individual Sales Logs
+                        </h3>
+                        <p class="text-sm text-gray-400 mt-1">All individual sales - Find and remove duplicates</p>
+                    </div>
+                    <button onclick="refreshDataTab('sales-logs')" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Uploaded</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Sale Date</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Model</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Chatter</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Fan</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Type</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Amount</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Source</th>
+                                <th class="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesLogsTableBody">
+                            <tr><td colspan="9" class="text-center py-8 text-gray-400">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
         <!-- Link Tracking Tab -->
         <div id="dataTab-link-tracking" class="data-tab-content hidden">
             <div class="glass-card rounded-xl p-6">
@@ -9387,6 +9505,9 @@ function createDataManagementSection() {
             </button>
             <button onclick="showDataTab('daily-reports')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-file-alt mr-2"></i>Daily Reports
+            </button>
+            <button onclick="showDataTab('sales-logs')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all bg-yellow-600/20 border border-yellow-500/30">
+                <i class="fas fa-dollar-sign mr-2"></i>Sales Logs (Find Duplicates)
             </button>
             <button onclick="showDataTab('chatter-performance')" class="data-tab-btn px-6 py-3 rounded-xl font-medium transition-all">
                 <i class="fas fa-chart-line mr-2"></i>Chatter Performance
