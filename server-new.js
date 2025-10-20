@@ -7755,10 +7755,22 @@ async function generateAgencyIntelligence(data) {
   const currentPPVsSent = current.performance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
   const unlockRate = currentPPVsSent > 0 ? ((currentPPVs / currentPPVsSent) * 100).toFixed(1) : 0;
   
-  const activeChatterCount = current.performance.length;
+  // Count UNIQUE chatters, not total performance records
+  const uniqueChatters = new Set(current.performance.map(p => p.chatterName));
+  const activeChatterCount = uniqueChatters.size;
+  
   const avgQuality = current.analyses.length > 0
     ? (current.analyses.reduce((sum, a) => sum + (a.overallScore || 0), 0) / current.analyses.length).toFixed(0)
     : 0;
+  
+  console.log('📊 Agency Analysis Exec Summary:', {
+    currentPPVs,
+    currentPPVsSent,
+    unlockRate: `${unlockRate}%`,
+    performanceRecords: current.performance.length,
+    uniqueChatters: activeChatterCount,
+    chatterList: Array.from(uniqueChatters)
+  });
   
   intelligence.executive = {
     period: { start: current.start, end: current.end },
