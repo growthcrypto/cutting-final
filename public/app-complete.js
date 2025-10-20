@@ -526,7 +526,9 @@ function setMarketingQuickFilter(type) {
 }
 
 function initializeMarketingDatePicker() {
-    setMarketingQuickFilter('week');
+    // Marketing dashboard uses interval buttons (24h, 7d, 30d), not date pickers
+    // Just load the default dashboard with 24h interval (already set)
+    loadMarketingDashboard();
 }
 
 // Populate model dropdown for marketing dashboard
@@ -2302,9 +2304,10 @@ function loadSectionData(sectionId) {
             loadMyPerformanceData();
             break;
         case 'marketing-dashboard':
-            // Initialize date picker, populate model dropdown, and load marketing dashboard data
-            initializeMarketingDatePicker();
-            populateMarketingModelDropdown();
+            // First populate model dropdown, then load data
+            populateMarketingModelDropdown().then(() => {
+                initializeMarketingDatePicker();
+            });
             break;
         case 'data-management':
             // Load all data for management
