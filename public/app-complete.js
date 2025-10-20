@@ -1244,20 +1244,23 @@ async function loadDailyReportsData() {
                 <td colspan="6" class="px-4 py-4">
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <div class="font-semibold text-purple-400 mb-2">PPV Sales:</div>
+                            <div class="font-semibold text-purple-400 mb-2">PPV Sales (${(report.ppvSales || []).length}):</div>
                             ${(report.ppvSales || []).map((sale, i) => `
-                                <div class="pl-3 text-gray-300">
-                                    ${i+1}. $${sale.amount.toFixed(2)}
-                                    ${sale.vipFanUsername ? ` - <span class="text-yellow-400">${sale.vipFanUsername}</span>` : ''}
+                                <div class="pl-3 text-gray-300 mb-2 border-l-2 border-purple-500/30 pl-3">
+                                    <div class="font-medium text-white">${i+1}. $${sale.amount.toFixed(2)}</div>
+                                    ${sale.fanUsername || sale.vipFanUsername ? `<div class="text-xs text-blue-400">👤 Fan: ${sale.fanUsername || sale.vipFanUsername}</div>` : '<div class="text-xs text-gray-500">👤 Fan: Not tracked</div>'}
+                                    ${sale.trafficSourceName ? `<div class="text-xs text-cyan-400">📍 Source: ${sale.trafficSourceName}</div>` : '<div class="text-xs text-gray-500">📍 Source: None</div>'}
+                                    ${sale.isVIP ? '<div class="text-xs text-yellow-400">⭐ VIP</div>' : ''}
                                 </div>
                             `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
                         </div>
                         <div>
-                            <div class="font-semibold text-green-400 mb-2">Tips:</div>
+                            <div class="font-semibold text-green-400 mb-2">Tips (${(report.tips || []).length}):</div>
                             ${(report.tips || []).map((tip, i) => `
-                                <div class="pl-3 text-gray-300">
-                                    ${i+1}. $${tip.amount.toFixed(2)}
-                                    ${tip.vipFanUsername ? ` - <span class="text-yellow-400">${tip.vipFanUsername}</span>` : ''}
+                                <div class="pl-3 text-gray-300 mb-2 border-l-2 border-green-500/30 pl-3">
+                                    <div class="font-medium text-white">${i+1}. $${tip.amount.toFixed(2)}</div>
+                                    ${tip.fanUsername || tip.vipFanUsername ? `<div class="text-xs text-blue-400">👤 Fan: ${tip.fanUsername || tip.vipFanUsername}</div>` : '<div class="text-xs text-gray-500">👤 Fan: Not tracked</div>'}
+                                    ${tip.trafficSourceName ? `<div class="text-xs text-cyan-400">📍 Source: ${tip.trafficSourceName}</div>` : '<div class="text-xs text-gray-500">📍 Source: None</div>'}
                                 </div>
                             `).join('') || '<div class="pl-3 text-gray-500">None</div>'}
                         </div>

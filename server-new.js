@@ -6477,10 +6477,35 @@ app.delete('/api/data-management/messages/:id', authenticateToken, requireManage
 app.get('/api/data-management/daily-reports', authenticateToken, requireManager, async (req, res) => {
   try {
     const reports = await DailyChatterReport.find()
+      .populate('ppvSales.trafficSource')
+      .populate('tips.trafficSource')
       .sort({ date: -1 })
       .limit(100);
     
-    res.json({ reports });
+    // Format data to include traffic source names
+    const formattedReports = reports.map(report => {
+      const reportObj = report.toObject();
+      
+      // Add traffic source names to PPV sales
+      if (reportObj.ppvSales) {
+        reportObj.ppvSales = reportObj.ppvSales.map(sale => ({
+          ...sale,
+          trafficSourceName: sale.trafficSource?.name || null
+        }));
+      }
+      
+      // Add traffic source names to tips
+      if (reportObj.tips) {
+        reportObj.tips = reportObj.tips.map(tip => ({
+          ...tip,
+          trafficSourceName: tip.trafficSource?.name || null
+        }));
+      }
+      
+      return reportObj;
+    });
+    
+    res.json({ reports: formattedReports });
   } catch (error) {
     console.error('Error fetching daily reports:', error);
     res.status(500).json({ error: 'Failed to fetch daily reports' });
