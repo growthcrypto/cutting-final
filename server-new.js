@@ -6027,14 +6027,26 @@ app.get('/api/marketing/dashboard', authenticateToken, async (req, res) => {
       console.log('📊 Marketing Dashboard showing ALL models (global view)');
     }
     
-    console.log('📊 Marketing Dashboard query:', dateQuery);
+    console.log('📊 Marketing Dashboard query:', JSON.stringify(dateQuery));
     
     // Get all purchases (aggregated from FanPurchase)
     const purchases = await FanPurchase.find(dateQuery)
       .populate('trafficSource')
       .populate('vipFan');
     
-    console.log(`📊 Found ${purchases.length} purchases for dashboard`);
+    console.log(`📊 Found ${purchases.length} purchases for marketing dashboard`);
+    if (creatorAccountId && creatorAccountId !== 'all') {
+      console.log(`   🎯 Filtered to model ${creatorAccountId}: ${purchases.length} purchases`);
+      console.log(`   📋 Sample purchase models:`, purchases.slice(0, 3).map(p => p.creatorAccount?.toString() || 'N/A'));
+    } else {
+      console.log(`   🌐 Global view: ${purchases.length} purchases across all models`);
+      const modelCounts = {};
+      purchases.forEach(p => {
+        const modelId = p.creatorAccount?.toString() || 'unknown';
+        modelCounts[modelId] = (modelCounts[modelId] || 0) + 1;
+      });
+      console.log(`   📊 Purchases by model:`, modelCounts);
+    }
     
     // Get all traffic sources
     const allSources = await TrafficSource.find({ isActive: true });
