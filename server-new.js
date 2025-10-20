@@ -7330,25 +7330,100 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       // Sum total messages from all analyzed days
       const totalMessagesAcrossAllDays = analyzedRecords.reduce((sum, ma) => sum + (ma.totalMessages || 0), 0);
       
-      // Get the most recent analyzed record as base and convert to plain object
+      // Aggregate grammar breakdowns from all days
+      let totalSpellingErrors = 0;
+      let totalGrammarIssues = 0;
+      let totalPunctuationProblems = 0;
+      
+      analyzedRecords.forEach(record => {
+        const gb = record.grammarBreakdown;
+        if (gb) {
+          // Extract counts from breakdown strings
+          const spellingMatch = gb.spellingErrors?.match(/Found (\d+)/);
+          const grammarMatch = gb.grammarIssues?.match(/Found (\d+)/);
+          const punctuationMatch = gb.punctuationProblems?.match(/Found (\d+)/);
+          
+          totalSpellingErrors += spellingMatch ? parseInt(spellingMatch[1]) : 0;
+          totalGrammarIssues += grammarMatch ? parseInt(grammarMatch[1]) : 0;
+          totalPunctuationProblems += punctuationMatch ? parseInt(punctuationMatch[1]) : 0;
+        }
+      });
+      
+      // Aggregate guidelines breakdowns from all days
+      const aggregatedGuidelines = {
+        generalChatting: { items: [] },
+        psychology: { items: [] },
+        captions: { items: [] },
+        sales: { items: [] }
+      };
+      
+      // Collect all unique guideline titles and sum their violations
+      const guidelineViolations = {};
+      analyzedRecords.forEach(record => {
+        const glb = record.guidelinesBreakdown;
+        if (glb) {
+          ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
+            if (glb[category]?.items) {
+              glb[category].items.forEach(item => {
+                const key = `${category}:${item.title}`;
+                if (!guidelineViolations[key]) {
+                  guidelineViolations[key] = {
+                    category,
+                    title: item.title,
+                    description: item.description,
+                    count: 0,
+                    examples: []
+                  };
+                }
+                guidelineViolations[key].count += item.count || 0;
+              });
+            }
+          });
+        }
+      });
+      
+      // Organize back into categories
+      Object.values(guidelineViolations).forEach(guideline => {
+        aggregatedGuidelines[guideline.category].items.push({
+          title: guideline.title,
+          description: guideline.description,
+          count: guideline.count,
+          examples: guideline.examples
+        });
+      });
+      
+      // Get the most recent analyzed record as base
       const latestRecord = analyzedRecords[analyzedRecords.length - 1].toObject ? 
         analyzedRecords[analyzedRecords.length - 1].toObject() : 
         analyzedRecords[analyzedRecords.length - 1];
       
-      // Create new object with averaged scores and summed message count
+      // Create aggregated grammar breakdown
+      const aggregatedGrammarBreakdown = {
+        spellingErrors: `Found ${totalSpellingErrors} spelling errors across all analyzed messages.`,
+        grammarIssues: `Found ${totalGrammarIssues} grammar issues across all analyzed messages.`,
+        punctuationProblems: `Found ${totalPunctuationProblems} punctuation problems across all analyzed messages.`,
+        scoreExplanation: `Grammar score: ${Math.round(avgGrammar)}/100. Total errors: ${totalSpellingErrors + totalGrammarIssues + totalPunctuationProblems} across ${totalMessagesAcrossAllDays} messages.`
+      };
+      
+      // Create new object with averaged scores, summed counts, and aggregated breakdowns
       messageAnalysis = {
         ...latestRecord,
         grammarScore: Math.round(avgGrammar),
         guidelinesScore: Math.round(avgGuidelines),
         overallScore: Math.round(avgOverall),
-        totalMessages: totalMessagesAcrossAllDays // Use summed total from ALL analyzed days
+        totalMessages: totalMessagesAcrossAllDays,
+        grammarBreakdown: aggregatedGrammarBreakdown,
+        guidelinesBreakdown: aggregatedGuidelines
       };
       
       console.log('📊 Averaged scores from', analyzedRecords.length, 'analyzed days:', {
         grammar: messageAnalysis.grammarScore,
         guidelines: messageAnalysis.guidelinesScore,
         overall: messageAnalysis.overallScore,
-        totalMessages: messageAnalysis.totalMessages
+        totalMessages: messageAnalysis.totalMessages,
+        totalSpellingErrors,
+        totalGrammarIssues,
+        totalPunctuationProblems
       });
     } else {
       console.log('⚠️ No analyzed records found - user needs to run analysis');
