@@ -7330,12 +7330,19 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       // Sum total messages from all analyzed days
       const totalMessagesAcrossAllDays = analyzedRecords.reduce((sum, ma) => sum + (ma.totalMessages || 0), 0);
       
-      // Use the most recent analyzed record as base, but with averaged scores and total message count
-      messageAnalysis = analyzedRecords[analyzedRecords.length - 1];
-      messageAnalysis.grammarScore = Math.round(avgGrammar);
-      messageAnalysis.guidelinesScore = Math.round(avgGuidelines);
-      messageAnalysis.overallScore = Math.round(avgOverall);
-      messageAnalysis.totalMessages = totalMessagesAcrossAllDays; // Use summed total, not just one day
+      // Get the most recent analyzed record as base and convert to plain object
+      const latestRecord = analyzedRecords[analyzedRecords.length - 1].toObject ? 
+        analyzedRecords[analyzedRecords.length - 1].toObject() : 
+        analyzedRecords[analyzedRecords.length - 1];
+      
+      // Create new object with averaged scores and summed message count
+      messageAnalysis = {
+        ...latestRecord,
+        grammarScore: Math.round(avgGrammar),
+        guidelinesScore: Math.round(avgGuidelines),
+        overallScore: Math.round(avgOverall),
+        totalMessages: totalMessagesAcrossAllDays // Use summed total from ALL analyzed days
+      };
       
       console.log('📊 Averaged scores from', analyzedRecords.length, 'analyzed days:', {
         grammar: messageAnalysis.grammarScore,
