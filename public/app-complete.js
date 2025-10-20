@@ -11173,6 +11173,13 @@ async function handleMessagesUploadDirect() {
         return;
     }
     
+    // Ensure employees are loaded before trying to upload
+    const dropdown = document.getElementById('messagesChatter');
+    if (dropdown && dropdown.options.length <= 1) {
+        console.log('Dropdown empty, loading employees first...');
+        await loadEmployees();
+    }
+    
     const file = document.getElementById('messagesFile').files[0];
     const chatter = document.getElementById('messagesChatter').value;
     const startDate = document.getElementById('messagesStartDate').value;
