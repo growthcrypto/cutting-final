@@ -7751,9 +7751,10 @@ async function generateAgencyIntelligence(data) {
   const revenueChange = currentRevenue - prevRevenue;
   const revenueChangePercent = prevRevenue > 0 ? ((revenueChange / prevRevenue) * 100).toFixed(1) : 0;
   
-  const currentPPVs = current.purchases.filter(p => p.type === 'ppv').length;
+  // FIXED: Use same calculation as Manager Dashboard (both from ChatterPerformance)
   const currentPPVsSent = current.performance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
-  const unlockRate = currentPPVsSent > 0 ? ((currentPPVs / currentPPVsSent) * 100).toFixed(1) : 0;
+  const currentPPVsUnlocked = current.performance.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
+  const unlockRate = currentPPVsSent > 0 ? ((currentPPVsUnlocked / currentPPVsSent) * 100).toFixed(1) : 0;
   
   // Count UNIQUE chatters, not total performance records
   const uniqueChatters = new Set(current.performance.map(p => p.chatterName));
@@ -7764,8 +7765,8 @@ async function generateAgencyIntelligence(data) {
     : 0;
   
   console.log('📊 Agency Analysis Exec Summary:', {
-    currentPPVs,
-    currentPPVsSent,
+    ppvsSent: currentPPVsSent,
+    ppvsUnlocked: currentPPVsUnlocked,
     unlockRate: `${unlockRate}%`,
     performanceRecords: current.performance.length,
     uniqueChatters: activeChatterCount,
