@@ -6773,28 +6773,45 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
 
 // Helper function to build previous period data
 async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterName) {
-  // Get previous period MessageAnalysis
+  // Get previous period MessageAnalysis (from the same time period)
   const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
   const prevMessageAnalysis = await MessageAnalysis.findOne({
-    chatterName: chatterNameRegex
-  }).sort({ createdAt: -1, _id: -1 }).skip(1); // Get second most recent (previous)
+    chatterName: chatterNameRegex,
+    createdAt: { $lt: new Date() } // Before current analysis
+  }).sort({ createdAt: -1 }); // Get most recent previous analysis
   
   if (prevPerformance.length === 0 && prevPurchases.length === 0) {
     return null; // No previous period data
   }
   
+  // Calculate from performance data (same as current period)
   const prevPerf = prevPerformance[0] || {};
   const prevRevenue = prevPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
   const prevPPVCount = prevPurchases.filter(p => p.type === 'ppv').length;
+  const prevPPVsSent = prevPerformance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
+  const prevMessagesSent = prevPerformance.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
+  const prevFansChatted = prevPerformance.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
+  
+  const prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : 0;
+  const prevAvgPPVPrice = prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0;
+  
+  console.log('📊 Previous period calculated:', {
+    revenue: prevRevenue,
+    ppvsSent: prevPPVsSent,
+    ppvsUnlocked: prevPPVCount,
+    unlockRate: prevUnlockRate,
+    messagesSent: prevMessagesSent,
+    fansChatted: prevFansChatted
+  });
   
   return {
     revenue: prevRevenue,
-    ppvsSent: prevPerf.ppvsSent || 0,
+    ppvsSent: prevPPVsSent,
     ppvsUnlocked: prevPPVCount,
-    messagesSent: prevPerf.messagesSent || 0,
-    fansChatted: prevPerf.fansChattedWith || 0,
-    unlockRate: prevPerf.ppvsSent > 0 ? ((prevPPVCount / prevPerf.ppvsSent) * 100).toFixed(1) : 0,
-    avgPPVPrice: prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0,
+    messagesSent: prevMessagesSent,
+    fansChatted: prevFansChatted,
+    unlockRate: prevUnlockRate,
+    avgPPVPrice: prevAvgPPVPrice,
     grammarScore: prevMessageAnalysis?.grammarScore || null,
     guidelinesScore: prevMessageAnalysis?.guidelinesScore || null,
     overallScore: prevMessageAnalysis?.overallScore || null,
@@ -7471,7 +7488,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     
     console.log('📅 Previous period:', { start: prevStart, end: prevEnd });
     
-    // Get previous period data for this chatter
+    // Get previous period data for this chatter (using same data sources as current period)
     const prevDateQuery = { date: { $gte: prevStart, $lte: prevEnd } };
     const prevPerformanceQuery = {
       weekStartDate: { $lte: prevEnd },
@@ -7479,12 +7496,28 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterName: chatterName
     };
     
-    const prevChatterPurchases = await FanPurchase.find({
+    // Use DailyChatterReport for previous period (same as current period)
+    const prevChatterReports = await DailyChatterReport.find({
       ...prevDateQuery,
       chatterName: chatterName
     });
     
     const prevChatterPerformance = await ChatterPerformance.find(prevPerformanceQuery);
+    
+    // Convert reports to purchases format for compatibility
+    const prevChatterPurchases = prevChatterReports.flatMap(report => {
+      const ppvPurchases = (report.ppvSales || []).map(sale => ({
+        amount: sale.amount || 0,
+        type: 'ppv',
+        date: report.date
+      }));
+      const tipPurchases = (report.tips || []).map(tip => ({
+        amount: tip.amount || 0,
+        type: 'tip',
+        date: report.date
+      }));
+      return [...ppvPurchases, ...tipPurchases];
+    });
     
     console.log('📊 Previous period data:', {
       purchases: prevChatterPurchases.length,
