@@ -2213,6 +2213,20 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
     existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
     existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
     
+    // 🔥 CRITICAL: Save numeric counts for reliable aggregation
+    if (analysisResult._numericCounts) {
+      existingAnalysis.totalMessages = analysisResult._numericCounts.totalMessages || existingAnalysis.totalMessages;
+      existingAnalysis.spellingCount = analysisResult._numericCounts.spellingCount || 0;
+      existingAnalysis.grammarIssuesCount = analysisResult._numericCounts.grammarIssuesCount || 0;
+      existingAnalysis.punctuationCount = analysisResult._numericCounts.punctuationCount || 0;
+      console.log('💾 Saving numeric counts:', {
+        spellingCount: existingAnalysis.spellingCount,
+        grammarIssuesCount: existingAnalysis.grammarIssuesCount,
+        punctuationCount: existingAnalysis.punctuationCount,
+        totalMessages: existingAnalysis.totalMessages
+      });
+    }
+    
     console.log('🔍 BREAKDOWN DEBUG BEFORE SAVE:');
     console.log('   grammarBreakdown type:', typeof analysisResult.grammarBreakdown);
     console.log('   guidelinesBreakdown type:', typeof analysisResult.guidelinesBreakdown);
