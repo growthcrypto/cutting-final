@@ -6040,6 +6040,43 @@ function renderNewChatterAnalysis(data) {
     // Parse guidelines by category
     const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown);
     
+    // Get previous period data for comparisons
+    const prev = data.previousPeriodData || {};
+    
+    // Helper function to calculate % change
+    const calcChange = (current, previous) => {
+        if (!previous || previous === 0 || previous === null) return null;
+        const change = ((current - previous) / previous * 100).toFixed(1);
+        return change > 0 ? `+${change}%` : `${change}%`;
+    };
+    
+    const getChangeClass = (current, previous) => {
+        if (!previous || previous === 0 || previous === null) return '';
+        const change = ((current - previous) / previous * 100);
+        return change > 0 ? 'text-green-400' : change < 0 ? 'text-red-400' : 'text-gray-400';
+    };
+    
+    // Calculate changes for all metrics
+    const grammarScoreChange = calcChange(data.grammarScore || 0, prev.grammarScore || 0);
+    const grammarScoreChangeClass = getChangeClass(data.grammarScore || 0, prev.grammarScore || 0);
+    const spellingChange = calcChange(parseInt(spellingCount), prev.spellingErrors || 0);
+    const grammarChange = calcChange(parseInt(grammarCount), prev.grammarIssues || 0);
+    const punctuationChange = calcChange(parseInt(punctuationCount), prev.punctuationCount || 0);
+    
+    const guidelinesScoreChange = calcChange(data.guidelinesScore || 0, prev.guidelinesScore || 0);
+    const guidelinesScoreChangeClass = getChangeClass(data.guidelinesScore || 0, prev.guidelinesScore || 0);
+    
+    const revenue = data.revenue || 0;
+    const revenueChange = calcChange(revenue, prev.revenue || 0);
+    const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100) : 0;
+    const unlockRateChange = calcChange(unlockRate, parseFloat(prev.unlockRate || 0));
+    const revenuePerMessage = data.messagesSent > 0 ? (revenue / data.messagesSent) : 0;
+    const prevRevenuePerMessage = prev.messagesSent > 0 ? ((prev.revenue || 0) / prev.messagesSent) : 0;
+    const revenuePerMessageChange = calcChange(revenuePerMessage, prevRevenuePerMessage);
+    const revenuePerFan = data.fansChatted > 0 ? (revenue / data.fansChatted) : 0;
+    const prevRevenuePerFan = prev.fansChatted > 0 ? ((prev.revenue || 0) / prev.fansChatted) : 0;
+    const revenuePerFanChange = calcChange(revenuePerFan, prevRevenuePerFan);
+    
     // Get deep insights
     const deepInsights = data.deepInsights || [];
     const improvements = data.improvements || [];
@@ -6051,6 +6088,7 @@ function renderNewChatterAnalysis(data) {
     console.log('🔍 Improvements:', improvements);
     console.log('🔍 Strengths:', strengths);
     console.log('🔍 Analysis Summary:', analysisSummary);
+    console.log('🔍 Previous Period Data:', prev);
     
     container.innerHTML = `
         <div class="space-y-4">
@@ -6092,29 +6130,41 @@ function renderNewChatterAnalysis(data) {
                                 <h4 class="text-xl font-bold text-white mb-1">Grammar Quality</h4>
                                 <p class="text-xs text-gray-400">Message professionalism</p>
                             </div>
-                            <div class="text-5xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
-                                ${data.grammarScore}
+                            <div class="text-right">
+                                <div class="text-5xl font-black ${data.grammarScore >= 80 ? 'text-green-400' : data.grammarScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                                    ${data.grammarScore}
+                                </div>
+                                ${grammarScoreChange ? `<div class="text-xs font-bold ${grammarScoreChangeClass}">${grammarScoreChange}</div>` : ''}
                             </div>
                         </div>
                         <div class="space-y-3">
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Spelling Errors</span>
-                                    <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${spellingCount}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="${parseInt(spellingCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${spellingCount}</span>
+                                        ${spellingChange ? `<span class="text-xs font-bold ${getChangeClass(parseInt(spellingCount), prev.spellingErrors || 0)}">${spellingChange}</span>` : ''}
+                                    </div>
                                 </div>
                                 <div class="text-xs text-gray-500">${spellingCount} typos out of ${totalMessages} messages (${spellingPct}% error rate)</div>
                             </div>
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Grammar Mistakes</span>
-                                    <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${grammarCount}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="${parseInt(grammarCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${grammarCount}</span>
+                                        ${grammarChange ? `<span class="text-xs font-bold ${getChangeClass(parseInt(grammarCount), prev.grammarIssues || 0)}">${grammarChange}</span>` : ''}
+                                    </div>
                                 </div>
                                 <div class="text-xs text-gray-500">${grammarCount} grammar errors in ${totalMessages} messages (${grammarPct}% error rate)</div>
                             </div>
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Formal Punctuation</span>
-                                    <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${punctuationCount}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="${parseInt(punctuationCount) === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${punctuationCount}</span>
+                                        ${punctuationChange ? `<span class="text-xs font-bold ${getChangeClass(parseInt(punctuationCount), prev.punctuationCount || 0)}">${punctuationChange}</span>` : ''}
+                                    </div>
                                 </div>
                                 <div class="text-xs text-gray-500">${punctuationCount} messages with periods/commas (${punctuationPct}% - should be casual)</div>
                             </div>
@@ -6131,20 +6181,31 @@ function renderNewChatterAnalysis(data) {
                                 <h4 class="text-xl font-bold text-white mb-1">Guidelines</h4>
                                 <p class="text-xs text-gray-400">Best practices compliance</p>
                             </div>
-                            <div class="text-5xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
-                                ${data.guidelinesScore}
+                            <div class="text-right">
+                                <div class="text-5xl font-black ${data.guidelinesScore >= 80 ? 'text-green-400' : data.guidelinesScore >= 60 ? 'text-yellow-400' : 'text-red-400'}">
+                                    ${data.guidelinesScore}
+                                </div>
+                                ${guidelinesScoreChange ? `<div class="text-xs font-bold ${guidelinesScoreChangeClass}">${guidelinesScoreChange}</div>` : ''}
                             </div>
                         </div>
                         <div class="space-y-3">
-                            ${guidelinesByCategory.slice(0, 3).map(cat => `
+                            ${guidelinesByCategory.slice(0, 3).map(cat => {
+                                // Find matching category in previous period
+                                const prevCat = prev.guidelinesBreakdown?.find(pc => pc.name === cat.name);
+                                const catChange = calcChange(cat.violations, prevCat?.violations || 0);
+                                return `
                                 <div class="bg-gray-800/50 rounded-lg p-3">
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-xs font-bold text-gray-300">${cat.name}</span>
-                                        <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${cat.violations}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="${cat.violations === 0 ? 'text-green-400' : 'text-red-400'} font-bold text-sm">${cat.violations}</span>
+                                            ${catChange ? `<span class="text-xs font-bold ${getChangeClass(cat.violations, prevCat?.violations || 0)}">${catChange}</span>` : ''}
+                                        </div>
                                     </div>
                                     <div class="text-xs text-gray-500">${cat.violations} violations (${cat.pct}% of messages break this rule)</div>
                                 </div>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 </div>
@@ -6158,31 +6219,43 @@ function renderNewChatterAnalysis(data) {
                                 <h4 class="text-xl font-bold text-white mb-1">Performance</h4>
                                 <p class="text-xs text-gray-400">Revenue & conversion</p>
                             </div>
-                            <div class="text-5xl font-black text-purple-400">
-                                ${data.revenue ? '$' + data.revenue : '—'}
+                            <div class="text-right">
+                                <div class="text-5xl font-black text-purple-400">
+                                    ${data.revenue ? '$' + data.revenue : '—'}
+                                </div>
+                                ${revenueChange ? `<div class="text-xs font-bold ${getChangeClass(revenue, prev.revenue || 0)}">${revenueChange}</div>` : ''}
                             </div>
                         </div>
                         <div class="space-y-3">
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Unlock Rate</span>
-                                    <span class="text-cyan-400 font-bold text-sm">${data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100).toFixed(1) : 0}%</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-cyan-400 font-bold text-sm">${unlockRate.toFixed(1)}%</span>
+                                        ${unlockRateChange ? `<span class="text-xs font-bold ${getChangeClass(unlockRate, parseFloat(prev.unlockRate || 0))}">${unlockRateChange}</span>` : ''}
+                                    </div>
                                 </div>
                                 <div class="text-xs text-gray-500">${data.ppvsUnlocked || 0} of ${data.ppvsSent || 0} PPVs unlocked by fans</div>
                             </div>
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Revenue/Message</span>
-                                    <span class="text-green-400 font-bold text-sm">$${data.messagesSent > 0 ? (data.revenue / data.messagesSent).toFixed(2) : '0.00'}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-green-400 font-bold text-sm">$${revenuePerMessage.toFixed(2)}</span>
+                                        ${revenuePerMessageChange ? `<span class="text-xs font-bold ${getChangeClass(revenuePerMessage, prevRevenuePerMessage)}">${revenuePerMessageChange}</span>` : ''}
+                                    </div>
                                 </div>
-                                <div class="text-xs text-gray-500">Earning $${data.messagesSent > 0 ? (data.revenue / data.messagesSent).toFixed(2) : '0.00'} per message sent</div>
+                                <div class="text-xs text-gray-500">Earning $${revenuePerMessage.toFixed(2)} per message sent</div>
                             </div>
                             <div class="bg-gray-800/50 rounded-lg p-3">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs font-bold text-gray-300">Revenue/Fan</span>
-                                    <span class="text-yellow-400 font-bold text-sm">$${data.fansChatted > 0 ? (data.revenue / data.fansChatted).toFixed(2) : '0.00'}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-yellow-400 font-bold text-sm">$${revenuePerFan.toFixed(2)}</span>
+                                        ${revenuePerFanChange ? `<span class="text-xs font-bold ${getChangeClass(revenuePerFan, prevRevenuePerFan)}">${revenuePerFanChange}</span>` : ''}
+                                    </div>
                                 </div>
-                                <div class="text-xs text-gray-500">Average $${data.fansChatted > 0 ? (data.revenue / data.fansChatted).toFixed(2) : '0.00'} per fan chatted</div>
+                                <div class="text-xs text-gray-500">Average $${revenuePerFan.toFixed(2)} per fan chatted</div>
                             </div>
                         </div>
                     </div>

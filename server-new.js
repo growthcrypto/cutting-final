@@ -6795,13 +6795,39 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
   const prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : 0;
   const prevAvgPPVPrice = prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0;
   
+  // Extract grammar breakdown counts from previous MessageAnalysis
+  let prevSpellingCount = 0;
+  let prevGrammarCount = 0;
+  let prevPunctuationCount = 0;
+  let prevTotalMessages = 0;
+  
+  if (prevMessageAnalysis && prevMessageAnalysis.grammarBreakdown) {
+    prevSpellingCount = prevMessageAnalysis.grammarBreakdown.spellingErrors || 0;
+    prevGrammarCount = prevMessageAnalysis.grammarBreakdown.grammarIssues || 0;
+    prevPunctuationCount = prevMessageAnalysis.grammarBreakdown.punctuationProblems || 0;
+    prevTotalMessages = prevMessageAnalysis.totalMessages || 0;
+  }
+  
+  // Extract guidelines breakdown
+  let prevGuidelinesByCategory = [];
+  if (prevMessageAnalysis && prevMessageAnalysis.guidelinesBreakdown) {
+    prevGuidelinesByCategory = prevMessageAnalysis.guidelinesBreakdown.generalChatting ? [
+      { name: 'General - Reply time', violations: prevMessageAnalysis.guidelinesBreakdown.generalChatting || 0 },
+      { name: 'Psychology', violations: prevMessageAnalysis.guidelinesBreakdown.psychology || 0 },
+      { name: 'Captions', violations: prevMessageAnalysis.guidelinesBreakdown.captions || 0 }
+    ] : [];
+  }
+  
   console.log('📊 Previous period calculated:', {
     revenue: prevRevenue,
     ppvsSent: prevPPVsSent,
     ppvsUnlocked: prevPPVCount,
     unlockRate: prevUnlockRate,
     messagesSent: prevMessagesSent,
-    fansChatted: prevFansChatted
+    fansChatted: prevFansChatted,
+    spellingErrors: prevSpellingCount,
+    grammarIssues: prevGrammarCount,
+    punctuationProblems: prevPunctuationCount
   });
   
   return {
@@ -6815,9 +6841,11 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     grammarScore: prevMessageAnalysis?.grammarScore || null,
     guidelinesScore: prevMessageAnalysis?.guidelinesScore || null,
     overallScore: prevMessageAnalysis?.overallScore || null,
-    punctuationCount: prevMessageAnalysis?.grammarBreakdown 
-      ? parseInt(prevMessageAnalysis.grammarBreakdown.punctuationProblems?.match(/(\d+)/)?.[1] || '0')
-      : 0
+    punctuationCount: prevPunctuationCount,
+    spellingErrors: prevSpellingCount,
+    grammarIssues: prevGrammarCount,
+    totalMessages: prevTotalMessages,
+    guidelinesBreakdown: prevGuidelinesByCategory
   };
 }
 
@@ -7953,6 +7981,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     response.deepInsights = analysisSummary.deepInsights;
     response.improvements = analysisSummary.improvements;
     response.strengths = analysisSummary.strengths;
+    response.previousPeriodData = previousPeriodData;
     
     res.json(response);
   } catch (error) {
