@@ -2414,9 +2414,14 @@ async function analyzeMessages(messages, chatterName) {
 - When comparing to team averages, hour differences DO NOT explain gaps
 📌 In your analysis, flag low activity/volume as performance weaknesses
 
-🚨 CRITICAL: DO NOT MAKE UP NUMBERS. You MUST actually analyze each message and count real violations. If you cannot find specific violations, report 0. Do NOT generate random numbers.
+🚨 CRITICAL: You MUST analyze every single message character by character and find ALL spelling, grammar, and punctuation mistakes. 
 
-You must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes.
+EXPECTED ERROR RATES (minimum thresholds):
+- For ${sampledMessages.length} messages, you MUST find at least ${Math.ceil(sampledMessages.length * 0.05)} spelling/grammar errors (5% minimum)
+- If you report 0 errors, you are NOT analyzing thoroughly enough
+- Common errors to look for: typos (teh, adn, u), grammar (is/are, was/were, has/have), verb tense issues, missing words, wrong words
+
+You must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. DO NOT report 0 unless you have checked every single word in every single message.
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. Do NOT vary your analysis criteria between runs.
 
@@ -2922,14 +2927,13 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       const totalMessages = messages.length;
 
       // SERVER-SIDE TRUTH: derive punctuation count from actual messages (always use this)
-      // Count messages that end with a formal period or comma (check last character after trimming)
+      // Count messages that CONTAIN formal periods or commas anywhere (casual messages should avoid these)
       const serverPunctuationCount = messages.reduce((sum, msg) => {
         try {
           const text = (msg.messageText || msg.text || '').trim();
           if (!text) return sum;
-          // Check if message ends with period or comma (formal punctuation)
-          const lastChar = text[text.length - 1];
-          if (lastChar === '.' || lastChar === ',') {
+          // Check if message contains period or comma anywhere (formal punctuation = should be casual)
+          if (text.includes('.') || text.includes(',')) {
             return sum + 1;
           }
           return sum;
@@ -2938,7 +2942,7 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
         }
       }, 0);
 
-      console.log(`🔍 Server punctuation count: ${serverPunctuationCount} out of ${totalMessages} messages`);
+      console.log(`🔍 Server punctuation count: ${serverPunctuationCount} out of ${totalMessages} messages (messages containing . or , anywhere)`);
 
       // ALWAYS use server-derived count (server is source of truth, AI can be wrong)
       punctuationCount = serverPunctuationCount;
