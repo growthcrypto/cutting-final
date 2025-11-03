@@ -2918,11 +2918,12 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       let grammarIssuesCount = parseInt(analysisResult.grammarBreakdown?.grammarIssues?.match(/(\d+)/)?.[1] || '0');
       let punctuationCount = parseInt(analysisResult.grammarBreakdown?.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
 
-      const totalMessages = sampledMessages.length;
+      // Use full message set, not any sampled subset
+      const totalMessages = messages.length;
 
       // SERVER-SIDE SANITY CHECK: derive punctuation count from actual messages
       // Count messages that end with a formal period or comma
-      const serverPunctuationCount = sampledMessages.reduce((sum, msg) => {
+      const serverPunctuationCount = messages.reduce((sum, msg) => {
         try {
           const text = (msg.messageText || msg.text || '').trim();
           if (!text) return sum;
@@ -6938,6 +6939,9 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     );
   }
   
+  // Ensure unlock rate derived exclusively from ChatterPerformance aggregates
+  prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : '0';
+
   console.log('📊 Previous period calculated:', {
     revenue: prevRevenue,
     ppvsSent: prevPPVsSent,
