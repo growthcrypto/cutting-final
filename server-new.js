@@ -2439,12 +2439,30 @@ async function analyzeMessages(messages, chatterName) {
     
     if (replyTimeGuideline) {
       const category = normalizeCategory(replyTimeGuideline.category);
+      // Store actual violating messages (up to 20 examples)
+      const violatingMessages = messagesWithReplyTime
+        .filter(msg => msg.replyTime > replyTimeThreshold)
+        .slice(0, 20)
+        .map(msg => ({
+          text: msg.messageText || msg.text || '',
+          replyTime: msg.replyTime,
+          fanUsername: msg.fanUsername || '',
+          timestamp: msg.timestamp,
+          index: sampledMessages.indexOf(msg)
+        }));
+      
       serverSideViolations[category][replyTimeGuideline.title] = {
         count: replyTimeViolations,
         description: replyTimeGuideline.description,
-        examples: []
+        examples: violatingMessages
       };
       console.log(`✅ Reply Time: ${replyTimeViolations} violations (>${replyTimeThreshold} min)`);
+      if (violatingMessages.length > 0) {
+        console.log(`📋 Sample Reply Time violations (showing first 3):`);
+        violatingMessages.slice(0, 3).forEach((msg, i) => {
+          console.log(`   ${i+1}. [${msg.replyTime.toFixed(1)} min] "${msg.text.substring(0, 100)}${msg.text.length > 100 ? '...' : ''}"`);
+        });
+      }
     }
   }
   
@@ -2467,26 +2485,44 @@ async function analyzeMessages(messages, chatterName) {
       // Check if PPV captions describe what's in the PPV
       ppvMessages.forEach((msg, idx) => {
         const text = (msg.messageText || msg.text || '').toLowerCase();
+        const originalText = msg.messageText || msg.text || '';
         // Violation if caption is too short or doesn't describe content
         // Good captions usually have >20 chars and mention what's in the content
         if (text.length < 20 || 
             (!text.includes('video') && !text.includes('pic') && !text.includes('photo') && 
              !text.includes('set') && !text.includes('content') && !text.includes('show'))) {
           violations++;
-          if (examples.length < 10) examples.push(idx);
+          if (examples.length < 20) {
+            examples.push({
+              text: originalText,
+              fanUsername: msg.fanUsername || '',
+              timestamp: msg.timestamp,
+              ppvPrice: msg.ppvRevenue || 0,
+              index: idx
+            });
+          }
         }
       });
     } else if (title.includes('hook') || desc.includes('hook')) {
       // Check if PPV captions have hooks (questions, personalization, attention grabbers)
       ppvMessages.forEach((msg, idx) => {
         const text = (msg.messageText || msg.text || '').toLowerCase();
+        const originalText = msg.messageText || msg.text || '';
         const hasQuestion = /[?]/.test(text);
         const hasPersonalization = /\b(u|you|ur|your|baby|babe|honey|daddy|dear)\b/.test(text);
         const hasAttentionGrabber = /\b(would|how|what|when|can|will|if|imagine|guess|check|see|look|wait|oh|wow|haha)\b/.test(text);
         
         if (!hasQuestion && !hasPersonalization && !hasAttentionGrabber) {
           violations++;
-          if (examples.length < 10) examples.push(idx);
+          if (examples.length < 20) {
+            examples.push({
+              text: originalText,
+              fanUsername: msg.fanUsername || '',
+              timestamp: msg.timestamp,
+              ppvPrice: msg.ppvRevenue || 0,
+              index: idx
+            });
+          }
         }
       });
     }
@@ -2498,6 +2534,12 @@ async function analyzeMessages(messages, chatterName) {
         examples: examples
       };
       console.log(`✅ ${guideline.title}: ${violations} violations`);
+      if (examples.length > 0) {
+        console.log(`📋 Sample ${guideline.title} violations (showing first 3):`);
+        examples.slice(0, 3).forEach((msg, i) => {
+          console.log(`   ${i+1}. [$${msg.ppvPrice}] "${msg.text.substring(0, 100)}${msg.text.length > 100 ? '...' : ''}"`);
+        });
+      }
     }
   });
   
@@ -2515,7 +2557,9 @@ async function analyzeMessages(messages, chatterName) {
     // Check messages for psychology guideline violations
     sampledMessages.forEach((msg, idx) => {
       const text = (msg.messageText || msg.text || '').toLowerCase();
+      const originalText = msg.messageText || msg.text || '';
       let isViolation = false;
+      let violationReason = '';
       
       // Information gathering / asking questions
       if (title.includes('information') || title.includes('gathering') || desc.includes('ask')) {
@@ -2525,6 +2569,7 @@ async function analyzeMessages(messages, chatterName) {
           // If message is substantial but has no question, might be violation
           // But only count if it's not a response to a fan question
           isViolation = true;
+          violationReason = 'No question asked';
         }
       }
       
@@ -2538,12 +2583,21 @@ async function analyzeMessages(messages, chatterName) {
         const hasPersonalization = /\b(u|you|ur|your|baby|babe|honey|daddy|dear|name)\b/.test(text);
         if (!hasPersonalization && text.length > 15) {
           isViolation = true;
+          violationReason = 'No personalization';
         }
       }
       
       if (isViolation) {
         violations++;
-        if (examples.length < 10) examples.push(idx);
+        if (examples.length < 20) {
+          examples.push({
+            text: originalText,
+            fanUsername: msg.fanUsername || '',
+            timestamp: msg.timestamp,
+            reason: violationReason,
+            index: idx
+          });
+        }
       }
     });
     
@@ -2554,6 +2608,12 @@ async function analyzeMessages(messages, chatterName) {
         examples: examples
       };
       console.log(`✅ ${guideline.title}: ${violations} violations`);
+      if (examples.length > 0) {
+        console.log(`📋 Sample ${guideline.title} violations (showing first 3):`);
+        examples.slice(0, 3).forEach((msg, i) => {
+          console.log(`   ${i+1}. [${msg.reason || 'violation'}] "${msg.text.substring(0, 100)}${msg.text.length > 100 ? '...' : ''}"`);
+        });
+      }
     }
   });
   
@@ -2587,6 +2647,22 @@ async function analyzeMessages(messages, chatterName) {
         for (let i = 1; i < ppvs.length; i++) {
           if (ppvs[i].price < ppvs[i-1].price) {
             violations++;
+            // Find the actual message for this violation
+            const violatingMsg = ppvMessages.find(msg => 
+              (msg.fanUsername || '') === fan && 
+              msg.timestamp && 
+              Math.abs(new Date(msg.timestamp).getTime() - ppvs[i].timestamp.getTime()) < 1000
+            );
+            if (violatingMsg && examples.length < 20) {
+              examples.push({
+                text: violatingMsg.messageText || violatingMsg.text || '',
+                fanUsername: fan,
+                timestamp: ppvs[i].timestamp,
+                previousPrice: ppvs[i-1].price,
+                currentPrice: ppvs[i].price,
+                priceDecrease: ppvs[i-1].price - ppvs[i].price
+              });
+            }
             break; // Count 1 violation per fan
           }
         }
@@ -2600,6 +2676,12 @@ async function analyzeMessages(messages, chatterName) {
         examples: examples
       };
       console.log(`✅ ${guideline.title}: ${violations} violations`);
+      if (examples.length > 0) {
+        console.log(`📋 Sample ${guideline.title} violations (showing first 3):`);
+        examples.slice(0, 3).forEach((msg, i) => {
+          console.log(`   ${i+1}. [${msg.fanUsername}] Price decreased: $${msg.previousPrice} → $${msg.currentPrice} (-$${msg.priceDecrease}) - "${msg.text.substring(0, 80)}${msg.text.length > 80 ? '...' : ''}"`);
+        });
+      }
     }
   });
   
@@ -9614,6 +9696,137 @@ app.get('/api/analytics/agency-intelligence', checkDatabaseConnection, authentic
     
   } catch (error) {
     console.error('❌ Agency Intelligence error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// EXPORT VIOLATIONS TO CSV
+app.get('/api/analytics/violations-export/:chatterName', checkDatabaseConnection, authenticateToken, async (req, res) => {
+  try {
+    const { chatterName } = req.params;
+    const { filterType, customStart, customEnd, weekStart, weekEnd } = req.query;
+    
+    // Build date query (same logic as deep analysis)
+    let start, end;
+    if (filterType === 'custom' && customStart && customEnd) {
+      start = new Date(customStart);
+      end = new Date(customEnd);
+    } else if (filterType === 'week' && weekStart && weekEnd) {
+      start = new Date(weekStart);
+      end = new Date(weekEnd);
+    } else {
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - 7);
+    }
+    
+    // Get message analyses for this period
+    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
+    const allMessageAnalyses = await MessageAnalysis.find({
+      chatterName: chatterNameRegex,
+      weekStartDate: { $lte: end },
+      weekEndDate: { $gte: start }
+    }).sort({ weekStartDate: 1 });
+    
+    const analyzedRecords = allMessageAnalyses.filter(ma => ma.overallScore != null);
+    
+    if (analyzedRecords.length === 0) {
+      return res.status(404).json({ error: 'No analyzed messages found for this period' });
+    }
+    
+    // Collect all violations from all records
+    const allViolations = [];
+    
+    analyzedRecords.forEach(record => {
+      const glb = record.guidelinesBreakdown;
+      if (!glb) return;
+      
+      ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
+        let items = [];
+        if (glb[category]?.items && Array.isArray(glb[category].items)) {
+          items = glb[category].items;
+        } else if (glb[category]?.details?.items && Array.isArray(glb[category].details.items)) {
+          items = glb[category].details.items;
+        } else if (glb[category]?.details && Array.isArray(glb[category].details)) {
+          items = glb[category].details;
+        }
+        
+        items.forEach(item => {
+          const violationCount = item.count || item.violations || 0;
+          if (violationCount > 0 && item.examples && Array.isArray(item.examples)) {
+            // Add each example as a row
+            item.examples.forEach((example, idx) => {
+              const violation = {
+                category: category,
+                guideline: item.title || 'Unknown',
+                description: item.description || '',
+                messageText: typeof example === 'string' ? example : (example.text || ''),
+                fanUsername: typeof example === 'object' ? (example.fanUsername || '') : '',
+                timestamp: typeof example === 'object' && example.timestamp ? new Date(example.timestamp).toISOString() : '',
+                replyTime: typeof example === 'object' ? (example.replyTime || '') : '',
+                ppvPrice: typeof example === 'object' ? (example.ppvPrice || '') : '',
+                previousPrice: typeof example === 'object' ? (example.previousPrice || '') : '',
+                currentPrice: typeof example === 'object' ? (example.currentPrice || '') : '',
+                priceDecrease: typeof example === 'object' ? (example.priceDecrease || '') : '',
+                violationReason: typeof example === 'object' ? (example.reason || '') : '',
+                date: record.weekStartDate ? new Date(record.weekStartDate).toISOString().split('T')[0] : ''
+              };
+              allViolations.push(violation);
+            });
+          }
+        });
+      });
+    });
+    
+    if (allViolations.length === 0) {
+      return res.status(404).json({ error: 'No violations found for this period' });
+    }
+    
+    // Convert to CSV
+    const headers = [
+      'Date',
+      'Category',
+      'Guideline',
+      'Description',
+      'Message Text',
+      'Fan Username',
+      'Timestamp',
+      'Reply Time (min)',
+      'PPV Price ($)',
+      'Previous Price ($)',
+      'Current Price ($)',
+      'Price Decrease ($)',
+      'Violation Reason'
+    ];
+    
+    const csvRows = [
+      headers.join(','),
+      ...allViolations.map(v => [
+        v.date || '',
+        `"${(v.category || '').replace(/"/g, '""')}"`,
+        `"${(v.guideline || '').replace(/"/g, '""')}"`,
+        `"${(v.description || '').replace(/"/g, '""')}"`,
+        `"${(v.messageText || '').replace(/"/g, '""')}"`,
+        `"${(v.fanUsername || '').replace(/"/g, '""')}"`,
+        v.timestamp || '',
+        v.replyTime || '',
+        v.ppvPrice || '',
+        v.previousPrice || '',
+        v.currentPrice || '',
+        v.priceDecrease || '',
+        `"${(v.violationReason || '').replace(/"/g, '""')}"`
+      ].join(','))
+    ];
+    
+    const csv = csvRows.join('\n');
+    
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="violations_${chatterName}_${start.toISOString().split('T')[0]}_to_${end.toISOString().split('T')[0]}.csv"`);
+    res.send(csv);
+    
+  } catch (error) {
+    console.error('❌ Violations export error:', error);
     res.status(500).json({ error: error.message });
   }
 });
