@@ -3023,18 +3023,41 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
             }
             if (/\bim\b/g.test(text) && !/\bi'm\b/g.test(text)) commonErrors.spelling += (text.match(/\bim\b/g) || []).length;
             
-            // GRAMMAR ERRORS: Wrong verb forms, tense issues
+            // GRAMMAR ERRORS: Wrong verb forms, tense issues, missing words, run-on sentences
+            // Verb tense errors after "did"
             if (/\bdid it made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid it made\b/g) || []).length;
             if (/\bwhat did u had\b/g.test(text)) commonErrors.grammar += (text.match(/\bwhat did u had\b/g) || []).length;
             if (/\bdid u made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid u made\b/g) || []).length;
             
-            // Check for verb tense issues more broadly: "did [verb] [past-tense-verb]"
+            // Check for verb tense issues more broadly: "did [subject] [past-tense-verb]"
             const didPastTensePattern = /\bdid\s+(?:it|u|you|i|he|she|we|they)\s+(made|had|went|came|took|saw|got|did|ate|gave|told|showed|bought|paid|sent)/g;
             const didMatches = text.match(didPastTensePattern);
             if (didMatches) {
-              // Count each occurrence (these are grammar errors - should be present tense after "did")
               commonErrors.grammar += didMatches.length;
             }
+            
+            // Missing spaces: "atleast" should be "at least", "wbu" should be "what about you", etc.
+            if (/\batleast\b/g.test(text)) commonErrors.grammar += (text.match(/\batleast\b/g) || []).length;
+            if (/\bwbu\b/g.test(text)) commonErrors.grammar += (text.match(/\bwbu\b/g) || []).length;
+            if (/\barent\b/g.test(text) && !/\baren't\b/g.test(text)) commonErrors.grammar += (text.match(/\barent\b/g) || []).length;
+            if (/\bisnt\b/g.test(text) && !/\bisn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bisnt\b/g) || []).length;
+            if (/\bwasnt\b/g.test(text) && !/\bwasn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bwasnt\b/g) || []).length;
+            if (/\bwerent\b/g.test(text) && !/\bweren't\b/g.test(text)) commonErrors.grammar += (text.match(/\bwerent\b/g) || []).length;
+            if (/\bhavent\b/g.test(text) && !/\bhaven't\b/g.test(text)) commonErrors.grammar += (text.match(/\bhavent\b/g) || []).length;
+            if (/\bhasnt\b/g.test(text) && !/\bhasn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bhasnt\b/g) || []).length;
+            if (/\bwouldnt\b/g.test(text) && !/\bwouldn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bwouldnt\b/g) || []).length;
+            if (/\bcouldnt\b/g.test(text) && !/\bcouldn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bcouldnt\b/g) || []).length;
+            if (/\bshouldnt\b/g.test(text) && !/\bshouldn't\b/g.test(text)) commonErrors.grammar += (text.match(/\bshouldnt\b/g) || []).length;
+            
+            // Subject-verb agreement issues: "u is", "u was", "u are" (though "u are" is acceptable)
+            if (/\bu\s+is\b/g.test(text)) commonErrors.grammar += (text.match(/\bu\s+is\b/g) || []).length;
+            if (/\bu\s+was\b/g.test(text)) commonErrors.grammar += (text.match(/\bu\s+was\b/g) || []).length;
+            
+            // Missing articles: "I want to see you" vs "I want see you" (though this is less common in casual chat)
+            // Run-on sentences: multiple sentences without proper punctuation (hard to detect, skip for now)
+            
+            // Word choice errors: "then" vs "than", "your" vs "you're" (but "ur" is acceptable in casual)
+            // These are too context-dependent, skip for now
           } catch (_) {}
         });
         
