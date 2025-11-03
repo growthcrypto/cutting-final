@@ -6826,7 +6826,7 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
   const prevMessagesSent = prevPerformance.reduce((sum, p) => sum + (p.messagesSent || 0), 0);
   const prevFansChatted = prevPerformance.reduce((sum, p) => sum + (p.fansChattedWith || 0), 0);
   
-  const prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : 0;
+  let prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : 0;
   const prevAvgPPVPrice = prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0;
   
   // Aggregate grammar breakdown counts from ALL previous MessageAnalysis records
