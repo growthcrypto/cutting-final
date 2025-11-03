@@ -4666,53 +4666,61 @@ app.post('/api/ai/analysis', checkDatabaseConnection, authenticateToken, async (
                 const aiItems = v2Json[category]?.items || [];
                 const reliableDetails = reliableGuidelinesAnalysis[category].details;
                 
-                // Replace placeholders with AI's actual analysis
-                reliableDetails.forEach(detail => {
-                  if (detail.needsAI) {
-                    const aiItem = aiItems.find(item => 
-                      item.title?.toLowerCase().includes(detail.title.toLowerCase()) ||
-                      detail.title.toLowerCase().includes(item.title?.toLowerCase())
-                    );
+                // CRITICAL FIX: First, preserve server-side reply time violations (if in generalChatting)
+                const existingReplyTime = reliableDetails.find(d => 
+                  d.title?.toLowerCase().includes('reply time') && !d.needsAI
+                );
+                
+                // CRITICAL FIX: Clear ALL placeholders and replace with AI items
+                // But preserve server-side reply time if it exists
+                const newDetails = existingReplyTime ? [existingReplyTime] : [];
+                
+                // Add ALL AI items (this ensures we capture all violations the AI found)
+                aiItems.forEach(aiItem => {
+                  // Skip reply time if we already have server-side data
+                  if (category === 'generalChatting' && existingReplyTime && 
+                      (aiItem.title?.toLowerCase().includes('reply time') || 
+                       aiItem.description?.toLowerCase().includes('reply time'))) {
+                    console.log(`⏭️ Skipping AI reply time (using server-side: ${existingReplyTime.count} violations)`);
+                    return;
+                  }
+                  
+                  // Only add items with violations (count > 0)
+                  if ((aiItem.count || 0) > 0) {
+                    newDetails.push({
+                      title: aiItem.title || aiItem.description || 'Unknown Guideline',
+                      count: aiItem.count || 0,
+                      description: aiItem.description || `Found ${aiItem.count || 0} violations`,
+                      examples: aiItem.examples || [],
+                      needsAI: false
+                    });
+                    console.log(`✅ Added AI item "${aiItem.title || 'Unknown'}": ${aiItem.count || 0} violations`);
                     
-                    if (aiItem) {
-                      detail.count = aiItem.count || 0;
-                      detail.description = `Found ${aiItem.count || 0} violations of ${detail.title} guideline`;
-                      detail.examples = aiItem.examples || [];
-                      detail.needsAI = false;
-                      console.log(`✅ Merged AI analysis for ${detail.title}: ${aiItem.count} violations`);
-                      
-                      // VERBOSE: Show the actual messages where violations were found
-                      if (aiItem.examples && aiItem.examples.length > 0) {
-                        console.log(`📋 VIOLATION EXAMPLES FOR "${detail.title}":`);
-                        aiItem.examples.slice(0, 5).forEach(msgIdx => {
-                          const msg = analysisMessageTexts[msgIdx];
-                          if (msg) {
-                            const msgText = msg.text || JSON.stringify(msg);
-                            console.log(`   Message ${msgIdx}: "${msgText.substring(0, 150)}${msgText.length > 150 ? '...' : ''}"`);
-                          }
-                        });
-                        if (aiItem.examples.length > 5) {
-                          console.log(`   ... and ${aiItem.examples.length - 5} more violations`);
+                    // VERBOSE: Show the actual messages where violations were found
+                    if (aiItem.examples && aiItem.examples.length > 0) {
+                      console.log(`📋 VIOLATION EXAMPLES FOR "${aiItem.title}":`);
+                      aiItem.examples.slice(0, 5).forEach(msgIdx => {
+                        const msg = analysisMessageTexts[msgIdx];
+                        if (msg) {
+                          const msgText = msg.text || JSON.stringify(msg);
+                          console.log(`   Message ${msgIdx}: "${msgText.substring(0, 150)}${msgText.length > 150 ? '...' : ''}"`);
                         }
-                      } else if (aiItem.count === 0) {
-                        // Show sample messages that the AI checked but found no violations
-                        console.log(`✅ NO VIOLATIONS FOUND FOR "${detail.title}"`);
-                        console.log(`📋 Sample messages AI checked (first 3 from batch):`);
-                        analysisMessageTexts.slice(0, 3).forEach((msg, idx) => {
-                          if (msg) {
-                            const msgText = msg.text || JSON.stringify(msg);
-                            console.log(`   Message ${idx}: "${msgText.substring(0, 150)}${msgText.length > 150 ? '...' : ''}"`);
-                          }
-                        });
+                      });
+                      if (aiItem.examples.length > 5) {
+                        console.log(`   ... and ${aiItem.examples.length - 5} more violations`);
                       }
-                    } else {
-                      console.log(`⚠️ NO AI DATA FOUND FOR "${detail.title}" - keeping placeholder`);
                     }
+                  } else {
+                    console.log(`⏭️ Skipped AI item "${aiItem.title || 'Unknown'}": 0 violations`);
                   }
                 });
                 
-              // Recalculate total violations for this category
-              reliableGuidelinesAnalysis[category].violations = reliableDetails.reduce((sum, detail) => sum + (detail.count || 0), 0);
+                // Update reliableGuidelinesAnalysis with new details
+                reliableGuidelinesAnalysis[category].details = newDetails;
+                
+                // Recalculate total violations for this category
+                reliableGuidelinesAnalysis[category].violations = newDetails.reduce((sum, detail) => sum + (detail.count || 0), 0);
+                console.log(`📊 ${category}: ${newDetails.length} items, ${reliableGuidelinesAnalysis[category].violations} total violations`);
             });
             
             console.log('✅ Merged AI complex analysis with reliable simple analysis');
