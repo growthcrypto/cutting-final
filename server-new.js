@@ -2913,12 +2913,38 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       let guidelinesScore = null;
       
       // BRUTAL SCORING: Calculate based on error percentage
-      // Parse error counts from breakdown
-      const spellingCount = parseInt(analysisResult.grammarBreakdown?.spellingErrors?.match(/(\d+)/)?.[1] || '0');
-      const grammarIssuesCount = parseInt(analysisResult.grammarBreakdown?.grammarIssues?.match(/(\d+)/)?.[1] || '0');
-      const punctuationCount = parseInt(analysisResult.grammarBreakdown?.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
-      const totalErrors = spellingCount + grammarIssuesCount + punctuationCount;
+      // Parse AI counts first
+      let spellingCount = parseInt(analysisResult.grammarBreakdown?.spellingErrors?.match(/(\d+)/)?.[1] || '0');
+      let grammarIssuesCount = parseInt(analysisResult.grammarBreakdown?.grammarIssues?.match(/(\d+)/)?.[1] || '0');
+      let punctuationCount = parseInt(analysisResult.grammarBreakdown?.punctuationProblems?.match(/(\d+)/)?.[1] || '0');
+
       const totalMessages = sampledMessages.length;
+
+      // SERVER-SIDE SANITY CHECK: derive punctuation count from actual messages
+      // Count messages that end with a formal period or comma
+      const serverPunctuationCount = sampledMessages.reduce((sum, msg) => {
+        try {
+          const text = (msg.messageText || msg.text || '').trim();
+          if (!text) return sum;
+          return /[\.,]$/.test(text) ? sum + 1 : sum;
+        } catch (_) {
+          return sum;
+        }
+      }, 0);
+
+      // Use the server-derived count if it's lower (avoid "all messages have punctuation" false positives)
+      if (serverPunctuationCount >= 0) {
+        punctuationCount = Math.min(punctuationCount, serverPunctuationCount);
+      }
+      // Clamp to total messages
+      punctuationCount = Math.max(0, Math.min(punctuationCount, totalMessages));
+
+      // Reflect corrected punctuation in the breakdown text
+      if (analysisResult.grammarBreakdown) {
+        analysisResult.grammarBreakdown.punctuationProblems = `Found ${punctuationCount} messages with formal punctuation (periods or commas).`;
+      }
+
+      const totalErrors = spellingCount + grammarIssuesCount + punctuationCount;
       const errorPercentage = totalMessages > 0 ? (totalErrors / totalMessages) * 100 : 0;
       
       // BRUTAL FORMULA: 100 - (errorPercentage * 5)
