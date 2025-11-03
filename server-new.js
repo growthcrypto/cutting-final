@@ -7036,6 +7036,81 @@ async function buildTeamData(allPurchases, allPerformance, excludeChatter) {
   };
 }
 
+// ==================== ANALYSIS UTILITIES ====================
+// Re-analyze all MessageAnalysis records for a chatter within a date range
+// Ensures we always compare fresh current vs previous period data
+async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
+  try {
+    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
+    // Find all message analysis records that overlap the range
+    const records = await MessageAnalysis.find({
+      chatterName: chatterNameRegex,
+      weekStartDate: { $lte: rangeEnd },
+      weekEndDate: { $gte: rangeStart }
+    }).sort({ weekStartDate: 1 });
+
+    if (!records || records.length === 0) {
+      console.log('🟡 No MessageAnalysis records found to re-analyze for range', { chatterName, rangeStart, rangeEnd });
+      return;
+    }
+
+    console.log(`🔄 Re-analyzing ${records.length} MessageAnalysis record(s) for`, { chatterName, start: rangeStart, end: rangeEnd });
+
+    // Sequential re-analysis to avoid rate limits / contention
+    for (const existingAnalysis of records) {
+      try {
+        // Extract all message objects; skip if not present
+        const messages = Array.isArray(existingAnalysis.messageRecords) ? existingAnalysis.messageRecords : [];
+        if (messages.length === 0) {
+          console.log('⏭️  Skipping re-analysis (no messageRecords) for', existingAnalysis._id.toString());
+          continue;
+        }
+
+        // Filter messages to the requested window (inclusive bounds)
+        const startDateStr = new Date(rangeStart).toISOString().slice(0, 10);
+        const endDateStr = new Date(rangeEnd).toISOString().slice(0, 10);
+
+        const filtered = messages.filter(m => {
+          const d = new Date(m.date || m.timestamp);
+          return d >= rangeStart && d <= rangeEnd;
+        });
+
+        console.log(`  📅 Filtering messages for ${existingAnalysis._id}: ${messages.length} → ${filtered.length} (range: ${startDateStr} to ${endDateStr})`);
+        if (filtered.length === 0) {
+          console.log('⏭️  Skipping re-analysis (no messages in range) for', existingAnalysis._id.toString());
+          continue;
+        }
+
+        // Run analysis
+        const analysisResult = await analyzeMessages(filtered, existingAnalysis.chatterName);
+
+        // Persist results
+        existingAnalysis.overallScore = analysisResult.overallScore !== undefined ? analysisResult.overallScore : null;
+        existingAnalysis.grammarScore = analysisResult.grammarScore !== undefined ? analysisResult.grammarScore : null;
+        existingAnalysis.guidelinesScore = analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null;
+        existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
+        existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
+        existingAnalysis.strengths = analysisResult.strengths || [];
+        existingAnalysis.weaknesses = analysisResult.weaknesses || [];
+        existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
+        existingAnalysis.chattingStyle = analysisResult.chattingStyle || null;
+        existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
+        existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
+
+        existingAnalysis.markModified('grammarBreakdown');
+        existingAnalysis.markModified('guidelinesBreakdown');
+
+        await existingAnalysis.save();
+        console.log('  ✅ Re-analyzed and saved', existingAnalysis._id.toString());
+      } catch (err) {
+        console.error('  ❌ Re-analysis failed for record', existingAnalysis._id?.toString?.() || 'unknown', err.message);
+      }
+    }
+  } catch (e) {
+    console.error('❌ reanalyzeRange() failed:', e);
+  }
+}
+
 // Helper function to calculate correlation between guidelines score and unlock rate
 function calculateGuidelinesUnlockCorrelation(chatters) {
   const dataPoints = chatters.filter(c => 
@@ -7575,6 +7650,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterName: chatterName
     };
     
+    // Always re-analyze the selected window to ensure fresh metrics
+    await reanalyzeRange(chatterName, start, end);
+
     // Get this chatter's data
     const chatterPurchases = await FanPurchase.find({
       ...dateQuery,
@@ -7600,6 +7678,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     const prevEnd = new Date(start.getTime());
     
     console.log('📅 Previous period:', { start: prevStart, end: prevEnd });
+
+    // Also re-analyze the previous window for fair comparisons
+    await reanalyzeRange(chatterName, prevStart, prevEnd);
     
     // Get previous period data for this chatter (using same data sources as current period)
     const prevDateQuery = { date: { $gte: prevStart, $lte: prevEnd } };
