@@ -6089,6 +6089,10 @@ function renderNewChatterAnalysis(data) {
     console.log('🔍 Strengths:', strengths);
     console.log('🔍 Analysis Summary:', analysisSummary);
     console.log('🔍 Previous Period Data:', prev);
+    console.log('🔍 Grammar Score Change:', grammarScoreChange);
+    console.log('🔍 Spelling Change:', spellingChange);
+    console.log('🔍 Guidelines Score Change:', guidelinesScoreChange);
+    console.log('🔍 Revenue Change:', revenueChange);
     
     container.innerHTML = `
         <div class="space-y-4">
