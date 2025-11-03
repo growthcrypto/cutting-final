@@ -6070,7 +6070,9 @@ function renderNewChatterAnalysis(data) {
     const revenue = data.revenue || 0;
     const revenueChange = calcChange(revenue, prev.revenue || 0);
     const unlockRate = data.ppvsSent > 0 ? ((data.ppvsUnlocked / data.ppvsSent) * 100) : 0;
-    const unlockRateChange = calcChange(unlockRate, parseFloat(prev.unlockRate || 0));
+    const prevUnlockRate = prev.unlockRate !== undefined && prev.unlockRate !== null ? parseFloat(prev.unlockRate) : null;
+    // Show unlock rate change as percentage points to match narrative
+    const unlockRatePointChange = (prevUnlockRate !== null) ? (unlockRate - prevUnlockRate) : null;
     const revenuePerMessage = data.messagesSent > 0 ? (revenue / data.messagesSent) : 0;
     const prevRevenuePerMessage = prev.messagesSent > 0 ? ((prev.revenue || 0) / prev.messagesSent) : 0;
     const revenuePerMessageChange = calcChange(revenuePerMessage, prevRevenuePerMessage);
@@ -6237,7 +6239,7 @@ function renderNewChatterAnalysis(data) {
                                     <span class="text-xs font-bold text-gray-300">Unlock Rate</span>
                                     <div class="flex items-center gap-2">
                                         <span class="text-cyan-400 font-bold text-sm">${unlockRate.toFixed(1)}%</span>
-                                        ${unlockRateChange ? `<span class="text-xs font-bold ${getChangeClass(unlockRate, parseFloat(prev.unlockRate || 0))}">${unlockRateChange}</span>` : ''}
+                                        ${unlockRatePointChange !== null ? `<span class="text-xs font-bold ${(unlockRatePointChange > 0 ? 'text-green-400' : (unlockRatePointChange < 0 ? 'text-red-400' : 'text-gray-400'))}">${unlockRatePointChange > 0 ? '+' : ''}${unlockRatePointChange.toFixed(1)} pp</span>` : ''}
                                     </div>
                                 </div>
                                 <div class="text-xs text-gray-500">${data.ppvsUnlocked || 0} of ${data.ppvsSent || 0} PPVs unlocked by fans</div>
