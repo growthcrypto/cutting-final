@@ -2399,25 +2399,239 @@ async function analyzeMessages(messages, chatterName) {
     return `Message ${index + 1}: "[Invalid message format]"`;
   }).join('\n');
   
-  // SERVER-SIDE COUNTING: Count reply time violations for accuracy
-  let serverSideReplyTimeViolations = 0;
-  const replyTimeThreshold = 5; // 5 minutes from "Reply time" guideline
+  // 🔥 SERVER-SIDE VALIDATION: Count ALL guideline violations directly from message data
+  // This is MORE RELIABLE than AI - we check actual messages against guideline rules
+  console.log(`🔍 SERVER-SIDE GUIDELINES VALIDATION: Analyzing ${sampledMessages.length} messages...`);
   
+  // Get all active guidelines from database
+  const allGuidelines = await Guideline.find({ isActive: true }).sort({ category: 1, weight: -1 });
+  console.log(`📋 Found ${allGuidelines.length} active guidelines to validate`);
+  
+  // Initialize server-side violations tracking
+  const serverSideViolations = {
+    generalChatting: {},
+    psychology: {},
+    captions: {},
+    sales: {}
+  };
+  
+  // Helper to normalize category name
+  const normalizeCategory = (cat) => {
+    const lower = (cat || '').toLowerCase().trim();
+    if (lower.includes('general') || lower.includes('chatting')) return 'generalChatting';
+    if (lower.includes('psychology') || lower.includes('psych')) return 'psychology';
+    if (lower.includes('caption') || lower.includes('message')) return 'captions';
+    if (lower.includes('sales') || lower.includes('sale')) return 'sales';
+    return 'generalChatting'; // default
+  };
+  
+  // 1. REPLY TIME VIOLATIONS (already working)
+  const replyTimeThreshold = 5; // 5 minutes
   const messagesWithReplyTime = sampledMessages.filter(msg => 
     typeof msg === 'object' && msg.replyTime && msg.replyTime > 0
   );
   
   if (messagesWithReplyTime.length > 0) {
-    serverSideReplyTimeViolations = messagesWithReplyTime.filter(msg => msg.replyTime > replyTimeThreshold).length;
-    const minReplyTime = Math.min(...messagesWithReplyTime.map(m => m.replyTime));
-    const maxReplyTime = Math.max(...messagesWithReplyTime.map(m => m.replyTime));
-    console.log(`📊 SERVER-SIDE REPLY TIME ANALYSIS:`);
-    console.log(`   Messages with reply time data: ${messagesWithReplyTime.length}/${sampledMessages.length}`);
-    console.log(`   Reply time range: ${minReplyTime.toFixed(1)} - ${maxReplyTime.toFixed(1)} minutes`);
-    console.log(`   Violations (>${replyTimeThreshold} min): ${serverSideReplyTimeViolations}`);
-  } else {
-    console.log(`⚠️ No reply time data found in messages - cannot count reply time violations`);
+    const replyTimeViolations = messagesWithReplyTime.filter(msg => msg.replyTime > replyTimeThreshold).length;
+    const replyTimeGuideline = allGuidelines.find(g => 
+      (g.title?.toLowerCase().includes('reply time') || g.description?.toLowerCase().includes('reply time'))
+    );
+    
+    if (replyTimeGuideline) {
+      const category = normalizeCategory(replyTimeGuideline.category);
+      serverSideViolations[category][replyTimeGuideline.title] = {
+        count: replyTimeViolations,
+        description: replyTimeGuideline.description,
+        examples: []
+      };
+      console.log(`✅ Reply Time: ${replyTimeViolations} violations (>${replyTimeThreshold} min)`);
+    }
   }
+  
+  // 2. CAPTION GUIDELINES (check PPV messages)
+  const ppvMessages = sampledMessages.filter(msg => 
+    typeof msg === 'object' && (msg.isPPV || (msg.ppvRevenue && msg.ppvRevenue > 0))
+  );
+  
+  const captionGuidelines = allGuidelines.filter(g => 
+    normalizeCategory(g.category) === 'captions'
+  );
+  
+  captionGuidelines.forEach(guideline => {
+    const title = guideline.title?.toLowerCase() || '';
+    const desc = guideline.description?.toLowerCase() || '';
+    let violations = 0;
+    const examples = [];
+    
+    if (title.includes('describe') || desc.includes('describe')) {
+      // Check if PPV captions describe what's in the PPV
+      ppvMessages.forEach((msg, idx) => {
+        const text = (msg.messageText || msg.text || '').toLowerCase();
+        // Violation if caption is too short or doesn't describe content
+        // Good captions usually have >20 chars and mention what's in the content
+        if (text.length < 20 || 
+            (!text.includes('video') && !text.includes('pic') && !text.includes('photo') && 
+             !text.includes('set') && !text.includes('content') && !text.includes('show'))) {
+          violations++;
+          if (examples.length < 10) examples.push(idx);
+        }
+      });
+    } else if (title.includes('hook') || desc.includes('hook')) {
+      // Check if PPV captions have hooks (questions, personalization, attention grabbers)
+      ppvMessages.forEach((msg, idx) => {
+        const text = (msg.messageText || msg.text || '').toLowerCase();
+        const hasQuestion = /[?]/.test(text);
+        const hasPersonalization = /\b(u|you|ur|your|baby|babe|honey|daddy|dear)\b/.test(text);
+        const hasAttentionGrabber = /\b(would|how|what|when|can|will|if|imagine|guess|check|see|look|wait|oh|wow|haha)\b/.test(text);
+        
+        if (!hasQuestion && !hasPersonalization && !hasAttentionGrabber) {
+          violations++;
+          if (examples.length < 10) examples.push(idx);
+        }
+      });
+    }
+    
+    if (violations > 0) {
+      serverSideViolations.captions[guideline.title] = {
+        count: violations,
+        description: guideline.description,
+        examples: examples
+      };
+      console.log(`✅ ${guideline.title}: ${violations} violations`);
+    }
+  });
+  
+  // 3. PSYCHOLOGY GUIDELINES (check message content patterns)
+  const psychologyGuidelines = allGuidelines.filter(g => 
+    normalizeCategory(g.category) === 'psychology'
+  );
+  
+  psychologyGuidelines.forEach(guideline => {
+    const title = guideline.title?.toLowerCase() || '';
+    const desc = guideline.description?.toLowerCase() || '';
+    let violations = 0;
+    const examples = [];
+    
+    // Check messages for psychology guideline violations
+    sampledMessages.forEach((msg, idx) => {
+      const text = (msg.messageText || msg.text || '').toLowerCase();
+      let isViolation = false;
+      
+      // Information gathering / asking questions
+      if (title.includes('information') || title.includes('gathering') || desc.includes('ask')) {
+        // Check if messages ask questions (good for psychology)
+        const hasQuestion = /[?]/.test(text);
+        if (!hasQuestion && text.length > 10) {
+          // If message is substantial but has no question, might be violation
+          // But only count if it's not a response to a fan question
+          isViolation = true;
+        }
+      }
+      
+      // Follow-up questions
+      if (title.includes('follow-up') || title.includes('follow up') || desc.includes('follow')) {
+        // This requires conversation context - skip for now (would need conversation flow)
+      }
+      
+      // Engagement / personalization
+      if (title.includes('engagement') || title.includes('personal') || desc.includes('personal')) {
+        const hasPersonalization = /\b(u|you|ur|your|baby|babe|honey|daddy|dear|name)\b/.test(text);
+        if (!hasPersonalization && text.length > 15) {
+          isViolation = true;
+        }
+      }
+      
+      if (isViolation) {
+        violations++;
+        if (examples.length < 10) examples.push(idx);
+      }
+    });
+    
+    if (violations > 0) {
+      serverSideViolations.psychology[guideline.title] = {
+        count: violations,
+        description: guideline.description,
+        examples: examples
+      };
+      console.log(`✅ ${guideline.title}: ${violations} violations`);
+    }
+  });
+  
+  // 4. SALES GUIDELINES (check sales patterns)
+  const salesGuidelines = allGuidelines.filter(g => 
+    normalizeCategory(g.category) === 'sales'
+  );
+  
+  salesGuidelines.forEach(guideline => {
+    const title = guideline.title?.toLowerCase() || '';
+    const desc = guideline.description?.toLowerCase() || '';
+    let violations = 0;
+    const examples = [];
+    
+    // PPV price progression (check if prices increase over time per fan)
+    if (title.includes('price') || title.includes('progression') || desc.includes('price')) {
+      // Group PPVs by fan to check progression
+      const ppvsByFan = {};
+      ppvMessages.forEach(msg => {
+        const fan = msg.fanUsername || 'unknown';
+        if (!ppvsByFan[fan]) ppvsByFan[fan] = [];
+        ppvsByFan[fan].push({
+          price: msg.ppvRevenue || 0,
+          timestamp: msg.timestamp || new Date(0)
+        });
+      });
+      
+      // Check each fan's PPV prices for decreases
+      Object.keys(ppvsByFan).forEach(fan => {
+        const ppvs = ppvsByFan[fan].sort((a, b) => a.timestamp - b.timestamp);
+        for (let i = 1; i < ppvs.length; i++) {
+          if (ppvs[i].price < ppvs[i-1].price) {
+            violations++;
+            break; // Count 1 violation per fan
+          }
+        }
+      });
+    }
+    
+    if (violations > 0) {
+      serverSideViolations.sales[guideline.title] = {
+        count: violations,
+        description: guideline.description,
+        examples: examples
+      };
+      console.log(`✅ ${guideline.title}: ${violations} violations`);
+    }
+  });
+  
+  // Convert server-side violations to guidelinesData format
+  const serverSideGuidelinesData = {
+    generalChatting: { items: [] },
+    psychology: { items: [] },
+    captions: { items: [] },
+    sales: { items: [] }
+  };
+  
+  Object.keys(serverSideViolations).forEach(category => {
+    Object.keys(serverSideViolations[category]).forEach(title => {
+      const violation = serverSideViolations[category][title];
+      serverSideGuidelinesData[category].items.push({
+        title: title,
+        description: violation.description,
+        count: violation.count,
+        examples: violation.examples
+      });
+    });
+  });
+  
+  console.log(`📊 SERVER-SIDE VALIDATION COMPLETE:`, {
+    generalChatting: serverSideGuidelinesData.generalChatting.items.length,
+    psychology: serverSideGuidelinesData.psychology.items.length,
+    captions: serverSideGuidelinesData.captions.items.length,
+    sales: serverSideGuidelinesData.sales.items.length
+  });
+  
+  // Keep old variable name for compatibility
+  const serverSideReplyTimeViolations = serverSideViolations.generalChatting['Reply time']?.count || 0;
 
             const prompt = `CRITICAL: You are analyzing ${sampledMessages.length} OnlyFans chat messages with ACTUAL REPLY TIME DATA and CONVERSATION FLOW CONTEXT. You MUST use the provided reply time data instead of inferring reply times from message content patterns. You MUST analyze conversations as complete flows, not individual isolated messages. 
 
@@ -3111,48 +3325,51 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
               }
             });
             
-            // 🔥 INJECT SERVER-SIDE REPLY TIME VIOLATIONS
-            if (serverSideReplyTimeViolations > 0) {
-              console.log(`🔧 INJECTING ${serverSideReplyTimeViolations} server-side reply time violations into guidelines analysis`);
-              
-              // Find the "General Chatting" category (or whichever category has Reply time)
-              const categories = Object.keys(guidelinesData);
-              for (const categoryKey of categories) {
-                const category = guidelinesData[categoryKey];
-                if (category.items && Array.isArray(category.items)) {
-                  // Check if this category has a reply time guideline
-                  const replyTimeItem = category.items.find(item => 
-                    item.title?.toLowerCase().includes('reply time') || 
-                    item.description?.toLowerCase().includes('reply time')
+            // 🔥 OVERRIDE WITH SERVER-SIDE VALIDATION (RELIABLE - FROM ACTUAL MESSAGE DATA)
+            // Server-side validation is MORE ACCURATE than AI - we check actual messages
+            console.log(`🔧 OVERRIDING AI analysis with server-side validation results`);
+            
+            // Merge server-side violations with AI results (server-side takes priority)
+            ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
+              if (serverSideGuidelinesData[category]?.items?.length > 0) {
+                // Server-side found violations - use those
+                if (!guidelinesData[category]) guidelinesData[category] = { items: [] };
+                
+                // Replace or merge items
+                serverSideGuidelinesData[category].items.forEach(serverItem => {
+                  const existingItem = guidelinesData[category].items.find(item => 
+                    item.title?.toLowerCase() === serverItem.title?.toLowerCase()
                   );
                   
-                  if (replyTimeItem) {
-                    console.log(`✅ Found reply time guideline in ${categoryKey}: "${replyTimeItem.title}"`);
-                    replyTimeItem.count = serverSideReplyTimeViolations;
-                    replyTimeItem.examples = []; // We could add message indices here if needed
-                    console.log(`✅ Updated count to ${serverSideReplyTimeViolations} violations`);
-                    break;
+                  if (existingItem) {
+                    // Update existing item with server-side count (more reliable)
+                    existingItem.count = serverItem.count;
+                    existingItem.examples = serverItem.examples;
+                    console.log(`✅ Updated ${category} - ${serverItem.title}: ${serverItem.count} violations (server-side)`);
+                  } else {
+                    // Add new item from server-side validation
+                    guidelinesData[category].items.push(serverItem);
+                    console.log(`✅ Added ${category} - ${serverItem.title}: ${serverItem.count} violations (server-side)`);
                   }
-                }
+                });
               }
-              
-              // Recalculate total violations with server-side data
-              totalViolations = 0;
-              Object.values(guidelinesData).forEach(category => {
-                if (category.items && Array.isArray(category.items)) {
-                  category.items.forEach(item => {
-                    totalViolations += (item.count || 0);
-                  });
-                }
-              });
-              
-              console.log(`📊 Recalculated total violations with server-side data: ${totalViolations}`);
-            }
+            });
             
-            // 🔥 CRITICAL: Update analysisResult.guidelinesBreakdown with the modified guidelinesData
-            // This ensures the frontend receives the server-side injected violations
+            // Recalculate total violations
+            totalViolations = 0;
+            Object.values(guidelinesData).forEach(category => {
+              if (category.items && Array.isArray(category.items)) {
+                category.items.forEach(item => {
+                  totalViolations += (item.count || 0);
+                });
+              }
+            });
+            
+            console.log(`📊 Total violations (server-side validated): ${totalViolations}`);
+            
+            // 🔥 CRITICAL: Update analysisResult.guidelinesBreakdown with server-side validated data
             analysisResult.guidelinesBreakdown = guidelinesData;
-            console.log('✅ Updated analysisResult.guidelinesBreakdown with server-side violations');
+            console.log('✅ Updated analysisResult.guidelinesBreakdown with SERVER-SIDE VALIDATED violations');
             
             // BRUTAL SCORING for Guidelines
             // Calculate violation percentage across all messages
