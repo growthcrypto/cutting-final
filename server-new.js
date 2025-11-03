@@ -2945,6 +2945,14 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
         analysisResult.grammarBreakdown.punctuationProblems = `Found ${punctuationCount} messages with formal punctuation (periods or commas).`;
       }
 
+      // Expose numeric counts so callers can persist them
+      analysisResult._numericCounts = {
+        totalMessages,
+        spellingCount,
+        grammarIssuesCount,
+        punctuationCount
+      };
+
       const totalErrors = spellingCount + grammarIssuesCount + punctuationCount;
       const errorPercentage = totalMessages > 0 ? (totalErrors / totalMessages) * 100 : 0;
       
@@ -6858,13 +6866,16 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
       return 0;
     };
     
-    // Sum up all grammar breakdowns from all records
+    // Sum up all grammar breakdowns from all records (prefer numeric fields if present)
     analyzedPrevRecords.forEach(record => {
       const gb = record.grammarBreakdown;
       if (gb) {
-        prevSpellingCount += parseCount(gb.spellingErrors, 'spelling');
-        prevGrammarCount += parseCount(gb.grammarIssues, 'grammar');
-        prevPunctuationCount += parseCount(gb.punctuationProblems, 'punctuation');
+        const numSpell = typeof record.spellingCount === 'number' ? record.spellingCount : parseCount(gb.spellingErrors, 'spelling');
+        const numGram = typeof record.grammarIssuesCount === 'number' ? record.grammarIssuesCount : parseCount(gb.grammarIssues, 'grammar');
+        const numPunc = typeof record.punctuationCount === 'number' ? record.punctuationCount : parseCount(gb.punctuationProblems, 'punctuation');
+        prevSpellingCount += numSpell;
+        prevGrammarCount += numGram;
+        prevPunctuationCount += numPunc;
       }
       prevTotalMessages += record.totalMessages || 0;
     });
@@ -6894,7 +6905,7 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
         categories.forEach(cat => {
           const items = glb[cat.key]?.items || [];
           items.forEach(item => {
-            const key = `${cat.key}:${item.title}`;
+            const key = `${cat.key}:${(item.title || '').toLowerCase().trim()}`;
             if (!guidelineViolationsMap[key]) {
               guidelineViolationsMap[key] = { name: cat.name, violations: 0 };
             }
@@ -6914,10 +6925,11 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
       }
     });
     
-    prevGuidelinesByCategory = categories.map(cat => ({
-      name: cat.name,
-      violations: categoryTotals[cat.name] || 0
-    }));
+    prevGuidelinesByCategory = categories.map(cat => {
+      const raw = categoryTotals[cat.name] || 0;
+      const capped = prevTotalMessages > 0 ? Math.min(raw, prevTotalMessages) : raw;
+      return { name: cat.name, violations: capped };
+    });
     
     console.log('📊 Aggregated guidelines breakdown:', prevGuidelinesByCategory);
   }
@@ -7138,6 +7150,17 @@ async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
         existingAnalysis.chattingStyle = analysisResult.chattingStyle || null;
         existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
         existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
+
+        // Also persist numeric counts for reliable aggregation
+        if (analysisResult._numericCounts) {
+          existingAnalysis.totalMessages = analysisResult._numericCounts.totalMessages;
+          existingAnalysis.spellingCount = analysisResult._numericCounts.spellingCount;
+          existingAnalysis.grammarIssuesCount = analysisResult._numericCounts.grammarIssuesCount;
+          existingAnalysis.punctuationCount = analysisResult._numericCounts.punctuationCount;
+        } else {
+          // Fallback to filtered length if numeric not present
+          existingAnalysis.totalMessages = filtered.length;
+        }
 
         existingAnalysis.markModified('grammarBreakdown');
         existingAnalysis.markModified('guidelinesBreakdown');
@@ -7806,6 +7829,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       analyzedRecords.forEach(record => {
         const gb = record.grammarBreakdown;
         if (gb) {
+          // Prefer stored numeric fields if present
+          const numericSpelling = typeof record.spellingCount === 'number' ? record.spellingCount : null;
+          const numericGrammar = typeof record.grammarIssuesCount === 'number' ? record.grammarIssuesCount : null;
+          const numericPunct = typeof record.punctuationCount === 'number' ? record.punctuationCount : null;
+
           // Extract counts from breakdown strings - use precise regex to avoid matching message totals
           // Format examples: "Found 5 spelling errors" or "Found 15 messages with formal punctuation"
           const parseCount = (str, type) => {
@@ -7826,9 +7854,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             return allNumbers.length > 0 ? parseInt(allNumbers[0]) : 0;
           };
           
-          totalSpellingErrors += parseCount(gb.spellingErrors, 'spelling');
-          totalGrammarIssues += parseCount(gb.grammarIssues, 'grammar');
-          totalPunctuationProblems += parseCount(gb.punctuationProblems, 'punctuation');
+          totalSpellingErrors += (numericSpelling ?? parseCount(gb.spellingErrors, 'spelling'));
+          totalGrammarIssues += (numericGrammar ?? parseCount(gb.grammarIssues, 'grammar'));
+          totalPunctuationProblems += (numericPunct ?? parseCount(gb.punctuationProblems, 'punctuation'));
         }
       });
       
@@ -7848,7 +7876,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
           ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
             if (glb[category]?.items) {
               glb[category].items.forEach(item => {
-                const key = `${category}:${item.title}`;
+                const key = `${category}:${(item.title || '').toLowerCase().trim()}`;
                 if (!guidelineViolations[key]) {
                   guidelineViolations[key] = {
                     category,
@@ -7873,6 +7901,20 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
           count: guideline.count,
           examples: guideline.examples
         });
+      });
+
+      // Cap per-category totals at total messages analyzed to avoid >100% rates in UI
+      const cap = (n) => Math.max(0, Math.min(n, totalMessagesAcrossAllDays || n));
+      Object.keys(aggregatedGuidelines).forEach(cat => {
+        const total = aggregatedGuidelines[cat].items.reduce((s, it) => s + (it.count || 0), 0);
+        if (total > (totalMessagesAcrossAllDays || 0)) {
+          // Scale down proportionally to cap at totalMessages
+          const factor = (totalMessagesAcrossAllDays || 1) / total;
+          aggregatedGuidelines[cat].items = aggregatedGuidelines[cat].items.map(it => ({
+            ...it,
+            count: Math.round((it.count || 0) * factor)
+          }));
+        }
       });
       
       // Get the most recent analyzed record as base
