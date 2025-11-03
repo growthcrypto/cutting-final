@@ -6042,6 +6042,7 @@ function renderNewChatterAnalysis(data) {
     
     // Get previous period data for comparisons
     const prev = data.previousPeriodData || {};
+    console.log('🔍 RAW PREV DATA:', JSON.stringify(prev, null, 2));
     
     // Helper function to calculate % change
     const calcChange = (current, previous) => {
