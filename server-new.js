@@ -6802,20 +6802,38 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
   let prevTotalMessages = 0;
   
   if (prevMessageAnalysis && prevMessageAnalysis.grammarBreakdown) {
-    prevSpellingCount = prevMessageAnalysis.grammarBreakdown.spellingErrors || 0;
-    prevGrammarCount = prevMessageAnalysis.grammarBreakdown.grammarIssues || 0;
-    prevPunctuationCount = prevMessageAnalysis.grammarBreakdown.punctuationProblems || 0;
+    // Parse counts from strings like "Found 5 spelling errors" or just numbers
+    const parseCount = (value) => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        const match = value.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      }
+      return 0;
+    };
+    
+    prevSpellingCount = parseCount(prevMessageAnalysis.grammarBreakdown.spellingErrors);
+    prevGrammarCount = parseCount(prevMessageAnalysis.grammarBreakdown.grammarIssues);
+    prevPunctuationCount = parseCount(prevMessageAnalysis.grammarBreakdown.punctuationProblems);
     prevTotalMessages = prevMessageAnalysis.totalMessages || 0;
   }
   
   // Extract guidelines breakdown
   let prevGuidelinesByCategory = [];
   if (prevMessageAnalysis && prevMessageAnalysis.guidelinesBreakdown) {
-    prevGuidelinesByCategory = prevMessageAnalysis.guidelinesBreakdown.generalChatting ? [
-      { name: 'General - Reply time', violations: prevMessageAnalysis.guidelinesBreakdown.generalChatting || 0 },
-      { name: 'Psychology', violations: prevMessageAnalysis.guidelinesBreakdown.psychology || 0 },
-      { name: 'Captions', violations: prevMessageAnalysis.guidelinesBreakdown.captions || 0 }
-    ] : [];
+    const glb = prevMessageAnalysis.guidelinesBreakdown;
+    // Sum violations from items for each category
+    const categories = [
+      { key: 'generalChatting', name: 'General - Reply time' },
+      { key: 'psychology', name: 'Psychology' },
+      { key: 'captions', name: 'Captions' }
+    ];
+    
+    prevGuidelinesByCategory = categories.map(cat => {
+      const items = glb[cat.key]?.items || [];
+      const violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
+      return { name: cat.name, violations };
+    });
   }
   
   console.log('📊 Previous period calculated:', {
