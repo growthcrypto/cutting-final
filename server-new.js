@@ -2996,65 +2996,41 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
             const text = (msg.messageText || msg.text || '').toLowerCase();
             if (!text || text.length < 2) return;
             
-            // Count 1 error per message per pattern type (not occurrences)
-            // This matches the AI prompt: "Count each error only once per message"
-            let messageHasSpellingError = false;
-            let messageHasGrammarError = false;
+            // SPELLING ERRORS: Only count ACTUAL typos, NOT acceptable casual language
+            // Count occurrences (10 errors in a message = 10 errors)
+            // DO NOT COUNT: "wanna", "gonna", "cant", "dont", "wont", "im", "ill" - these are ACCEPTABLE in casual OnlyFans messages
+            if (/\bheyy\b/g.test(text)) commonErrors.spelling += (text.match(/\bheyy\b/g) || []).length;
+            if (/\btooo\b/g.test(text)) commonErrors.spelling += (text.match(/\btooo\b/g) || []).length;
+            if (/\byouu\b/g.test(text)) commonErrors.spelling += (text.match(/\byouu\b/g) || []).length;
+            if (/\bquestionn\b/g.test(text)) commonErrors.spelling += (text.match(/\bquestionn\b/g) || []).length;
+            if (/\bpsychologyy\b/g.test(text)) commonErrors.spelling += (text.match(/\bpsychologyy\b/g) || []).length;
+            if (/\bpyschology\b/g.test(text)) commonErrors.spelling += (text.match(/\bpyschology\b/g) || []).length;
+            if (/\bjsut\b/g.test(text)) commonErrors.spelling += (text.match(/\bjsut\b/g) || []).length;
+            if (/\bseee\b/g.test(text)) commonErrors.spelling += (text.match(/\bseee\b/g) || []).length;
             
-            // SPELLING ERRORS: Double/triple letters, missing apostrophes, common typos
-            if (/\bheyy\b/g.test(text)) messageHasSpellingError = true;
-            if (/\btooo\b/g.test(text)) messageHasSpellingError = true;
-            if (/\byouu\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bquestionn\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bpsychologyy\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bpyschology\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bjsut\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bseee\b/g.test(text)) messageHasSpellingError = true;
+            // REMOVED: "cant", "dont", "wont", "im", "ill" - these are ACCEPTABLE casual language, not errors
             
-            // Missing apostrophes in contractions (count as spelling variations)
-            if (/\bcant\b/g.test(text) && !/\bcan't\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bdont\b/g.test(text) && !/\bdon't\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bwont\b/g.test(text) && !/\bwon't\b/g.test(text)) messageHasSpellingError = true;
-            if (/\bill\b/g.test(text) && text.includes('ill') && !/\bi'll\b/g.test(text)) {
-              // Only count "ill" if it's clearly a contraction (surrounded by spaces or start/end)
-              if (/\bill\s+(show|tell|give|make|do|go|get|see|come|take|send|put|buy|pay|tip)/g.test(text)) {
-                messageHasSpellingError = true;
-              }
-            }
-            if (/\bim\b/g.test(text) && !/\bi'm\b/g.test(text)) messageHasSpellingError = true;
-            
-            // Count 1 spelling error per message (not per occurrence)
-            if (messageHasSpellingError) commonErrors.spelling += 1;
-            
-            // GRAMMAR ERRORS: Wrong verb forms, tense issues, missing words, run-on sentences
-            // Verb tense errors after "did"
-            if (/\bdid it made\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bwhat did u had\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bdid u made\b/g.test(text)) messageHasGrammarError = true;
+            // GRAMMAR ERRORS: Wrong verb forms, tense issues, missing words
+            // Count occurrences (10 errors in a message = 10 errors)
+            if (/\bdid it made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid it made\b/g) || []).length;
+            if (/\bwhat did u had\b/g.test(text)) commonErrors.grammar += (text.match(/\bwhat did u had\b/g) || []).length;
+            if (/\bdid u made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid u made\b/g) || []).length;
             
             // Check for verb tense issues more broadly: "did [subject] [past-tense-verb]"
             const didPastTensePattern = /\bdid\s+(?:it|u|you|i|he|she|we|they)\s+(made|had|went|came|took|saw|got|did|ate|gave|told|showed|bought|paid|sent)/g;
-            if (didPastTensePattern.test(text)) messageHasGrammarError = true;
+            const didMatches = text.match(didPastTensePattern);
+            if (didMatches) {
+              commonErrors.grammar += didMatches.length;
+            }
             
             // Missing spaces: "atleast" should be "at least", "wbu" should be "what about you", etc.
-            if (/\batleast\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bwbu\b/g.test(text)) messageHasGrammarError = true;
-            if (/\barent\b/g.test(text) && !/\baren't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bisnt\b/g.test(text) && !/\bisn't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bwasnt\b/g.test(text) && !/\bwasn't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bwerent\b/g.test(text) && !/\bweren't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bhavent\b/g.test(text) && !/\bhaven't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bhasnt\b/g.test(text) && !/\bhasn't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bwouldnt\b/g.test(text) && !/\bwouldn't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bcouldnt\b/g.test(text) && !/\bcouldn't\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bshouldnt\b/g.test(text) && !/\bshouldn't\b/g.test(text)) messageHasGrammarError = true;
+            if (/\batleast\b/g.test(text)) commonErrors.grammar += (text.match(/\batleast\b/g) || []).length;
+            if (/\bwbu\b/g.test(text)) commonErrors.grammar += (text.match(/\bwbu\b/g) || []).length;
+            // REMOVED: "arent", "isnt", "wasnt", "werent", "havent", "hasnt", "wouldnt", "couldnt", "shouldnt" - these are ACCEPTABLE casual contractions
             
-            // Subject-verb agreement issues: "u is", "u was", "u are" (though "u are" is acceptable)
-            if (/\bu\s+is\b/g.test(text)) messageHasGrammarError = true;
-            if (/\bu\s+was\b/g.test(text)) messageHasGrammarError = true;
-            
-            // Count 1 grammar error per message (not per occurrence)
-            if (messageHasGrammarError) commonErrors.grammar += 1;
+            // Subject-verb agreement issues: "u is", "u was" (though "u are" is acceptable)
+            if (/\bu\s+is\b/g.test(text)) commonErrors.grammar += (text.match(/\bu\s+is\b/g) || []).length;
+            if (/\bu\s+was\b/g.test(text)) commonErrors.grammar += (text.match(/\bu\s+was\b/g) || []).length;
             
             // Missing articles: "I want to see you" vs "I want see you" (though this is less common in casual chat)
             // Run-on sentences: multiple sentences without proper punctuation (hard to detect, skip for now)
