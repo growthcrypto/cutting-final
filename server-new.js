@@ -6825,6 +6825,15 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     prevGrammarCount = parseCount(prevMessageAnalysis.grammarBreakdown.grammarIssues);
     prevPunctuationCount = parseCount(prevMessageAnalysis.grammarBreakdown.punctuationProblems);
     prevTotalMessages = prevMessageAnalysis.totalMessages || 0;
+    
+    console.log('📊 Parsed grammar breakdown:', {
+      raw_spelling: prevMessageAnalysis.grammarBreakdown.spellingErrors,
+      parsed_spelling: prevSpellingCount,
+      raw_grammar: prevMessageAnalysis.grammarBreakdown.grammarIssues,
+      parsed_grammar: prevGrammarCount,
+      raw_punctuation: prevMessageAnalysis.grammarBreakdown.punctuationProblems,
+      parsed_punctuation: prevPunctuationCount
+    });
   }
   
   // Extract guidelines breakdown
