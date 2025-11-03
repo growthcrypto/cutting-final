@@ -6037,8 +6037,8 @@ function renderNewChatterAnalysis(data) {
     const grammarPct = ((parseInt(grammarCount) / totalMessages) * 100).toFixed(1);
     const punctuationPct = ((parseInt(punctuationCount) / totalMessages) * 100).toFixed(1);
     
-    // Parse guidelines by category
-    const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown);
+    // Parse guidelines by category (pass totalMessages for accurate percentages)
+    const guidelinesByCategory = parseGuidelinesByCategory(data.guidelinesBreakdown, totalMessages);
     
     // Get previous period data for comparisons
     const prev = data.previousPeriodData || {};
@@ -6400,7 +6400,7 @@ function renderNewChatterAnalysis(data) {
 }
 
 // Parse guidelines by category with counts
-function parseGuidelinesByCategory(guidelinesBreakdown) {
+function parseGuidelinesByCategory(guidelinesBreakdown, totalMessages = 0) {
     if (!guidelinesBreakdown) return [];
     
     const categories = [
@@ -6410,17 +6410,32 @@ function parseGuidelinesByCategory(guidelinesBreakdown) {
         { key: 'sales', name: 'Sales' }
     ];
     
-    const totalMessages = guidelinesBreakdown.totalMessages || 544;
+    // Use provided totalMessages or fallback to guidelinesBreakdown.totalMessages
+    const msgCount = totalMessages || guidelinesBreakdown.totalMessages || 544;
     
     return categories.map(cat => {
         const items = guidelinesBreakdown[cat.key]?.items || [];
-        const violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
-        const pct = ((violations / totalMessages) * 100).toFixed(1);
+        let violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
         
-        // Get titles of violated guidelines (count > 0)
+        // Safety cap: violations can't exceed total messages
+        if (msgCount > 0 && violations > msgCount) {
+            violations = msgCount;
+        }
+        
+        const pct = msgCount > 0 ? ((violations / msgCount) * 100).toFixed(1) : '0.0';
+        
+        // Get titles of violated guidelines (count > 0), deduplicate by normalized title
+        const seenTitles = new Set();
         const violatedTitles = items
             .filter(item => item.count > 0)
-            .map(item => item.title)
+            .map(item => {
+                // Normalize title to avoid duplicates like "GENERAL CHATTING: Informality" vs "Informality"
+                const normalized = item.title.toLowerCase().replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '').trim();
+                if (seenTitles.has(normalized)) return null;
+                seenTitles.add(normalized);
+                return item.title;
+            })
+            .filter(Boolean)
             .join(', ');
         
         // Create display name with violated guideline titles

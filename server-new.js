@@ -6897,7 +6897,18 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
       { key: 'captions', name: 'Captions' }
     ];
     
-    // Collect all violations across all records
+    // Normalize titles to handle variations like "GENERAL CHATTING: Informality" vs "Informality"
+    const normalizeTitle = (title) => {
+      if (!title) return '';
+      let normalized = title.toLowerCase().trim();
+      normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '');
+      normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/i, '');
+      normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/i, '');
+      normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/i, '');
+      return normalized.trim();
+    };
+    
+    // Collect all violations across all records (with normalization)
     const guidelineViolationsMap = {};
     analyzedPrevRecords.forEach(record => {
       const glb = record.guidelinesBreakdown;
@@ -6905,11 +6916,14 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
         categories.forEach(cat => {
           const items = glb[cat.key]?.items || [];
           items.forEach(item => {
-            const key = `${cat.key}:${(item.title || '').toLowerCase().trim()}`;
+            const normalizedTitle = normalizeTitle(item.title);
+            const key = `${cat.key}:${normalizedTitle}`;
             if (!guidelineViolationsMap[key]) {
               guidelineViolationsMap[key] = { name: cat.name, violations: 0 };
             }
-            guidelineViolationsMap[key].violations += item.count || 0;
+            // Cap each item's count at totalMessages to avoid double-counting
+            const itemCount = Math.min(item.count || 0, prevTotalMessages || item.count || 0);
+            guidelineViolationsMap[key].violations += itemCount;
           });
         });
       }
@@ -7869,6 +7883,18 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       };
       
       // Collect all unique guideline titles and sum their violations
+      // Normalize titles to handle variations like "GENERAL CHATTING: Informality" vs "Informality"
+      const normalizeTitle = (title) => {
+        if (!title) return '';
+        let normalized = title.toLowerCase().trim();
+        // Strip common prefixes
+        normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '');
+        normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/i, '');
+        normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/i, '');
+        normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/i, '');
+        return normalized.trim();
+      };
+      
       const guidelineViolations = {};
       analyzedRecords.forEach(record => {
         const glb = record.guidelinesBreakdown;
@@ -7876,41 +7902,50 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
           ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
             if (glb[category]?.items) {
               glb[category].items.forEach(item => {
-                const key = `${category}:${(item.title || '').toLowerCase().trim()}`;
+                // Use normalized title for deduplication
+                const normalizedTitle = normalizeTitle(item.title);
+                const key = `${category}:${normalizedTitle}`;
+                
                 if (!guidelineViolations[key]) {
+                  // Use the first (or most descriptive) title we encounter
                   guidelineViolations[key] = {
                     category,
-                    title: item.title,
+                    title: item.title, // Keep original for display
                     description: item.description,
                     count: 0,
                     examples: []
                   };
                 }
-                guidelineViolations[key].count += item.count || 0;
+                // Sum violations, but cap at totalMessages per item to avoid double-counting
+                const itemCount = Math.min(item.count || 0, totalMessagesAcrossAllDays || item.count || 0);
+                guidelineViolations[key].count += itemCount;
               });
             }
           });
         }
       });
       
-      // Organize back into categories
+      // Organize back into categories and cap totals
       Object.values(guidelineViolations).forEach(guideline => {
+        // Cap each individual item's count at totalMessages
+        const cappedCount = Math.min(guideline.count, totalMessagesAcrossAllDays || guideline.count);
         aggregatedGuidelines[guideline.category].items.push({
           title: guideline.title,
           description: guideline.description,
-          count: guideline.count,
+          count: cappedCount,
           examples: guideline.examples
         });
       });
 
       // Cap per-category totals at total messages analyzed to avoid >100% rates in UI
-      const cap = (n) => Math.max(0, Math.min(n, totalMessagesAcrossAllDays || n));
       Object.keys(aggregatedGuidelines).forEach(cat => {
-        const total = aggregatedGuidelines[cat].items.reduce((s, it) => s + (it.count || 0), 0);
-        if (total > (totalMessagesAcrossAllDays || 0)) {
+        const items = aggregatedGuidelines[cat].items;
+        const total = items.reduce((s, it) => s + (it.count || 0), 0);
+        
+        if (total > (totalMessagesAcrossAllDays || 0) && totalMessagesAcrossAllDays > 0) {
           // Scale down proportionally to cap at totalMessages
-          const factor = (totalMessagesAcrossAllDays || 1) / total;
-          aggregatedGuidelines[cat].items = aggregatedGuidelines[cat].items.map(it => ({
+          const factor = totalMessagesAcrossAllDays / total;
+          aggregatedGuidelines[cat].items = items.map(it => ({
             ...it,
             count: Math.round((it.count || 0) * factor)
           }));
