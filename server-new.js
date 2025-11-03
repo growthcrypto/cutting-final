@@ -6773,21 +6773,19 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
 
 // Helper function to build previous period data
 async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterName, prevStart, prevEnd) {
-  // Get previous period MessageAnalysis (from the same time period)
+  // Get ALL previous period MessageAnalysis records (from the same time period)
   const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
-  const prevMessageAnalysis = await MessageAnalysis.findOne({
+  const prevMessageAnalyses = await MessageAnalysis.find({
     chatterName: chatterNameRegex,
     weekStartDate: { $lte: prevEnd },
     weekEndDate: { $gte: prevStart }
-  }).sort({ createdAt: -1 }); // Get most recent previous analysis in this period
+  }).sort({ weekStartDate: 1 }); // Get all previous analyses in this period
   
-  console.log('📊 Previous MessageAnalysis found:', prevMessageAnalysis ? {
-    id: prevMessageAnalysis._id,
-    dates: { start: prevMessageAnalysis.weekStartDate, end: prevMessageAnalysis.weekEndDate },
-    totalMessages: prevMessageAnalysis.totalMessages,
-    hasGrammarBreakdown: !!prevMessageAnalysis.grammarBreakdown,
-    hasGuidelinesBreakdown: !!prevMessageAnalysis.guidelinesBreakdown
-  } : 'NONE');
+  console.log(`📊 Previous MessageAnalyses found: ${prevMessageAnalyses.length} records`);
+  
+  // Filter to only analyzed records (with scores)
+  const analyzedPrevRecords = prevMessageAnalyses.filter(ma => ma.overallScore != null);
+  console.log(`✅ Analyzed previous records: ${analyzedPrevRecords.length} of ${prevMessageAnalyses.length}`);
   
   if (prevPerformance.length === 0 && prevPurchases.length === 0) {
     return null; // No previous period data
@@ -6804,13 +6802,13 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
   const prevUnlockRate = prevPPVsSent > 0 ? ((prevPPVCount / prevPPVsSent) * 100).toFixed(1) : 0;
   const prevAvgPPVPrice = prevPPVCount > 0 ? Math.round(prevRevenue / prevPPVCount) : 0;
   
-  // Extract grammar breakdown counts from previous MessageAnalysis
+  // Aggregate grammar breakdown counts from ALL previous MessageAnalysis records
   let prevSpellingCount = 0;
   let prevGrammarCount = 0;
   let prevPunctuationCount = 0;
   let prevTotalMessages = 0;
   
-  if (prevMessageAnalysis && prevMessageAnalysis.grammarBreakdown) {
+  if (analyzedPrevRecords.length > 0) {
     // Parse counts from strings like "Found 5 spelling errors" or just numbers
     const parseCount = (value) => {
       if (typeof value === 'number') return value;
@@ -6821,37 +6819,85 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
       return 0;
     };
     
-    prevSpellingCount = parseCount(prevMessageAnalysis.grammarBreakdown.spellingErrors);
-    prevGrammarCount = parseCount(prevMessageAnalysis.grammarBreakdown.grammarIssues);
-    prevPunctuationCount = parseCount(prevMessageAnalysis.grammarBreakdown.punctuationProblems);
-    prevTotalMessages = prevMessageAnalysis.totalMessages || 0;
+    // Sum up all grammar breakdowns from all records
+    analyzedPrevRecords.forEach(record => {
+      const gb = record.grammarBreakdown;
+      if (gb) {
+        prevSpellingCount += parseCount(gb.spellingErrors);
+        prevGrammarCount += parseCount(gb.grammarIssues);
+        prevPunctuationCount += parseCount(gb.punctuationProblems);
+      }
+      prevTotalMessages += record.totalMessages || 0;
+    });
     
-    console.log('📊 Parsed grammar breakdown:', {
-      raw_spelling: prevMessageAnalysis.grammarBreakdown.spellingErrors,
-      parsed_spelling: prevSpellingCount,
-      raw_grammar: prevMessageAnalysis.grammarBreakdown.grammarIssues,
-      parsed_grammar: prevGrammarCount,
-      raw_punctuation: prevMessageAnalysis.grammarBreakdown.punctuationProblems,
-      parsed_punctuation: prevPunctuationCount
+    console.log('📊 Aggregated grammar breakdown from', analyzedPrevRecords.length, 'records:', {
+      totalMessages: prevTotalMessages,
+      spelling: prevSpellingCount,
+      grammar: prevGrammarCount,
+      punctuation: prevPunctuationCount
     });
   }
   
-  // Extract guidelines breakdown
+  // Aggregate guidelines breakdown from ALL records
   let prevGuidelinesByCategory = [];
-  if (prevMessageAnalysis && prevMessageAnalysis.guidelinesBreakdown) {
-    const glb = prevMessageAnalysis.guidelinesBreakdown;
-    // Sum violations from items for each category
+  if (analyzedPrevRecords.length > 0) {
     const categories = [
       { key: 'generalChatting', name: 'General - Reply time' },
       { key: 'psychology', name: 'Psychology' },
       { key: 'captions', name: 'Captions' }
     ];
     
-    prevGuidelinesByCategory = categories.map(cat => {
-      const items = glb[cat.key]?.items || [];
-      const violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
-      return { name: cat.name, violations };
+    // Collect all violations across all records
+    const guidelineViolationsMap = {};
+    analyzedPrevRecords.forEach(record => {
+      const glb = record.guidelinesBreakdown;
+      if (glb) {
+        categories.forEach(cat => {
+          const items = glb[cat.key]?.items || [];
+          items.forEach(item => {
+            const key = `${cat.key}:${item.title}`;
+            if (!guidelineViolationsMap[key]) {
+              guidelineViolationsMap[key] = { name: cat.name, violations: 0 };
+            }
+            guidelineViolationsMap[key].violations += item.count || 0;
+          });
+        });
+      }
     });
+    
+    // Group by category and sum violations
+    const categoryTotals = {};
+    categories.forEach(cat => categoryTotals[cat.name] = 0);
+    
+    Object.values(guidelineViolationsMap).forEach(item => {
+      if (categoryTotals[item.name] !== undefined) {
+        categoryTotals[item.name] += item.violations;
+      }
+    });
+    
+    prevGuidelinesByCategory = categories.map(cat => ({
+      name: cat.name,
+      violations: categoryTotals[cat.name] || 0
+    }));
+    
+    console.log('📊 Aggregated guidelines breakdown:', prevGuidelinesByCategory);
+  }
+  
+  // Calculate average scores from all analyzed records (like current period)
+  let prevGrammarScore = null;
+  let prevGuidelinesScore = null;
+  let prevOverallScore = null;
+  
+  if (analyzedPrevRecords.length > 0) {
+    prevGrammarScore = Math.round(
+      analyzedPrevRecords.reduce((sum, ma) => sum + (ma.grammarScore || 0), 0) / analyzedPrevRecords.length
+    );
+    prevGuidelinesScore = Math.round(
+      analyzedPrevRecords.reduce((sum, ma) => sum + (ma.guidelinesScore || 0), 0) / analyzedPrevRecords.length
+    );
+    prevOverallScore = Math.round(
+      analyzedPrevRecords.reduce((sum, ma) => sum + (ma.overallScore || 0), 0) / analyzedPrevRecords.length
+    );
   }
   
   console.log('📊 Previous period calculated:', {
@@ -6863,7 +6909,10 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     fansChatted: prevFansChatted,
     spellingErrors: prevSpellingCount,
     grammarIssues: prevGrammarCount,
-    punctuationProblems: prevPunctuationCount
+    punctuationProblems: prevPunctuationCount,
+    grammarScore: prevGrammarScore,
+    guidelinesScore: prevGuidelinesScore,
+    overallScore: prevOverallScore
   });
   
   return {
@@ -6874,9 +6923,9 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     fansChatted: prevFansChatted,
     unlockRate: prevUnlockRate,
     avgPPVPrice: prevAvgPPVPrice,
-    grammarScore: prevMessageAnalysis?.grammarScore || null,
-    guidelinesScore: prevMessageAnalysis?.guidelinesScore || null,
-    overallScore: prevMessageAnalysis?.overallScore || null,
+    grammarScore: prevGrammarScore,
+    guidelinesScore: prevGuidelinesScore,
+    overallScore: prevOverallScore,
     punctuationCount: prevPunctuationCount,
     spellingErrors: prevSpellingCount,
     grammarIssues: prevGrammarCount,
