@@ -2921,22 +2921,27 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       // Use full message set, not any sampled subset
       const totalMessages = messages.length;
 
-      // SERVER-SIDE SANITY CHECK: derive punctuation count from actual messages
-      // Count messages that end with a formal period or comma
+      // SERVER-SIDE TRUTH: derive punctuation count from actual messages (always use this)
+      // Count messages that end with a formal period or comma (check last character after trimming)
       const serverPunctuationCount = messages.reduce((sum, msg) => {
         try {
           const text = (msg.messageText || msg.text || '').trim();
           if (!text) return sum;
-          return /[\.,]$/.test(text) ? sum + 1 : sum;
+          // Check if message ends with period or comma (formal punctuation)
+          const lastChar = text[text.length - 1];
+          if (lastChar === '.' || lastChar === ',') {
+            return sum + 1;
+          }
+          return sum;
         } catch (_) {
           return sum;
         }
       }, 0);
 
-      // Use the server-derived count if it's lower (avoid "all messages have punctuation" false positives)
-      if (serverPunctuationCount >= 0) {
-        punctuationCount = Math.min(punctuationCount, serverPunctuationCount);
-      }
+      console.log(`🔍 Server punctuation count: ${serverPunctuationCount} out of ${totalMessages} messages`);
+
+      // ALWAYS use server-derived count (server is source of truth, AI can be wrong)
+      punctuationCount = serverPunctuationCount;
       // Clamp to total messages
       punctuationCount = Math.max(0, Math.min(punctuationCount, totalMessages));
 
@@ -6900,12 +6905,18 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     // Normalize titles to handle variations like "GENERAL CHATTING: Informality" vs "Informality"
     const normalizeTitle = (title) => {
       if (!title) return '';
-      let normalized = title.toLowerCase().trim();
-      normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '');
-      normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/i, '');
-      normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/i, '');
-      normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/i, '');
-      return normalized.trim();
+      let normalized = title.trim();
+      // Strip common prefixes (case-insensitive, handle all variations)
+      normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/gi, '');
+      normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/gi, '');
+      normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/gi, '');
+      normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/gi, '');
+      // Capitalize first letter only, preserve rest
+      normalized = normalized.trim();
+      if (normalized.length > 0) {
+        normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+      }
+      return normalized;
     };
     
     // Collect all violations across all records (with normalization)
@@ -7152,34 +7163,37 @@ async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
         // Run analysis
         const analysisResult = await analyzeMessages(filtered, existingAnalysis.chatterName);
 
-        // Persist results
-        existingAnalysis.overallScore = analysisResult.overallScore !== undefined ? analysisResult.overallScore : null;
-        existingAnalysis.grammarScore = analysisResult.grammarScore !== undefined ? analysisResult.grammarScore : null;
-        existingAnalysis.guidelinesScore = analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null;
-        existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
-        existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
-        existingAnalysis.strengths = analysisResult.strengths || [];
-        existingAnalysis.weaknesses = analysisResult.weaknesses || [];
-        existingAnalysis.recommendations = analysisResult.suggestions || analysisResult.recommendations || [];
-        existingAnalysis.chattingStyle = analysisResult.chattingStyle || null;
-        existingAnalysis.messagePatterns = analysisResult.messagePatterns || null;
-        existingAnalysis.engagementMetrics = analysisResult.engagementMetrics || null;
+        // Build update object
+        const updateData = {
+          overallScore: analysisResult.overallScore !== undefined ? analysisResult.overallScore : null,
+          grammarScore: analysisResult.grammarScore !== undefined ? analysisResult.grammarScore : null,
+          guidelinesScore: analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null,
+          grammarBreakdown: analysisResult.grammarBreakdown || {},
+          guidelinesBreakdown: analysisResult.guidelinesBreakdown || {},
+          strengths: analysisResult.strengths || [],
+          weaknesses: analysisResult.weaknesses || [],
+          recommendations: analysisResult.suggestions || analysisResult.recommendations || [],
+          chattingStyle: analysisResult.chattingStyle || null,
+          messagePatterns: analysisResult.messagePatterns || null,
+          engagementMetrics: analysisResult.engagementMetrics || null
+        };
 
         // Also persist numeric counts for reliable aggregation
         if (analysisResult._numericCounts) {
-          existingAnalysis.totalMessages = analysisResult._numericCounts.totalMessages;
-          existingAnalysis.spellingCount = analysisResult._numericCounts.spellingCount;
-          existingAnalysis.grammarIssuesCount = analysisResult._numericCounts.grammarIssuesCount;
-          existingAnalysis.punctuationCount = analysisResult._numericCounts.punctuationCount;
+          updateData.totalMessages = analysisResult._numericCounts.totalMessages;
+          updateData.spellingCount = analysisResult._numericCounts.spellingCount;
+          updateData.grammarIssuesCount = analysisResult._numericCounts.grammarIssuesCount;
+          updateData.punctuationCount = analysisResult._numericCounts.punctuationCount;
         } else {
-          // Fallback to filtered length if numeric not present
-          existingAnalysis.totalMessages = filtered.length;
+          updateData.totalMessages = filtered.length;
         }
 
-        existingAnalysis.markModified('grammarBreakdown');
-        existingAnalysis.markModified('guidelinesBreakdown');
-
-        await existingAnalysis.save();
+        // Use findByIdAndUpdate to avoid version conflicts
+        await MessageAnalysis.findByIdAndUpdate(
+          existingAnalysis._id,
+          { $set: updateData },
+          { runValidators: false, new: false }
+        );
         console.log('  ✅ Re-analyzed and saved', existingAnalysis._id.toString());
       } catch (err) {
         console.error('  ❌ Re-analysis failed for record', existingAnalysis._id?.toString?.() || 'unknown', err.message);
@@ -7886,13 +7900,18 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       // Normalize titles to handle variations like "GENERAL CHATTING: Informality" vs "Informality"
       const normalizeTitle = (title) => {
         if (!title) return '';
-        let normalized = title.toLowerCase().trim();
-        // Strip common prefixes
-        normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '');
-        normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/i, '');
-        normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/i, '');
-        normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/i, '');
-        return normalized.trim();
+        let normalized = title.trim();
+        // Strip common prefixes (case-insensitive, handle all variations)
+        normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/gi, '');
+        normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/gi, '');
+        normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/gi, '');
+        normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/gi, '');
+        // Capitalize first letter only, preserve rest
+        normalized = normalized.trim();
+        if (normalized.length > 0) {
+          normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+        }
+        return normalized;
       };
       
       const guidelineViolations = {};
@@ -7907,10 +7926,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
                 const key = `${category}:${normalizedTitle}`;
                 
                 if (!guidelineViolations[key]) {
-                  // Use the first (or most descriptive) title we encounter
+                  // Use normalized title for display (cleaner, no duplicates)
+                  const displayTitle = normalizedTitle || item.title;
                   guidelineViolations[key] = {
                     category,
-                    title: item.title, // Keep original for display
+                    title: displayTitle, // Use normalized for cleaner display
                     description: item.description,
                     count: 0,
                     examples: []

@@ -6425,15 +6425,21 @@ function parseGuidelinesByCategory(guidelinesBreakdown, totalMessages = 0) {
         const pct = msgCount > 0 ? ((violations / msgCount) * 100).toFixed(1) : '0.0';
         
         // Get titles of violated guidelines (count > 0), deduplicate by normalized title
+        // Backend now normalizes titles, but we dedupe here as a safety net
         const seenTitles = new Set();
         const violatedTitles = items
             .filter(item => item.count > 0)
             .map(item => {
-                // Normalize title to avoid duplicates like "GENERAL CHATTING: Informality" vs "Informality"
-                const normalized = item.title.toLowerCase().replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/i, '').trim();
+                // Normalize title (match backend logic)
+                let normalized = item.title.trim();
+                normalized = normalized.replace(/^(general\s+chatting|general\s+-|general)\s*[:-\s]*/gi, '');
+                normalized = normalized.replace(/^(psychology|psych)\s*[:-\s]*/gi, '');
+                normalized = normalized.replace(/^(captions|caption)\s*[:-\s]*/gi, '');
+                normalized = normalized.replace(/^(sales|sale)\s*[:-\s]*/gi, '');
+                normalized = normalized.trim().toLowerCase();
                 if (seenTitles.has(normalized)) return null;
                 seenTitles.add(normalized);
-                return item.title;
+                return item.title; // Backend already normalized, so this should be clean
             })
             .filter(Boolean)
             .join(', ');
