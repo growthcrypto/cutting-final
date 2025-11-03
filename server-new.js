@@ -6772,13 +6772,22 @@ app.post('/api/vip-fans/update-message-activity', authenticateToken, async (req,
 });
 
 // Helper function to build previous period data
-async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterName) {
+async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterName, prevStart, prevEnd) {
   // Get previous period MessageAnalysis (from the same time period)
   const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
   const prevMessageAnalysis = await MessageAnalysis.findOne({
     chatterName: chatterNameRegex,
-    createdAt: { $lt: new Date() } // Before current analysis
-  }).sort({ createdAt: -1 }); // Get most recent previous analysis
+    weekStartDate: { $lte: prevEnd },
+    weekEndDate: { $gte: prevStart }
+  }).sort({ createdAt: -1 }); // Get most recent previous analysis in this period
+  
+  console.log('📊 Previous MessageAnalysis found:', prevMessageAnalysis ? {
+    id: prevMessageAnalysis._id,
+    dates: { start: prevMessageAnalysis.weekStartDate, end: prevMessageAnalysis.weekEndDate },
+    totalMessages: prevMessageAnalysis.totalMessages,
+    hasGrammarBreakdown: !!prevMessageAnalysis.grammarBreakdown,
+    hasGuidelinesBreakdown: !!prevMessageAnalysis.guidelinesBreakdown
+  } : 'NONE');
   
   if (prevPerformance.length === 0 && prevPurchases.length === 0) {
     return null; // No previous period data
@@ -7980,7 +7989,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     const previousPeriodData = await buildPreviousPeriodData(
       prevChatterPurchases,
       prevChatterPerformance,
-      chatterName
+      chatterName,
+      prevStart,
+      prevEnd
     );
     
     // Build team averages object
