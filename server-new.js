@@ -8035,35 +8035,69 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       };
       
       const guidelineViolations = {};
-      analyzedRecords.forEach(record => {
+      let totalGuidelineItemsFound = 0;
+      analyzedRecords.forEach((record, recordIdx) => {
         const glb = record.guidelinesBreakdown;
         if (glb) {
+          console.log(`📋 Record ${recordIdx + 1} guidelinesBreakdown structure:`, {
+            hasGuidelinesBreakdown: !!glb,
+            keys: Object.keys(glb),
+            hasGeneralChatting: !!glb.generalChatting,
+            hasPsychology: !!glb.psychology,
+            hasCaptions: !!glb.captions,
+            hasSales: !!glb.sales,
+            generalChattingType: typeof glb.generalChatting,
+            generalChattingItems: glb.generalChatting?.items?.length || 0
+          });
+          
           ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
-            if (glb[category]?.items) {
-              glb[category].items.forEach(item => {
+            // Support both new format (with items array) and old format (with details object)
+            let items = [];
+            if (glb[category]?.items && Array.isArray(glb[category].items)) {
+              // New format: { items: [{ title, count, ... }] }
+              items = glb[category].items;
+            } else if (glb[category]?.details?.items && Array.isArray(glb[category].details.items)) {
+              // Alternative format: { details: { items: [...] } }
+              items = glb[category].details.items;
+            } else if (glb[category]?.details && Array.isArray(glb[category].details)) {
+              // Another alternative: { details: [...] }
+              items = glb[category].details;
+            }
+            
+            if (items.length > 0) {
+              totalGuidelineItemsFound += items.length;
+              console.log(`  📊 ${category}: Found ${items.length} items`);
+              items.forEach(item => {
                 // Use normalized title for deduplication
-                const normalizedTitle = normalizeTitle(item.title);
+                const normalizedTitle = normalizeTitle(item.title || item.name || item.label);
                 const key = `${category}:${normalizedTitle}`;
                 
                 if (!guidelineViolations[key]) {
                   // Use normalized title for display (cleaner, no duplicates)
-                  const displayTitle = normalizedTitle || item.title;
+                  const displayTitle = normalizedTitle || item.title || item.name || item.label || 'Unknown';
                   guidelineViolations[key] = {
                     category,
-                    title: displayTitle, // Use normalized for cleaner display
-                    description: item.description,
+                    title: displayTitle,
+                    description: item.description || '',
                     count: 0,
-                    examples: []
+                    examples: item.examples || []
                   };
                 }
                 // Sum violations, but cap at totalMessages per item to avoid double-counting
-                const itemCount = Math.min(item.count || 0, totalMessagesAcrossAllDays || item.count || 0);
+                const itemCount = Math.min(item.count || item.violations || 0, totalMessagesAcrossAllDays || item.count || item.violations || 0);
                 guidelineViolations[key].count += itemCount;
+                console.log(`    ✅ ${displayTitle}: +${itemCount} violations (total: ${guidelineViolations[key].count})`);
               });
+            } else {
+              console.log(`  ⚠️ ${category}: No items found in record ${recordIdx + 1}`);
             }
           });
+        } else {
+          console.log(`⚠️ Record ${recordIdx + 1} has no guidelinesBreakdown`);
         }
       });
+      
+      console.log(`📊 Total guideline items found across all records: ${totalGuidelineItemsFound}`);
       
       // Organize back into categories and cap totals
       Object.values(guidelineViolations).forEach(guideline => {
