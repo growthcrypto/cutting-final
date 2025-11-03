@@ -8303,6 +8303,8 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
                 // Sum violations, but cap at totalMessages per item to avoid double-counting
                 const itemCount = Math.min(item.count || item.violations || 0, totalMessagesAcrossAllDays || item.count || item.violations || 0);
                 guidelineViolations[key].count += itemCount;
+                // Use stored title from guidelineViolations[key] to avoid scope issues
+                const displayTitle = guidelineViolations[key].title;
                 console.log(`    ✅ ${displayTitle}: +${itemCount} violations (total: ${guidelineViolations[key].count})`);
               });
             } else {
