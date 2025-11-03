@@ -6809,12 +6809,24 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
   let prevTotalMessages = 0;
   
   if (analyzedPrevRecords.length > 0) {
-    // Parse counts from strings like "Found 5 spelling errors" or just numbers
-    const parseCount = (value) => {
+    // Parse counts from strings like "Found 5 spelling errors" - use precise regex
+    const parseCount = (value, type) => {
       if (typeof value === 'number') return value;
       if (typeof value === 'string') {
-        const match = value.match(/(\d+)/);
-        return match ? parseInt(match[1]) : 0;
+        // Priority 1: Match "Found X [spelling|grammar|punctuation]" followed by error/issue/problem/message
+        let match = value.match(/Found (\d+)\s+(?:spelling|grammar|punctuation).*?(?:error|issue|problem|message)/i);
+        if (match) return parseInt(match[1]);
+        // Priority 2: Match "Found X [error|issue|problem|message]" (broader)
+        match = value.match(/Found (\d+)\s+(?:error|issue|problem|message)/i);
+        if (match) return parseInt(match[1]);
+        // Priority 3: For punctuation, look for pattern like "X messages with" 
+        if (type === 'punctuation') {
+          match = value.match(/(\d+)\s+messages?\s+with\s+(?:formal\s+)?punctuation/i);
+          if (match) return parseInt(match[1]);
+        }
+        // Fallback: match any number (first number is usually the count)
+        const allNumbers = value.match(/\d+/g) || [];
+        return allNumbers.length > 0 ? parseInt(allNumbers[0]) : 0;
       }
       return 0;
     };
@@ -6823,9 +6835,9 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     analyzedPrevRecords.forEach(record => {
       const gb = record.grammarBreakdown;
       if (gb) {
-        prevSpellingCount += parseCount(gb.spellingErrors);
-        prevGrammarCount += parseCount(gb.grammarIssues);
-        prevPunctuationCount += parseCount(gb.punctuationProblems);
+        prevSpellingCount += parseCount(gb.spellingErrors, 'spelling');
+        prevGrammarCount += parseCount(gb.grammarIssues, 'grammar');
+        prevPunctuationCount += parseCount(gb.punctuationProblems, 'punctuation');
       }
       prevTotalMessages += record.totalMessages || 0;
     });
@@ -7764,14 +7776,29 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       analyzedRecords.forEach(record => {
         const gb = record.grammarBreakdown;
         if (gb) {
-          // Extract counts from breakdown strings
-          const spellingMatch = gb.spellingErrors?.match(/Found (\d+)/);
-          const grammarMatch = gb.grammarIssues?.match(/Found (\d+)/);
-          const punctuationMatch = gb.punctuationProblems?.match(/Found (\d+)/);
+          // Extract counts from breakdown strings - use precise regex to avoid matching message totals
+          // Format examples: "Found 5 spelling errors" or "Found 15 messages with formal punctuation"
+          const parseCount = (str, type) => {
+            if (!str || typeof str !== 'string') return 0;
+            // Priority 1: Match "Found X [spelling|grammar|punctuation]" followed by error/issue/problem/message
+            let match = str.match(/Found (\d+)\s+(?:spelling|grammar|punctuation).*?(?:error|issue|problem|message)/i);
+            if (match) return parseInt(match[1]);
+            // Priority 2: Match "Found X [error|issue|problem|message]" (broader)
+            match = str.match(/Found (\d+)\s+(?:error|issue|problem|message)/i);
+            if (match) return parseInt(match[1]);
+            // Priority 3: For punctuation, look for pattern like "X messages with" 
+            if (type === 'punctuation') {
+              match = str.match(/(\d+)\s+messages?\s+with\s+(?:formal\s+)?punctuation/i);
+              if (match) return parseInt(match[1]);
+            }
+            // Fallback: match any number (first number is usually the count)
+            const allNumbers = str.match(/\d+/g) || [];
+            return allNumbers.length > 0 ? parseInt(allNumbers[0]) : 0;
+          };
           
-          totalSpellingErrors += spellingMatch ? parseInt(spellingMatch[1]) : 0;
-          totalGrammarIssues += grammarMatch ? parseInt(grammarMatch[1]) : 0;
-          totalPunctuationProblems += punctuationMatch ? parseInt(punctuationMatch[1]) : 0;
+          totalSpellingErrors += parseCount(gb.spellingErrors, 'spelling');
+          totalGrammarIssues += parseCount(gb.grammarIssues, 'grammar');
+          totalPunctuationProblems += parseCount(gb.punctuationProblems, 'punctuation');
         }
       });
       
