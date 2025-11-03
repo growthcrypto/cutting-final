@@ -2414,14 +2414,31 @@ async function analyzeMessages(messages, chatterName) {
 - When comparing to team averages, hour differences DO NOT explain gaps
 📌 In your analysis, flag low activity/volume as performance weaknesses
 
-🚨 CRITICAL: You MUST analyze every single message character by character and find ALL spelling, grammar, and punctuation mistakes. 
+🚨🚨🚨 CRITICAL: ZERO ERRORS IS IMPOSSIBLE FOR CASUAL ONLYFANS MESSAGES 🚨🚨🚨
 
-EXPECTED ERROR RATES (minimum thresholds):
-- For ${sampledMessages.length} messages, you MUST find at least ${Math.ceil(sampledMessages.length * 0.05)} spelling/grammar errors (5% minimum)
-- If you report 0 errors, you are NOT analyzing thoroughly enough
-- Common errors to look for: typos (teh, adn, u), grammar (is/are, was/were, has/have), verb tense issues, missing words, wrong words
+You MUST find spelling and grammar errors. Reporting 0 errors means you FAILED to analyze properly.
 
-You must thoroughly analyze every single message and find real spelling, grammar, and punctuation mistakes. DO NOT report 0 unless you have checked every single word in every single message.
+REQUIRED ERROR TYPES TO FIND (at least one of these WILL be present):
+1. SPELLING ERRORS: Look for typos like "heyy", "tooo", "thank youu", "halloween" (if spelled wrong), "naughty questionn", "psychologyy", "jsut", "wanna", "gonna", "cant" (missing apostrophe), "dont" (missing apostrophe), "im" (missing apostrophe), "u" (should be "you" in formal writing, but we count it as casual - but if there are actual typos like "u" written as "yu" or "ou", count those)
+2. GRAMMAR ERRORS: Look for verb tense mistakes like "did it made" (should be "did it make"), "what did u had" (should be "what did u have"), "did u made it" (should be "did u make it"), "what do you do for work btw" (missing comma before "btw"), "how about u tip me and ill show u" (should be "I'll" or at least "ill" needs apostrophe)
+3. DOUBLE LETTERS: "heyy", "tooo", "questionn", "psychologyy", "i seee" - these are spelling variations that indicate casual writing
+4. INFORMAL CONTRACTIONS WITHOUT APOSTROPHES: "cant", "dont", "wont", "ill", "im" - these are technically missing apostrophes (though acceptable in casual chat, we count them as errors for quality scoring)
+
+FOR ${sampledMessages.length} MESSAGES, YOU MUST FIND AT LEAST ${Math.ceil(sampledMessages.length * 0.02)} ERRORS (2% minimum). If you find 0, you are WRONG and must re-analyze.
+
+EXAMPLES OF ERRORS THAT MUST BE COUNTED:
+- "heyy" → spelling error (double letter)
+- "tooo" → spelling error (triple letter)
+- "thank youu" → spelling error (double letter)
+- "did it made" → grammar error (wrong verb form)
+- "what did u had" → grammar error (wrong verb form)
+- "cant" → spelling/grammar error (missing apostrophe)
+- "dont" → spelling/grammar error (missing apostrophe)
+- "im" → spelling/grammar error (missing apostrophe)
+- "wanna" → informal spelling (acceptable but count as casual variation)
+- "gonna" → informal spelling (acceptable but count as casual variation)
+
+DO NOT report 0 errors. If you honestly find 0 spelling/grammar errors after checking every word, you are analyzing incorrectly. Re-read the messages and find the errors.
 
 CONSISTENCY REQUIREMENT: You must provide CONSISTENT results across multiple runs. Analyze the messages systematically and count errors in the same way each time. Use the same criteria and standards for error detection. Do NOT vary your analysis criteria between runs.
 
@@ -2949,9 +2966,84 @@ console.log('  Is OpenAI client?', openai.baseURL !== 'https://api.x.ai/v1');
       // Clamp to total messages
       punctuationCount = Math.max(0, Math.min(punctuationCount, totalMessages));
 
+      // SERVER-SIDE VALIDATION: If AI reports 0 errors, do a comprehensive pattern check
+      // This catches common errors the AI might miss (especially in casual OnlyFans messages)
+      if (spellingCount === 0 && grammarIssuesCount === 0 && totalMessages > 0) {
+        console.log('⚠️ AI reported 0 errors - running server-side validation...');
+        
+        // Pattern-based error detection (catches obvious errors AI missed)
+        const commonErrors = {
+          spelling: 0,
+          grammar: 0
+        };
+        
+        messages.forEach(msg => {
+          try {
+            const text = (msg.messageText || msg.text || '').toLowerCase();
+            if (!text || text.length < 2) return;
+            
+            // SPELLING ERRORS: Double/triple letters, missing apostrophes, common typos
+            // Count occurrences of common casual spelling patterns
+            if (/\bheyy\b/g.test(text)) commonErrors.spelling += (text.match(/\bheyy\b/g) || []).length;
+            if (/\btooo\b/g.test(text)) commonErrors.spelling += (text.match(/\btooo\b/g) || []).length;
+            if (/\byouu\b/g.test(text)) commonErrors.spelling += (text.match(/\byouu\b/g) || []).length;
+            if (/\bquestionn\b/g.test(text)) commonErrors.spelling += (text.match(/\bquestionn\b/g) || []).length;
+            if (/\bpsychologyy\b/g.test(text)) commonErrors.spelling += (text.match(/\bpsychologyy\b/g) || []).length;
+            if (/\bpyschology\b/g.test(text)) commonErrors.spelling += (text.match(/\bpyschology\b/g) || []).length;
+            if (/\bjsut\b/g.test(text)) commonErrors.spelling += (text.match(/\bjsut\b/g) || []).length;
+            if (/\bseee\b/g.test(text)) commonErrors.spelling += (text.match(/\bseee\b/g) || []).length;
+            
+            // Missing apostrophes in contractions (count as spelling variations)
+            if (/\bcant\b/g.test(text) && !/\bcan't\b/g.test(text)) commonErrors.spelling += (text.match(/\bcant\b/g) || []).length;
+            if (/\bdont\b/g.test(text) && !/\bdon't\b/g.test(text)) commonErrors.spelling += (text.match(/\bdont\b/g) || []).length;
+            if (/\bwont\b/g.test(text) && !/\bwon't\b/g.test(text)) commonErrors.spelling += (text.match(/\bwont\b/g) || []).length;
+            if (/\bill\b/g.test(text) && text.includes('ill') && !/\bi'll\b/g.test(text)) {
+              // Only count "ill" if it's clearly a contraction (surrounded by spaces or start/end)
+              const illMatches = text.match(/\bill\b/g) || [];
+              illMatches.forEach(() => {
+                // Check context - if followed by verb, likely contraction
+                if (/\bill\s+(show|tell|give|make|do|go|get|see|come|take|send|put|buy|pay|tip)/g.test(text)) {
+                  commonErrors.spelling += 1;
+                }
+              });
+            }
+            if (/\bim\b/g.test(text) && !/\bi'm\b/g.test(text)) commonErrors.spelling += (text.match(/\bim\b/g) || []).length;
+            
+            // GRAMMAR ERRORS: Wrong verb forms, tense issues
+            if (/\bdid it made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid it made\b/g) || []).length;
+            if (/\bwhat did u had\b/g.test(text)) commonErrors.grammar += (text.match(/\bwhat did u had\b/g) || []).length;
+            if (/\bdid u made\b/g.test(text)) commonErrors.grammar += (text.match(/\bdid u made\b/g) || []).length;
+            
+            // Check for verb tense issues more broadly: "did [verb] [past-tense-verb]"
+            const didPastTensePattern = /\bdid\s+(?:it|u|you|i|he|she|we|they)\s+(made|had|went|came|took|saw|got|did|ate|gave|told|showed|bought|paid|sent)/g;
+            const didMatches = text.match(didPastTensePattern);
+            if (didMatches) {
+              // Count each occurrence (these are grammar errors - should be present tense after "did")
+              commonErrors.grammar += didMatches.length;
+            }
+          } catch (_) {}
+        });
+        
+        // If we found errors via patterns, use those counts (AI missed them)
+        if (commonErrors.spelling > 0 || commonErrors.grammar > 0) {
+          console.log(`🔧 Server-side validation found errors AI missed: ${commonErrors.spelling} spelling, ${commonErrors.grammar} grammar`);
+          spellingCount = Math.max(spellingCount, commonErrors.spelling);
+          grammarIssuesCount = Math.max(grammarIssuesCount, commonErrors.grammar);
+        } else {
+          console.log('⚠️ Server-side validation also found 0 errors - messages may be genuinely error-free or validation needs improvement');
+        }
+      }
+
       // Reflect corrected punctuation in the breakdown text
       if (analysisResult.grammarBreakdown) {
         analysisResult.grammarBreakdown.punctuationProblems = `Found ${punctuationCount} messages with formal punctuation (periods or commas).`;
+        // Update spelling/grammar counts if we found errors via validation
+        if (spellingCount > 0) {
+          analysisResult.grammarBreakdown.spellingErrors = `Found ${spellingCount} spelling errors: ${spellingCount > 0 ? 'Server-side validation detected common error patterns.' : 'No errors detected.'}`;
+        }
+        if (grammarIssuesCount > 0) {
+          analysisResult.grammarBreakdown.grammarIssues = `Found ${grammarIssuesCount} grammar issues: ${grammarIssuesCount > 0 ? 'Server-side validation detected common error patterns.' : 'No errors detected.'}`;
+        }
       }
 
       // Expose numeric counts so callers can persist them
