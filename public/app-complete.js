@@ -6021,10 +6021,19 @@ function renderNewChatterAnalysis(data) {
         return;
     }
     
+    // Build CSV export URL with current filter parameters
+    // Use currentAIInterval to determine filter type
+    const currentFilterType = (typeof currentAIInterval !== 'undefined' && currentAIInterval) ? currentAIInterval : 'custom';
+    const customStart = data.weekStartDate ? new Date(data.weekStartDate).toISOString().split('T')[0] : '';
+    const customEnd = data.weekEndDate ? new Date(data.weekEndDate).toISOString().split('T')[0] : '';
+    
     // Date display
     const dateRange = data.weekStartDate && data.weekEndDate 
         ? `${formatDateShort(data.weekStartDate)} - ${formatDateShort(data.weekEndDate)}`
         : (data.interval ? `Last ${data.interval}` : 'Period');
+    
+    // Get chatter name for CSV export
+    const chatterName = data.chatterName || document.getElementById('chatterAnalysisSelect')?.value || '';
     
     // Parse grammar breakdown for counts
     const spellingCount = data.grammarBreakdown?.spellingErrors?.match(/Found (\d+)/)?.[1] || '0';
@@ -6103,11 +6112,20 @@ function renderNewChatterAnalysis(data) {
             <!-- Header with Overall Score -->
             <div class="bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-pink-600/20 rounded-lg p-6 border border-indigo-500/30">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold text-white mb-1">Individual Analysis</h3>
-                        <p class="text-sm text-gray-400">📅 ${dateRange} · ${totalMessages} messages analyzed</p>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Individual Analysis</h3>
+                            ${chatterName ? `
+                            <button onclick="downloadViolationsCSV('${chatterName}', '${customStart}', '${customEnd}', '${currentFilterType}')" 
+                                    class="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all shadow-lg hover:shadow-cyan-500/50 text-sm font-medium">
+                                <i class="fas fa-download"></i>
+                                <span>Download Violations CSV</span>
+                            </button>
+                            ` : ''}
+                        </div>
+                        <p class="text-sm text-gray-400">📅 ${dateRange} · ${totalMessages.toLocaleString()} messages analyzed</p>
                     </div>
-                    <div class="text-center">
+                    <div class="text-center ml-4">
                         <div class="text-5xl font-black ${data.overallScore >= 80 ? 'text-green-400' : data.overallScore >= 60 ? 'text-yellow-400' : 'text-red-400'} mb-1">
                             ${data.overallScore}
                         </div>
@@ -12331,6 +12349,52 @@ function showLoading(show) {
         } else {
             overlay.classList.add('hidden');
         }
+    }
+}
+
+// Download violations CSV
+async function downloadViolationsCSV(chatterName, customStart, customEnd, filterType) {
+    if (!chatterName) {
+        showNotification('No chatter selected', 'error');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        // Build the URL
+        const url = `/api/analytics/violations-export/${encodeURIComponent(chatterName)}?filterType=${filterType || 'custom'}&customStart=${customStart || ''}&customEnd=${customEnd || ''}`;
+        
+        // Fetch with authentication
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': 'Bearer ' + (authToken || localStorage.getItem('authToken'))
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to download: ${response.statusText}`);
+        }
+        
+        // Get the CSV blob
+        const blob = await response.blob();
+        
+        // Create download link
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `violations_${chatterName}_${customStart || 'start'}_${customEnd || 'end'}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        showNotification('Violations CSV downloaded successfully!', 'success');
+    } catch (error) {
+        console.error('CSV download error:', error);
+        showNotification('Failed to download violations CSV: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
     }
 }
 

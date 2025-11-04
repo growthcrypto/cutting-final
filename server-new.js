@@ -2425,14 +2425,27 @@ async function analyzeMessages(messages, chatterName) {
     return 'generalChatting'; // default
   };
   
-  // 1. REPLY TIME VIOLATIONS (already working)
+  // 1. REPLY TIME VIOLATIONS (BULLETPROOF - ALWAYS use stored replyTime from messageRecords)
   const replyTimeThreshold = 5; // 5 minutes
-  const messagesWithReplyTime = sampledMessages.filter(msg => 
-    typeof msg === 'object' && msg.replyTime && msg.replyTime > 0
-  );
+  
+  // 🔥 CRITICAL: Reply time MUST come from stored messageRecords, NEVER recalculated
+  // This ensures consistency across all analyses - same messages always have same reply time
+  const messagesWithReplyTime = sampledMessages.filter(msg => {
+    if (typeof msg !== 'object') return false;
+    // ALWAYS use stored replyTime - it was calculated once during upload and stored permanently
+    const storedReplyTime = msg.replyTime;
+    // Only count messages with valid reply time (> 0 and not null/undefined)
+    return storedReplyTime !== null && storedReplyTime !== undefined && storedReplyTime > 0;
+  });
+  
+  console.log(`📊 Reply Time Analysis: Found ${messagesWithReplyTime.length} messages with stored reply time out of ${sampledMessages.length} total`);
   
   if (messagesWithReplyTime.length > 0) {
-    const replyTimeViolations = messagesWithReplyTime.filter(msg => msg.replyTime > replyTimeThreshold).length;
+    // Count violations using stored replyTime (NEVER recalculate)
+    const replyTimeViolations = messagesWithReplyTime.filter(msg => {
+      const storedReplyTime = msg.replyTime; // Use stored value only
+      return storedReplyTime > replyTimeThreshold;
+    }).length;
     const replyTimeGuideline = allGuidelines.find(g => 
       (g.title?.toLowerCase().includes('reply time') || g.description?.toLowerCase().includes('reply time'))
     );
@@ -2440,16 +2453,23 @@ async function analyzeMessages(messages, chatterName) {
     if (replyTimeGuideline) {
       const category = normalizeCategory(replyTimeGuideline.category);
       // Store actual violating messages (up to 20 examples)
+      // CRITICAL: Use stored replyTime only - this ensures consistency
       const violatingMessages = messagesWithReplyTime
-        .filter(msg => msg.replyTime > replyTimeThreshold)
+        .filter(msg => {
+          const storedReplyTime = msg.replyTime; // Use stored value from upload
+          return storedReplyTime > replyTimeThreshold;
+        })
         .slice(0, 20)
-        .map(msg => ({
-          text: msg.messageText || msg.text || '',
-          replyTime: msg.replyTime,
-          fanUsername: msg.fanUsername || '',
-          timestamp: msg.timestamp,
-          index: sampledMessages.indexOf(msg)
-        }));
+        .map(msg => {
+          const storedReplyTime = msg.replyTime; // Always use stored value
+          return {
+            text: msg.messageText || msg.text || '',
+            replyTime: storedReplyTime, // Stored value only
+            fanUsername: msg.fanUsername || '',
+            timestamp: msg.timestamp,
+            index: sampledMessages.indexOf(msg)
+          };
+        });
       
       serverSideViolations[category][replyTimeGuideline.title] = {
         count: replyTimeViolations,
