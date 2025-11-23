@@ -1273,7 +1273,8 @@ async function loadDailyReportsData() {
                     ${report.notes ? `<div class="mt-3 text-gray-400"><strong>Notes:</strong> ${report.notes}</div>` : ''}
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     } catch (error) {
         console.error('Error loading daily reports:', error);
         showNotification('Failed to load daily reports', 'error');
