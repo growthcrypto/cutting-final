@@ -2169,11 +2169,15 @@ function showSection(sectionId) {
     
     // Ensure creator dropdowns are populated for forms that need them
     if (['daily-report', 'data-upload'].includes(sectionId)) {
-        if (creatorAccounts.length > 0) {
-            setTimeout(() => populateAllCreatorDropdowns(), 300);
-        } else {
-            loadCreatorAccounts();
-        }
+        // Always try to populate, and load if needed
+        setTimeout(() => {
+            if (creatorAccounts.length > 0) {
+                populateAllCreatorDropdowns();
+            } else {
+                console.log('🔄 Creator accounts empty, loading...');
+                loadCreatorAccounts();
+            }
+        }, 300);
     }
     
     // If showing dashboard, load available periods
