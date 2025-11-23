@@ -2727,7 +2727,29 @@ async function loadCreatorAccounts() {
             return creatorAccounts;
         } else if (response.status === 403) {
             console.warn('⚠️ 403 Forbidden - Token may be expired or invalid');
-            console.warn('💡 User may need to log in again');
+            console.warn('💡 Attempting to refresh token from localStorage...');
+            
+            // Try to refresh token from localStorage
+            const refreshedToken = localStorage.getItem('authToken');
+            if (refreshedToken && refreshedToken !== token) {
+                console.log('🔄 Token refreshed, retrying...');
+                authToken = refreshedToken;
+                // Retry once with refreshed token
+                return loadCreatorAccounts();
+            }
+            
+            // If still failing, check if user is logged in
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) {
+                console.error('❌ No user found in localStorage - user needs to log in');
+                // Don't break the UI - just show empty dropdowns
+                creatorAccounts = [];
+                populateAllCreatorDropdowns();
+                return null;
+            }
+            
+            // Token is invalid but user exists - might need to re-login
+            console.warn('⚠️ Token appears to be expired. User may need to log in again.');
             // Don't break the UI - just show empty dropdowns
             creatorAccounts = [];
             populateAllCreatorDropdowns();
