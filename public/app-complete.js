@@ -2167,6 +2167,15 @@ function showSection(sectionId) {
     // Load section-specific data
     loadSectionData(sectionId);
     
+    // Ensure creator dropdowns are populated for forms that need them
+    if (['daily-report', 'data-upload'].includes(sectionId)) {
+        if (creatorAccounts.length > 0) {
+            setTimeout(() => populateAllCreatorDropdowns(), 300);
+        } else {
+            loadCreatorAccounts();
+        }
+    }
+    
     // If showing dashboard, load available periods
     if (sectionId === 'dashboard' && currentUser?.role === 'manager') {
         loadAvailablePeriods();
@@ -2699,9 +2708,14 @@ async function loadCreatorAccounts() {
 
         if (response.ok) {
             creatorAccounts = await response.json();
-            console.log('✅ Creator accounts loaded:', creatorAccounts.map(c => c.name).join(', '));
+            console.log('✅ Creator accounts loaded from API:', creatorAccounts.length, 'accounts');
+            console.log('📋 Accounts:', creatorAccounts.map(c => `${c.name} (${c._id})`).join(', '));
             // Populate all creator account dropdowns
             populateAllCreatorDropdowns();
+        } else {
+            console.error('❌ Failed to load creator accounts:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
         }
     } catch (error) {
         console.error('Error loading creator accounts:', error);
@@ -2711,50 +2725,64 @@ async function loadCreatorAccounts() {
 // Populate all creator account dropdowns in forms
 function populateAllCreatorDropdowns() {
     if (!creatorAccounts || creatorAccounts.length === 0) {
-        console.log('⚠️ No creator accounts to populate');
+        console.log('⚠️ No creator accounts to populate - array is empty');
         return;
     }
+
+    console.log(`🔄 Populating dropdowns with ${creatorAccounts.length} creator(s): ${creatorAccounts.map(c => c.name).join(', ')}`);
 
     // Daily Report form - creatorAccount dropdown
     const dailyReportSelect = document.getElementById('creatorAccount');
     if (dailyReportSelect) {
+        const currentValue = dailyReportSelect.value;
         dailyReportSelect.innerHTML = '<option value="">Select Creator...</option>' +
             creatorAccounts.map(account => 
                 `<option value="${account.name.toLowerCase()}">${account.name}</option>`
             ).join('');
-        console.log('✅ Populated daily report creator dropdown');
+        if (currentValue) {
+            dailyReportSelect.value = currentValue;
+        }
+        console.log('✅ Populated daily report creator dropdown:', dailyReportSelect.options.length, 'options');
+    } else {
+        console.log('⚠️ creatorAccount dropdown not found');
     }
 
     // Account Snapshots form - snapshotCreator dropdown
     const snapshotSelect = document.getElementById('snapshotCreator');
     if (snapshotSelect) {
+        const currentValue = snapshotSelect.value;
         snapshotSelect.innerHTML = '<option value="">Select Creator...</option>' +
             creatorAccounts.map(account => 
                 `<option value="${account.name.toLowerCase()}">${account.name}</option>`
             ).join('');
-        console.log('✅ Populated snapshot creator dropdown');
+        if (currentValue) {
+            snapshotSelect.value = currentValue;
+        }
+        console.log('✅ Populated snapshot creator dropdown:', snapshotSelect.options.length, 'options');
+    } else {
+        console.log('⚠️ snapshotCreator dropdown not found');
     }
 
-    // OF Account Data form - ofAccountCreator dropdown (already handled in loadChattersForInfloww)
-    // But let's make sure it's updated
+    // OF Account Data form - ofAccountCreator dropdown
     const ofAccountSelect = document.getElementById('ofAccountCreator');
-    if (ofAccountSelect && ofAccountSelect.options.length <= 1) {
+    if (ofAccountSelect) {
+        const currentValue = ofAccountSelect.value;
         ofAccountSelect.innerHTML = '<option value="">Select Creator...</option>' +
             creatorAccounts.map(account => 
                 `<option value="${account.name}">${account.name}</option>`
             ).join('');
-        console.log('✅ Populated OF account creator dropdown');
+        if (currentValue) {
+            ofAccountSelect.value = currentValue;
+        }
+        console.log('✅ Populated OF account creator dropdown:', ofAccountSelect.options.length, 'options');
+    } else {
+        console.log('⚠️ ofAccountCreator dropdown not found');
     }
 
     // Any other creator account dropdowns (by name attribute like name="creatorName")
     document.querySelectorAll('select[name*="creator"], select[name*="Creator"]').forEach(select => {
-        // Check if it has hardcoded options (Arya, Iris, Lilla)
-        const hasHardcoded = Array.from(select.options).some(opt => 
-            ['Arya', 'Iris', 'Lilla', 'arya', 'iris', 'lilla'].includes(opt.value)
-        );
-        
-        if (hasHardcoded) {
-            // Replace hardcoded options
+        // Always populate if it's a creator dropdown (has "creator" in name/id)
+        if (select.id !== 'marketingModelFilter') { // Skip marketing filter, it's handled separately
             const currentValue = select.value;
             select.innerHTML = '<option value="">Select Creator...</option>' +
                 creatorAccounts.map(account => 
@@ -2763,11 +2791,11 @@ function populateAllCreatorDropdowns() {
             if (currentValue) {
                 select.value = currentValue;
             }
-            console.log(`✅ Replaced hardcoded options in ${select.name || select.id}`);
+            console.log(`✅ Populated ${select.name || select.id || 'unnamed'} dropdown`);
         }
     });
     
-    console.log(`✅ Populated ${creatorAccounts.length} creator account(s) in all forms: ${creatorAccounts.map(c => c.name).join(', ')}`);
+    console.log(`✅ Finished populating all creator dropdowns with: ${creatorAccounts.map(c => c.name).join(', ')}`);
 }
 
 async function loadUsers() {
