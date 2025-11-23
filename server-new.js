@@ -511,6 +511,38 @@ app.post('/api/creator-accounts', authenticateToken, requireManager, async (req,
   }
 });
 
+// One-time migration: Ensure Bella exists (can be called by anyone, but safe to run multiple times)
+app.post('/api/migrate/add-bella', authenticateToken, async (req, res) => {
+  try {
+    const bellaExists = await CreatorAccount.findOne({ name: 'Bella' });
+    
+    if (bellaExists) {
+      // Ensure it's active
+      if (!bellaExists.isActive) {
+        bellaExists.isActive = true;
+        await bellaExists.save();
+        return res.json({ message: 'Bella already exists, activated', account: bellaExists });
+      }
+      return res.json({ message: 'Bella already exists and is active', account: bellaExists });
+    }
+    
+    // Create Bella
+    const bella = new CreatorAccount({
+      name: 'Bella',
+      accountName: 'bella_account',
+      isActive: true,
+      isMainAccount: true
+    });
+    
+    await bella.save();
+    console.log('✅ Bella creator account created via migration');
+    res.json({ message: 'Bella created successfully', account: bella });
+  } catch (error) {
+    console.error('❌ Error adding Bella:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all users (manager only)
 app.get('/api/users', checkDatabaseConnection, authenticateToken, requireManager, async (req, res) => {
   try {
