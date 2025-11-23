@@ -2370,6 +2370,12 @@ function loadSectionData(sectionId) {
             // Load marketing data for daily report
             loadTrafficSources();
             loadVIPFans();
+            // Ensure creator dropdown is populated
+            if (creatorAccounts.length > 0) {
+                populateAllCreatorDropdowns();
+            } else {
+                loadCreatorAccounts();
+            }
             // Add one PPV and one Tip field by default with new format
             setTimeout(() => {
                 // Clear containers first to avoid duplicates
@@ -2693,10 +2699,75 @@ async function loadCreatorAccounts() {
 
         if (response.ok) {
             creatorAccounts = await response.json();
+            console.log('✅ Creator accounts loaded:', creatorAccounts.map(c => c.name).join(', '));
+            // Populate all creator account dropdowns
+            populateAllCreatorDropdowns();
         }
     } catch (error) {
         console.error('Error loading creator accounts:', error);
     }
+}
+
+// Populate all creator account dropdowns in forms
+function populateAllCreatorDropdowns() {
+    if (!creatorAccounts || creatorAccounts.length === 0) {
+        console.log('⚠️ No creator accounts to populate');
+        return;
+    }
+
+    // Daily Report form - creatorAccount dropdown
+    const dailyReportSelect = document.getElementById('creatorAccount');
+    if (dailyReportSelect) {
+        dailyReportSelect.innerHTML = '<option value="">Select Creator...</option>' +
+            creatorAccounts.map(account => 
+                `<option value="${account.name.toLowerCase()}">${account.name}</option>`
+            ).join('');
+        console.log('✅ Populated daily report creator dropdown');
+    }
+
+    // Account Snapshots form - snapshotCreator dropdown
+    const snapshotSelect = document.getElementById('snapshotCreator');
+    if (snapshotSelect) {
+        snapshotSelect.innerHTML = '<option value="">Select Creator...</option>' +
+            creatorAccounts.map(account => 
+                `<option value="${account.name.toLowerCase()}">${account.name}</option>`
+            ).join('');
+        console.log('✅ Populated snapshot creator dropdown');
+    }
+
+    // OF Account Data form - ofAccountCreator dropdown (already handled in loadChattersForInfloww)
+    // But let's make sure it's updated
+    const ofAccountSelect = document.getElementById('ofAccountCreator');
+    if (ofAccountSelect && ofAccountSelect.options.length <= 1) {
+        ofAccountSelect.innerHTML = '<option value="">Select Creator...</option>' +
+            creatorAccounts.map(account => 
+                `<option value="${account.name}">${account.name}</option>`
+            ).join('');
+        console.log('✅ Populated OF account creator dropdown');
+    }
+
+    // Any other creator account dropdowns (by name attribute like name="creatorName")
+    document.querySelectorAll('select[name*="creator"], select[name*="Creator"]').forEach(select => {
+        // Check if it has hardcoded options (Arya, Iris, Lilla)
+        const hasHardcoded = Array.from(select.options).some(opt => 
+            ['Arya', 'Iris', 'Lilla', 'arya', 'iris', 'lilla'].includes(opt.value)
+        );
+        
+        if (hasHardcoded) {
+            // Replace hardcoded options
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Select Creator...</option>' +
+                creatorAccounts.map(account => 
+                    `<option value="${account.name}">${account.name}</option>`
+                ).join('');
+            if (currentValue) {
+                select.value = currentValue;
+            }
+            console.log(`✅ Replaced hardcoded options in ${select.name || select.id}`);
+        }
+    });
+    
+    console.log(`✅ Populated ${creatorAccounts.length} creator account(s) in all forms: ${creatorAccounts.map(c => c.name).join(', ')}`);
 }
 
 async function loadUsers() {
@@ -8468,9 +8539,7 @@ function createDataUploadSection() {
                         <select id="snapshotCreator" required
                                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
                               <option value="">Select Creator...</option>
-                              <option value="arya">Arya</option>
-                              <option value="iris">Iris</option>
-                              <option value="lilla">Lilla</option>
+                              <!-- Options populated dynamically by populateAllCreatorDropdowns() -->
                           </select>
                     </div>
                 </div>
