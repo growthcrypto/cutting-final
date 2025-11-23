@@ -2701,14 +2701,26 @@ async function loadCreatorAccounts() {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
         
-        const response = await fetch('/api/creator-accounts', {
-            headers: headers
+        // Add cache-busting timestamp to prevent browser caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/creator-accounts?t=${timestamp}`, {
+            headers: headers,
+            cache: 'no-store'
         });
 
         if (response.ok) {
             creatorAccounts = await response.json();
             console.log('✅ Creator accounts loaded from API:', creatorAccounts.length, 'accounts');
             console.log('📋 Accounts:', creatorAccounts.map(c => `${c.name} (${c._id})`).join(', '));
+            console.log('🔍 Full API response:', JSON.stringify(creatorAccounts, null, 2));
+            
+            // Validate: ensure we have the expected accounts
+            const accountNames = creatorAccounts.map(c => c.name);
+            if (!accountNames.includes('Bella')) {
+                console.error('⚠️ WARNING: Bella not found in API response!');
+                console.error('⚠️ Received accounts:', accountNames);
+            }
+            
             // Populate all creator account dropdowns
             populateAllCreatorDropdowns();
             return creatorAccounts;
