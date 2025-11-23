@@ -7360,21 +7360,63 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     
     // Collect all violations across all records (with normalization)
     const guidelineViolationsMap = {};
-    analyzedPrevRecords.forEach(record => {
+    analyzedPrevRecords.forEach((record, recordIdx) => {
       const glb = record.guidelinesBreakdown;
+      const recordTotalMessages = record.totalMessages || 0;
       if (glb) {
+        // 🔥 CRITICAL FIX: Deduplicate items within THIS record first (by normalized title)
+        // This prevents summing duplicate guideline items from the same record (e.g., two "Reply time" items)
+        const recordDeduplicatedItems = {};
+        
         categories.forEach(cat => {
           const items = glb[cat.key]?.items || [];
+          
+          // First pass: Deduplicate within this record by taking MAX count per normalized title
           items.forEach(item => {
-            const normalizedTitle = normalizeTitle(item.title);
-            const key = `${cat.key}:${normalizedTitle}`;
-            if (!guidelineViolationsMap[key]) {
-              guidelineViolationsMap[key] = { name: cat.name, violations: 0 };
+            const originalTitle = item.title || 'Unknown';
+            const normalizedTitle = normalizeTitle(originalTitle);
+            const recordKey = `${cat.key}:${normalizedTitle}`;
+            const rawCount = item.count || 0;
+            const itemCount = Math.min(rawCount, recordTotalMessages > 0 ? recordTotalMessages : rawCount);
+            
+            // 🔥 DEBUG: Log duplicate detection for reply time items
+            if (normalizedTitle.toLowerCase().includes('reply time') || normalizedTitle.toLowerCase().includes('replytime')) {
+              if (recordDeduplicatedItems[recordKey]) {
+                console.log(`📊 [PREV] DUPLICATE DETECTED in Record ${recordIdx + 1}: "${originalTitle}" → "${normalizedTitle}" (existing: ${recordDeduplicatedItems[recordKey].count}, new: ${itemCount}, taking MAX)`);
+              } else {
+                console.log(`📊 [PREV] FIRST ENCOUNTER in Record ${recordIdx + 1}: "${originalTitle}" → "${normalizedTitle}" (count: ${itemCount})`);
+              }
             }
-            // Cap each item's count at totalMessages to avoid double-counting
-            const itemCount = Math.min(item.count || 0, prevTotalMessages || item.count || 0);
-            guidelineViolationsMap[key].violations += itemCount;
+            
+            // If we've seen this normalized title in this record, take the MAXIMUM count (not sum)
+            if (!recordDeduplicatedItems[recordKey] || itemCount > recordDeduplicatedItems[recordKey].count) {
+              recordDeduplicatedItems[recordKey] = {
+                category: cat.name,
+                count: itemCount,
+                rawCount: rawCount
+              };
+            }
           });
+        });
+        
+        // Second pass: Aggregate deduplicated items from this record into global aggregation
+        Object.entries(recordDeduplicatedItems).forEach(([recordKey, dedupItem]) => {
+          const key = recordKey; // key is already `${cat.key}:${normalizedTitle}`
+          if (!guidelineViolationsMap[key]) {
+            // Extract category key from recordKey (format: "categoryKey:normalizedTitle")
+            const categoryKey = recordKey.split(':')[0];
+            const cat = categories.find(c => c.key === categoryKey);
+            guidelineViolationsMap[key] = { name: cat ? cat.name : dedupItem.category, violations: 0 };
+          }
+          
+          // Sum across records (but within each record, we've already deduplicated)
+          guidelineViolationsMap[key].violations += dedupItem.count;
+          
+          // Log reply time violations for debugging
+          const normalizedTitle = recordKey.split(':').slice(1).join(':'); // Get normalized title from key
+          if (normalizedTitle.toLowerCase().includes('reply time') || normalizedTitle.toLowerCase().includes('replytime')) {
+            console.log(`📊 Record ${recordIdx + 1} (${recordTotalMessages} msgs): Reply time violations: ${dedupItem.count} (raw: ${dedupItem.rawCount})`);
+          }
         });
       }
     });
@@ -7392,6 +7434,16 @@ async function buildPreviousPeriodData(prevPurchases, prevPerformance, chatterNa
     prevGuidelinesByCategory = categories.map(cat => {
       const raw = categoryTotals[cat.name] || 0;
       const capped = prevTotalMessages > 0 ? Math.min(raw, prevTotalMessages) : raw;
+      
+      // Log reply time category specifically for debugging
+      if (cat.name.toLowerCase().includes('reply time')) {
+        console.log(`📊 FINAL AGGREGATION - Reply Time:`);
+        console.log(`   Raw sum: ${raw} violations`);
+        console.log(`   Total messages: ${prevTotalMessages}`);
+        console.log(`   Capped at: ${capped} violations`);
+        console.log(`   Records processed: ${analyzedPrevRecords.length}`);
+      }
+      
       return { name: cat.name, violations: capped };
     });
     
@@ -8357,6 +8409,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       let totalGuidelineItemsFound = 0;
       analyzedRecords.forEach((record, recordIdx) => {
         const glb = record.guidelinesBreakdown;
+        const recordTotalMessages = record.totalMessages || 0;
         if (glb) {
           console.log(`📋 Record ${recordIdx + 1} guidelinesBreakdown structure:`, {
             hasGuidelinesBreakdown: !!glb,
@@ -8368,6 +8421,10 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             generalChattingType: typeof glb.generalChatting,
             generalChattingItems: glb.generalChatting?.items?.length || 0
           });
+          
+          // 🔥 CRITICAL FIX: Deduplicate items within THIS record first (by normalized title)
+          // This prevents summing duplicate guideline items from the same record (e.g., two "Reply time" items)
+          const recordDeduplicatedItems = {};
           
           ['generalChatting', 'psychology', 'captions', 'sales'].forEach(category => {
             // Support both new format (with items array) and old format (with details object)
@@ -8386,31 +8443,84 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             if (items.length > 0) {
               totalGuidelineItemsFound += items.length;
               console.log(`  📊 ${category}: Found ${items.length} items`);
+              
+              // First pass: Deduplicate within this record by taking MAX count per normalized title
               items.forEach(item => {
-                // Use normalized title for deduplication
-                const normalizedTitle = normalizeTitle(item.title || item.name || item.label);
-                const key = `${category}:${normalizedTitle}`;
+                const originalTitle = item.title || item.name || item.label || 'Unknown';
+                const normalizedTitle = normalizeTitle(originalTitle);
+                const recordKey = `${category}:${normalizedTitle}`;
+                const rawCount = item.count || item.violations || 0;
+                const itemCount = Math.min(rawCount, recordTotalMessages > 0 ? recordTotalMessages : rawCount);
                 
-                if (!guidelineViolations[key]) {
-                  // Use normalized title for display (cleaner, no duplicates)
-                  const displayTitle = normalizedTitle || item.title || item.name || item.label || 'Unknown';
-                  guidelineViolations[key] = {
+                // 🔥 DEBUG: Log duplicate detection for reply time items
+                if (normalizedTitle.toLowerCase().includes('reply time') || normalizedTitle.toLowerCase().includes('replytime')) {
+                  if (recordDeduplicatedItems[recordKey]) {
+                    console.log(`    🔥 DUPLICATE DETECTED in Record ${recordIdx + 1}: "${originalTitle}" → "${normalizedTitle}" (existing: ${recordDeduplicatedItems[recordKey].count}, new: ${itemCount}, taking MAX)`);
+                  } else {
+                    console.log(`    ✅ FIRST ENCOUNTER in Record ${recordIdx + 1}: "${originalTitle}" → "${normalizedTitle}" (count: ${itemCount})`);
+                  }
+                }
+                
+                // If we've seen this normalized title in this record, take the MAXIMUM count (not sum)
+                if (!recordDeduplicatedItems[recordKey] || itemCount > recordDeduplicatedItems[recordKey].count) {
+                  recordDeduplicatedItems[recordKey] = {
                     category,
-                    title: displayTitle,
+                    normalizedTitle,
+                    displayTitle: normalizedTitle || originalTitle,
                     description: item.description || '',
-                    count: 0,
+                    count: itemCount,
+                    rawCount: rawCount,
                     examples: item.examples || []
                   };
+                } else {
+                  // Keep the existing one (it has higher count) but merge examples
+                  if (item.examples && Array.isArray(item.examples)) {
+                    recordDeduplicatedItems[recordKey].examples = [
+                      ...(recordDeduplicatedItems[recordKey].examples || []),
+                      ...item.examples
+                    ].slice(0, 20); // Cap at 20 examples
+                  }
                 }
-                // Sum violations, but cap at totalMessages per item to avoid double-counting
-                const itemCount = Math.min(item.count || item.violations || 0, totalMessagesAcrossAllDays || item.count || item.violations || 0);
-                guidelineViolations[key].count += itemCount;
-                // Use stored title from guidelineViolations[key] to avoid scope issues
-                const displayTitle = guidelineViolations[key].title;
-                console.log(`    ✅ ${displayTitle}: +${itemCount} violations (total: ${guidelineViolations[key].count})`);
               });
             } else {
               console.log(`  ⚠️ ${category}: No items found in record ${recordIdx + 1}`);
+            }
+          });
+          
+          // Second pass: Aggregate deduplicated items from this record into global aggregation
+          const dedupKeys = Object.keys(recordDeduplicatedItems);
+          if (dedupKeys.some(k => k.toLowerCase().includes('replytime'))) {
+            console.log(`    🔍 Record ${recordIdx + 1} deduplicated items (${dedupKeys.length} unique keys):`, dedupKeys.filter(k => k.toLowerCase().includes('replytime')).map(k => `${k} (count: ${recordDeduplicatedItems[k].count})`));
+          }
+          
+          Object.values(recordDeduplicatedItems).forEach(dedupItem => {
+            const key = `${dedupItem.category}:${dedupItem.normalizedTitle}`;
+            
+            if (!guidelineViolations[key]) {
+              guidelineViolations[key] = {
+                category: dedupItem.category,
+                title: dedupItem.displayTitle,
+                description: dedupItem.description,
+                count: 0,
+                examples: dedupItem.examples || []
+              };
+            }
+            
+            // Sum across records (but within each record, we've already deduplicated)
+            const countBefore = guidelineViolations[key].count;
+            guidelineViolations[key].count += dedupItem.count;
+            
+            // Merge examples (cap at 20 total)
+            if (dedupItem.examples && Array.isArray(dedupItem.examples)) {
+              guidelineViolations[key].examples = [
+                ...(guidelineViolations[key].examples || []),
+                ...dedupItem.examples
+              ].slice(0, 20);
+            }
+            
+            // Log reply time violations for debugging
+            if (dedupItem.normalizedTitle.toLowerCase().includes('reply time') || dedupItem.normalizedTitle.toLowerCase().includes('replytime')) {
+              console.log(`    ✅ ${dedupItem.displayTitle}: +${dedupItem.count} violations (raw: ${dedupItem.rawCount}, record msgs: ${recordTotalMessages}, countBefore: ${countBefore}, total: ${guidelineViolations[key].count})`);
             }
           });
         } else {
@@ -8436,6 +8546,19 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       Object.keys(aggregatedGuidelines).forEach(cat => {
         const items = aggregatedGuidelines[cat].items;
         const total = items.reduce((s, it) => s + (it.count || 0), 0);
+        
+        // Log reply time category specifically for debugging
+        if (cat.toLowerCase().includes('general') || cat.toLowerCase().includes('chatting')) {
+          const replyTimeItem = items.find(it => 
+            (it.title?.toLowerCase().includes('reply time') || it.title?.toLowerCase().includes('replytime'))
+          );
+          if (replyTimeItem) {
+            console.log(`📊 FINAL AGGREGATION (Current Period) - Reply Time:`);
+            console.log(`   Raw sum: ${replyTimeItem.count} violations`);
+            console.log(`   Total messages: ${totalMessagesAcrossAllDays}`);
+            console.log(`   Records processed: ${analyzedRecords.length}`);
+          }
+        }
         
         if (total > (totalMessagesAcrossAllDays || 0) && totalMessagesAcrossAllDays > 0) {
           // Scale down proportionally to cap at totalMessages
