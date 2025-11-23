@@ -2435,22 +2435,14 @@ async function loadChattersForInfloww() {
             // Chatter data form now uses static options (Arya, Iris, Lilla)
         }
         
-        // Load creator accounts for OF Account Data form
-        const creatorsResponse = await fetch('/api/creators', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
-        
-        if (creatorsResponse.ok) {
-            const creators = await creatorsResponse.json();
-            const creatorSelect = document.getElementById('ofAccountCreator');
-            if (creatorSelect) {
-                creatorSelect.innerHTML = '<option value="">Select Creator...</option>' +
-                    creators.map(creator => 
-                        `<option value="${creator.name}">${creator.name}</option>`
-                    ).join('');
-            }
+        // Don't load creators here - let populateAllCreatorDropdowns() handle it
+        // This prevents race conditions and ensures consistency
+        // Just ensure creatorAccounts is loaded and dropdowns are populated
+        if (!creatorAccounts || creatorAccounts.length === 0) {
+            await loadCreatorAccounts();
+        } else {
+            // Use existing creatorAccounts to populate
+            populateAllCreatorDropdowns();
         }
     } catch (error) {
         console.error('Error loading chatters for Infloww:', error);
