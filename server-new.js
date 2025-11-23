@@ -416,6 +416,24 @@ app.post('/api/auth/register-manager', checkDatabaseConnection, authenticateToke
 // Creator Account Management
 app.get('/api/creator-accounts', authenticateToken, async (req, res) => {
   try {
+    // Ensure Bella exists (fallback check on every request)
+    const bellaExists = await CreatorAccount.findOne({ name: 'Bella' });
+    if (!bellaExists) {
+      console.log('⚠️ Bella not found, creating...');
+      const bella = new CreatorAccount({
+        name: 'Bella',
+        accountName: 'bella_account',
+        isActive: true,
+        isMainAccount: true
+      });
+      await bella.save();
+      console.log('✅ Bella created via API fallback');
+    } else if (!bellaExists.isActive) {
+      bellaExists.isActive = true;
+      await bellaExists.save();
+      console.log('✅ Bella activated via API fallback');
+    }
+    
     const accounts = await CreatorAccount.find({ isActive: true });
     res.json(accounts);
   } catch (error) {
