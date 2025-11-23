@@ -2746,10 +2746,14 @@ async function loadCreatorAccounts() {
 function populateAllCreatorDropdowns() {
     if (!creatorAccounts || creatorAccounts.length === 0) {
         console.log('⚠️ No creator accounts to populate - array is empty');
+        console.log('💡 Attempting to reload creator accounts...');
+        loadCreatorAccounts();
         return;
     }
 
     console.log(`🔄 Populating dropdowns with ${creatorAccounts.length} creator(s): ${creatorAccounts.map(c => c.name).join(', ')}`);
+
+    let populatedCount = 0;
 
     // Daily Report form - creatorAccount dropdown
     const dailyReportSelect = document.getElementById('creatorAccount');
@@ -2762,6 +2766,7 @@ function populateAllCreatorDropdowns() {
         if (currentValue) {
             dailyReportSelect.value = currentValue;
         }
+        populatedCount++;
         console.log('✅ Populated daily report creator dropdown:', dailyReportSelect.options.length, 'options');
     } else {
         console.log('⚠️ creatorAccount dropdown not found');
@@ -2778,6 +2783,7 @@ function populateAllCreatorDropdowns() {
         if (currentValue) {
             snapshotSelect.value = currentValue;
         }
+        populatedCount++;
         console.log('✅ Populated snapshot creator dropdown:', snapshotSelect.options.length, 'options');
     } else {
         console.log('⚠️ snapshotCreator dropdown not found');
@@ -2794,15 +2800,19 @@ function populateAllCreatorDropdowns() {
         if (currentValue) {
             ofAccountSelect.value = currentValue;
         }
+        populatedCount++;
         console.log('✅ Populated OF account creator dropdown:', ofAccountSelect.options.length, 'options');
     } else {
         console.log('⚠️ ofAccountCreator dropdown not found');
     }
 
     // Any other creator account dropdowns (by name attribute like name="creatorName")
-    document.querySelectorAll('select[name*="creator"], select[name*="Creator"]').forEach(select => {
-        // Always populate if it's a creator dropdown (has "creator" in name/id)
-        if (select.id !== 'marketingModelFilter') { // Skip marketing filter, it's handled separately
+    document.querySelectorAll('select[name*="creator"], select[name*="Creator"], select[id*="creator"], select[id*="Creator"]').forEach(select => {
+        // Skip marketing filter and already populated dropdowns
+        if (select.id !== 'marketingModelFilter' && 
+            select.id !== 'creatorAccount' && 
+            select.id !== 'snapshotCreator' && 
+            select.id !== 'ofAccountCreator') {
             const currentValue = select.value;
             select.innerHTML = '<option value="">Select Creator...</option>' +
                 creatorAccounts.map(account => 
@@ -2811,11 +2821,18 @@ function populateAllCreatorDropdowns() {
             if (currentValue) {
                 select.value = currentValue;
             }
+            populatedCount++;
             console.log(`✅ Populated ${select.name || select.id || 'unnamed'} dropdown`);
         }
     });
     
-    console.log(`✅ Finished populating all creator dropdowns with: ${creatorAccounts.map(c => c.name).join(', ')}`);
+    console.log(`✅ Finished populating ${populatedCount} dropdown(s) with: ${creatorAccounts.map(c => c.name).join(', ')}`);
+    
+    // If no dropdowns were found, retry after a delay (elements might not be loaded yet)
+    if (populatedCount === 0) {
+        console.log('⚠️ No dropdowns found, retrying in 500ms...');
+        setTimeout(() => populateAllCreatorDropdowns(), 500);
+    }
 }
 
 async function loadUsers() {
