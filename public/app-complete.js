@@ -2812,9 +2812,10 @@ function populateAllCreatorDropdowns() {
     const dailyReportSelect = document.getElementById('creatorAccount');
     if (dailyReportSelect) {
         const currentValue = dailyReportSelect.value;
+        // Use the actual account name (capitalized) as the value, not lowercase
         dailyReportSelect.innerHTML = '<option value="">Select Creator...</option>' +
             creatorAccounts.map(account => 
-                `<option value="${account.name.toLowerCase()}">${account.name}</option>`
+                `<option value="${account.name}">${account.name}</option>`
             ).join('');
         if (currentValue) {
             dailyReportSelect.value = currentValue;
@@ -2829,9 +2830,10 @@ function populateAllCreatorDropdowns() {
     const snapshotSelect = document.getElementById('snapshotCreator');
     if (snapshotSelect) {
         const currentValue = snapshotSelect.value;
+        // Use the actual account name (capitalized) as the value
         snapshotSelect.innerHTML = '<option value="">Select Creator...</option>' +
             creatorAccounts.map(account => 
-                `<option value="${account.name.toLowerCase()}">${account.name}</option>`
+                `<option value="${account.name}">${account.name}</option>`
             ).join('');
         if (currentValue) {
             snapshotSelect.value = currentValue;
