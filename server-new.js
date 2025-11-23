@@ -202,23 +202,25 @@ async function initializeData() {
       
       await CreatorAccount.insertMany(defaultAccounts);
       console.log('✅ Default creator accounts created');
+    }
+    
+    // ALWAYS ensure Bella exists (for existing databases)
+    const bellaExists = await CreatorAccount.findOne({ name: 'Bella' });
+    if (!bellaExists) {
+      const bella = new CreatorAccount({
+        name: 'Bella',
+        accountName: 'bella_account',
+        isActive: true,
+        isMainAccount: true
+      });
+      await bella.save();
+      console.log('✅ Bella creator account added to existing database');
+    } else if (!bellaExists.isActive) {
+      bellaExists.isActive = true;
+      await bellaExists.save();
+      console.log('✅ Bella creator account activated');
     } else {
-      // Ensure Bella exists (for existing databases)
-      const bellaExists = await CreatorAccount.findOne({ name: 'Bella' });
-      if (!bellaExists) {
-        const bella = new CreatorAccount({
-          name: 'Bella',
-          accountName: 'bella_account',
-          isActive: true,
-          isMainAccount: true
-        });
-        await bella.save();
-        console.log('✅ Bella creator account added');
-      } else if (!bellaExists.isActive) {
-        bellaExists.isActive = true;
-        await bellaExists.save();
-        console.log('✅ Bella creator account activated');
-      }
+      console.log('✅ Bella creator account already exists and is active');
     }
 
     // Create default manager account if none exists
