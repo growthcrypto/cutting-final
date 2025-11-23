@@ -1227,9 +1227,14 @@ async function loadDailyReportsData() {
             return;
         }
         
-        tbody.innerHTML = data.reports.map(report => `
+        tbody.innerHTML = data.reports.map(report => {
+            // Normalize creator name for display (capitalize first letter)
+            const creatorName = report.creator 
+                ? report.creator.charAt(0).toUpperCase() + report.creator.slice(1).toLowerCase()
+                : 'N/A';
+            return `
             <tr class="border-b border-gray-800 hover:bg-gray-800/30 transition-all cursor-pointer" onclick="toggleReportDetails('${report._id}')">
-                <td class="px-4 py-4 text-yellow-400 font-medium capitalize">${report.creator || 'N/A'}</td>
+                <td class="px-4 py-4 text-yellow-400 font-medium">${creatorName}</td>
                 <td class="px-4 py-4 text-white font-medium">${report.chatterName}</td>
                 <td class="px-4 py-4 text-gray-300">${new Date(report.date).toLocaleDateString()}</td>
                 <td class="px-4 py-4 text-gray-300 capitalize">${report.shift}</td>

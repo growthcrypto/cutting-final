@@ -7025,15 +7025,31 @@ app.delete('/api/data-management/messages/:id', authenticateToken, requireManage
 // Get all daily reports for data management
 app.get('/api/data-management/daily-reports', authenticateToken, requireManager, async (req, res) => {
   try {
-    const reports = await DailyChatterReport.find()
+    // Get ALL reports, no filters - managers should see everything
+    const reports = await DailyChatterReport.find({})
       .populate('ppvSales.trafficSource')
       .populate('tips.trafficSource')
       .sort({ date: -1 })
-      .limit(100);
+      .limit(500); // Increased limit to show more reports
+    
+    console.log(`📊 Data Management: Found ${reports.length} daily reports`);
+    
+    // Log creator distribution for debugging
+    const creatorCounts = {};
+    reports.forEach(r => {
+      const creator = r.creator || 'NULL';
+      creatorCounts[creator] = (creatorCounts[creator] || 0) + 1;
+    });
+    console.log('📋 Creator distribution:', creatorCounts);
     
     // Format data to include traffic source names
     const formattedReports = reports.map(report => {
       const reportObj = report.toObject();
+      
+      // Normalize creator name (capitalize first letter)
+      if (reportObj.creator) {
+        reportObj.creator = reportObj.creator.charAt(0).toUpperCase() + reportObj.creator.slice(1).toLowerCase();
+      }
       
       // Add traffic source names to PPV sales
       if (reportObj.ppvSales) {
