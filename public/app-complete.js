@@ -2696,10 +2696,19 @@ function formatDateLabel(dateStr) {
 // Data loading functions
 async function loadCreatorAccounts() {
     try {
-        const headers = {};
-        if (authToken) {
-            headers['Authorization'] = `Bearer ${authToken}`;
+        // Always try to get token from localStorage if authToken is null
+        const token = authToken || localStorage.getItem('authToken');
+        
+        if (!token) {
+            console.warn('⚠️ No auth token available, cannot load creator accounts');
+            // Still try to populate with empty array so dropdowns show "Select Creator..."
+            populateAllCreatorDropdowns();
+            return null;
         }
+        
+        const headers = {
+            'Authorization': `Bearer ${token}`
+        };
         
         // Add cache-busting timestamp to prevent browser caching
         const timestamp = new Date().getTime();
@@ -2712,18 +2721,17 @@ async function loadCreatorAccounts() {
             creatorAccounts = await response.json();
             console.log('✅ Creator accounts loaded from API:', creatorAccounts.length, 'accounts');
             console.log('📋 Accounts:', creatorAccounts.map(c => `${c.name} (${c._id})`).join(', '));
-            console.log('🔍 Full API response:', JSON.stringify(creatorAccounts, null, 2));
-            
-            // Validate: ensure we have the expected accounts
-            const accountNames = creatorAccounts.map(c => c.name);
-            if (!accountNames.includes('Bella')) {
-                console.error('⚠️ WARNING: Bella not found in API response!');
-                console.error('⚠️ Received accounts:', accountNames);
-            }
             
             // Populate all creator account dropdowns
             populateAllCreatorDropdowns();
             return creatorAccounts;
+        } else if (response.status === 403) {
+            console.warn('⚠️ 403 Forbidden - Token may be expired or invalid');
+            console.warn('💡 User may need to log in again');
+            // Don't break the UI - just show empty dropdowns
+            creatorAccounts = [];
+            populateAllCreatorDropdowns();
+            return null;
         } else {
             console.error('❌ Failed to load creator accounts:', response.status, response.statusText);
             const errorText = await response.text();
@@ -2731,6 +2739,9 @@ async function loadCreatorAccounts() {
             // Fallback: try to use any existing creatorAccounts
             if (creatorAccounts && creatorAccounts.length > 0) {
                 console.log('⚠️ Using cached creator accounts');
+                populateAllCreatorDropdowns();
+            } else {
+                // Ensure dropdowns are at least populated with empty state
                 populateAllCreatorDropdowns();
             }
             return null;
@@ -2741,6 +2752,9 @@ async function loadCreatorAccounts() {
         if (creatorAccounts && creatorAccounts.length > 0) {
             console.log('⚠️ Using cached creator accounts after error');
             populateAllCreatorDropdowns();
+        } else {
+            // Ensure dropdowns are at least populated with empty state
+            populateAllCreatorDropdowns();
         }
         return null;
     }
@@ -2748,11 +2762,21 @@ async function loadCreatorAccounts() {
 
 // Populate all creator account dropdowns in forms
 function populateAllCreatorDropdowns() {
+    // Always populate dropdowns, even if empty (shows "Select Creator..." option)
     if (!creatorAccounts || creatorAccounts.length === 0) {
         console.log('⚠️ No creator accounts to populate - array is empty');
-        console.log('💡 Attempting to reload creator accounts...');
-        loadCreatorAccounts();
-        return;
+        
+        // Only try to reload if we have a token
+        const token = authToken || localStorage.getItem('authToken');
+        if (token) {
+            console.log('💡 Attempting to reload creator accounts...');
+            loadCreatorAccounts();
+        } else {
+            console.log('⚠️ No token available, populating with empty state');
+        }
+        
+        // Still populate with empty state so dropdowns show "Select Creator..."
+        creatorAccounts = [];
     }
 
     console.log(`🔄 Populating dropdowns with ${creatorAccounts.length} creator(s): ${creatorAccounts.map(c => c.name).join(', ')}`);
