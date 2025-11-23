@@ -2704,10 +2704,13 @@ function formatDateLabel(dateStr) {
 // Data loading functions
 async function loadCreatorAccounts() {
     try {
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
         const response = await fetch('/api/creator-accounts', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
+            headers: headers
         });
 
         if (response.ok) {
@@ -2716,13 +2719,26 @@ async function loadCreatorAccounts() {
             console.log('📋 Accounts:', creatorAccounts.map(c => `${c.name} (${c._id})`).join(', '));
             // Populate all creator account dropdowns
             populateAllCreatorDropdowns();
+            return creatorAccounts;
         } else {
             console.error('❌ Failed to load creator accounts:', response.status, response.statusText);
             const errorText = await response.text();
             console.error('Error response:', errorText);
+            // Fallback: try to use any existing creatorAccounts
+            if (creatorAccounts && creatorAccounts.length > 0) {
+                console.log('⚠️ Using cached creator accounts');
+                populateAllCreatorDropdowns();
+            }
+            return null;
         }
     } catch (error) {
-        console.error('Error loading creator accounts:', error);
+        console.error('❌ Error loading creator accounts:', error);
+        // Fallback: try to use any existing creatorAccounts
+        if (creatorAccounts && creatorAccounts.length > 0) {
+            console.log('⚠️ Using cached creator accounts after error');
+            populateAllCreatorDropdowns();
+        }
+        return null;
     }
 }
 
