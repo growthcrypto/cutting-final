@@ -2054,6 +2054,9 @@ async function handleLogin(event) {
 
             showMainApp();
             showNotification('Login successful!', 'success');
+            
+            // Load creator accounts after successful login
+            loadCreatorAccounts();
         } else {
             if (response.status === 503) {
                 showError('System is starting up. Please wait a moment and try again.');
