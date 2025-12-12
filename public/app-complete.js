@@ -1663,22 +1663,24 @@ async function loadEmployees() {
             cachedChatters = chatters.filter(chatter => chatter.isActive !== false);
             console.log(`📋 Filtered to ${cachedChatters.length} active chatters`);
             
-            // Wait for elements to be available before updating (but don't fail if they don't exist yet)
-            const chatterDataEl = await waitForElement('chatterDataChatter');
-            const messagesEl = await waitForElement('messagesChatter');
+            // Update all chatter dropdowns that exist (don't wait, just check if they exist)
+            // These are the actual dropdown IDs in the HTML:
+            // - chatterPerformanceChatterSelect (in data-upload section)
+            // - messagesChatter (in data-upload section)
+            // - chatterDataChatter (may exist in other sections, but not in data-upload)
             
-            // Update all chatter dropdowns that exist
-            if (chatterDataEl) {
-                updateEmployeeDropdown('chatterDataChatter', cachedChatters);
+            const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
+            const messagesEl = document.getElementById('messagesChatter');
+            const chatterDataEl = document.getElementById('chatterDataChatter');
+            
+            if (perfSelect) {
+                updateEmployeeDropdown('chatterPerformanceChatterSelect', cachedChatters);
             }
             if (messagesEl) {
                 updateEmployeeDropdown('messagesChatter', cachedChatters);
             }
-            
-            // Also update chatterPerformanceChatterSelect if it exists
-            const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
-            if (perfSelect) {
-                updateEmployeeDropdown('chatterPerformanceChatterSelect', cachedChatters);
+            if (chatterDataEl) {
+                updateEmployeeDropdown('chatterDataChatter', cachedChatters);
             }
             
             return cachedChatters;
@@ -1686,19 +1688,23 @@ async function loadEmployees() {
             const errorText = await response.text();
             console.error('❌ Failed to load employees:', response.status, errorText);
             // Fallback to empty dropdowns
-            const chatterDataEl = document.getElementById('chatterDataChatter');
+            const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
             const messagesEl = document.getElementById('messagesChatter');
-            if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
+            const chatterDataEl = document.getElementById('chatterDataChatter');
+            if (perfSelect) updateEmployeeDropdown('chatterPerformanceChatterSelect', []);
             if (messagesEl) updateEmployeeDropdown('messagesChatter', []);
+            if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
             return [];
         }
     } catch (error) {
         console.error('❌ Error loading employees:', error);
         // Fallback to empty dropdowns
-        const chatterDataEl = document.getElementById('chatterDataChatter');
+        const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
         const messagesEl = document.getElementById('messagesChatter');
-        if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
+        const chatterDataEl = document.getElementById('chatterDataChatter');
+        if (perfSelect) updateEmployeeDropdown('chatterPerformanceChatterSelect', []);
         if (messagesEl) updateEmployeeDropdown('messagesChatter', []);
+        if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
         return [];
     }
 }
@@ -1737,12 +1743,19 @@ function updateEmployeeDropdown(selectId, employees) {
 function populateAllChatterDropdowns() {
     console.log('🔄 populateAllChatterDropdowns called, cachedChatters:', cachedChatters.length);
     if (cachedChatters.length > 0) {
-        updateEmployeeDropdown('chatterDataChatter', cachedChatters);
-        updateEmployeeDropdown('messagesChatter', cachedChatters);
-        // Also populate the chatterPerformanceChatterSelect dropdown
+        // Populate all dropdowns that exist (check each one individually)
         const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
+        const messagesEl = document.getElementById('messagesChatter');
+        const chatterDataEl = document.getElementById('chatterDataChatter');
+        
         if (perfSelect) {
             updateEmployeeDropdown('chatterPerformanceChatterSelect', cachedChatters);
+        }
+        if (messagesEl) {
+            updateEmployeeDropdown('messagesChatter', cachedChatters);
+        }
+        if (chatterDataEl) {
+            updateEmployeeDropdown('chatterDataChatter', cachedChatters);
         }
     } else {
         console.log('⚠️ No cached chatters, loading from API...');
