@@ -1624,17 +1624,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load employees from database
 async function loadEmployees() {
-    console.log('Loading employees...', authToken ? 'Token available' : 'No token');
+    console.log('🔄 Loading employees...', authToken ? 'Token available' : 'No token');
     
     // Wait for elements to be available
     const waitForElement = (id) => {
         return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max
             const checkElement = () => {
+                attempts++;
                 const element = document.getElementById(id);
                 if (element) {
                     resolve(element);
-                } else {
+                } else if (attempts < maxAttempts) {
                     setTimeout(checkElement, 100);
+                } else {
+                    console.warn(`⚠️ Element ${id} not found after ${maxAttempts} attempts`);
+                    resolve(null);
                 }
             };
             checkElement();
@@ -1648,31 +1654,52 @@ async function loadEmployees() {
             }
         });
         
-        console.log('Response status:', response.status);
+        console.log('📡 Response status:', response.status);
         
         if (response.ok) {
             const chatters = await response.json();
-            console.log('Loaded chatters:', chatters);
-            cachedChatters = chatters.filter(chatter => chatter.isActive);
+            console.log(`✅ Loaded ${chatters.length} chatters from API:`, chatters.map(c => c.chatterName || c.username));
+            // Include all chatters where isActive is not explicitly false
+            cachedChatters = chatters.filter(chatter => chatter.isActive !== false);
+            console.log(`📋 Filtered to ${cachedChatters.length} active chatters`);
             
-            // Wait for elements to be available before updating
-            await waitForElement('chatterDataChatter');
-            await waitForElement('messagesChatter');
+            // Wait for elements to be available before updating (but don't fail if they don't exist yet)
+            const chatterDataEl = await waitForElement('chatterDataChatter');
+            const messagesEl = await waitForElement('messagesChatter');
             
-            // Update both dropdowns
-            updateEmployeeDropdown('chatterDataChatter', cachedChatters);
-            updateEmployeeDropdown('messagesChatter', cachedChatters);
+            // Update all chatter dropdowns that exist
+            if (chatterDataEl) {
+                updateEmployeeDropdown('chatterDataChatter', cachedChatters);
+            }
+            if (messagesEl) {
+                updateEmployeeDropdown('messagesChatter', cachedChatters);
+            }
+            
+            // Also update chatterPerformanceChatterSelect if it exists
+            const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
+            if (perfSelect) {
+                updateEmployeeDropdown('chatterPerformanceChatterSelect', cachedChatters);
+            }
+            
+            return cachedChatters;
         } else {
-            console.error('Failed to load employees:', response.statusText);
+            const errorText = await response.text();
+            console.error('❌ Failed to load employees:', response.status, errorText);
             // Fallback to empty dropdowns
-            updateEmployeeDropdown('chatterDataChatter', []);
-            updateEmployeeDropdown('messagesChatter', []);
+            const chatterDataEl = document.getElementById('chatterDataChatter');
+            const messagesEl = document.getElementById('messagesChatter');
+            if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
+            if (messagesEl) updateEmployeeDropdown('messagesChatter', []);
+            return [];
         }
     } catch (error) {
-        console.error('Error loading employees:', error);
+        console.error('❌ Error loading employees:', error);
         // Fallback to empty dropdowns
-        updateEmployeeDropdown('chatterDataChatter', []);
-        updateEmployeeDropdown('messagesChatter', []);
+        const chatterDataEl = document.getElementById('chatterDataChatter');
+        const messagesEl = document.getElementById('messagesChatter');
+        if (chatterDataEl) updateEmployeeDropdown('chatterDataChatter', []);
+        if (messagesEl) updateEmployeeDropdown('messagesChatter', []);
+        return [];
     }
 }
 
@@ -1708,12 +1735,23 @@ function updateEmployeeDropdown(selectId, employees) {
 
 // Populate all chatter dropdowns (call this when showing forms)
 function populateAllChatterDropdowns() {
+    console.log('🔄 populateAllChatterDropdowns called, cachedChatters:', cachedChatters.length);
     if (cachedChatters.length > 0) {
         updateEmployeeDropdown('chatterDataChatter', cachedChatters);
         updateEmployeeDropdown('messagesChatter', cachedChatters);
+        // Also populate the chatterPerformanceChatterSelect dropdown
+        const perfSelect = document.getElementById('chatterPerformanceChatterSelect');
+        if (perfSelect) {
+            updateEmployeeDropdown('chatterPerformanceChatterSelect', cachedChatters);
+        }
     } else {
-        console.log('No cached chatters, loading from API...');
-        loadEmployees();
+        console.log('⚠️ No cached chatters, loading from API...');
+        loadEmployees().then(() => {
+            // After loading, populate again
+            setTimeout(() => {
+                populateAllChatterDropdowns();
+            }, 500);
+        });
     }
 }
 
@@ -2387,6 +2425,18 @@ function loadSectionData(sectionId) {
         case 'data-upload':
             loadChattersForInfloww();
             setDefaultDateRanges();
+            // Populate chatter dropdowns when data-upload section is shown
+            // Use setTimeout to ensure DOM is ready
+            setTimeout(() => {
+                if (cachedChatters.length > 0) {
+                    populateAllChatterDropdowns();
+                } else {
+                    // Force reload chatters if cache is empty
+                    loadEmployees().then(() => {
+                        populateAllChatterDropdowns();
+                    });
+                }
+            }, 300);
             break;
         case 'daily-report':
             // Load marketing data for daily report
@@ -11182,6 +11232,10 @@ async function handleCreateUserDirect() {
             showNotification(`${role.charAt(0).toUpperCase() + role.slice(1)} created successfully!`, 'success');
             document.getElementById('createUserForm').reset();
             loadUsers();
+            // If a chatter was created, reload chatters dropdowns
+            if (role === 'chatter') {
+                loadEmployees(); // This refreshes the chatters dropdowns
+            }
         } else {
             showError(result.error || 'Failed to create user');
         }

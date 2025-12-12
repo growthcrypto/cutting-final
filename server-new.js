@@ -608,7 +608,13 @@ app.get('/api/auth/me', checkDatabaseConnection, authenticateToken, async (req, 
 
 app.get('/api/chatters', checkDatabaseConnection, authenticateToken, async (req, res) => {
   try {
-    const chatters = await User.find({ role: 'chatter' }, { password: 0 });
+    // Filter by role='chatter' and isActive=true (or undefined for backward compatibility)
+    const chatters = await User.find({ 
+      role: 'chatter',
+      $or: [{ isActive: true }, { isActive: { $exists: false } }]
+    }, { password: 0 }).sort({ chatterName: 1, username: 1 });
+    
+    console.log(`📋 Fetched ${chatters.length} active chatters`);
     res.json(chatters);
   } catch (error) {
     console.error('Error fetching chatters:', error);
