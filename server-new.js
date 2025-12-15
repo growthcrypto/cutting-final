@@ -2292,12 +2292,22 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
       weaknessesCount: analysisResult.weaknesses?.length || 0
     }, null, 2));
     
+    // 🔥 SIMPLE: Recalculate reply time violations from messageRecords
+    const replyTimeThreshold = 5;
+    const replyTimeViolations = (existingAnalysis.messageRecords || []).filter(msg => {
+      const replyTime = msg.replyTime;
+      return replyTime != null && replyTime !== undefined && replyTime > replyTimeThreshold;
+    }).length;
+    
+    console.log(`📊 Recalculated reply time violations: ${replyTimeViolations} (out of ${existingAnalysis.messageRecords?.length || 0} messages)`);
+    
     // Update the existing record
     existingAnalysis.overallScore = analysisResult.overallScore !== undefined ? analysisResult.overallScore : null;
     existingAnalysis.grammarScore = analysisResult.grammarScore !== undefined ? analysisResult.grammarScore : null;
     existingAnalysis.guidelinesScore = analysisResult.guidelinesScore !== undefined ? analysisResult.guidelinesScore : null;
     existingAnalysis.grammarBreakdown = analysisResult.grammarBreakdown || {};
     existingAnalysis.guidelinesBreakdown = analysisResult.guidelinesBreakdown || {};
+    existingAnalysis.replyTimeViolations = replyTimeViolations; // Save the count
     
     // 🔥 CRITICAL: Save numeric counts for reliable aggregation
     if (analysisResult._numericCounts) {
@@ -2309,7 +2319,8 @@ app.post('/api/messages/reanalyze/:id', checkDatabaseConnection, authenticateTok
         spellingCount: existingAnalysis.spellingCount,
         grammarIssuesCount: existingAnalysis.grammarIssuesCount,
         punctuationCount: existingAnalysis.punctuationCount,
-        totalMessages: existingAnalysis.totalMessages
+        totalMessages: existingAnalysis.totalMessages,
+        replyTimeViolations: existingAnalysis.replyTimeViolations
       });
     }
     
@@ -7756,6 +7767,13 @@ async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
         // Run analysis
         const analysisResult = await analyzeMessages(filtered, existingAnalysis.chatterName);
 
+        // 🔥 SIMPLE: Recalculate reply time violations from messageRecords
+        const replyTimeThreshold = 5;
+        const replyTimeViolations = (existingAnalysis.messageRecords || []).filter(msg => {
+          const replyTime = msg.replyTime;
+          return replyTime != null && replyTime !== undefined && replyTime > replyTimeThreshold;
+        }).length;
+
         // Build update object
         const updateData = {
           overallScore: analysisResult.overallScore !== undefined ? analysisResult.overallScore : null,
@@ -7768,7 +7786,8 @@ async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
           recommendations: analysisResult.suggestions || analysisResult.recommendations || [],
           chattingStyle: analysisResult.chattingStyle || null,
           messagePatterns: analysisResult.messagePatterns || null,
-          engagementMetrics: analysisResult.engagementMetrics || null
+          engagementMetrics: analysisResult.engagementMetrics || null,
+          replyTimeViolations: replyTimeViolations // Recalculate and save
         };
 
         // Also persist numeric counts for reliable aggregation
@@ -7780,6 +7799,8 @@ async function reanalyzeRange(chatterName, rangeStart, rangeEnd) {
         } else {
           updateData.totalMessages = filtered.length;
         }
+        
+        console.log(`  📊 Recalculated reply time violations: ${replyTimeViolations} (out of ${existingAnalysis.messageRecords?.length || 0} messages)`);
 
         // Use findByIdAndUpdate to avoid version conflicts
         await MessageAnalysis.findByIdAndUpdate(
