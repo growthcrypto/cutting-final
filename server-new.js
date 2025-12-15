@@ -8419,8 +8419,52 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     console.log(`💬 MessageAnalysis records found: ${allMessageAnalyses.length}`);
     
     // Aggregate scores from all analyzed records (ignore unanalyzed ones with null scores)
-    const analyzedRecords = allMessageAnalyses.filter(ma => ma.overallScore != null);
+    let analyzedRecords = allMessageAnalyses.filter(ma => ma.overallScore != null);
     console.log(`✅ Analyzed records: ${analyzedRecords.length} of ${allMessageAnalyses.length}`);
+    
+    // 🔥 CRITICAL FIX: Deduplicate records by date range to prevent double-counting violations
+    // If multiple records have overlapping date ranges, we should use only non-overlapping ones
+    // or use the one with the most recent analysis. Sort by creation date (most recent first) 
+    // and filter out overlapping records
+    if (analyzedRecords.length > 1) {
+      // Sort by createdAt descending (most recent first)
+      analyzedRecords.sort((a, b) => {
+        const dateA = a.createdAt || a.weekEndDate || new Date(0);
+        const dateB = b.createdAt || b.weekEndDate || new Date(0);
+        return dateB - dateA;
+      });
+      
+      // Keep only non-overlapping records (or the most recent one if they all overlap)
+      const nonOverlappingRecords = [];
+      const seenRanges = [];
+      
+      for (const record of analyzedRecords) {
+        const recordStart = record.weekStartDate;
+        const recordEnd = record.weekEndDate;
+        
+        // Check if this record's range overlaps with any we've already kept
+        const overlaps = seenRanges.some(range => {
+          return !(recordEnd < range.start || recordStart > range.end);
+        });
+        
+        if (!overlaps) {
+          nonOverlappingRecords.push(record);
+          seenRanges.push({ start: recordStart, end: recordEnd });
+        } else {
+          console.log(`⚠️ Skipping overlapping record: ${record.weekStartDate} to ${record.weekEndDate} (would cause double-counting)`);
+        }
+      }
+      
+      // If all records overlap, just use the most recent one
+      if (nonOverlappingRecords.length === 0 && analyzedRecords.length > 0) {
+        console.log(`⚠️ All records overlap - using only the most recent record to avoid double-counting`);
+        analyzedRecords = [analyzedRecords[0]];
+      } else {
+        analyzedRecords = nonOverlappingRecords;
+      }
+      
+      console.log(`✅ After deduplication: ${analyzedRecords.length} non-overlapping records`);
+    }
     
     let messageAnalysis = null;
     if (analyzedRecords.length > 0) {
@@ -8430,7 +8474,14 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       const avgOverall = analyzedRecords.reduce((sum, ma) => sum + (ma.overallScore || 0), 0) / analyzedRecords.length;
       
       // Sum total messages from all analyzed days
+      // 🔥 NOTE: After deduplication, this should represent unique messages across non-overlapping records
+      // If records still overlap, this might be inflated, but the violation cap below will handle it
       const totalMessagesAcrossAllDays = analyzedRecords.reduce((sum, ma) => sum + (ma.totalMessages || 0), 0);
+      
+      // Log if total messages seem unreasonably high (potential double-counting)
+      if (analyzedRecords.length > 1 && totalMessagesAcrossAllDays > 10000) {
+        console.log(`⚠️ WARNING: High total message count (${totalMessagesAcrossAllDays}) from ${analyzedRecords.length} records. May indicate duplicate counting.`);
+      }
       
       // Aggregate grammar breakdowns from all days
       let totalSpellingErrors = 0;
@@ -8599,8 +8650,17 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             }
             
             // Sum across records (but within each record, we've already deduplicated)
+            // 🔥 CRITICAL: After deduplication, records should be non-overlapping, so summing is safe
+            // However, if we still get unreasonable counts, the final cap will handle it
             const countBefore = guidelineViolations[key].count;
             guidelineViolations[key].count += dedupItem.count;
+            
+            // Log a warning if the sum seems unreasonable for reply time violations
+            const isReplyTime = dedupItem.normalizedTitle.toLowerCase().includes('reply time') || 
+                               dedupItem.normalizedTitle.toLowerCase().includes('replytime');
+            if (isReplyTime && guidelineViolations[key].count > 500) {
+              console.log(`    ⚠️ WARNING: Reply time violations sum is high (${guidelineViolations[key].count}). May indicate remaining overlap. Will be capped at final aggregation step.`);
+            }
             
             // Merge examples (cap at 20 total)
             if (dedupItem.examples && Array.isArray(dedupItem.examples)) {
@@ -8624,8 +8684,15 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       
       // Organize back into categories and cap totals
       Object.values(guidelineViolations).forEach(guideline => {
-        // Cap each individual item's count at totalMessages
-        const cappedCount = Math.min(guideline.count, totalMessagesAcrossAllDays || guideline.count);
+        // 🔥 CRITICAL FIX: Cap violations at total messages to prevent impossible counts
+        // Violations can't exceed the number of messages analyzed
+        let cappedCount = Math.min(guideline.count, totalMessagesAcrossAllDays || guideline.count);
+        
+        // Additional safeguard: If violations exceed messages, log a warning and cap it
+        if (guideline.count > totalMessagesAcrossAllDays && totalMessagesAcrossAllDays > 0) {
+          console.log(`⚠️ WARNING: ${guideline.title} has ${guideline.count} violations but only ${totalMessagesAcrossAllDays} total messages. Capping at ${cappedCount}.`);
+        }
+        
         aggregatedGuidelines[guideline.category].items.push({
           title: guideline.title,
           description: guideline.description,
