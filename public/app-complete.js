@@ -6691,9 +6691,36 @@ function parseGuidelinesByCategory(guidelinesBreakdown, totalMessages = 0) {
     // Use provided totalMessages or fallback to guidelinesBreakdown.totalMessages
     const msgCount = totalMessages || guidelinesBreakdown.totalMessages || 544;
     
-    return categories.map(cat => {
+    const results = [];
+    
+    categories.forEach(cat => {
         const items = guidelinesBreakdown[cat.key]?.items || [];
-        let violations = items.reduce((sum, item) => sum + (item.count || 0), 0);
+        
+        // Check if there's a reply time violation item
+        const replyTimeItem = items.find(item => {
+            const title = (item.title || '').toLowerCase();
+            return title.includes('reply time') || title.includes('replytime');
+        });
+        
+        // If reply time violations exist, show them separately
+        if (replyTimeItem && replyTimeItem.count > 0) {
+            const replyTimeViolations = Math.min(replyTimeItem.count, msgCount);
+            const replyTimePct = msgCount > 0 ? ((replyTimeViolations / msgCount) * 100).toFixed(1) : '0.0';
+            results.push({ 
+                name: 'Reply Time', 
+                violations: replyTimeViolations, 
+                pct: replyTimePct,
+                isReplyTime: true 
+            });
+        }
+        
+        // Calculate other violations (excluding reply time)
+        const otherItems = items.filter(item => {
+            const title = (item.title || '').toLowerCase();
+            return !title.includes('reply time') && !title.includes('replytime');
+        });
+        
+        let violations = otherItems.reduce((sum, item) => sum + (item.count || 0), 0);
         
         // Safety cap: violations can't exceed total messages
         if (msgCount > 0 && violations > msgCount) {
@@ -6705,7 +6732,7 @@ function parseGuidelinesByCategory(guidelinesBreakdown, totalMessages = 0) {
         // Get titles of violated guidelines (count > 0), deduplicate by normalized title
         // Backend now normalizes titles, but we dedupe here as a safety net
         const seenTitles = new Set();
-        const violatedTitles = items
+        const violatedTitles = otherItems
             .filter(item => item.count > 0)
             .map(item => {
                 // Normalize title (match backend logic)
@@ -6722,11 +6749,15 @@ function parseGuidelinesByCategory(guidelinesBreakdown, totalMessages = 0) {
             .filter(Boolean)
             .join(', ');
         
-        // Create display name with violated guideline titles
-        const displayName = violatedTitles ? `${cat.name} - ${violatedTitles}` : cat.name;
-        
-        return { name: displayName, violations, pct };
+        // Only add category if it has other violations (not just reply time)
+        if (violations > 0 || !replyTimeItem) {
+            // Create display name with violated guideline titles
+            const displayName = violatedTitles ? `${cat.name} - ${violatedTitles}` : cat.name;
+            results.push({ name: displayName, violations, pct });
+        }
     });
+    
+    return results;
 }
 
 // Render detailed guidelines with individual items
