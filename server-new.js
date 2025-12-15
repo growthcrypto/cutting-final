@@ -8422,48 +8422,12 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     let analyzedRecords = allMessageAnalyses.filter(ma => ma.overallScore != null);
     console.log(`✅ Analyzed records: ${analyzedRecords.length} of ${allMessageAnalyses.length}`);
     
-    // 🔥 CRITICAL FIX: Deduplicate records by date range to prevent double-counting violations
-    // If multiple records have overlapping date ranges, we should use only non-overlapping ones
-    // or use the one with the most recent analysis. Sort by creation date (most recent first) 
-    // and filter out overlapping records
+    // 🔥 IMPORTANT: We sum violations from ALL records in the date range
+    // The final cap at totalMessages will prevent impossible counts (>100% violation rate)
+    // This allows proper aggregation across multiple time periods while preventing double-counting
+    // by capping at the actual total message count
     if (analyzedRecords.length > 1) {
-      // Sort by createdAt descending (most recent first)
-      analyzedRecords.sort((a, b) => {
-        const dateA = a.createdAt || a.weekEndDate || new Date(0);
-        const dateB = b.createdAt || b.weekEndDate || new Date(0);
-        return dateB - dateA;
-      });
-      
-      // Keep only non-overlapping records (or the most recent one if they all overlap)
-      const nonOverlappingRecords = [];
-      const seenRanges = [];
-      
-      for (const record of analyzedRecords) {
-        const recordStart = record.weekStartDate;
-        const recordEnd = record.weekEndDate;
-        
-        // Check if this record's range overlaps with any we've already kept
-        const overlaps = seenRanges.some(range => {
-          return !(recordEnd < range.start || recordStart > range.end);
-        });
-        
-        if (!overlaps) {
-          nonOverlappingRecords.push(record);
-          seenRanges.push({ start: recordStart, end: recordEnd });
-        } else {
-          console.log(`⚠️ Skipping overlapping record: ${record.weekStartDate} to ${record.weekEndDate} (would cause double-counting)`);
-        }
-      }
-      
-      // If all records overlap, just use the most recent one
-      if (nonOverlappingRecords.length === 0 && analyzedRecords.length > 0) {
-        console.log(`⚠️ All records overlap - using only the most recent record to avoid double-counting`);
-        analyzedRecords = [analyzedRecords[0]];
-      } else {
-        analyzedRecords = nonOverlappingRecords;
-      }
-      
-      console.log(`✅ After deduplication: ${analyzedRecords.length} non-overlapping records`);
+      console.log(`📊 Aggregating violations from ${analyzedRecords.length} records. Final count will be capped at total messages.`);
     }
     
     let messageAnalysis = null;
@@ -8686,11 +8650,14 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       Object.values(guidelineViolations).forEach(guideline => {
         // 🔥 CRITICAL FIX: Cap violations at total messages to prevent impossible counts
         // Violations can't exceed the number of messages analyzed
-        let cappedCount = Math.min(guideline.count, totalMessagesAcrossAllDays || guideline.count);
+        // However, if we're summing across multiple non-overlapping records, violations
+        // can legitimately be up to totalMessagesAcrossAllDays
+        let cappedCount = guideline.count;
         
-        // Additional safeguard: If violations exceed messages, log a warning and cap it
+        // Only cap if violations exceed messages (indicating double-counting from overlapping records)
         if (guideline.count > totalMessagesAcrossAllDays && totalMessagesAcrossAllDays > 0) {
-          console.log(`⚠️ WARNING: ${guideline.title} has ${guideline.count} violations but only ${totalMessagesAcrossAllDays} total messages. Capping at ${cappedCount}.`);
+          cappedCount = totalMessagesAcrossAllDays;
+          console.log(`⚠️ WARNING: ${guideline.title} has ${guideline.count} violations but only ${totalMessagesAcrossAllDays} total messages. This suggests overlapping records. Capping at ${cappedCount}.`);
         }
         
         aggregatedGuidelines[guideline.category].items.push({
