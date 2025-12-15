@@ -2089,12 +2089,22 @@ app.post('/api/upload/messages', checkDatabaseConnection, authenticateToken, upl
       
       console.log(`📅 Creating MessageAnalysis for ${dateKey}: ${dailyMessages.length} messages`);
       
+      // 🔥 SIMPLE: Count reply time violations directly from the data (replyTime > 5 minutes)
+      const replyTimeThreshold = 5;
+      const replyTimeViolations = dailyMessages.filter(msg => {
+        const replyTime = msg.replyTime;
+        return replyTime != null && replyTime > replyTimeThreshold;
+      }).length;
+      
+      console.log(`  📊 Reply time violations for ${dateKey}: ${replyTimeViolations} (out of ${dailyMessages.length} messages)`);
+      
       const messageAnalysis = new MessageAnalysis({
         chatterName: chatter,
         weekStartDate: dayDate,
         weekEndDate: dayDate, // Single day
         totalMessages: dailyMessages.length,
         messageRecords: dailyMessages,
+        replyTimeViolations: replyTimeViolations, // Store the count directly
         overallScore: null,
         grammarScore: null,
         guidelinesScore: null,
@@ -8442,6 +8452,10 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       // If records still overlap, this might be inflated, but the violation cap below will handle it
       const totalMessagesAcrossAllDays = analyzedRecords.reduce((sum, ma) => sum + (ma.totalMessages || 0), 0);
       
+      // 🔥 SIMPLE: Sum reply time violations directly from stored counts
+      const totalReplyTimeViolations = analyzedRecords.reduce((sum, ma) => sum + (ma.replyTimeViolations || 0), 0);
+      console.log(`📊 Total reply time violations (sum from all records): ${totalReplyTimeViolations}`);
+      
       // Log if total messages seem unreasonably high (potential double-counting)
       if (analyzedRecords.length > 1 && totalMessagesAcrossAllDays > 10000) {
         console.log(`⚠️ WARNING: High total message count (${totalMessagesAcrossAllDays}) from ${analyzedRecords.length} records. May indicate duplicate counting.`);
@@ -8603,6 +8617,29 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
           Object.values(recordDeduplicatedItems).forEach(dedupItem => {
             const key = `${dedupItem.category}:${dedupItem.normalizedTitle}`;
             
+            // 🔥 SIMPLE: For reply time violations, use the stored count from the record if available
+            const isReplyTime = dedupItem.normalizedTitle.toLowerCase().includes('reply time') || 
+                               dedupItem.normalizedTitle.toLowerCase().includes('replytime');
+            
+            if (isReplyTime) {
+              if (record.replyTimeViolations != null && record.replyTimeViolations !== undefined) {
+                // Use stored count directly (more reliable than recalculating from breakdown)
+                dedupItem.count = record.replyTimeViolations;
+                console.log(`    ✅ Using stored replyTimeViolations count: ${record.replyTimeViolations} (instead of breakdown count: ${dedupItem.rawCount})`);
+              } else {
+                // Fallback: calculate from messageRecords if stored count doesn't exist (for old records)
+                const replyTimeThreshold = 5;
+                const violationsFromRecords = (record.messageRecords || []).filter(msg => {
+                  const replyTime = msg.replyTime;
+                  return replyTime != null && replyTime > replyTimeThreshold;
+                }).length;
+                if (violationsFromRecords > 0) {
+                  dedupItem.count = violationsFromRecords;
+                  console.log(`    ⚠️ No stored count, calculated from messageRecords: ${violationsFromRecords} violations`);
+                }
+              }
+            }
+            
             if (!guidelineViolations[key]) {
               guidelineViolations[key] = {
                 category: dedupItem.category,
@@ -8620,8 +8657,6 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             guidelineViolations[key].count += dedupItem.count;
             
             // Log a warning if the sum seems unreasonable for reply time violations
-            const isReplyTime = dedupItem.normalizedTitle.toLowerCase().includes('reply time') || 
-                               dedupItem.normalizedTitle.toLowerCase().includes('replytime');
             if (isReplyTime && guidelineViolations[key].count > 500) {
               console.log(`    ⚠️ WARNING: Reply time violations sum is high (${guidelineViolations[key].count}). May indicate remaining overlap. Will be capped at final aggregation step.`);
             }
@@ -8635,8 +8670,8 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
             }
             
             // Log reply time violations for debugging
-            if (dedupItem.normalizedTitle.toLowerCase().includes('reply time') || dedupItem.normalizedTitle.toLowerCase().includes('replytime')) {
-              console.log(`    ✅ ${dedupItem.displayTitle}: +${dedupItem.count} violations (raw: ${dedupItem.rawCount}, record msgs: ${recordTotalMessages}, countBefore: ${countBefore}, total: ${guidelineViolations[key].count})`);
+            if (isReplyTime) {
+              console.log(`    ✅ ${dedupItem.displayTitle}: +${dedupItem.count} violations (record msgs: ${recordTotalMessages}, countBefore: ${countBefore}, total: ${guidelineViolations[key].count})`);
             }
           });
         } else {
@@ -8680,9 +8715,16 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
           );
           if (replyTimeItem) {
             console.log(`📊 FINAL AGGREGATION (Current Period) - Reply Time:`);
-            console.log(`   Raw sum: ${replyTimeItem.count} violations`);
+            console.log(`   Raw sum from breakdown: ${replyTimeItem.count} violations`);
+            console.log(`   Stored sum (direct): ${totalReplyTimeViolations} violations`);
             console.log(`   Total messages: ${totalMessagesAcrossAllDays}`);
             console.log(`   Records processed: ${analyzedRecords.length}`);
+            
+            // 🔥 OVERRIDE: Use the stored count (more accurate)
+            if (totalReplyTimeViolations > 0) {
+              replyTimeItem.count = totalReplyTimeViolations;
+              console.log(`   ✅ Using stored count: ${totalReplyTimeViolations} violations`);
+            }
           }
         }
         

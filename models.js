@@ -101,6 +101,7 @@ const messageAnalysisSchema = new mongoose.Schema({
   // Message Data
   totalMessages: { type: Number, default: 0 },
   messagesSample: [{ type: String }], // Sample messages for analysis
+  replyTimeViolations: { type: Number, default: 0 }, // Count of messages with replyTime > 5 minutes (stored directly)
   
   // NEW: Individual Message Records (for flow analysis)
   messageRecords: [{
