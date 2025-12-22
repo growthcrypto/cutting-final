@@ -8371,14 +8371,16 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     await reanalyzeRange(chatterName, start, end);
 
     // Get this chatter's data
+    // 🔥 CRITICAL: Use case-insensitive regex for chatterName to handle variations
+    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
     const chatterPurchases = await FanPurchase.find({
       ...dateQuery,
-      chatterName: chatterName
+      chatterName: chatterNameRegex
     }).populate('trafficSource').populate('vipFan');
     
     const chatterReports = await DailyChatterReport.find({
       ...dateQuery,
-      chatterName: chatterName
+      chatterName: chatterNameRegex
     });
     
     // 🔥 DEBUG: Log purchase dates to verify filtering
@@ -8403,7 +8405,11 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     }
     
     // FALLBACK: Get ChatterPerformance data if no daily reports
-    const chatterPerformance = await ChatterPerformance.find(performanceQuery);
+    const chatterPerformanceQueryWithRegex = {
+      ...performanceQuery,
+      chatterName: chatterNameRegex
+    };
+    const chatterPerformance = await ChatterPerformance.find(chatterPerformanceQueryWithRegex);
     console.log('📊 Chatter data found:', {
       purchases: chatterPurchases.length,
       dailyReports: chatterReports.length,
@@ -8470,8 +8476,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     });
     
     // Get ALL message analyses for this chatter in the date range
-    const chatterNameRegex = new RegExp(`^${chatterName}$`, 'i');
-    
+    // (chatterNameRegex already defined above)
     const allMessageAnalyses = await MessageAnalysis.find({
       chatterName: chatterNameRegex,
       weekStartDate: { $lte: end },
