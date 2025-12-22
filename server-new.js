@@ -8842,23 +8842,30 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     let chatterFansChatted, chatterMessagesSent, chatterAvgResponseTime;
     
     if (chatterReports.length > 0) {
-      // 🔥 CRITICAL: Calculate revenue ONLY from PPV sales in DailyChatterReport for this week
+      // 🔥 CRITICAL: Calculate revenue from DailyChatterReport sales logs (PPV sales + tips)
       // This is the source of truth - the daily sales logs they upload
       chatterRevenue = 0;
       chatterPPVRevenue = 0;
       chatterPPVCount = 0;
       
       chatterReports.forEach(report => {
-        // ONLY sum PPV sales from this report (no tips, no other revenue sources)
+        // Sum PPV sales from this report
         if (report.ppvSales && Array.isArray(report.ppvSales)) {
           report.ppvSales.forEach(sale => {
             const amount = sale.amount || 0;
             chatterPPVRevenue += amount;
-            chatterRevenue += amount;  // Revenue = PPV sales only
+            chatterRevenue += amount;
             chatterPPVCount++;
           });
         }
-        // NOTE: Tips are NOT included in revenue calculation - only PPV sales
+        
+        // Sum tips from this report
+        if (report.tips && Array.isArray(report.tips)) {
+          report.tips.forEach(tip => {
+            const amount = tip.amount || 0;
+            chatterRevenue += amount;
+          });
+        }
       });
       
       chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
@@ -8868,7 +8875,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
       chatterMessagesSent = chatterFansChatted * 15;
       chatterAvgResponseTime = 0;
-      console.log(`💰 Revenue from DailyChatterReport PPV sales ONLY: $${chatterRevenue} (${chatterPPVCount} PPVs from ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
+      console.log(`💰 Revenue from DailyChatterReport (PPV sales + tips): $${chatterRevenue} (${chatterPPVCount} PPVs from ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
     } else if (chatterPerformance.length > 0) {
       // FALLBACK: Use ChatterPerformance (weekly data)
       console.log(`📊 Using ChatterPerformance fallback for ${chatterName} (${chatterPerformance.length} records)`);
