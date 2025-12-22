@@ -8841,6 +8841,9 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     let chatterPPVsSent, chatterPPVsUnlocked, chatterUnlockRate;
     let chatterFansChatted, chatterMessagesSent, chatterAvgResponseTime;
     
+    // 🔥 DEBUG: Log what we're about to calculate
+    console.log(`🔥 REVENUE CALCULATION START for ${chatterName}: ${chatterReports.length} reports, ${chatterPurchases.length} purchases, ${chatterPerformance.length} performance records`);
+    
     if (chatterReports.length > 0) {
       // 🔥 CRITICAL: Calculate revenue from DailyChatterReport sales logs (PPV sales + tips)
       // This is the source of truth - the daily sales logs they upload
@@ -8876,6 +8879,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterMessagesSent = chatterFansChatted * 15;
       chatterAvgResponseTime = 0;
       console.log(`💰 Revenue from DailyChatterReport (PPV sales + tips): $${chatterRevenue} (${chatterPPVCount} PPVs from ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
+      console.log(`🔥 DETAILED BREAKDOWN: PPV Revenue = $${chatterPPVRevenue}, Tips = $${chatterRevenue - chatterPPVRevenue}, Total = $${chatterRevenue}`);
     } else if (chatterPerformance.length > 0) {
       // FALLBACK: Use ChatterPerformance (weekly data)
       console.log(`📊 Using ChatterPerformance fallback for ${chatterName} (${chatterPerformance.length} records)`);
@@ -9132,6 +9136,8 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     };
     
     console.log(`🔥 FINAL REVENUE VALUE IN RESPONSE: $${response.revenue} (chatterRevenue was: $${chatterRevenue})`);
+    console.log(`🔥 VERIFICATION: response.revenue = ${response.revenue}, response.chatter.revenue = ${response.chatter.revenue}`);
+    console.log(`🔥 SOURCE: ${chatterReports.length > 0 ? 'DailyChatterReport' : chatterPerformance.length > 0 ? 'ChatterPerformance' : 'NO DATA'}`);
     
     // Build previous period data object
     const previousPeriodData = await buildPreviousPeriodData(
