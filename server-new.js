@@ -8476,7 +8476,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     });
     
     // Get ALL message analyses for this chatter in the date range
-    // (chatterNameRegex already defined above)
+    // (using chatterNameRegex defined above)
     const allMessageAnalyses = await MessageAnalysis.find({
       chatterName: chatterNameRegex,
       weekStartDate: { $lte: end },
@@ -8842,10 +8842,32 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
     let chatterFansChatted, chatterMessagesSent, chatterAvgResponseTime;
     
     if (chatterReports.length > 0) {
-      // Use DailyChatterReport (preferred)
-      chatterRevenue = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-      chatterPPVRevenue = chatterPurchases.filter(p => p.type === 'ppv').reduce((sum, p) => sum + (p.amount || 0), 0);
-      chatterPPVCount = chatterPurchases.filter(p => p.type === 'ppv').length;
+      // 🔥 CRITICAL: Calculate revenue directly from DailyChatterReport sales logs (ppvSales and tips)
+      // This is the source of truth - the daily sales logs they upload
+      chatterRevenue = 0;
+      chatterPPVRevenue = 0;
+      chatterPPVCount = 0;
+      
+      chatterReports.forEach(report => {
+        // Sum PPV sales from this report
+        if (report.ppvSales && Array.isArray(report.ppvSales)) {
+          report.ppvSales.forEach(sale => {
+            const amount = sale.amount || 0;
+            chatterPPVRevenue += amount;
+            chatterRevenue += amount;
+            chatterPPVCount++;
+          });
+        }
+        
+        // Sum tips from this report
+        if (report.tips && Array.isArray(report.tips)) {
+          report.tips.forEach(tip => {
+            const amount = tip.amount || 0;
+            chatterRevenue += amount;
+          });
+        }
+      });
+      
       chatterAvgPPVPrice = chatterPPVCount > 0 ? chatterPPVRevenue / chatterPPVCount : 0;
       chatterPPVsSent = chatterReports.reduce((sum, r) => sum + (r.ppvsSent || 0), 0);
       chatterPPVsUnlocked = chatterPPVCount;
@@ -8853,7 +8875,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
       chatterMessagesSent = chatterFansChatted * 15;
       chatterAvgResponseTime = 0;
-      console.log(`💰 Revenue from DailyChatterReport: $${chatterRevenue} (${chatterPurchases.length} purchases from ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
+      console.log(`💰 Revenue from DailyChatterReport (sales logs): $${chatterRevenue} (${chatterPPVCount} PPVs, ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
     } else if (chatterPerformance.length > 0) {
       // FALLBACK: Use ChatterPerformance (weekly data)
       console.log(`📊 Using ChatterPerformance fallback for ${chatterName} (${chatterPerformance.length} records)`);
