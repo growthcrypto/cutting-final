@@ -8350,12 +8350,22 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       start.setDate(start.getDate() - 7);
     }
     
+    // 🔥 CRITICAL: Normalize dates to ensure proper filtering
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    
+    console.log(`📅 Date range for revenue query: ${start.toISOString()} to ${end.toISOString()}`);
+    
     const dateQuery = { date: { $gte: start, $lte: end } };
+    // Use overlap query for ChatterPerformance (weekly summaries can overlap date ranges)
     const performanceQuery = {
       weekStartDate: { $lte: end },
       weekEndDate: { $gte: start },
       chatterName: chatterName
     };
+    
+    console.log(`📅 Date query:`, JSON.stringify(dateQuery));
+    console.log(`📅 Performance query:`, JSON.stringify(performanceQuery));
     
     // Always re-analyze the selected window to ensure fresh metrics
     await reanalyzeRange(chatterName, start, end);
@@ -8817,12 +8827,20 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterFansChatted = chatterReports.reduce((sum, r) => sum + (r.fansChatted || 0), 0);
       chatterMessagesSent = chatterFansChatted * 15;
       chatterAvgResponseTime = 0;
+      console.log(`💰 Revenue from DailyChatterReport: $${chatterRevenue} (${chatterPurchases.length} purchases from ${chatterReports.length} reports, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
     } else if (chatterPerformance.length > 0) {
       // FALLBACK: Use ChatterPerformance (weekly data)
       console.log(`📊 Using ChatterPerformance fallback for ${chatterName} (${chatterPerformance.length} records)`);
+      console.log(`📊 ChatterPerformance records:`, chatterPerformance.map(p => ({
+        weekStart: p.weekStartDate?.toISOString().split('T')[0],
+        weekEnd: p.weekEndDate?.toISOString().split('T')[0],
+        netSales: p.netSales,
+        ppvRevenue: p.ppvRevenue
+      })));
       
       // CRITICAL: Sum ALL ChatterPerformance records in date range, not just first one
       chatterRevenue = chatterPerformance.reduce((sum, p) => sum + (p.netSales || 0), 0);
+      console.log(`💰 Revenue from ChatterPerformance: $${chatterRevenue} (${chatterPerformance.length} records, date range: ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]})`);
       chatterPPVRevenue = chatterPerformance.reduce((sum, p) => sum + (p.ppvRevenue || 0), 0);
       chatterPPVsSent = chatterPerformance.reduce((sum, p) => sum + (p.ppvsSent || 0), 0);
       chatterPPVsUnlocked = chatterPerformance.reduce((sum, p) => sum + (p.ppvsUnlocked || 0), 0);
