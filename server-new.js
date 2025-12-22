@@ -8381,6 +8381,27 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       chatterName: chatterName
     });
     
+    // 🔥 DEBUG: Log purchase dates to verify filtering
+    if (chatterPurchases.length > 0) {
+      const purchaseDates = chatterPurchases.map(p => ({
+        date: p.date?.toISOString().split('T')[0],
+        amount: p.amount,
+        type: p.type
+      }));
+      console.log(`📊 FanPurchase records found (${chatterPurchases.length}):`, purchaseDates.slice(0, 10)); // Show first 10
+      const totalFromPurchases = chatterPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+      console.log(`💰 Total revenue from FanPurchase records: $${totalFromPurchases}`);
+    }
+    
+    if (chatterReports.length > 0) {
+      const reportDates = chatterReports.map(r => ({
+        date: r.date?.toISOString().split('T')[0],
+        ppvsCount: r.ppvSales?.length || 0,
+        tipsCount: r.tips?.length || 0
+      }));
+      console.log(`📊 DailyChatterReport records found (${chatterReports.length}):`, reportDates.slice(0, 10)); // Show first 10
+    }
+    
     // FALLBACK: Get ChatterPerformance data if no daily reports
     const chatterPerformance = await ChatterPerformance.find(performanceQuery);
     console.log('📊 Chatter data found:', {
