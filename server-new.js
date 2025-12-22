@@ -9075,7 +9075,7 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       // Nested structure
       chatter: {
         name: chatterName,
-        revenue: chatterRevenue,
+        revenue: Math.round(chatterRevenue),
         avgPPVPrice: chatterAvgPPVPrice,
         unlockRate: chatterUnlockRate,
         ppvsSent: chatterPPVsSent,
@@ -9123,13 +9123,15 @@ app.get('/api/analytics/chatter-deep-analysis/:chatterName', checkDatabaseConnec
       messagePatterns: messageAnalysis?.messagePatterns || null,
       engagementMetrics: messageAnalysis?.engagementMetrics || null,
       totalMessages: messageAnalysis?.totalMessages || chatterMessagesSent || 0,
-      revenue: chatterRevenue,
+      revenue: Math.round(chatterRevenue),
       ppvsSent: chatterPPVsSent,
       ppvsUnlocked: chatterPPVsUnlocked,
       messagesSent: chatterMessagesSent,
       avgResponseTime: chatterAvgResponseTime,
       fansChatted: chatterFansChatted
     };
+    
+    console.log(`🔥 FINAL REVENUE VALUE IN RESPONSE: $${response.revenue} (chatterRevenue was: $${chatterRevenue})`);
     
     // Build previous period data object
     const previousPeriodData = await buildPreviousPeriodData(
